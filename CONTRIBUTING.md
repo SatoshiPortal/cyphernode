@@ -86,7 +86,7 @@ Deployment flexibility:
   - Multi-authorization: SuperAdmin, Accounting (transactions, etc.), Marketing (usage, etc.), etc.
 - Web Wallet
   - Using Trezor/Coldcard for authentication/signing
-- Index the blockchain
+- Index the blockchain (full explorer)
 - PGP features: signing, verifying, etc.
 - Full blockchain explorer
 - e-mail notifications when things happen (monitoring):

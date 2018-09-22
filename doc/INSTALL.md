@@ -47,10 +47,9 @@ debian@dev:~/dev/Cyphernode$ docker network connect cyphernodenet yourappcontain
 
 ```shell
 debian@dev:~/dev/Cyphernode$ vi proxy_docker/env.properties
-debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/derivation.properties
+debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/config.properties
 debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/watcher_btcnode_curlcfg.properties
 debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/spender_btcnode_curlcfg.properties
-debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/config.properties
 debian@dev:~/dev/Cyphernode$ vi cron_docker/env.properties
 debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 ```
@@ -72,6 +71,8 @@ debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 [See how to build clightning image](https://github.com/SatoshiPortal/dockers/tree/master/rpi/LN/c-lightning)
 
 ### Deploy
+
+Edit docker-compose.yml to specify special deployment constraints or if you want to run the Bitcoin node on the same machine: uncomment corresponding lines.
 
 ```shell
 debian@dev:~/dev/Cyphernode$ docker stack deploy --compose-file docker-compose.yml cyphernodestack
