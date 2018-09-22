@@ -1,0 +1,75 @@
+version: "3"
+
+services:
+  cyphernode:
+    # Bitcoin Mini Proxy
+    env_file:
+      - proxy_docker/env.properties
+    image: btcproxyimg
+#    ports:
+#      - "8888:8888"
+    volumes:
+      # Variable substitutions don't work
+      # Match with DB_PATH in proxy_docker/env.properties
+      - "~/btcproxydb:/proxyuser/db"
+      - "~/.lightning:/proxyuser/.lightning"
+    deploy:
+      placement:
+        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+
+  proxycronnode:
+    # Async jobs
+    env_file:
+      - cron_docker/env.properties
+    image: proxycronimg
+    deploy:
+      placement:
+        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+
+  pycoinnode:
+    # Pycoin
+    env_file:
+      - pycoin_docker/env.properties
+    image: pycoinimg
+#    ports:
+#      - "7777:7777"
+    deploy:
+      placement:
+        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+
+  clightningnode:
+    # c-lightning lightning network node
+    image: clnimg
+    ports:
+      - "9735:9735"
+    volumes:
+      - "~/.lightning:/lnuser/.lightning"
+    deploy:
+      placement:
+        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+
+#  spbtcnode:
+    # Bitcoin node
+#    image: btcnode
+#    ports:
+#      - "18333:18333"
+#      - "18332:18332"
+#      - "29000:29000"
+#      - "8333:8333"
+#      - "8332:8332"
+#    volumes:
+#      - "~/.bitcoin:/bitcoinuser/.bitcoin"
+#    networks:
+#      - cyphernodenet
+
+networks:
+  cyphernodenet:
+    external: true
