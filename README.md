@@ -1,5 +1,5 @@
 # cyphernode
-Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties
+Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties. 
 
 # What is cyphernode?
 
