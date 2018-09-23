@@ -85,4 +85,4 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 
 When building cyphernode, we had specific use-cases in mind that we built for ourselves. Use this as inspiration, and innovate on our procedures.
 
-[See one of Satoshi Portal's use case flow](../doc/SATOSHIPORTAL-WORKFLOW.md)
+[See one of Satoshi Portal's use case flow](doc/SATOSHIPORTAL-WORKFLOW.md)
