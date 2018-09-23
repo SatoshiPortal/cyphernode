@@ -73,12 +73,12 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 
 1. Open-source (white-label) web interface (self-hosted as part of the default Docker network)
 - Allow users to connect using Trezor
-- Send PBST files to ColdCard wallet for remote signing
+- Send PSBT files to ColdCard wallet for remote signing
 - Change Bitcoin and C-Lighning configs.
 - Manually call all API endpoints (with parameters) in web-interface to empower non-technical users to perform advanced functions
 - Complete web-interface over Bitcoin Core RPC
 - View transactions, balances, etc.
-- suggestion welcome!
+- suggestions welcome!
 2. Lunanode launcher web app
 
 # Example use-case for cyphernode
