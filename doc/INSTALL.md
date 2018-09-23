@@ -72,7 +72,7 @@ debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 
 ### Deploy
 
-Edit docker-compose.yml to specify special deployment constraints or if you want to run the Bitcoin node on the same machine: uncomment corresponding lines.
+**Edit docker-compose.yml to specify special deployment constraints or if you want to run the Bitcoin node on the same machine: uncomment corresponding lines.**
 
 ```shell
 debian@dev:~/dev/Cyphernode$ docker stack deploy --compose-file docker-compose.yml cyphernodestack
