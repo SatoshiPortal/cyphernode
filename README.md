@@ -17,7 +17,7 @@ It is designed to be deployed on multiple Rasberry Pi with very low computing re
 
 Hardware wallets (ColdCard, Trezor) will be utilized for key generation and signing (using PSBT BIP174), as well as for connecting to self-hosted web user interfaces.
 
-It is currently in production by Bylls.com, Canada's first and largest Bitcoin payment processor, as well as Bitcoin Outlet, a fixed-rate Bitcoin exchange service alternative to Coinbase which allows Canadians to purchase bitcoins sent directly to their own Bitcoia wallet.
+It is currently in production by Bylls.com, Canada's first and largest Bitcoin payment processor, as well as Bitcoin Outlet, a fixed-rate Bitcoin exchange service alternative to Coinbase which allows Canadians to purchase bitcoins sent directly to their own Bitcoin wallet.
 
 The docker containers used in this project are hosted at www.bitcoindockers.com 
 
