@@ -25,8 +25,17 @@ confirmation()
 {
 	trace "Entering confirmation()..."
 
+	local returncode
 	local txid=${1}
-	local tx_details=$(get_transaction ${txid})
+	local tx_details
+	tx_details=$(get_transaction ${txid})
+	returncode=$?
+	trace_rc ${returncode}
+	trace "[confirmation] tx_details=${tx_details}"
+	if [ "${returncode}" -ne "0" ]; then
+		trace "[confirmation] Transaction not in watcher, exiting."
+		return 0
+	fi
 
 	########################################################################################################
 	# First of all, let's make sure we're working on watched addresses...
