@@ -56,19 +56,19 @@ services:
     networks:
       - cyphernodenet
 
-#  spbtcnode:
+  btcnode:
     # Bitcoin node
-#    image: btcnode
+    image: btcnode
 #    ports:
 #      - "18333:18333"
 #      - "18332:18332"
 #      - "29000:29000"
 #      - "8333:8333"
 #      - "8332:8332"
-#    volumes:
-#      - "~/.bitcoin:/bitcoinuser/.bitcoin"
-#    networks:
-#      - cyphernodenet
+    volumes:
+      - "~/.bitcoin:/bitcoinuser/.bitcoin"
+    networks:
+      - cyphernodenet
 
 networks:
   cyphernodenet:

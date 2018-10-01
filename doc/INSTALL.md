@@ -15,6 +15,8 @@ Here's the plan:
 - To manually manage the Proxy (and have access to it), one has to gain access to the Docker host servers as a docker user.
 - **Coming soon**: added security to use the spending features of the Proxy with Trezor and Coldcard.
 
+## See [Step-by-step detailed instructions](INSTALL-MANUAL-STEPS.md) for real-world copy-paste standard install instructions
+
 ## Setting up
 
 Default setup assumes your Bitcoin Node is already running somewhere.  The reason is that it takes a lot of disk space and often already exists in your infrastructure, why not reusing it.  After all, full blockchain sync takes a while.
@@ -66,9 +68,13 @@ debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 
 [See how to build pycoin image](../pycoin_docker)
 
+### Build btcnode image
+
+[See how to build btcnode image](https://github.com/SatoshiPortal/dockers/tree/master/x86_64/bitcoin-core)
+
 ### Build clightning image
 
-[See how to build clightning image](https://github.com/SatoshiPortal/dockers/tree/master/rpi/LN/c-lightning)
+[See how to build clightning image](https://github.com/SatoshiPortal/dockers/tree/master/x86_64/LN/c-lightning)
 
 ### Deploy
 

@@ -45,7 +45,7 @@ COPY --chown=proxyuser app/bin/lightning-cli_x86 ${HOME}/lightning-cli
 USER ${USERNAME}
 WORKDIR ${HOME}
 
-RUN chmod +x startproxy.sh requesthandler.sh \
+RUN chmod +x startproxy.sh requesthandler.sh lightning-cli \
  && chmod 600 watcher_btcnode_curlcfg.properties \
  && chmod 600 spender_btcnode_curlcfg.properties \
  && chmod 600 config.properties \
