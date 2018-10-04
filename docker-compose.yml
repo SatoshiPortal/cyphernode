@@ -1,6 +1,21 @@
 version: "3"
 
 services:
+  authapi:
+    # HTTP authentication API gate
+    image: authapi
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "~/cyphernode/certs:/etc/ssl/certs"
+      - "~/cyphernode/private:/etc/ssl/private"
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+
   cyphernode:
     # Bitcoin Mini Proxy
     env_file:
