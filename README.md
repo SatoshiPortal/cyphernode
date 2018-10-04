@@ -83,6 +83,10 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 - suggestions welcome!
 2. Lunanode launcher web app
 
+## Security Roadmap
+
+You can find it here: https://github.com/SatoshiPortal/cyphernode/issues/13#issue-364164006
+
 # Example use-case for cyphernode
 
 When building cyphernode, we had specific use-cases in mind that we built for ourselves. Use this as inspiration, and innovate on our procedures.
