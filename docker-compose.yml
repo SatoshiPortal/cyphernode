@@ -8,8 +8,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "~/cyphernode/certs:/etc/ssl/certs"
-      - "~/cyphernode/private:/etc/ssl/private"
+      - "~/cyphernode-ssl/certs:/etc/ssl/certs"
+      - "~/cyphernode-ssl/private:/etc/ssl/private"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]

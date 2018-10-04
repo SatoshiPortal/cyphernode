@@ -2,15 +2,25 @@
 
 So all the other containers are in the Docker Swarm and we want to expose a real HTTP/S interface to clients outside of the Swarm, that makes sense.  Clients have to get an API key first.
 
-## API key
+## Build
+
+### Create your API key and put it in keys.properties
 
 Let's produce a 256-bits key that we'll convert in an hex string to store and use with openssl hmac feature.
+
+Alpine (Busybox):
 
 ```shell
 dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -pc 32
 ```
 
-The key is stored in keys.properties and must be given to the client.  This is a secret key.  keys.properties looks like this:
+Linux:
+
+```shell
+dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -ps -c 32
+```
+
+Put the key in keys.properties and keep it for the client.  This is a secret key.  keys.properties looks like this:
 
 ```property
 #keyid=hex(key)
@@ -18,7 +28,36 @@ key001=2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36
 key002=50c5e483b80964595508f214229b014aa6c013594d57d38bcb841093a39f1d83
 ```
 
-### Bearer token
+You can have multiple keys, but be aware that this container has **not** been built to support thousands of API keys!  **Cyphernode should be used locally**, not publicly as a service.
+
+## SSL
+
+If you already have your certificates and keystores infra, you already know what to do and your can skip this section.  Put your files in the bound volume (~/cyphernode-ssl/ see volume path in docker-compose.yml).
+
+If not, you can create your keys and self-signed certificates.
+
+```shell
+mkdir -p ~/cyphernode-ssl/certs ~/cyphernode-ssl/private
+openssl req -subj '/CN=localhost' -x509 -newkey rsa:4096 -nodes -keyout ~/cyphernode-ssl/private/key.pem -out ~/cyphernode-ssl/certs/cert.pem -days 365
+```
+
+If you don't want to use HTTPS, just copy default.conf instead of default-ssl.conf in Dockerfile.
+
+**Nota bene**: If you self-sign the certificate, you have to trust the certificate on the client side by adding it to the Trusted Root Certification Authorities or whatever your client needs.
+
+### Build and run docker image
+
+```shell
+docker build -t authapi .
+```
+
+If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
+
+```shell
+docker run -d --rm --name authapi -p 80:80 -p 443:443 --network cyphernodenet -v "~/cyphernode-ssl/certs:/etc/ssl/certs" -v "~/cyphernode-ssl/private:/etc/ssl/private" authapi
+```
+
+## FYI: Bearer token
 
 Following JWT (JSON Web Tokens) standard, we build a bearer token that will be in the request header and signed with the secret key.  We need this in the request header:
 
@@ -78,29 +117,6 @@ id="001";h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo "
 
 ```shell
 id="001";h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+60))}" | base64);k="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36";s=$(echo "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -v -H "Authorization: Bearer $token" https://localhost/getbestblockhash
-```
-
-## SSL
-
-Create your key and certificates.
-
-openssl req -subj '/CN=localhost' -x509 -newkey rsa:4096 -nodes -keyout ~/cyphernode/private/key.pem -out ~/cyphernode/certs/cert.pem -days 365
-
-Use default-ssl.conf as the template instead of default.conf.
-
-## Build
-
-### Create your API key and put it in keys.properties
-
-```shell
-dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -pc 32
-```
-
-### Build and run docker image
-
-```shell
-docker build -t authapi .
-docker run -d --rm --name authapi -p 80:80 -p 443:443 --network cyphernodenet -v "~/cyphernode/certs:/etc/ssl/certs" -v "~/cyphernode/private:/etc/ssl/private" authapi
 ```
 
 ## Invoke cyphernode through authenticated API

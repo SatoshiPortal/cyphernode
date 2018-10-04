@@ -73,12 +73,17 @@ debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 
 [See how to build clightning image](https://github.com/SatoshiPortal/dockers/tree/master/x86_64/LN/c-lightning)
 
+### Build the authenticated HTTP API image
+
+[See how to build authapi image](../api_auth_docker)
+
 ### Deploy
 
 **Edit docker-compose.yml to specify special deployment constraints or if you want to run the Bitcoin node on the same machine: uncomment corresponding lines.**
 
 ```shell
 debian@dev:~/dev/Cyphernode$ USER=`id -u cyphernode`:`id -g cyphernode` docker stack deploy --compose-file docker-compose.yml cyphernodestack
+Creating service cyphernodestack_authapi
 Creating service cyphernodestack_cyphernode
 Creating service cyphernodestack_proxycronnode
 Creating service cyphernodestack_pycoinnode
@@ -86,6 +91,8 @@ Creating service cyphernodestack_clightningnode
 ```
 
 ## Off-site Bitcoin Node
+
+This section is useful if you already have a Bitcoin Core node running and you want to use it in Cyphernode.  In that case, please comment out the btcnode section from docker-compose.yml.
 
 ### Join swarm created on Cyphernode server
 
