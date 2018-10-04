@@ -26,7 +26,7 @@ The project is in **heavy development** - we are currently looking for review, n
 # About this project
 
 - Created and maintained by www.satoshiportal.com
-- Dedicated full-time developper @kexkey
+- Dedicated full-time developer @kexkey
 - Project manager @FrancisPouliot
 - Disclaimer: as of release on Sept. 23 2018 the project is still it its early stages (Alpha) and many of the features have yet to be implemented. The core architecture and basic wallet operations and blockchain query functions are fully functional.
 
