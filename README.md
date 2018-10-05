@@ -13,7 +13,7 @@ It is a substitute for the Bitcore and Insight software projects.
 
 If aims to offer all advanced features and utilities necessary to operate entreprise grade Bitcoin services.  We provide a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
 
-It is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases). For a full-node and all modules, prepapre 350GB of space and 2GB or RAM.
+It is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases). For a full-node and all modules, prepapre 350GB of space and 2GB of RAM.
 
 Hardware wallets (ColdCard, Trezor) will be utilized for key generation and signing (using PSBT BIP174), as well as for connecting to self-hosted web user interfaces.
 
