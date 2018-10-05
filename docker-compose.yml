@@ -21,8 +21,6 @@ services:
     env_file:
       - proxy_docker/env.properties
     image: btcproxyimg
-#    ports:
-#      - "8888:8888"
     volumes:
       # Variable substitutions don't work
       # Match with DB_PATH in proxy_docker/env.properties
@@ -52,8 +50,6 @@ services:
     env_file:
       - pycoin_docker/env.properties
     image: pycoinimg
-#    ports:
-#      - "7777:7777"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -80,10 +76,8 @@ services:
     image: btcnode
 #    ports:
 #      - "18333:18333"
-#      - "18332:18332"
 #      - "29000:29000"
 #      - "8333:8333"
-#      - "8332:8332"
     volumes:
       - "~/btcdata:/.bitcoin"
     command: $USER bitcoind

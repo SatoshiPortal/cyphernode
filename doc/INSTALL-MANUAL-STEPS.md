@@ -45,6 +45,9 @@ vi pycoin_docker/env.properties
 ```shell
 sudo useradd cyphernode
 mkdir ~/btcproxydb ; sudo chown -R cyphernode:debian ~/btcproxydb ; sudo chmod g+ws ~/btcproxydb
+mkdir -p ~/cyphernode-ssl/certs ~/cyphernode-ssl/private
+openssl req -subj '/CN=localhost' -x509 -newkey rsa:4096 -nodes -keyout ~/cyphernode-ssl/private/key.pem -out ~/cyphernode-ssl/certs/cert.pem -days 365
+docker build -t authapi api_auth_docker/.
 docker build -t proxycronimg cron_docker/.
 docker build -t btcproxyimg proxy_docker/.
 docker build -t pycoinimg pycoin_docker/.
