@@ -35,8 +35,8 @@ module.exports = class extends Generator {
   /* filters */
 
   _trimFilter( input ) {
-    return input.trim();
-  }
+    return (input+"").trim();
+  } 
 
   /* prompts */
   _configureFeatures() {
@@ -66,7 +66,7 @@ module.exports = class extends Generator {
         {
           name: 'Electrum server',
           value: 'electrum',
-          checked: this._isChecked( 'features', 'ots' )
+          checked: this._isChecked( 'features', 'electrum' )
         }
 
       ]
