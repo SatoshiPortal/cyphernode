@@ -14,14 +14,6 @@ module.exports = {
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
       message: 'Run bitcoin node in prune mode?'+'\n',
-    },
-    {
-      when: featureCondition,
-      type: 'input',
-      name: 'bitcoin_external_ip',
-      default: utils._getDefault( 'bitcoin_external_ip' ),
-      validate: utils._ipValidator,
-      message: 'What external ip does your bitcoin full node have?'+'\n',
     }];
   },
   env: function( props ) {

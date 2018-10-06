@@ -24,6 +24,14 @@ module.exports = {
           value: 'lnd'
         }
       ]
+    },
+    {
+      when: featureCondition,
+      type: 'input',
+      name: 'lightning_external_ip',
+      default: utils._getDefault( 'lightning_external_ip' ),
+      validate: utils._ipValidator,
+      message: 'What external ip does your lightning node have?'+'\n',
     }];
   },
   env: function( props ) {

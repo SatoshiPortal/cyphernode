@@ -14,6 +14,19 @@ module.exports = {
       choices: utils._featureChoices()
     },
     {
+      type: 'list',
+      name: 'cyphernode_net',
+      default: utils._getDefault( 'cyphernode_net' ),
+      message: 'What net do you want to run on?'+'\n',
+      choices: [{
+        name: "Testnet",
+        value: "testnet"
+      },{
+        name: "Mainnet",
+        value: "mainnet"
+      }]
+    },
+    {
       type: 'input',
       name: 'cyphernode_xpub',
       default: utils._getDefault( 'cyphernode_xpub' ),
