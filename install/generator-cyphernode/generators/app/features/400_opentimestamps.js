@@ -13,5 +13,8 @@ module.exports = {
   },
   env: function( props ) {
     return 'VAR0=VALUE0\nVAR1=VALUE1';
+  },
+  templates: function( props ) {
+    return [];
   }
 };

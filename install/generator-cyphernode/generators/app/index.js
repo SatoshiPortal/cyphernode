@@ -19,8 +19,8 @@ module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
 
-    if( fs.existsSync('/data/props.json') ) {
-      this.props = require('/data/props.json');
+    if( fs.existsSync(this.destinationPath('props.json')) ) {
+      this.props = require(this.destinationPath('props.json'));
     } else {
       this.props = {};
     }
@@ -48,17 +48,22 @@ module.exports = class extends Generator {
   }
 
   writing() {
-    fs.writeFileSync('/data/props.json', JSON.stringify(this.props, null, 2));
+    fs.writeFileSync(this.destinationPath('props.json'), JSON.stringify(this.props, null, 2));
 
     for( let m of featurePromptModules ) {
-      fs.writeFileSync('/data/'+m.name(), m.env());
+      const name = m.name();
+      fs.writeFileSync(this.destinationPath(name+'.properties'), m.env());
+      
+      for( let t of m.templates(this.props) ) {
+        const p = path.join(name,t);
+        this.fs.copyTpl(
+          this.templatePath(p),
+          this.destinationPath(p),
+          this.props
+        );
+      } 
+      
     }
-    /*
-    this.fs.copy(
-      this.templatePath('dummyfile.txt'),
-      this.destinationPath('dummyfile.txt')
-    );
-    */
   }
 
   install() {
