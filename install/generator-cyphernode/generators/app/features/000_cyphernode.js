@@ -14,16 +14,11 @@ module.exports = {
       choices: utils._featureChoices()
     },
     {
-      type: 'confirm',
-      name: 'cyphernode_rocks0',
-      default: utils._getDefault( 'cyphernode_rocks0' ),
-      message: 'Does cyphernode rock?'+'\n',
-    },
-    {
-      type: 'confirm',
-      name: 'cyphernode_rocks1',
-      default: utils._getDefault( 'cyphernode_rocks1' ),
-      message: 'Does cyphernode rock?'+'\n',
+      type: 'input',
+      name: 'cyphernode_xpub',
+      default: utils._getDefault( 'cyphernode_xpub' ),
+      message: 'What is your xpub to watch?'+'\n',
+      validate: utils._xkeyValidator
     }];
   },
   env: function( props ) {

@@ -6,6 +6,7 @@ const wrap = require('wordwrap')(86);
 const validator = require('validator');
 const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
+const coinstring = require('coinstring');
 
 let featurePromptModules = [];
 const normalizedPath = path.join(__dirname, "features");
@@ -75,6 +76,16 @@ module.exports = class extends Generator {
   _ipValidator( ip ) {
     return validator.isIP((ip+"").trim());
   }
+
+  _xpubValidator( xpub ) {
+    try {
+      coinstring.decode(xpub);
+    } catch( e ) {
+      throw new Error('Invalid extended public key. Please check your input.');
+    }
+    return true;
+  }
+
 
   _trimFilter( input ) {
     return (input+"").trim();
