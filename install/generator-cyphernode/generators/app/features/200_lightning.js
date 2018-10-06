@@ -30,7 +30,7 @@ module.exports = {
       type: 'input',
       name: 'lightning_external_ip',
       default: utils._getDefault( 'lightning_external_ip' ),
-      validate: utils._ipValidator,
+      validate: utils._ipOrFQDNValidator,
       message: 'What external ip does your lightning node have?'+'\n',
     }];
   },

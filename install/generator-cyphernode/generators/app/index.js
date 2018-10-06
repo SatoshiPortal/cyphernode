@@ -73,8 +73,15 @@ module.exports = class extends Generator {
     return this.props && this.props[name];
   }
 
-  _ipValidator( ip ) {
-    return validator.isIP((ip+"").trim());
+  _ipOrFQDNValidator( host ) {
+    host = (host+"").trim();
+
+    if( !(validator.isIP(host) || 
+      validator.isFQDN(host)) ) {
+      throw new Error( 'No IP address or fully qualified domain name' )
+    }
+
+    return true;
   }
 
   _xkeyValidator( xpub ) {

@@ -35,7 +35,7 @@ module.exports = {
       type: 'input',
       name: 'bitcoin_node_ip',
       default: utils._getDefault( 'bitcoin_node_ip' ),
-      validate: utils._ipValidator,
+      validate: utils._ipOrFQDNValidator,
       message: 'What is your full node ip address?'+'\n',
     },
     {
