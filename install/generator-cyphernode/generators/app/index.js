@@ -34,16 +34,9 @@ module.exports = class extends Generator {
   prompting() {
     const splash = fs.readFileSync(this.templatePath('splash.txt'));
     this.log(splash.toString());
-
-    var prompts = [{
-      // https://github.com/SBoudrias/Inquirer.js#question
-      // input, confirm, list, rawlist, expand, checkbox, password, editor
-      type: 'checkbox',
-      name: 'features',
-      message: wrap('What features do you want to add to your cyphernode?')+'\n',
-      choices: this.featureChoices
-    }];
     
+    let prompts = [];
+
     for( let m of featurePromptModules ) {
       prompts = prompts.concat(m.prompts(this));
     }
@@ -57,9 +50,7 @@ module.exports = class extends Generator {
     fs.writeFileSync('/data/props.json', JSON.stringify(this.props, null, 2));
 
     for( let m of featurePromptModules ) {
-      const name = m.name();
-      const env = m.env();
-      fs.writeFileSync('/data/'+name+'.sh', env);
+      fs.writeFileSync('/data/'+m.name(), m.env());
     }
     /*
     this.fs.copy(
@@ -91,6 +82,10 @@ module.exports = class extends Generator {
 
   _wrap(text) {
     return wrap(text);
+  }
+
+  _featureChoices() {
+    return this.featureChoices;
   }
 
 };
