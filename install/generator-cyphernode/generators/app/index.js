@@ -9,28 +9,22 @@ module.exports = class extends Generator {
 
   constructor(args, opts) {
     super(args, opts);
+    if( fs.existsSync('/data/props.json') ) {
+      this.props = require('/data/props.json');
+    } else {
+      this.props = {};
+    }
 
-    this.props = {
-
-    };
+    console.log( this.props );
   }
 
   /* values */
-
   _isChecked( name, value ) {
-    return value=='bitcoin';
+    return this.props && this.props[name].indexOf(value) != -1 ;
   }
 
-  _getConfirmDefault( name ) {
-    return true;
-  }
-
-  _getListDefault( name ) {
-    return 'lnd';
-  }
-
-  _getInputDefault( name ) {
-    return '';
+  _getDefault( name ) {
+    return this.props && this.props[name];
   }
 
   /* validators */
@@ -65,8 +59,13 @@ module.exports = class extends Generator {
 
         },
         {
-          name: 'Open timestamps server',
+          name: 'Open timestamps client',
           value: 'ots',
+          checked: this._isChecked( 'features', 'ots' )
+        },
+        {
+          name: 'Electrum server',
+          value: 'electrum',
           checked: this._isChecked( 'features', 'ots' )
         }
 
@@ -82,7 +81,7 @@ module.exports = class extends Generator {
       },
       type: 'confirm',
       name: 'bitcoin_prune',
-      default: this._getConfirmDefault( 'bitcoin_prune' ),
+      default: this._getDefault( 'bitcoin_prune' ),
       message: wrap('Run bitcoin node in prune mode?')+'\n',
     },
     {
@@ -92,7 +91,7 @@ module.exports = class extends Generator {
       },
       type: 'input',
       name: 'bitcoin_external_ip',
-      default: this._getInputDefault( 'bitcoin_external_ip' ),
+      default: this._getDefault( 'bitcoin_external_ip' ),
       validate: this._ipValidator,
       message: wrap('What external ip does your bitcoin full node have?')+'\n',
     }];
@@ -106,7 +105,7 @@ module.exports = class extends Generator {
       },
       type: 'list',
       name: 'lightning_implementation',
-      default: this._getListDefault( 'lightning_implementation' ),
+      default: this._getDefault( 'lightning_implementation' ),
       message: wrap('What lightning implementation do you want to use?')+'\n',
       choices: [
         {
@@ -116,6 +115,29 @@ module.exports = class extends Generator {
         {
           name: 'LND',
           value: 'lnd'
+        }
+      ]
+    }];
+  }
+
+  _configureElectrumImplementation() {
+    return [{
+      when: function(answers) {
+        return answers.features && 
+          answers.features.indexOf( 'electrum' ) != -1;
+      },
+      type: 'list',
+      name: 'electrum_implementation',
+      default: this._getDefault( 'electrum_implementation' ),
+      message: wrap('What electrum implementation do you want to use?')+'\n',
+      choices: [
+        {
+          name: 'Electrum personal server',
+          value: 'eps'
+        },
+        {
+          name: 'Electrumx server',
+          value: 'elx'
         }
       ]
     }];
@@ -137,6 +159,7 @@ module.exports = class extends Generator {
       this._configureFeatures()
       .concat(this._configureBitcoinFullNode())
       .concat(this._configureLightningImplementation())
+      .concat(this._configureElectrumImplementation())
       //.concat(this._configureCLightning())
       //.concat(this._configureLND())
 
@@ -146,7 +169,7 @@ module.exports = class extends Generator {
   }
 
   writing() {
-    console.log( JSON.stringify(this.props, null, 2));
+    fs.writeFileSync('/data/props.json', JSON.stringify(this.props, null, 2));
     /*
     this.fs.copy(
       this.templatePath('dummyfile.txt'),
