@@ -78,11 +78,11 @@ module.exports = class extends Generator {
   }
 
   _xkeyValidator( xpub ) {
-    try {
-      coinstring.decode(xpub);
-    } catch( e ) {
-      throw new Error('Invalid extended public key. Please check your input.');
+    // TOOD: check for version
+    if( !coinstring.isValid( xpub ) ) {
+      throw new Error('Not an extended key.');
     }
+
     return true;
   }
 
