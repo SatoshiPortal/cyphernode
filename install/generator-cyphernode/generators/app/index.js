@@ -35,10 +35,17 @@ module.exports = class extends Generator {
     const splash = fs.readFileSync(this.templatePath('splash.txt'));
     this.log(splash.toString());
 
-    var prompts = this._configureFeatures()
+    var prompts = [{
+      // https://github.com/SBoudrias/Inquirer.js#question
+      // input, confirm, list, rawlist, expand, checkbox, password, editor
+      type: 'checkbox',
+      name: 'features',
+      message: wrap('What features do you want to add to your cyphernode?')+'\n',
+      choices: this.featureChoices
+    }];
     
     for( let m of featurePromptModules ) {
-      prompts = prompts.concat(m(this));
+      prompts = prompts.concat(m.prompts(this));
     }
 
     return this.prompt(prompts).then(props => {
@@ -48,6 +55,12 @@ module.exports = class extends Generator {
 
   writing() {
     fs.writeFileSync('/data/props.json', JSON.stringify(this.props, null, 2));
+
+    for( let m of featurePromptModules ) {
+      const name = m.name();
+      const env = m.env();
+      fs.writeFileSync('/data/'+name+'.sh', env);
+    }
     /*
     this.fs.copy(
       this.templatePath('dummyfile.txt'),
@@ -60,18 +73,6 @@ module.exports = class extends Generator {
   }
 
   /* some utils */
-
-  _configureFeatures() {
-    return [{
-      // https://github.com/SBoudrias/Inquirer.js#question
-      // input, confirm, list, rawlist, expand, checkbox, password, editor
-      type: 'checkbox',
-      name: 'features',
-      message: wrap('What features do you want to add to your cyphernode?')+'\n',
-      choices: this.featureChoices
-    }];
-  }
-  
   _isChecked( name, value ) {
     return this.props && this.props[name] && this.props[name].indexOf(value) != -1 ;
   }
