@@ -3,7 +3,6 @@
 . ./trace.sh
 . ./docker.sh
 . ./cyphernodeconf.sh
-. ./config.sh
 
 config_file=$1
 
