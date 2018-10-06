@@ -8,9 +8,9 @@
 # commands not needed for runtime
 
 cyphernodeconf_configure() {
-	local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+  local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
-	docker run -v $current_path/../data:/data \
-	           --log-driver=none\
-	           --rm -it cyphernodeconf:latest
+  docker run -v $current_path/../data:/data \
+             --log-driver=none\
+             --rm -it cyphernodeconf:latest
 }
