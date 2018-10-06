@@ -77,7 +77,7 @@ module.exports = class extends Generator {
     return validator.isIP((ip+"").trim());
   }
 
-  _xpubValidator( xpub ) {
+  _xkeyValidator( xpub ) {
     try {
       coinstring.decode(xpub);
     } catch( e ) {
