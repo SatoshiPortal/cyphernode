@@ -19,7 +19,7 @@ RUN chown -R yo:yo /yo/.config
 
 # run in user space
 USER yo
-WORKDIR /yo
+WORKDIR /data
 
 CMD ["yo","cyphernode"]
 
