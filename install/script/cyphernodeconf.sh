@@ -9,10 +9,8 @@
 
 cyphernodeconf_configure() {
 	local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-	local data_path=$current_path/../data
-	local docker_image="cyphernodeconf:latest"
 
-	docker run -v $data_path:/data \
+	docker run -v $current_path/../data:/data \
 	           --log-driver=none\
-	           --rm -it $docker_image
+	           --rm -it cyphernodeconf:latest
 }
