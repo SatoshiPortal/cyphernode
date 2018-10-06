@@ -24,3 +24,5 @@ build_docker_image ../ cyphernodeconf && clear && echo "Thinking..."
 
 # configure features of cyphernode
 cyphernodeconf_configure
+
+#docker image rm cyphernodeconf:latest
