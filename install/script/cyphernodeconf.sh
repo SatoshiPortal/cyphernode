@@ -8,13 +8,11 @@
 # commands not needed for runtime
 
 cyphernodeconf_configure() {
-	PWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-	DATA_PATH=$PWD/../data
-	SCRIPT_PATH=$PWD/../$1/script
-	VOLUME_PATH=/tmp
-	docker run -v $VOLUME_PATH:/volume \
-	           -v $DATA_PATH:/data \
-	           -v $SCRIPT_PATH:/script\
+	local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+	local data_path=$current_path/../data
+	local docker_image="cyphernodeconf:latest"
+
+	docker run -v $data_path:/data \
 	           --log-driver=none\
-	           --rm -it cyphernodeconf:latest
+	           --rm -it $docker_image
 }

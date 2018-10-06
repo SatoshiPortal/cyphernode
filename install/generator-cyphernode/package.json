@@ -1,0 +1,29 @@
+{
+  "name": "generator-cyphernode",
+  "version": "0.0.0",
+  "description": "",
+  "homepage": "",
+  "author": {
+    "name": "jash",
+    "email": "jash@schulterklopfer-productions.de",
+    "url": ""
+  },
+  "files": [
+    "generators"
+  ],
+  "main": "generators/index.js",
+  "keywords": [
+    "cyphernode",
+    "yeoman-generator"
+  ],
+  "engines": {
+    "npm": ">= 4.0.0"
+  },
+  "dependencies": {
+    "chalk": "^2.1.0",
+    "wordwrap": "^1.0.0",
+    "yeoman-generator": "^2.0.1"
+  },
+  "repository": "git@github.com:schulterklopfer/cyphernode.git",
+  "license": "MIT"
+}
