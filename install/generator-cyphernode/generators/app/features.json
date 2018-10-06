@@ -1,9 +1,5 @@
 [
   {
-    "name": "Bitcoin full node",
-    "value": "bitcoin"
-  },
-  {
     "name": "Lightning node",
     "value": "lightning"
 
