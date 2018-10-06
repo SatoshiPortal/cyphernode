@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Bitcoin full node",
+    "value": "bitcoin"
+  },
+  {
+    "name": "Lightning node",
+    "value": "lightning"
+
+  },
+  {
+    "name": "Open timestamps client",
+    "value": "opentimestamps"
+  },
+  {
+    "name": "Electrum server",
+    "value": "electrum"
+  }
+]
