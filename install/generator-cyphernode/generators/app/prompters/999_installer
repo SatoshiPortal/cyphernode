@@ -1,0 +1,49 @@
+const name = 'installer';
+const chalk = require('chalk');
+
+const installerDocker = function(props) {
+  return props.installer === 'docker'
+};
+
+const installerLunanode = function(props) {
+  return props.installer === 'lunanode'
+};
+
+module.exports = {
+  name: function() { 
+    return name;
+  },
+  prompts: function( utils ) {
+    return [{
+      type: 'list',
+      name: 'installer',
+      default: utils._getDefault( 'installer' ),
+      message: chalk.red('Where do you want to install cyphernode?')+'\n',
+      choices: [{
+        name: "Local docker",
+        value: "docker"
+      },{
+        name: "Lunanode",
+        value: "lunanode"
+      }]
+    },
+    {
+      when: installerDocker,
+      type: 'confirm',
+      name: 'installer_confirm_docker',
+      default: utils._getDefault( 'installer_confirm_docker' ),
+      message: 'Docker?! Really?'+'\n'
+    },
+    {
+      when: installerLunanode,
+      type: 'confirm',
+      name: 'installer_confirm_docker',
+      default: utils._getDefault( 'installer_confirm_docker' ),
+      message: 'Lunanode?! No wayyyy!'+'\n'
+    }
+    ];
+  },
+  templates: function( props ) {
+    return [];
+  }
+};
