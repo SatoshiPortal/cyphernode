@@ -20,10 +20,10 @@ module.exports = {
       default: utils._getDefault( 'installer' ),
       message: chalk.red('Where do you want to install cyphernode?')+'\n',
       choices: [{
-        name: "Local docker",
+        name: "LDocker",
         value: "docker"
       },{
-        name: "Lunanode",
+        name: "Lunanode (not implemented)",
         value: "lunanode"
       }]
     },
