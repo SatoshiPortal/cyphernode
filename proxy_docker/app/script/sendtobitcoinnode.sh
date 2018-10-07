@@ -5,7 +5,7 @@
 send_to_watcher_node()
 {
 	trace "Entering send_to_watcher_node()..."
-	send_to_bitcoin_node ${WATCHER_NODE_RPC_URL} ${WATCHER_NODE_RPC_USER} $@
+	send_to_bitcoin_node ${WATCHER_NODE_RPC_URL} ${WATCHER_BTC_NODE_RPC_CFG} $@
 	local returncode=$?
 	trace_rc ${returncode}
 	return ${returncode}
@@ -14,7 +14,7 @@ send_to_watcher_node()
 send_to_spender_node()
 {
 	trace "Entering send_to_spender_node()..."
-	send_to_bitcoin_node ${SPENDER_NODE_RPC_URL} ${SPENDER_NODE_RPC_USER} $@
+	send_to_bitcoin_node ${SPENDER_NODE_RPC_URL} ${SPENDER_BTC_NODE_RPC_CFG} $@
 	local returncode=$?
 	trace_rc ${returncode}
 	return ${returncode}
@@ -27,11 +27,11 @@ send_to_bitcoin_node()
 	local result
 	local errorstring
 	local node_url=${1}
-	local user=${2}
+	local config=${2}
 	local data=${3}
 
 	trace "[send_to_bitcoin_node] curl -s --user ${user} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
-	result=$(curl -s --user ${user} -H "Content-Type: application/json" -d "${data}" ${node_url})
+	result=$(curl -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
 	returncode=$?
 	trace_rc ${returncode}
 	trace "[send_to_bitcoin_node] result=${result}"
