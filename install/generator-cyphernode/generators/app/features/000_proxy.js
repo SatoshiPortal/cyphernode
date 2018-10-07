@@ -1,4 +1,4 @@
-const name = 'cyphernode';
+const name = 'proxy';
 
 module.exports = {
   name: function() { 
@@ -15,8 +15,8 @@ module.exports = {
     },
     {
       type: 'list',
-      name: 'cyphernode_net',
-      default: utils._getDefault( 'cyphernode_net' ),
+      name: 'net',
+      default: utils._getDefault( 'net' ),
       message: 'What net do you want to run on?'+'\n',
       choices: [{
         name: "Testnet",
@@ -28,16 +28,20 @@ module.exports = {
     },
     {
       type: 'input',
-      name: 'cyphernode_xpub',
-      default: utils._getDefault( 'cyphernode_xpub' ),
+      name: 'xpub',
+      default: utils._getDefault( 'xpub' ),
       message: 'What is your xpub to watch?'+'\n',
       validate: utils._xkeyValidator
+    },
+    {
+      type: 'input',
+      name: 'derivation_path',
+      default: utils._getDefault( 'derivation_path' ),
+      message: 'What is your address derivation path?'+'\n',
+      validate: utils._derivationPathValidator
     }];
   },
-  env: function( props ) {
-    return 'VAR0=VALUE0\nVAR1=VALUE1'
-  },
   templates: function( props ) {
-    return [];
+    return [ 'env.properties' ];
   }
 };
