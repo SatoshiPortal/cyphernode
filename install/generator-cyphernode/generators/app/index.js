@@ -9,7 +9,7 @@ const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 
 let featurePromptModules = [];
-const normalizedPath = path.join(__dirname, "features");
+const normalizedPath = path.join(__dirname, "prompters");
 fs.readdirSync(normalizedPath).forEach(function(file) {
   featurePromptModules.push(require(path.join(normalizedPath,file)));
 });
