@@ -23,7 +23,8 @@ module.exports = class extends Generator {
       this.props = require(this.destinationPath('props.json'));
     } else {
       this.props = {
-        'derivation_path': '0/n'
+        'derivation_path': '0/n',
+        'installer': 'docker'
       };
     }
 
