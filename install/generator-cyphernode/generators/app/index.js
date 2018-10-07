@@ -22,7 +22,9 @@ module.exports = class extends Generator {
     if( fs.existsSync(this.destinationPath('props.json')) ) {
       this.props = require(this.destinationPath('props.json'));
     } else {
-      this.props = {};
+      this.props = {
+        'derivation_path': '0/n'
+      };
     }
 
     this.featureChoices = featureChoices;
@@ -51,9 +53,7 @@ module.exports = class extends Generator {
     fs.writeFileSync(this.destinationPath('props.json'), JSON.stringify(this.props, null, 2));
 
     for( let m of featurePromptModules ) {
-      const name = m.name();
-      fs.writeFileSync(this.destinationPath(name+'.properties'), m.env());
-      
+      const name = m.name();      
       for( let t of m.templates(this.props) ) {
         const p = path.join(name,t);
         this.fs.copyTpl(
@@ -62,7 +62,6 @@ module.exports = class extends Generator {
           this.props
         );
       } 
-      
     }
   }
 
@@ -80,12 +79,10 @@ module.exports = class extends Generator {
 
   _ipOrFQDNValidator( host ) {
     host = (host+"").trim();
-
     if( !(validator.isIP(host) || 
       validator.isFQDN(host)) ) {
       throw new Error( 'No IP address or fully qualified domain name' )
     }
-
     return true;
   }
 
@@ -94,10 +91,12 @@ module.exports = class extends Generator {
     if( !coinstring.isValid( xpub ) ) {
       throw new Error('Not an extended key.');
     }
-
     return true;
   }
 
+  _derivationPathValidator( path ) {
+    return true;
+  }
 
   _trimFilter( input ) {
     return (input+"").trim();

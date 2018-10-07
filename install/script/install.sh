@@ -16,7 +16,7 @@ trace "Updating SatoshiPortal dockers"
 #
 ## build cyphernode images
 #build_docker_image ../../cron_docker/ proxycronimg
-#build_docker_image ../../proxy_docker/ btcproxyimg
+build_docker_image ../../proxy_docker/ btcproxyimg
 #build_docker_image ../../pycoin_docker/ pycoinimg
 #
 ## build setup docker image

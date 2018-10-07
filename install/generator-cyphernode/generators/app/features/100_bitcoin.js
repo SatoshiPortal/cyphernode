@@ -63,6 +63,13 @@ module.exports = {
       name: 'bitcoin_expose',
       default: utils._getDefault( 'bitcoin_expose' ),
       message: 'Expose bitcoin full node outside of the docker network?'+'\n',
+    },
+    {
+      when: bitcoinInternal,
+      type: 'input',
+      name: 'bitcoin_uacomment',
+      default: utils._getDefault( 'bitcoin_uacomment' ),
+      message: 'Any UA comment?'+'\n',
     }];
   },
   env: function( props ) {

@@ -41,9 +41,6 @@ module.exports = {
       message: 'What external ip does your lightning node have?'+'\n',
     }];
   },
-  env: function( props ) {
-    return 'VAR0=VALUE0\nVAR1=VALUE1'
-  },
   templates: function( props ) {
     return templates[props.lightning_implementation]
   }
