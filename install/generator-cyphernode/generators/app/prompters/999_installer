@@ -37,8 +37,8 @@ module.exports = {
     {
       when: installerLunanode,
       type: 'confirm',
-      name: 'installer_confirm_docker',
-      default: utils._getDefault( 'installer_confirm_docker' ),
+      name: 'installer_confirm_lunanode',
+      default: utils._getDefault( 'installer_confirm_lunanode' ),
       message: 'Lunanode?! No wayyyy!'+'\n'
     }
     ];
