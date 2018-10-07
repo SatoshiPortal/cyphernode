@@ -8,10 +8,10 @@ const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 
-let featurePromptModules = [];
+let prompters = [];
 const normalizedPath = path.join(__dirname, "prompters");
 fs.readdirSync(normalizedPath).forEach(function(file) {
-  featurePromptModules.push(require(path.join(normalizedPath,file)));
+  prompters.push(require(path.join(normalizedPath,file)));
 });
 
 module.exports = class extends Generator {
@@ -40,7 +40,7 @@ module.exports = class extends Generator {
     
     let prompts = [];
 
-    for( let m of featurePromptModules ) {
+    for( let m of prompters ) {
       prompts = prompts.concat(m.prompts(this));
     }
 
@@ -52,7 +52,7 @@ module.exports = class extends Generator {
   writing() {
     fs.writeFileSync(this.destinationPath('props.json'), JSON.stringify(this.props, null, 2));
 
-    for( let m of featurePromptModules ) {
+    for( let m of prompters ) {
       const name = m.name();      
       for( let t of m.templates(this.props) ) {
         const p = path.join(name,t);
