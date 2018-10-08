@@ -1,5 +1,4 @@
 const name = 'bitcoin';
-
 const bitcoinExternal = function(props) {
   return props.bitcoin_mode === 'external'
 };
@@ -56,13 +55,6 @@ module.exports = {
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
       message: 'Run bitcoin node in prune mode?'+'\n',
-    },
-    {
-      when: bitcoinInternal,
-      type: 'confirm',
-      name: 'bitcoin_expose',
-      default: utils._getDefault( 'bitcoin_expose' ),
-      message: 'Expose bitcoin full node outside of the docker network?'+'\n',
     },
     {
       when: bitcoinInternal,
