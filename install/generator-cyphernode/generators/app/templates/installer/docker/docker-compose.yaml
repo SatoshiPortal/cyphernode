@@ -64,7 +64,7 @@ services:
     ports:
       - "9735:9735"
     volumes:
-      - "~/.lightning:/lnuser/.lightning"
+      - "<%= lightning_datapath%>:/lnuser/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -82,7 +82,7 @@ services:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
 <% } %>
     volumes:
-      - "~/.bitcoin:/bitcoinuser/.bitcoin"
+      - "<%= bitcoin_datapath%>:/bitcoinuser/.bitcoin"
     networks:
       - cyphernodenet
 <% } %>
