@@ -28,9 +28,12 @@ module.exports = class extends Generator {
     } else {
       this.props = {
         'derivation_path': '0/n',
-        'installer': 'docker'
+        'installer': 'docker',
+        'devmode': false
       };
     }
+
+    this.props.devmode = this.props.devmode || false;
 
     this.featureChoices = featureChoices;
     for( let c of this.featureChoices ) {
