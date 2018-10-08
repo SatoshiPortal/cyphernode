@@ -1,4 +1,11 @@
-alias=SatoshiPortal01
-rgb=008000
-#port=9735
-network=testnet
+<% if (net === 'testnet') { %>
+# testnet
+testnet=1
+<% } %>
+alias=<%= lightning_nodename %>
+rgb=<%= lightning_nodecolor %>
+addr=<%= lightning_external_ip %>
+rpcconnect=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>
+rpcuser=<%= bitcoin_rpcuser %>
+rpcpassword=<%= bitcoin_rpcpassword %>
+rpcwallet=ln01.dat
