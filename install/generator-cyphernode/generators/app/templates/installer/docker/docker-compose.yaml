@@ -23,8 +23,6 @@ services:
 #    ports:
 #      - "8888:8888"
     volumes:
-      # Variable substitutions don't work
-      # Match with DB_PATH in proxy_docker/env.properties
       - "<%= proxy_datapath %>:/proxyuser/db"
       - "<%= lightning_datapath %>:/proxyuser/.lightning"
 #    deploy:
@@ -34,7 +32,6 @@ services:
       - cyphernodenet
 
   proxycron:
-    # Async jobs
     environment:
       - "PROXY_URL=proxy:8888/executecallbacks"
     image: cyphernode/proxycron
@@ -59,7 +56,6 @@ services:
       - cyphernodenet
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   lightning:
-    # c-lightning lightning network node
     image: cyphernode/clightning
     ports:
       - "9735:9735"
@@ -70,12 +66,9 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
-<% } else if( features.indexOf('lightning') !== -1 && lightning_implementation === 'lnd' ) { %>
-# TODO: add lnd support
 <% } %>
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
-    # Bitcoin node
     image: cyphernode/bitcoin
 <% if( bitcoin_expose ) { %>
     ports:
