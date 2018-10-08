@@ -18,8 +18,8 @@ install_docker() {
   	build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
   fi
 
- 	if [[ $FEATURE_OPENTIMESTAMPS == true ]]; then
-  	trace "Opentimestamps support not implemented"
+ 	if [[ $FEATURE_OTSCLIENT == true ]]; then
+  	build_docker_image ../SatoshiPortal/dockers/$arch/ots/otsclient cyphernode/otsclient
   fi 
   
   

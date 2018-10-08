@@ -1,5 +1,5 @@
 
-const name = 'opentimestamps';
+const name = 'otsclient';
 const featureCondition = function(props) {
   return props.features && props.features.indexOf( name ) != -1;
 }

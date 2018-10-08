@@ -6,7 +6,7 @@
   },
   {
     "name": "Open timestamps client",
-    "value": "opentimestamps"
+    "value": "otsclient"
   },
   {
     "name": "Electrum server",
