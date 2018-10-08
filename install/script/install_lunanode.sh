@@ -1,3 +1,3 @@
 install_lunanode() {
-	trace "Lunanode installation not implemented"
+  trace "Lunanode installation not implemented"
 }

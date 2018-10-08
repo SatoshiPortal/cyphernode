@@ -2,54 +2,54 @@
 
 install_docker() {
 
-	local sourceDataPath=../data
-	local topLevel=../..
+  local sourceDataPath=../data
+  local topLevel=../..
 
-	if [[ $BITCOIN_INTERAL == true || $FEATURE_LIGHTNING == true ]]; then
-		trace "Updating SatoshiPortal repos"
-	  git submodule update --recursive --remote
-	  trace "Creating SatoshiPortal images"
+  if [[ $BITCOIN_INTERAL == true || $FEATURE_LIGHTNING == true ]]; then
+    trace "Updating SatoshiPortal repos"
+    git submodule update --recursive --remote
+    trace "Creating SatoshiPortal images"
 
-	fi
+  fi
   
   local arch=$(uname -m) # TODO: is this correct for every host
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
-  	build_docker_image ../SatoshiPortal/dockers/$arch/bitcoin-core cyphernode/bitcoin
-  	if [ ! -d $BITCOIN_DATAPATH ]; then
-  		trace "Creating $BITCOIN_DATAPATH"
-  		mkdir -p $BITCOIN_DATAPATH
-  	fi
+    build_docker_image ../SatoshiPortal/dockers/$arch/bitcoin-core cyphernode/bitcoin
+    if [ ! -d $BITCOIN_DATAPATH ]; then
+      trace "Creating $BITCOIN_DATAPATH"
+      mkdir -p $BITCOIN_DATAPATH
+    fi
 
-		if [[ -f $BITCOIN_DATAPATH/bitcoin.conf ]]; then
-  		trace "Creating backup of $BITCOIN_DATAPATH/bitcoin.conf"
-  		cp $BITCOIN_DATAPATH/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf-$(date +"%y-%m-%d-%T")
-  	fi
+    if [[ -f $BITCOIN_DATAPATH/bitcoin.conf ]]; then
+      trace "Creating backup of $BITCOIN_DATAPATH/bitcoin.conf"
+      cp $BITCOIN_DATAPATH/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf-$(date +"%y-%m-%d-%T")
+    fi
 
-  	trace "Copying bitcoin core node config"
-  	cp $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH
+    trace "Copying bitcoin core node config"
+    cp $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
-  	if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
-  	  	build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
-  	  	if [ ! -d $LIGHTNING_DATAPATH ]; then
-  	  		trace "Creating $LIGHTNING_DATAPATH"
-  				mkdir -p $LIGHTNING_DATAPATH
-  			fi
+    if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
+        build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
+        if [ ! -d $LIGHTNING_DATAPATH ]; then
+          trace "Creating $LIGHTNING_DATAPATH"
+          mkdir -p $LIGHTNING_DATAPATH
+        fi
 
-  	  	if [[ -f $LIGHTNING_DATAPATH/config ]]; then
-  	  		trace "Creating backup of $LIGHTNING_DATAPATH/config"
-  	  		cp $LIGHTNING_DATAPATH/config $LIGHTNING_DATAPATH/config-$(date +"%y-%m-%d-%T")
-  	  	fi
+        if [[ -f $LIGHTNING_DATAPATH/config ]]; then
+          trace "Creating backup of $LIGHTNING_DATAPATH/config"
+          cp $LIGHTNING_DATAPATH/config $LIGHTNING_DATAPATH/config-$(date +"%y-%m-%d-%T")
+        fi
 
-  	  	trace "Copying c-lightning config"
-  			cp $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH
-  	fi
+        trace "Copying c-lightning config"
+        cp $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH
+    fi
   fi
 
- 	if [[ $FEATURE_OTSCLIENT == true ]]; then
-  	build_docker_image ../SatoshiPortal/dockers/$arch/ots/otsclient cyphernode/otsclient
+  if [[ $FEATURE_OTSCLIENT == true ]]; then
+    build_docker_image ../SatoshiPortal/dockers/$arch/ots/otsclient cyphernode/otsclient
   fi 
   
   
@@ -57,9 +57,9 @@ install_docker() {
   trace "Creating cyphernode images"
   build_docker_image ../../proxy_docker/ cyphernode/proxy
   if [ ! -d $PROXY_DATAPATH ]; then
-		trace "Creating $PROXY_DATAPATH"
-		mkdir -p $PROXY_DATAPATH
-	fi
+    trace "Creating $PROXY_DATAPATH"
+    mkdir -p $PROXY_DATAPATH
+  fi
   build_docker_image ../../cron_docker/ cyphernode/proxycron
   build_docker_image ../../pycoin_docker/ cyphernode/pycoin
 
@@ -67,16 +67,16 @@ install_docker() {
   docker network create cyphernodenet > /dev/null 2>&1
 
   if [[ -f $topLevel/docker-compose.yaml ]]; then
-		trace "Creating backup of docker-compose.yaml"
-		cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
-	fi
+    trace "Creating backup of docker-compose.yaml"
+    cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
+  fi
 
-	trace "Copying docker-compose.yaml to top level"
-	cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
+  trace "Copying docker-compose.yaml to top level"
+  cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
 
-	echo "+------------------------------------------+"
-	echo "|        to start cyphernode run:          |"
-	echo "| docker-compose -f docker-compose.yaml up |"
-	echo "+------------------------------------------+"
+  echo "+------------------------------------------+"
+  echo "|        to start cyphernode run:          |"
+  echo "| docker-compose -f docker-compose.yaml up |"
+  echo "+------------------------------------------+"
 
 }
