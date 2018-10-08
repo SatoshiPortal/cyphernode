@@ -1,16 +1,16 @@
 CyphernodeClient = function(is_prod) {
 	this.baseURL = is_prod ? 'https://cyphernode:443' : 'https://cyphernode-dev:443'
+  this.h64 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg=='
+  this.api_key = Meteor.settings.CYPHERNODE.api_key
 };
 
 CyphernodeClient.prototype._post = function(url, postdata, cb) {
 	let urlr = this.baseURL + url;
 
-  let h64 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg=='
   let current = Math.round(new Date().getTime/1000) + 10
 	let p64 = btoa('{"id":"${id}","exp":' + current + '}')
-  let api_key = Meteor.settings.CYPHERNODE.api_key
-  let s = CryptoJS.HmacSHA256(p64, api_key).toString()
-	let token = h64 + '.' + p64 + '.' + s
+  let s = CryptoJS.HmacSHA256(p64, this.api_key).toString()
+	let token = this.h64 + '.' + p64 + '.' + s
 
 	HTTP.post(
 		urlr,
@@ -27,12 +27,10 @@ CyphernodeClient.prototype._post = function(url, postdata, cb) {
 CyphernodeClient.prototype._get = function(url, cb) {
 	let urlr = this.baseURL + url;
 
-  let h64 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg=='
   let current = Math.round(new Date().getTime/1000) + 10
 	let p64 = btoa('{"id":"${id}","exp":' + current + '}')
-  let api_key = Meteor.settings.CYPHERNODE.api_key
-  let s = CryptoJS.HmacSHA256(p64, api_key).toString()
-	let token = h64 + '.' + p64 + '.' + s
+  let s = CryptoJS.HmacSHA256(p64, this.api_key).toString()
+	let token = this.h64 + '.' + p64 + '.' + s
 
 	HTTP.get(urlr, {headers: {'Authorization': 'Bearer ' + token}}, function (err, resp) {
 		cb(err, resp.data)

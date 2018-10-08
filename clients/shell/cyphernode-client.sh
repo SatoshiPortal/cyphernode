@@ -7,7 +7,6 @@ invoke_cyphernode()
 	local action=${1}
 	local post=${2}
 
-	local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
 	local p64=$(echo "{\"id\":\"${id}\",\"exp\":$((`date +"%s"`+10))}" | base64)
 	local s=$(echo "$h64.$p64" | openssl dgst -hmac "$key" -sha256 -r | cut -sd ' ' -f1)
 	local token="$h64.$p64.$s"
