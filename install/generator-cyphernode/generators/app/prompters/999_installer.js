@@ -7,14 +7,6 @@ const installerDocker = function(props) {
   return props.installer_mode === 'docker'
 };
 
-const installerDocker_bitcoinInternal = function(props) {
-  return props.installer_mode === 'docker' && props.bitcoin_mode === 'internal' 
-};
-
-const installerDocker_bitcoinExternal = function(props) {
-  return props.installer_mode === 'docker' && props.bitcoin_mode === 'external'
-};
-
 const installerLunanode = function(props) {
   return props.installer_mode === 'lunanode'
 };
@@ -43,11 +35,27 @@ module.exports = {
       }]
     },
     {
-      when: installerDocker_bitcoinInternal,
+      when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',
       default: utils._getDefault( 'bitcoin_expose' ),
       message: 'Expose bitcoin full node outside of the docker network?'+'\n',
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
+      type: 'input',
+      name: 'bitcoin_datapath',
+      default: utils._getDefault( 'bitcoin_datapath' ),
+      validate: utils._pathValidator,
+      message: 'Where is your blockchain data?'+'\n',
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
+      type: 'input',
+      name: 'lightning_datapath',
+      default: utils._getDefault( 'lightning_datapath' ),
+      validate: utils._pathValidator,
+      message: 'Where is your lightning node data?'+'\n',
     },
     {
       when: installerLunanode,

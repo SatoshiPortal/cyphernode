@@ -95,6 +95,11 @@ module.exports = class extends Generator {
     return true;
   }
 
+  _pathValidator( p ) {
+
+    return true;
+  }
+
   _derivationPathValidator( path ) {
     return true;
   }
