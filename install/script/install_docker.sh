@@ -5,6 +5,8 @@ install_docker() {
 	if [[ $BITCOIN_INTERAL == true || $FEATURE_LIGHTNING == true ]]; then
 		trace "Updating SatoshiPortal repos"
 	  git submodule update --recursive --remote
+	  trace "Creating SatoshiPortal images"
+
 	fi
   
   # build SatoshiPortal images
@@ -28,7 +30,7 @@ install_docker() {
   
   
   # build cyphernode images
-  trace "Creating cyphernode dockers"
+  trace "Creating cyphernode images"
   build_docker_image ../../proxy_docker/ cyphernode/proxy
   build_docker_image ../../cron_docker/ cyphernode/proxycron
   build_docker_image ../../pycoin_docker/ cyphernode/pycoin
