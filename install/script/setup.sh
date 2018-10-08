@@ -22,12 +22,16 @@ while getopts ":ci" opt; do
   esac
 done
 
-if [[ $CONFIGURE == 1 ]]; then
-	echo "Starting configuration phase"
-	configure
-fi
+if [[  $CONFIGURE == 0 && $INSTALL == 0 ]]; then
+		echo "Please use -c to configure, -i to install and -ci to do both"
+else
+	if [[ $CONFIGURE == 1 ]]; then
+		trace "Starting configuration phase"
+		configure
+	fi
 
-if [[ $INSTALL == 1 ]]; then
-	echo "Starting installation phase"
-	install
+	if [[ $INSTALL == 1 ]]; then
+		trace "Starting installation phase"
+		install
+	fi
 fi
