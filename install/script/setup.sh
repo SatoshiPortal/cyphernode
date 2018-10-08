@@ -3,7 +3,6 @@
 . ./trace.sh
 . ./configure.sh
 . ./install.sh
-. ./docker.sh
 
 CONFIGURE=0
 INSTALL=0
