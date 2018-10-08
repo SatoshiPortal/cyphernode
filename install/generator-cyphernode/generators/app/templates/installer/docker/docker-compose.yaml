@@ -20,8 +20,10 @@ services:
       - "DERIVATION_PATH=<%= derivation_path %>"
       - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
     image: cyphernode/proxy
-#    ports:
-#      - "8888:8888"
+<% if ( devmode ) { %>
+    ports:
+      - "8888:8888"
+<% } %>
     volumes:
       - "<%= proxy_datapath %>:/proxyuser/db"
       - "<%= lightning_datapath %>:/proxyuser/.lightning"
@@ -47,8 +49,10 @@ services:
     environment:
       - "TRACING=1"
       - "PYCOIN_LISTENING_PORT=7777"
-#    ports:
-#      - "7777:7777"
+<% if ( devmode ) { %>
+    ports:
+      - "7777:7777"
+<% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
