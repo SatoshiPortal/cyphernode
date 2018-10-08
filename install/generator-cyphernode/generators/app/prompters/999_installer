@@ -16,15 +16,20 @@ module.exports = {
   prompts: function( utils ) {
     return [{
       type: 'list',
-      name: 'installer',
-      default: utils._getDefault( 'installer' ),
+      name: 'installer_mode',
+      default: utils._getDefault( 'installer_mode' ),
       message: chalk.red('Where do you want to install cyphernode?')+'\n',
       choices: [{
         name: "Docker",
         value: "docker"
-      },{
+      },
+      {
         name: "Lunanode (not implemented)",
         value: "lunanode"
+      },
+      {
+        name: "No installation. Just create config files",
+        value: "none"
       }]
     },
     {
@@ -44,6 +49,9 @@ module.exports = {
     ];
   },
   templates: function( props ) {
-    return [];
+    if( props.installer_mode === 'docker' ) {
+      return ['config.sh','docker-compose.yaml'];
+    }
+    return ['config.sh'];
   }
 };
