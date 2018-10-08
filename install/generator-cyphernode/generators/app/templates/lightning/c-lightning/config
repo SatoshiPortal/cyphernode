@@ -1,11 +1,11 @@
 <% if (net === 'testnet') { %>
 # testnet
-testnet=1
+network=testnet
+<% } else if (net === 'mainnet') { %>
+network=bitcoin
 <% } %>
 alias=<%= lightning_nodename %>
 rgb=<%= lightning_nodecolor %>
-addr=<%= lightning_external_ip %>
-rpcconnect=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>
-rpcuser=<%= bitcoin_rpcuser %>
-rpcpassword=<%= bitcoin_rpcpassword %>
-rpcwallet=ln01.dat
+bitcoin-rpcconnect=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>
+bitcoin-rpcuser=<%= bitcoin_rpcuser %>
+bitcoin-rpcpassword=<%= bitcoin_rpcpassword %>
