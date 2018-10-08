@@ -28,10 +28,6 @@ module.exports = {
       {
         name: "Lunanode (not implemented)",
         value: "lunanode"
-      },
-      {
-        name: "No installation. Just create config files",
-        value: "none"
       }]
     },
     {
