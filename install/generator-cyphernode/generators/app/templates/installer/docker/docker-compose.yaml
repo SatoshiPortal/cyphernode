@@ -3,30 +3,30 @@ version: "3"
 services:
   proxy:
     # Bitcoin Mini Proxy
-    env:
-      "TRACING":"1"
-      "WATCHER_BTC_NODE_RPC_URL":"<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/watching01.dat"
-      "WATCHER_BTC_NODE_RPC_USER":"<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      "WATCHER_BTC_NODE_RPC_CFG":"/proxyuser/watcher_btcnode_curlcfg.properties"
-      "SPENDER_BTC_NODE_RPC_URL":"<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
-      "SPENDER_BTC_NODE_RPC_USER":"<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      "SPENDER_BTC_NODE_RPC_CFG":"/proxyuser/sender_btcnode_curlcfg.properties"
-      "PROXY_LISTENING_PORT":"8888"
-      "DB_PATH":"/proxyuser/db"
-      "DB_FILE":"/proxyuser/db/proxydb"
-      "PYCOIN_CONTAINER":"pycoin:7777"
-      "OTS_CONTAINER":"otsclient:6666"
-      "DERIVATION_PUB32":"<%= xpub %>"
-      "DERIVATION_PATH":"<%= derivation_path %>"
-      "WATCHER_BTC_NODE_PRUNED":"<%= bitcoin_prune?'true':'false' %>"
+    environment:
+      - "TRACING=1"
+      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/watching01.dat"
+      - "WATCHER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "WATCHER_BTC_NODE_RPC_CFG=/proxyuser/watcher_btcnode_curlcfg.properties"
+      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
+      - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "SPENDER_BTC_NODE_RPC_CFG=/proxyuser/sender_btcnode_curlcfg.properties"
+      - "PROXY_LISTENING_PORT=8888"
+      - "DB_PATH=/proxyuser/db"
+      - "DB_FILE=/proxyuser/db/proxydb"
+      - "PYCOIN_CONTAINER=pycoin:7777"
+      - "OTS_CONTAINER=otsclient:6666"
+      - "DERIVATION_PUB32=<%= xpub %>"
+      - "DERIVATION_PATH=<%= derivation_path %>"
+      - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
     image: cyphernode/proxy
 #    ports:
 #      - "8888:8888"
     volumes:
       # Variable substitutions don't work
       # Match with DB_PATH in proxy_docker/env.properties
-      - "~/btcproxydb:/proxyuser/db"
-      - "~/.lightning:/proxyuser/.lightning"
+      - "<%= proxy_datapath %>:/proxyuser/db"
+      - "<%= lightning_datapath %>:/proxyuser/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -35,8 +35,8 @@ services:
 
   proxycron:
     # Async jobs
-    env:
-      "PROXY_URL":"proxy:8888/executecallbacks"
+    environment:
+      - "PROXY_URL=proxy:8888/executecallbacks"
     image: cyphernode/proxycron
 #    deploy:
 #      placement:
@@ -47,9 +47,9 @@ services:
   pycoin:
     # Pycoin
     image: cyphernode/pycoin
-    env:
-      "TRACING":"1"
-      "PYCOIN_LISTENING_PORT":"7777"
+    environment:
+      - "TRACING=1"
+      - "PYCOIN_LISTENING_PORT=7777"
 #    ports:
 #      - "7777:7777"
 #    deploy:
