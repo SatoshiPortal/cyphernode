@@ -12,10 +12,16 @@ install_docker() {
 
   fi
   
-  local arch=$(uname -m) # TODO: is this correct for every host
+  local archpath=$(uname -m) 
+
+  # compat mode for SatoshiPortal repo
+  # TODO: add more mappings?
+  if [[ $archpath == 'armv7l' ]]; then
+    archpath="rpi"
+  fi
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
-    build_docker_image ../SatoshiPortal/dockers/$arch/bitcoin-core cyphernode/bitcoin
+    build_docker_image ../SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin
     if [ ! -d $BITCOIN_DATAPATH ]; then
       trace "Creating $BITCOIN_DATAPATH"
       mkdir -p $BITCOIN_DATAPATH
@@ -32,7 +38,7 @@ install_docker() {
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
     if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
-        build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
+        build_docker_image ../SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning
         if [ ! -d $LIGHTNING_DATAPATH ]; then
           trace "Creating $LIGHTNING_DATAPATH"
           mkdir -p $LIGHTNING_DATAPATH
@@ -49,7 +55,7 @@ install_docker() {
   fi
 
   if [[ $FEATURE_OTSCLIENT == true ]]; then
-    build_docker_image ../SatoshiPortal/dockers/$arch/ots/otsclient cyphernode/otsclient
+    build_docker_image ../SatoshiPortal/dockers/$archpath/ots/otsclient cyphernode/otsclient
   fi 
   
   
