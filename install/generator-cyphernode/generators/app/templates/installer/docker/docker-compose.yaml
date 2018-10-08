@@ -77,12 +77,10 @@ services:
   bitcoin:
     # Bitcoin node
     image: cyphernode/bitcoin
-#    ports:
-#      - "18333:18333"
-#      - "18332:18332"
-#      - "29000:29000"
-#      - "8333:8333"
-#      - "8332:8332"
+<% if( bitcoin_expose ) { %>
+    ports:
+      - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
+<% } %>
     volumes:
       - "~/.bitcoin:/bitcoinuser/.bitcoin"
     networks:
