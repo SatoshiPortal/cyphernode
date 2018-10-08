@@ -35,11 +35,12 @@ module.exports = {
       }]
     },
     {
-      when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
-      type: 'confirm',
-      name: 'bitcoin_expose',
-      default: utils._getDefault( 'bitcoin_expose' ),
-      message: 'Expose bitcoin full node outside of the docker network?'+'\n',
+      when: installerDocker,
+      type: 'input',
+      name: 'proxy_datapath',
+      default: utils._getDefault( 'proxy_datapath' ),
+      validate: utils._pathValidator,
+      message: 'Where to store your proxy db?'+'\n',
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
@@ -56,6 +57,13 @@ module.exports = {
       default: utils._getDefault( 'lightning_datapath' ),
       validate: utils._pathValidator,
       message: 'Where is your lightning node data?'+'\n',
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
+      type: 'confirm',
+      name: 'bitcoin_expose',
+      default: utils._getDefault( 'bitcoin_expose' ),
+      message: 'Expose bitcoin full node outside of the docker network?'+'\n',
     },
     {
       when: installerLunanode,
