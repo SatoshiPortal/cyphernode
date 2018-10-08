@@ -1,3 +1,5 @@
+. ./docker.sh
+
 install_docker() {
 
 	echo 
@@ -9,8 +11,7 @@ install_docker() {
 
 	fi
   
-  # build SatoshiPortal images
-  local arch=$(uname -m) #x86_64
+  local arch=$(uname -m) # TODO: is this correct for every host
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
   	build_docker_image ../SatoshiPortal/dockers/$arch/bitcoin-core cyphernode/bitcoin
