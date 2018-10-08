@@ -19,6 +19,10 @@ module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
 
+    if( args.indexOf('recreate') !== -1 ) {
+      this.recreate = true;
+    }
+
     if( fs.existsSync(this.destinationPath('props.json')) ) {
       this.props = require(this.destinationPath('props.json'));
     } else {
@@ -36,6 +40,10 @@ module.exports = class extends Generator {
   }
 
   prompting() {
+    if( this.recreate ) {
+      // no prompts
+      return;
+    }
     const splash = fs.readFileSync(this.templatePath('splash.txt'));
     this.log(splash.toString());
     
