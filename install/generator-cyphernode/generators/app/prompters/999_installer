@@ -1,5 +1,7 @@
-const name = 'installer';
+const path = require('path');
 const chalk = require('chalk');
+
+const name = 'installer';
 
 const installerDocker = function(props) {
   return props.installer === 'docker'
@@ -50,7 +52,7 @@ module.exports = {
   },
   templates: function( props ) {
     if( props.installer_mode === 'docker' ) {
-      return ['config.sh','docker-compose.yaml'];
+      return ['config.sh', path.join('docker', 'docker-compose.yaml')];
     }
     return ['config.sh'];
   }
