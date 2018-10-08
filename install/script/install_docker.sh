@@ -38,7 +38,12 @@ install_docker() {
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
     if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
-        build_docker_image ../SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning
+        local dockerfile="Dockerfile"
+        if [[ $archpath == "rpi" ]]; then
+          dockerfile="Dockerfile-alpine"
+        fi
+        
+        build_docker_image ../SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $dockerfile
         if [ ! -d $LIGHTNING_DATAPATH ]; then
           trace "Creating $LIGHTNING_DATAPATH"
           mkdir -p $LIGHTNING_DATAPATH
