@@ -1,14 +1,24 @@
 const path = require('path');
+const chalk = require('chalk');
 
 const name = 'lightning';
+
+const capitalise = function( txt ) {
+  return txt.charAt(0).toUpperCase() + txt.substr(1);
+};
+
+const prefix = function() {
+  return chalk.green(capitalise(name)+': ');
+};
+
 const featureCondition = function(props) {
   return props.features && props.features.indexOf( name ) != -1;
-}
+};
 
 const templates = {
   'lnd': [ path.join('lnd','lnd.conf') ],
   'c-lightning': [ path.join('c-lightning','config') ]
-}
+};
 
 module.exports = {
   name: function() { 
@@ -20,7 +30,7 @@ module.exports = {
       type: 'list',
       name: 'lightning_implementation',
       default: utils._getDefault( 'lightning_implementation' ),
-      message: 'What lightning implementation do you want to use?'+'\n',
+      message: prefix()+'What lightning implementation do you want to use?'+'\n',
       choices: [
         {
           name: 'C-lightning',

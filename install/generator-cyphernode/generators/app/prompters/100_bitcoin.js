@@ -1,4 +1,15 @@
+const chalk = require('chalk');
+
 const name = 'bitcoin';
+
+const capitalise = function( txt ) {
+  return txt.charAt(0).toUpperCase() + txt.substr(1);
+};
+
+const prefix = function() {
+  return chalk.green(capitalise(name)+': ');
+};
+
 const bitcoinExternal = function(props) {
   return props.bitcoin_mode === 'external'
 };
@@ -17,7 +28,7 @@ module.exports = {
       type: 'list',
       name: 'bitcoin_mode',
       default: utils._getDefault( 'bitcoin_mode' ),
-      message: 'Where is your bitcoin full node running?'+'\n',
+      message: prefix()+'Where is your bitcoin full node running?'+'\n',
       choices: [
         {
           name: 'Nowhere! I want cyphernode to run one.',
@@ -35,33 +46,33 @@ module.exports = {
       name: 'bitcoin_node_ip',
       default: utils._getDefault( 'bitcoin_node_ip' ),
       validate: utils._ipOrFQDNValidator,
-      message: 'What is your full node ip address?'+'\n',
+      message: prefix()+'What is your full node ip address?'+'\n',
     },
     {
       type: 'input',
       name: 'bitcoin_rpcuser',
       default: utils._getDefault( 'bitcoin_rpcuser' ),
-      message: 'Name of bitcoin rpc user?'+'\n',
+      message: prefix()+'Name of bitcoin rpc user?'+'\n',
     },
     {
       type: 'password',
       name: 'bitcoin_rpcpassword',
       default: utils._getDefault( 'bitcoin_rpcpassword' ),
-      message: 'Password of bitcoin rpc user?'+'\n',
+      message: prefix()+'Password of bitcoin rpc user?'+'\n',
     },
     {
       when: bitcoinInternal,
       type: 'confirm',
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
-      message: 'Run bitcoin node in prune mode?'+'\n',
+      message: prefix()+'Run bitcoin node in prune mode?'+'\n',
     },
     {
       when: bitcoinInternal,
       type: 'input',
       name: 'bitcoin_uacomment',
       default: utils._getDefault( 'bitcoin_uacomment' ),
-      message: 'Any UA comment?'+'\n',
+      message: prefix()+'Any UA comment?'+'\n',
     }];
   },
   env: function( props ) {
