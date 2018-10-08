@@ -112,7 +112,7 @@ module.exports = class extends Generator {
   }
 
   _colorValidator(color) {
-    if( !validator.isHexColor(color) ) {
+    if( !validator.isHexadecimal(color) ) {
       throw new Error('Not a hex color.');
     }
     return true;
