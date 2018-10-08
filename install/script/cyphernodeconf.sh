@@ -1,7 +1,3 @@
-#!/bin/sh
-
-. ./trace.sh
-
 # this will run configure.sh of the specified package inside a 
 # cyphernodeconf container. This way we ensure we have the right
 # environment and do not pollute the host machine with utility

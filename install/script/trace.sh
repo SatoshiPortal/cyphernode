@@ -1,5 +1,3 @@
-#!/bin/sh
-
 trace()
 {
   if [ -n "${TRACING}" ]; then
