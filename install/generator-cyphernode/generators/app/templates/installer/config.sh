@@ -5,5 +5,5 @@ FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
 FEATURE_ELECTRUM=<%= (features.indexOf('electrum') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
-LIGHTNING_DATAPAT=<%= lightning_datapath %>
-PROXY_DATAPAT=<%= proxy_datapath %>
+LIGHTNING_DATAPATH=<%= lightning_datapath %>
+PROXY_DATAPATH=<%= proxy_datapath %>
