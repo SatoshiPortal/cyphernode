@@ -35,11 +35,13 @@ module.exports = {
       }]
     },
     {
-      when: installerDocker,
+      when: function(props) { 
+        return (installerDocker(props) && props.bitcoin_mode === 'internal') 
+      },
       type: 'confirm',
-      name: 'installer_confirm_docker',
-      default: utils._getDefault( 'installer_confirm_docker' ),
-      message: 'Docker?! Really?'+'\n'
+      name: 'bitcoin_expose',
+      default: utils._getDefault( 'bitcoin_expose' ),
+      message: 'Expose bitcoin full node outside of the docker network?'+'\n',
     },
     {
       when: installerLunanode,
