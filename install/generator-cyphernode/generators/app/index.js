@@ -104,11 +104,24 @@ module.exports = class extends Generator {
   }
 
   _pathValidator( p ) {
-
     return true;
   }
 
   _derivationPathValidator( path ) {
+    return true;
+  }
+
+  _colorValidator(color) {
+    if( !validator.isHexColor(color) ) {
+      throw new Error('Not a hex color.');
+    }
+    return true;
+  }
+
+  _notEmptyValidator( path ) {
+    if( !path ) {
+      throw new Error('Please enter something');
+    }
     return true;
   }
 
