@@ -5,14 +5,14 @@ install_docker() {
   local sourceDataPath=../data
   local topLevel=../..
 
-  if [[ $BITCOIN_INTERAL == true || $FEATURE_LIGHTNING == true ]]; then
+  if [[ $BITCOIN_INTERNAL == true || $FEATURE_LIGHTNING == true ]]; then
     trace "Updating SatoshiPortal repos"
     git submodule update --recursive --remote
     trace "Creating SatoshiPortal images"
 
   fi
-  
-  local archpath=$(uname -m) 
+
+  local archpath=$(uname -m)
 
   # compat mode for SatoshiPortal repo
   # TODO: add more mappings?
