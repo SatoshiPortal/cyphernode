@@ -42,6 +42,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [ 'env.properties' ];
+    return [];
   }
 };
