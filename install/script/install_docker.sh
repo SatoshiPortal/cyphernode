@@ -15,7 +15,11 @@ install_docker() {
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
-  	build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
+  	if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
+  	  	build_docker_image ../SatoshiPortal/dockers/$arch/LN/c-lightning cyphernode/clightning
+  	elif [[ $LIGHTNING_IMPLEMENTATION == "lnd" ]]; then
+  			trace "lnd is not supported right now"
+  	fi
   fi
 
  	if [[ $FEATURE_OTSCLIENT == true ]]; then
