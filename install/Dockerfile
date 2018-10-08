@@ -21,5 +21,5 @@ RUN chown -R yo:yo /yo/.config
 USER yo
 WORKDIR /data
 
-CMD ["yo","cyphernode"]
+ENTRYPOINT ["yo","cyphernode"]
 
