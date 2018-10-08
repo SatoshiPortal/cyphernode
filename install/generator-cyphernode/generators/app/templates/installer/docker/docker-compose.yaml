@@ -5,10 +5,10 @@ services:
     # Bitcoin Mini Proxy
     env:
       "TRACING":"1"
-      "WATCHER_BTC_NODE_RPC_URL":"bitcoin:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/watching01.dat"
+      "WATCHER_BTC_NODE_RPC_URL":"<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/watching01.dat"
       "WATCHER_BTC_NODE_RPC_USER":"<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       "WATCHER_BTC_NODE_RPC_CFG":"/proxyuser/watcher_btcnode_curlcfg.properties"
-      "SPENDER_BTC_NODE_RPC_URL":"bitcoin:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
+      "SPENDER_BTC_NODE_RPC_URL":"<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
       "SPENDER_BTC_NODE_RPC_USER":"<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       "SPENDER_BTC_NODE_RPC_CFG":"/proxyuser/sender_btcnode_curlcfg.properties"
       "PROXY_LISTENING_PORT":"8888"
