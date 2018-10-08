@@ -25,11 +25,13 @@ module.exports = {
         {
           name: 'C-lightning',
           value: 'c-lightning'
-        },
+        }
+        /*,
         {
           name: 'LND',
           value: 'lnd'
         }
+        */
       ]
     },
     {
