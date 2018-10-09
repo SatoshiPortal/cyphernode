@@ -1,25 +1,32 @@
+FROM alpine as builder
+
+RUN set -x\
+ && apk add --no-cache\
+  gcc\
+  make\
+  git\
+  musl-dev
+
+RUN git clone https://github.com/ncopa/su-exec.git /su-exec
+
+WORKDIR /su-exec
+RUN make
+RUN strip su-exec
+
 FROM node:alpine
 
-RUN apk add --update bash && rm -rf /var/cache/apk/*
-RUN adduser -D -h /yo yo yo
-RUN chown -R yo:yo /usr/local/lib/node_modules /usr/local/bin
+COPY --from=builder /su-exec/su-exec /sbin/
 
-USER yo
+RUN apk add --update bash && rm -rf /var/cache/apk/*
+RUN mkdir -p /app
+RUN mkdir /.config
+RUN chmod a+rwx /.config
+
 RUN npm install -g yo
-COPY generator-cyphernode /yo
-WORKDIR /yo/generator-cyphernode
+COPY generator-cyphernode /app
+WORKDIR /app/generator-cyphernode
 RUN npm link
 
-USER root
-RUN mkdir -p /yo/.config/insight-nodejs
-
-# prevent "do you want to send stats"-questions for temporary yo installation
-COPY insight-yo.json /yo/.config/insight-nodejs/insight-yo.json
-RUN chown -R yo:yo /yo/.config
-
-# run in user space
-USER yo
 WORKDIR /data
 
-ENTRYPOINT ["yo","cyphernode"]
-
+ENTRYPOINT ["/sbin/su-exec"]

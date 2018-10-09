@@ -13,5 +13,6 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path/../data:/data \
              --log-driver=none\
-             --rm -it cyphernodeconf:latest $recreate
+             --rm -it cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
 }
+
