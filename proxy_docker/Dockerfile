@@ -1,3 +1,18 @@
+FROM alpine as builder
+
+RUN set -x\
+ && apk add --no-cache\
+  gcc\
+  make\
+  git\
+  musl-dev
+
+RUN git clone https://github.com/ncopa/su-exec.git /su-exec
+
+WORKDIR /su-exec
+RUN make
+RUN strip su-exec
+
 FROM alpine
 
 ENV HOME /proxy
