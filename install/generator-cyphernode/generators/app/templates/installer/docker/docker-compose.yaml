@@ -32,7 +32,7 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
-
+    restart: always
   proxycron:
     environment:
       - "PROXY_URL=proxy:8888/executecallbacks"
@@ -42,7 +42,7 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
-
+    restart: always
   pycoin:
     # Pycoin
     image: cyphernode/pycoin
@@ -58,6 +58,7 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
+    restart: always
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   lightning:
     image: cyphernode/clightning
@@ -70,6 +71,7 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
+    restart: always
 <% } %>
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
@@ -82,6 +84,7 @@ services:
       - "<%= bitcoin_datapath%>:/bitcoinuser/.bitcoin"
     networks:
       - cyphernodenet
+    restart: always
 <% } %>
 networks:
   cyphernodenet:
