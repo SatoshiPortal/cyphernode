@@ -20,7 +20,6 @@ services:
       - "DERIVATION_PATH=<%= derivation_path %>"
       - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
     image: cyphernode/proxy
-    command: "$USER /app/startproxy.sh"
 <% if ( devmode ) { %>
     ports:
       - "8888:8888"
