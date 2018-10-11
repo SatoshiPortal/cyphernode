@@ -38,6 +38,7 @@ COPY app/bin/lightning-cli_x86 ${HOME}/lightning-cli
 WORKDIR ${HOME}
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli \
+ && chmod o+w . \
  && mkdir db
 
 VOLUME ["${HOME}/db", "${HOME}/.lightning"]
