@@ -1,14 +1,6 @@
 FROM alpine
 
-#ARG USER_ID
-#ARG GROUP_ID
-#ENV USERNAME proxyuser
 ENV HOME /proxy
-#ENV USER_ID ${USER_ID:-1000}
-#ENV GROUP_ID ${GROUP_ID:-1000}
-
-#RUN addgroup -g ${GROUP_ID} ${USERNAME} \
-#    && adduser -u ${USER_ID} -G ${USERNAME} -D -s /bin/sh -h ${HOME} ${USERNAME}
 
 RUN apk add --update --no-cache \
     sqlite \
@@ -43,16 +35,11 @@ COPY app/script/tests.sh ${HOME}/tests.sh
 COPY app/script/tests-cb.sh ${HOME}/tests-cb.sh
 COPY app/bin/lightning-cli_x86 ${HOME}/lightning-cli
 
-#USER ${USERNAME}
 WORKDIR ${HOME}
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli \
-# && chmod 600 watcher_btcnode_curlcfg.properties \
-# && chmod 600 spender_btcnode_curlcfg.properties \
-# && chmod 600 config.properties \
  && mkdir db
 
 VOLUME ["${HOME}/db", "${HOME}/.lightning"]
 
 ENTRYPOINT ["su-exec"]
-#CMD ["./startproxy.sh"]
