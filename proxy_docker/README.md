@@ -2,14 +2,6 @@
 
 We assume you are the user pi on a Raspberry Pi.
 
-## Create proxyuser that will run the processes
-
-Log in your host and:
-
-```shell
-sudo useradd proxyuser
-```
-
 ## Configure your container by modifying `env.properties` file
 
 ```properties
@@ -18,8 +10,8 @@ WATCHER_BTC_NODE_RPC_URL=btcnode:18332/wallet/watching01.dat
 SPENDER_BTC_NODE_RPC_URL=btcnode:18332/wallet/spending01.dat
 PROXY_LISTENING_PORT=8888
 # Variable substitutions don't work
-DB_PATH=/proxyuser/db
-DB_FILE=/proxyuser/db/proxydb
+DB_PATH=/proxy/db
+DB_FILE=/proxy/db/proxydb
 # Pycoin container
 PYCOIN_CONTAINER=pycoinnode:7777
 # OTS container
@@ -49,13 +41,13 @@ watchingnode.pruned=false
 ## Building docker image
 
 ```shell
-docker build -t btcproxyimg --build-arg USER_ID=$(id -u proxyuser) --build-arg GROUP_ID=$(id -g proxyuser) .
+docker build -t btcproxyimg .
 ```
 
 ## Create sqlite3 database path and give rights
 
 ```shell
-mkdir ~/btcproxydb ; sudo chown -R proxyuser:pi ~/btcproxydb ; sudo chmod g+ws ~/btcproxydb
+mkdir ~/btcproxydb ; sudo chown -R cyphernode:pi ~/btcproxydb ; sudo chmod g+ws ~/btcproxydb
 ```
 
 ## What you MUST have in your Watching Bitcoin node's bitcoin.conf file

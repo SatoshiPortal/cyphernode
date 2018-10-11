@@ -11,11 +11,12 @@ services:
     volumes:
       # Variable substitutions don't work
       # Match with DB_PATH in proxy_docker/env.properties
-      - "~/btcproxydb:/proxyuser/db"
-      - "~/.lightning:/proxyuser/.lightning"
+      - "~/btcproxydb:/proxy/db"
+      - "~/lndata:/proxy/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
+    command: $USER /proxy/startproxy.sh
     networks:
       - cyphernodenet
 
@@ -40,6 +41,7 @@ services:
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
+    command: $USER /pycoin/startpycoin.sh
     networks:
       - cyphernodenet
 
@@ -49,10 +51,11 @@ services:
     ports:
       - "9735:9735"
     volumes:
-      - "~/.lightning:/lnuser/.lightning"
+      - "~/lndata:/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
+    command: $USER lightningd
     networks:
       - cyphernodenet
 
@@ -66,7 +69,8 @@ services:
 #      - "8333:8333"
 #      - "8332:8332"
     volumes:
-      - "~/.bitcoin:/bitcoinuser/.bitcoin"
+      - "~/btcdata:/.bitcoin"
+    command: $USER bitcoind
     networks:
       - cyphernodenet
 

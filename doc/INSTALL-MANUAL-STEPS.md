@@ -49,8 +49,8 @@ vi pycoin_docker/env.properties
 sudo useradd cyphernode
 mkdir ~/btcproxydb ; sudo chown -R cyphernode:debian ~/btcproxydb ; sudo chmod g+ws ~/btcproxydb
 docker build -t proxycronimg cron_docker/.
-docker build -t btcproxyimg --build-arg USER_ID=$(id -u cyphernode) --build-arg GROUP_ID=$(id -g cyphernode) proxy_docker/.
-docker build -t pycoinimg --build-arg USER_ID=$(id -u cyphernode) --build-arg GROUP_ID=$(id -g cyphernode) pycoin_docker/.
+docker build -t btcproxyimg proxy_docker/.
+docker build -t pycoinimg pycoin_docker/.
 ```
 
 ## Build images from Satoshi Portal's dockers repo
@@ -75,16 +75,16 @@ rpcwallet=ln01.dat
 
 ```shell
 vi config
-mkdir ~/.lightning
-cp config ~/.lightning/
-sudo chown -R cyphernode:debian ~/.lightning ; sudo chmod g+ws ~/.lightning
-sudo find ~/.lightning -type d -exec chmod 2775 {} \; ; sudo find ~/.lightning -type f -exec chmod g+rw {} \;
-docker build -t clnimg --build-arg USER_ID=$(id -u cyphernode) --build-arg GROUP_ID=$(id -g cyphernode) .
+mkdir ~/lndata
+cp config ~/lndata/
+sudo chown -R cyphernode:debian ~/lndata ; sudo chmod g+ws ~/lndata
+sudo find ~/lndata -type d -exec chmod 2775 {} \; ; sudo find ~/lndata -type f -exec chmod g+rw {} \;
+docker build -t clnimg .
 cd ../../bitcoin-core/
-mkdir ~/.bitcoin
-sudo chown -R cyphernode:debian ~/.bitcoin ; sudo chmod g+ws ~/.bitcoin
-sudo find ~/.bitcoin -type d -exec chmod 2775 {} \; ; sudo find ~/.bitcoin -type f -exec chmod g+rw {} \;
-docker build -t btcnode --build-arg USER_ID=$(id -u cyphernode) --build-arg GROUP_ID=$(id -g cyphernode) --build-arg CORE_VERSION="0.16.3" .
+mkdir ~/btcdata
+sudo chown -R cyphernode:debian ~/btcdata ; sudo chmod g+ws ~/btcdata
+sudo find ~/btcdata -type d -exec chmod 2775 {} \; ; sudo find ~/btcdata -type f -exec chmod g+rw {} \;
+docker build -t btcnode .
 ```
 
 ## Mount bitcoin data volume and make sure bitcoin configuration is ok
@@ -92,8 +92,8 @@ docker build -t btcnode --build-arg USER_ID=$(id -u cyphernode) --build-arg GROU
 (Watcher and spender is the same bitcoin node, with different wallets)
 
 ```shell
-sudo mount /dev/vdc ~/.bitcoin/
-vi ~/.bitcoin/bitcoin.conf
+sudo mount /dev/vdc ~/btcdata/
+vi ~/btcdata/bitcoin.conf
 ```
 
 *Make sure testnet, rpcuser and rpcpassword have the same value as in c-lightning node's bitcoin.conf file (see above)*
@@ -119,16 +119,16 @@ walletnotify=curl cyphernode:8888/conf/%s
 
 ```shell
 cd ~/cyphernode/
-docker stack deploy --compose-file docker-compose.yml cyphernodestack
+USER=`id -u cyphernode`:`id -g cyphernode` docker stack deploy --compose-file docker-compose.yml cyphernodestack
 ```
 
 ## Wait a few minutes and re-apply permissions
 
 ```shell
-sudo chown -R cyphernode:debian ~/.lightning ; sudo chmod g+ws ~/.lightning
-sudo chown -R cyphernode:debian ~/.bitcoin ; sudo chmod g+ws ~/.bitcoin
-sudo find ~/.lightning -type d -exec chmod 2775 {} \; ; sudo find ~/.lightning -type f -exec chmod g+rw {} \;
-sudo find ~/.bitcoin -type d -exec chmod 2775 {} \; ; sudo find ~/.bitcoin -type f -exec chmod g+rw {} \;
+sudo chown -R cyphernode:debian ~/lndata ; sudo chmod g+ws ~/lndata
+sudo chown -R cyphernode:debian ~/btcdata ; sudo chmod g+ws ~/btcdata
+sudo find ~/lndata -type d -exec chmod 2775 {} \; ; sudo find ~/lndata -type f -exec chmod g+rw {} \;
+sudo find ~/btcdata -type d -exec chmod 2775 {} \; ; sudo find ~/btcdata -type f -exec chmod g+rw {} \;
   ```
 
 ## Test the deployment

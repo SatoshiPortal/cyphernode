@@ -1,7 +1,7 @@
 # Build image
 
 ```shell
-docker build -t pycoinimg --build-arg USER_ID=$(id -u proxyuser) --build-arg GROUP_ID=$(id -g proxyuser) .
+docker build -t pycoinimg .
 ```
 
 # Usefull examples
