@@ -41,6 +41,7 @@ module.exports = {
       name: 'xpub',
       default: utils._getDefault( 'xpub' ),
       message: prefix()+'What is your xpub to watch?'+'\n',
+      filter: utils._trimFilter,
       validate: utils._xkeyValidator
     },
     {
@@ -48,6 +49,7 @@ module.exports = {
       name: 'derivation_path',
       default: utils._getDefault( 'derivation_path' ),
       message: prefix()+'What is your address derivation path?'+'\n',
+      filter: utils._trimFilter,
       validate: utils._derivationPathValidator
     }];
   },
