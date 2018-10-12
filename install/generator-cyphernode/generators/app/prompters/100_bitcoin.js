@@ -45,6 +45,7 @@ module.exports = {
       type: 'input',
       name: 'bitcoin_node_ip',
       default: utils._getDefault( 'bitcoin_node_ip' ),
+      filter: utils._trimFilter,
       validate: utils._ipOrFQDNValidator,
       message: prefix()+'What is your full node ip address?'+'\n',
     },
@@ -53,12 +54,14 @@ module.exports = {
       name: 'bitcoin_rpcuser',
       default: utils._getDefault( 'bitcoin_rpcuser' ),
       message: prefix()+'Name of bitcoin rpc user?'+'\n',
+      filter: utils._trimFilter,
     },
     {
       type: 'password',
       name: 'bitcoin_rpcpassword',
       default: utils._getDefault( 'bitcoin_rpcpassword' ),
       message: prefix()+'Password of bitcoin rpc user?'+'\n',
+      filter: utils._trimFilter,
     },
     {
       when: bitcoinInternal,
@@ -73,6 +76,7 @@ module.exports = {
       name: 'bitcoin_uacomment',
       default: utils._getDefault( 'bitcoin_uacomment' ),
       message: prefix()+'Any UA comment?'+'\n',
+      filter: utils._trimFilter,
       validate: utils._UACommentValidator
     }];
   },

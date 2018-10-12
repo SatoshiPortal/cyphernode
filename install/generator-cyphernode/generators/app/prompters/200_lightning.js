@@ -49,6 +49,7 @@ module.exports = {
       type: 'input',
       name: 'lightning_external_ip',
       default: utils._getDefault( 'lightning_external_ip' ),
+      filter: utils._trimFilter,
       validate: utils._ipOrFQDNValidator,
       message: prefix()+'What external ip does your lightning node have?'+'\n',
     },
@@ -57,6 +58,7 @@ module.exports = {
       type: 'input',
       name: 'lightning_nodename',
       default: utils._getDefault( 'lightning_nodename' ),
+      filter: utils._trimFilter,
       validate: utils._notEmptyValidator,
       message: prefix()+'What name has your lightning node?'+'\n',
     },
@@ -65,6 +67,7 @@ module.exports = {
       type: 'input',
       name: 'lightning_nodecolor',
       default: utils._getDefault( 'lightning_nodecolor' ),
+      filter: utils._trimFilter,
       validate: utils._colorValidator,
       message: prefix()+'What color has your lightning node?'+'\n',
     }];
