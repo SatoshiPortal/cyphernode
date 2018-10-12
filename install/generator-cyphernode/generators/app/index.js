@@ -8,6 +8,8 @@ const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 
+const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\?@]+$/
+
 let prompters = [];
 const normalizedPath = path.join(__dirname, "prompters");
 fs.readdirSync(normalizedPath).forEach(function(file) {
@@ -124,6 +126,13 @@ module.exports = class extends Generator {
   _notEmptyValidator( path ) {
     if( !path ) {
       throw new Error('Please enter something');
+    }
+    return true;
+  }
+
+  _UACommentValidator( comment ) {
+    if( !uaCommentRegexp.test( comment ) ) {
+      throw new Error('Unsafe characters in UA comment. Please use only a-z, A-Z, 0-9, SPACE and .,:_?@');
     }
     return true;
   }

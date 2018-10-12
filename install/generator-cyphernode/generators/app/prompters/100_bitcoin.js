@@ -73,6 +73,7 @@ module.exports = {
       name: 'bitcoin_uacomment',
       default: utils._getDefault( 'bitcoin_uacomment' ),
       message: prefix()+'Any UA comment?'+'\n',
+      validate: utils._UACommentValidator
     }];
   },
   env: function( props ) {
