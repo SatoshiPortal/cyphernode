@@ -36,10 +36,6 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 
 ## DOCS
 
-### API DOCS
-
-### Watch a Bitcoin Address (called by application)
-
 Read the API docs here: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.md
 
 Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
