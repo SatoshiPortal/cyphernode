@@ -32,11 +32,13 @@ module.exports = {
       choices: [{
         name: "Docker",
         value: "docker"
-      },
+      }
+      /*,
       {
         name: "Lunanode (not implemented)",
         value: "lunanode"
-      }]
+      }*/
+      ]
     },
     {
       when: installerDocker,
@@ -73,11 +75,20 @@ module.exports = {
       message: prefix()+'Expose bitcoin full node outside of the docker network?'+'\n',
     },
     {
-      when: installerLunanode,
-      type: 'confirm',
-      name: 'installer_confirm_lunanode',
-      default: utils._getDefault( 'installer_confirm_lunanode' ),
-      message: prefix()+'Lunanode?! No wayyyy!'+'\n'
+      when: installerDocker,
+      type: 'list',
+      name: 'docker_mode',
+      default: utils._getDefault( 'docker_mode' ),
+      message: prefix()+'What docker mode: docker swarm or docker-compose?'+'\n',
+      choices: [{
+        name: "docker swarm",
+        value: "swarm"
+      },
+      {
+        name: "docker-compose",
+        value: "compose"
+      }
+      ]
     }];
   },
   templates: function( props ) {
