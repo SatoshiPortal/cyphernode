@@ -42,6 +42,9 @@ build_docker_images() {
     archpath="rpi"
   fi
 
+  trace "Creating cyphernodeconf image"
+  build_docker_image install/ cyphernodeconf
+
   trace "Creating SatoshiPortal images"
   build_docker_image install/SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin
   build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $dockerfile
