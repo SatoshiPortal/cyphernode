@@ -85,9 +85,9 @@ install_docker() {
   trace "Copying docker-compose.yaml to top level"
   cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
 
-  echo "+------------------------------------------+"
-  echo "|        to start cyphernode run:          |"
-  echo "| docker-compose -f docker-compose.yaml up |"
-  echo "+------------------------------------------+"
+  echo "+---------------------------------------------------------------+"
+  echo "|                     to start cyphernode run:                  |"
+  echo '| USER=`id -u`:`id -g` docker-compose -f docker-compose.yaml up |'
+  echo "+---------------------------------------------------------------+"
 
 }

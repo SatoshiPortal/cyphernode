@@ -2,6 +2,7 @@ version: "3"
 
 services:
   proxy:
+    command: $USER ./startproxy.sh
     # Bitcoin Mini Proxy
     environment:
       - "TRACING=1"
@@ -10,10 +11,10 @@ services:
       - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
       - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
       - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/sender_btcnode_curlcfg.properties"
+      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
       - "PROXY_LISTENING_PORT=8888"
-      - "DB_PATH=/app/db"
-      - "DB_FILE=/app/db/proxydb"
+      - "DB_PATH=/proxy/db"
+      - "DB_FILE=/proxy/db/proxydb"
       - "PYCOIN_CONTAINER=pycoin:7777"
       - "OTS_CONTAINER=otsclient:6666"
       - "DERIVATION_PUB32=<%= xpub %>"
@@ -25,8 +26,8 @@ services:
       - "8888:8888"
 <% } %>
     volumes:
-      - "<%= proxy_datapath %>:/app/db"
-      - "<%= lightning_datapath %>:/app/.lightning"
+      - "<%= proxy_datapath %>:/proxy/db"
+      - "<%= lightning_datapath %>:/proxy/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -45,6 +46,7 @@ services:
     restart: always
   pycoin:
     # Pycoin
+    command: $USER ./startpycoin.sh
     image: cyphernode/pycoin
     environment:
       - "TRACING=1"
@@ -61,11 +63,12 @@ services:
     restart: always
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   lightning:
+    command: $USER lightningd
     image: cyphernode/clightning
     ports:
       - "9735:9735"
     volumes:
-      - "<%= lightning_datapath%>:/lnuser/.lightning"
+      - "<%= lightning_datapath%>:/.lightning"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -75,13 +78,14 @@ services:
 <% } %>
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
+    command: $USER bitcoind
     image: cyphernode/bitcoin
 <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
 <% } %>
     volumes:
-      - "<%= bitcoin_datapath%>:/bitcoinuser/.bitcoin"
+      - "<%= bitcoin_datapath%>:/.bitcoin"
     networks:
       - cyphernodenet
     restart: always
