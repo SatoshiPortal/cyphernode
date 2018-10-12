@@ -8,7 +8,7 @@ const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 
-const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\?@]+$/
+const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 
 let prompters = [];
 const normalizedPath = path.join(__dirname, "prompters");
