@@ -7,7 +7,7 @@
 
 compute_fees()
 {
-	local pruned=$(get_prop "watchingnode.pruned")
+	local pruned=${WATCHER_BTC_NODE_PRUNED}
 	if [ "${pruned}" = "true" ]; then
 		trace "[compute_fees]  pruned=${pruned}"
 		# We want null instead of 0.00000000 in this case.
