@@ -16,9 +16,6 @@ COPY app/script/requesthandler.sh ${HOME}/requesthandler.sh
 COPY app/script/watchrequest.sh ${HOME}/watchrequest.sh
 COPY app/script/walletoperations.sh ${HOME}/walletoperations.sh
 COPY app/script/confirmation.sh ${HOME}/confirmation.sh
-COPY app/config/watcher_btcnode_curlcfg.properties ${HOME}/watcher_btcnode_curlcfg.properties
-COPY app/config/spender_btcnode_curlcfg.properties ${HOME}/spender_btcnode_curlcfg.properties
-COPY app/config/config.properties ${HOME}/config.properties
 COPY app/script/startproxy.sh ${HOME}/startproxy.sh
 COPY app/script/trace.sh ${HOME}/trace.sh
 COPY app/script/sendtobitcoinnode.sh ${HOME}/sendtobitcoinnode.sh
@@ -29,7 +26,6 @@ COPY app/data/watching.sql ${HOME}/watching.sql
 COPY app/script/computefees.sh ${HOME}/computefees.sh
 COPY app/script/unwatchrequest.sh ${HOME}/unwatchrequest.sh
 COPY app/script/getactivewatches.sh ${HOME}/getactivewatches.sh
-COPY app/script/utils.sh ${HOME}/utils.sh
 COPY app/script/manage_missed_conf.sh ${HOME}/manage_missed_conf.sh
 COPY app/script/tests.sh ${HOME}/tests.sh
 COPY app/script/tests-cb.sh ${HOME}/tests-cb.sh
