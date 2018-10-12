@@ -34,6 +34,18 @@ The project is in **heavy development** - we are currently looking for review, n
 
 The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
 
+## DOCS
+
+### API DOCS
+
+### Watch a Bitcoin Address (called by application)
+
+Read the API docs here: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.md
+
+Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
+
+Step-by-step manual install: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
+
 ## When calling a cyphernode endpoint, you are either
 
 - making a delegated request (call) to the functions of the P2P network nodes part of your overlay network (e.g. calling Bitcoin RPC)
