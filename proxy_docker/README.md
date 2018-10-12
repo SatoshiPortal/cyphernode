@@ -7,7 +7,11 @@ We assume you are the user pi on a Raspberry Pi.
 ```properties
 TRACING=1
 WATCHER_BTC_NODE_RPC_URL=btcnode:18332/wallet/watching01.dat
+WATCHER_BTC_NODE_RPC_USER=rpc_username:rpc_password
+WATCHER_BTC_NODE_RPC_CFG=/proxy/watcher_btcnode_curlcfg.properties
 SPENDER_BTC_NODE_RPC_URL=btcnode:18332/wallet/spending01.dat
+SPENDER_BTC_NODE_RPC_USER=rpc_username:rpc_password
+SPENDER_BTC_NODE_RPC_CFG=/proxy/spender_btcnode_curlcfg.properties
 PROXY_LISTENING_PORT=8888
 # Variable substitutions don't work
 DB_PATH=/proxy/db
@@ -16,26 +20,10 @@ DB_FILE=/proxy/db/proxydb
 PYCOIN_CONTAINER=pycoinnode:7777
 # OTS container
 OTS_CONTAINER=otsnode:6666
-```
 
-## Set your Watching Bitcoin node RPC credentials in `app/config/watcher_btcnode_curlcfg.properties`
-
-```properties
-user=rpc_username:rpc_password
-```
-
-## Set your Spending Bitcoin node RPC credentials in `app/config/spender_btcnode_curlcfg.properties`
-
-```properties
-user=rpc_username:rpc_password
-```
-
-## Set your address derivation information in `app/config/derivation.properties`
-
-```properties
-derivation.xpub=upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
-derivation.path=0/n
-watchingnode.pruned=false
+DERIVATION_PUB32=upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
+DERIVATION_PATH=0/n
+WATCHER_BTC_NODE_PRUNED=false
 ```
 
 ## Building docker image

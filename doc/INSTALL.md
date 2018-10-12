@@ -49,9 +49,6 @@ debian@dev:~/dev/Cyphernode$ docker network connect cyphernodenet yourappcontain
 
 ```shell
 debian@dev:~/dev/Cyphernode$ vi proxy_docker/env.properties
-debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/config.properties
-debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/watcher_btcnode_curlcfg.properties
-debian@dev:~/dev/Cyphernode$ vi proxy_docker/app/config/spender_btcnode_curlcfg.properties
 debian@dev:~/dev/Cyphernode$ vi cron_docker/env.properties
 debian@dev:~/dev/Cyphernode$ vi pycoin_docker/env.properties
 ```
@@ -100,11 +97,7 @@ pi@SP-BTC01:~ $ docker swarm join --token SWMTKN-1-2pxouynn9g8si42e8g9ujwy0v9po4
 
 [See how to build Bitcoin Node image](https://github.com/SatoshiPortal/dockers/tree/master/rpi/bitcoin-core)
 
-### Run node or connect already-running node
-
-```shell
-pi@SP-BTC01:~ $ docker run -d --rm --mount type=bind,source="$HOME/.bitcoin",target="/bitcoinuser/.bitcoin" --name btcnode --network cyphernodenet btcnode
-```
+### Connect already-running node
 
 ```shell
 pi@SP-BTC01:~ $ docker network connect cyphernodenet btcnode

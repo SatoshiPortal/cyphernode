@@ -27,11 +27,11 @@ createCurlConfig() {
 
 	local user=$( trim $2 )
 	echo "user=${user}" > ${1}
-	
+
 }
 
 if [ ! -e ${DB_FILE} ]; then
-	echo "DB not found, creating..." > /dev/stderr
+	echo "DB not found, creating..." 1>&2
 	cat watching.sql | sqlite3 $DB_FILE
 fi
 

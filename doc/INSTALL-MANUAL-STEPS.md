@@ -31,14 +31,11 @@ docker network create --driver=overlay --attachable --opt encrypted cyphernodene
 git clone https://github.com/SatoshiPortal/cyphernode.git
 cd cyphernode/
 vi proxy_docker/env.properties
-vi proxy_docker/app/config/config.properties
 ```
 
 *Make sure user have same rpcuser and rpcpassword values as in bitcoin node's bitcoin.conf file (see below)*
 
 ```shell
-vi proxy_docker/app/config/watcher_btcnode_curlcfg.properties
-vi proxy_docker/app/config/spender_btcnode_curlcfg.properties
 vi cron_docker/env.properties
 vi pycoin_docker/env.properties
 ```
