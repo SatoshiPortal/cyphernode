@@ -25,8 +25,8 @@ module.exports = class extends Generator {
       this.recreate = true;
     }
 
-    if( fs.existsSync(this.destinationPath('props.json')) ) {
-      this.props = require(this.destinationPath('props.json'));
+    if( fs.existsSync(this.destinationPath('config.json')) ) {
+      this.props = require(this.destinationPath('config.json'));
     } else {
       this.props = {
         'derivation_path': '0/n',
@@ -64,7 +64,7 @@ module.exports = class extends Generator {
   }
 
   writing() {
-    fs.writeFileSync(this.destinationPath('props.json'), JSON.stringify(this.props, null, 2));
+    fs.writeFileSync(this.destinationPath('config.json'), JSON.stringify(this.props, null, 2));
 
     for( let m of prompters ) {
       const name = m.name();      
