@@ -7,3 +7,4 @@ LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 LIGHTNING_DATAPATH=<%= lightning_datapath %>
 PROXY_DATAPATH=<%= proxy_datapath %>
+DOCKER_MODE=<%= docker_mode %>
