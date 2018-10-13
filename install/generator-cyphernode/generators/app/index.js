@@ -23,16 +23,34 @@ const sleep = function(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const easeOutCubic = function(t, b, c, d) {
+  return c*((t=t/d-1)*t*t+1)+b;
+}
+
 const splash = async function() {
     let frames = [];
     fs.readdirSync(path.join(__dirname,'splash')).forEach(function(file) {
       frames.push(fs.readFileSync(path.join(__dirname,'splash',file)));
     });
 
+    const frame0 = frames[0];
+
+    const frame0lines = frame0.toString().split('\n');
+    const frame0lineCount = frame0lines.length;
+    const steps = 10;
+
     process.stdout.write(clear);
 
-    process.stdout.write(reset);
-    process.stdout.write(frames[0]);
+    await sleep(150);
+
+    for( let i=0; i<=steps; i++ ) {
+      const pos = easeOutCubic( i, 0, frame0lineCount, steps ) | 0;
+      process.stdout.write(reset);
+      for( let l=frame0lineCount-pos; l<frame0lineCount; l++ ) {
+        process.stdout.write( frame0lines[l]+'\n' );
+      }
+      await sleep(33);
+    }
 
     await sleep(400);
 
@@ -41,9 +59,7 @@ const splash = async function() {
       process.stdout.write(frame.toString());
       await sleep(33);
     }
-
     await sleep(400);
-
     process.stdout.write('\n');
 }
 
