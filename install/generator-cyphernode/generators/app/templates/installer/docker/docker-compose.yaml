@@ -20,7 +20,7 @@ services:
       - "DERIVATION_PUB32=<%= xpub %>"
       - "DERIVATION_PATH=<%= derivation_path %>"
       - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
-    image: cyphernode/proxy
+    image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/proxy
 <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -37,7 +37,7 @@ services:
   proxycron:
     environment:
       - "PROXY_URL=proxy:8888/executecallbacks"
-    image: cyphernode/proxycron
+    image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/proxycron
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -47,7 +47,7 @@ services:
   pycoin:
     # Pycoin
     command: $USER ./startpycoin.sh
-    image: cyphernode/pycoin
+    image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/pycoin
     environment:
       - "TRACING=1"
       - "PYCOIN_LISTENING_PORT=7777"
@@ -64,7 +64,7 @@ services:
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   lightning:
     command: $USER lightningd
-    image: cyphernode/clightning
+    image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/clightning
     ports:
       - "9735:9735"
     volumes:
@@ -79,7 +79,7 @@ services:
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
     command: $USER bitcoind
-    image: cyphernode/bitcoin
+    image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/bitcoin
 <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"

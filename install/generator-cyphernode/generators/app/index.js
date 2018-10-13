@@ -78,7 +78,8 @@ module.exports = class extends Generator {
       this.props = {
         'derivation_path': '0/n',
         'installer': 'docker',
-        'devmode': false
+        'devmode': false,
+        'devregistry': false
       };
     }
 
