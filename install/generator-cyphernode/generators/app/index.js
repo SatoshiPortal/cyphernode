@@ -10,11 +10,42 @@ const coinstring = require('coinstring');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 
+const reset = '\u001B[u';
+const clear = '\u001Bc';
+
+
 let prompters = [];
-const normalizedPath = path.join(__dirname, "prompters");
-fs.readdirSync(normalizedPath).forEach(function(file) {
-  prompters.push(require(path.join(normalizedPath,file)));
+fs.readdirSync(path.join(__dirname, "prompters")).forEach(function(file) {
+  prompters.push(require(path.join(__dirname, "prompters",file)));
 });
+
+const sleep = function(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const splash = async function() {
+    let frames = [];
+    fs.readdirSync(path.join(__dirname,'splash')).forEach(function(file) {
+      frames.push(fs.readFileSync(path.join(__dirname,'splash',file)));
+    });
+
+    process.stdout.write(clear);
+
+    process.stdout.write(reset);
+    process.stdout.write(frames[0]);
+
+    await sleep(400);
+
+    for( let frame of frames ) {
+      process.stdout.write(reset);
+      process.stdout.write(frame.toString());
+      await sleep(33);
+    }
+
+    await sleep(400);
+
+    process.stdout.write('\n');
+}
 
 module.exports = class extends Generator {
 
@@ -44,16 +75,15 @@ module.exports = class extends Generator {
 
   }
 
-  prompting() {
+  async prompting() {
     if( this.recreate ) {
       // no prompts
       return;
     }
-    const splash = fs.readFileSync(this.templatePath('splash.txt'));
-    this.log(splash.toString());
+
+    await splash();
     
     let prompts = [];
-
     for( let m of prompters ) {
       prompts = prompts.concat(m.prompts(this));
     }
