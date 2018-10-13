@@ -1,6 +1,6 @@
 const chalk = require('chalk');
 
-const name = 'proxy';
+const name = 'cyphernode';
 
 const capitalise = function( txt ) {
   return txt.charAt(0).toUpperCase() + txt.substr(1);
