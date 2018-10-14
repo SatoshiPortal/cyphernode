@@ -110,13 +110,20 @@ install_docker() {
     cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
   fi
 
-  trace "Copying docker-compose.yaml to top level"
+  trace "Copying docker-compose.yaml"
   cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
 
-  echo "+---------------------------------------------------------------+"
-  echo "|                     to start cyphernode run:                  |"
-  echo '| USER=`id -u`:`id -g` docker-compose -f docker-compose.yaml up |'
-  echo "+---------------------------------------------------------------+"
+  trace "Copying start and stop scripts"
+  cp $sourceDataPath/installer/start.sh $topLevel
+  cp $sourceDataPath/installer/stop.sh $topLevel
+  chmod +x start.sh stop.sh
+
+  echo "+--------------------------+"
+  echo "| To start cyphernode run: |"
+  echo '| ./start.sh               |'
+  echo "| To stop cyphernode run:  |"
+  echo '| ./stop.sh                |'
+  echo "+--------------------------+"
 
 }
 
