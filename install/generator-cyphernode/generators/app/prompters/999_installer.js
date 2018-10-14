@@ -93,8 +93,8 @@ module.exports = {
   },
   templates: function( props ) {
     if( props.installer_mode === 'docker' ) {
-      return ['config.sh', path.join('docker', 'docker-compose.yaml')];
+      return ['config.sh','start.sh', 'stop.sh', path.join('docker', 'docker-compose.yaml')];
     }
-    return ['config.sh'];
+    return ['config.sh','start.sh', 'stop.sh'];
   }
 };
