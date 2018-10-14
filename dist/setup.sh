@@ -35,7 +35,15 @@ configure() {
     recreate="recreate"
   fi
 
-  clear && echo "Thinking..."
+  
+
+  ARCH=$(uname -m)
+
+  if [[ $ARCH =~ ^arm ]]; then
+    clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so small. :D"
+  else
+    clear && echo "Thinking..."
+  fi
 
   # configure features of cyphernode
   docker run -v $current_path:/data \
