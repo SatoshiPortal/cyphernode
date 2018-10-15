@@ -165,6 +165,8 @@ copy_file() {
         next
       fi
       doCopy=1
+    else 
+      logline "[36midentical[0m $targetFile"
     fi
   else
     doCopy=1
