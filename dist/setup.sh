@@ -217,8 +217,8 @@ install_docker() {
   fi
 
   copy_file $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
-  copy_file $sourceDataPath/installer/start.sh $topLevel/start.sh
-  copy_file $sourceDataPath/installer/stop.sh $topLevel/stop.sh
+  copy_file $sourceDataPath/installer/start.sh $topLevel/start.sh 0
+  copy_file $sourceDataPath/installer/stop.sh $topLevel/stop.sh 0
 
   step "Making scripts executable"  
   try chmod +x start.sh stop.sh
