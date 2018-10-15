@@ -81,11 +81,12 @@ try() {
 }
 
 echo_success() {
-  echo -n "[73G[   [32mOK[0m   ]"
+  #echo -n "[70G[   [32mOK[0m   ]"
+  echo -n
 }
 
 echo_failure() {
-  echo -n "[73G[ [31mFAILED[0m ]"
+  echo -n "[70G[ [31mFAILED[0m ]"
 }
 
 next() {
@@ -159,7 +160,7 @@ copy_file() {
     if [[ $? == 1 ]]; then
       # different content
       if [[ $createBackup == 1 ]]; then
-        step "Creating backup of $targetFile"
+        step "   [32mcreate[0m backup of $targetFile"
         try cp $targetFile $targetFile-$(date +"%y-%m-%d-%T")
         next
       fi
@@ -171,7 +172,7 @@ copy_file() {
 
   if [[ $doCopy == 1 ]]; then
     local basename=$(basename "$sourceFile")
-    step "Copying $basename"
+    step "     [32mcopy[0m $basename"
     try cp $sourceFile $targetFile
     next
   fi
@@ -192,7 +193,7 @@ install_docker() {
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
-      step "Creating $BITCOIN_DATAPATH"
+      step "   [32mcreate[0m $BITCOIN_DATAPATH"
       try mkdir -p $BITCOIN_DATAPATH
       next
     fi
@@ -206,7 +207,7 @@ install_docker() {
           dockerfile="Dockerfile-alpine"
         fi
         if [ ! -d $LIGHTNING_DATAPATH ]; then
-          step "Creating $LIGHTNING_DATAPATH"
+          step "   [32mcreate[0m $LIGHTNING_DATAPATH"
           try mkdir -p $LIGHTNING_DATAPATH
           next
         fi
@@ -216,13 +217,13 @@ install_docker() {
 
   # build cyphernode images
   if [ ! -d $PROXY_DATAPATH ]; then
-    step "Creating $PROXY_DATAPATH"
+    step "   [32mcreate[0m $PROXY_DATAPATH"
     try mkdir -p $PROXY_DATAPATH
     next
   fi
 
   if [[ ! $(docker network ls | grep cyphernodenet) =~ cyphernodenet ]]; then
-    step "Creating cyphernode network"
+    step "   [32mcreate[0mcyphernode network"
     try docker network create cyphernodenet > /dev/null 2>&1
     next
   fi
@@ -231,9 +232,17 @@ install_docker() {
   copy_file $sourceDataPath/installer/start.sh $topLevel/start.sh 0
   copy_file $sourceDataPath/installer/stop.sh $topLevel/stop.sh 0
 
-  step "Making scripts executable"  
-  try chmod +x start.sh stop.sh
-  next
+  if [[ ! -x start.sh ]]; then
+    step "     [32mmake[0m start.sh executable"
+    try chmod +x start.sh
+    next
+  fi
+
+  if [[ ! -x stop.sh ]]; then
+    step "     [32mmake[0m stop.sh executable"
+    try chmod +x stop.sh
+    next
+  fi
 
   cowsay
 }
@@ -280,12 +289,10 @@ if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
 fi
 
 if [[ $CONFIGURE == 1 ]]; then
-  logline "Configuration phase"
   configure $RECREATE
 fi
 
 if [[ $INSTALL == 1 ]]; then
-  logline "Starting installation phase"
   install
 fi
 
