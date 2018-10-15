@@ -23,9 +23,13 @@ dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -ps -c 32
 Put the key in keys.properties and keep it for the client.  This is a secret key.  keys.properties looks like this:
 
 ```property
-#keyid=hex(key)
-key001=2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36
-key002=50c5e483b80964595508f214229b014aa6c013594d57d38bcb841093a39f1d83
+#group.id=hex(key)
+watcher.001=2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36
+watcher.002=50c5e483b80964595508f214229b014aa6c013594d57d38bcb841093a39f1d83
+spender.001=b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af
+spender.002=bb0458b705e774c0c9622efaccfe573aa30c82f62386d9435f04e9727cdc26fd
+admin.001=6c009201b123e8c24c6b74590de28c0c96f3287e88cac9460a2173a53d73fb87
+admin.002=19e121b698014fac638f772c4ff5775a738856bf6cbdef0dc88971059c69da4b
 ```
 
 You can have multiple keys, but be aware that this container has **not** been built to support thousands of API keys!  **Cyphernode should be used locally**, not publicly as a service.

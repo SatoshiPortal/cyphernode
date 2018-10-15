@@ -3,6 +3,8 @@ version: "3"
 services:
   authapi:
     # HTTP authentication API gate
+    env_file:
+      - api_auth_docker/env.properties
     image: authapi
     ports:
       - "80:80"

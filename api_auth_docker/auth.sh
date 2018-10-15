@@ -16,61 +16,99 @@
 
 . ./trace.sh
 
-verify()
+verify_sign()
 {
+  local returncode
+
   local header64=$(echo ${1} | cut -sd '.' -f1)
   local payload64=$(echo ${1} | cut -sd '.' -f2)
   local signature=$(echo ${1} | cut -sd '.' -f3)
 
-  trace "[verify] header64=${header64}"
-  trace "[verify] payload64=${payload64}"
-  trace "[verify] signature=${signature}"
+  trace "[verify_sign] header64=${header64}"
+  trace "[verify_sign] payload64=${payload64}"
+  trace "[verify_sign] signature=${signature}"
 
   local payload=$(echo ${payload64} | base64 -d)
   local exp=$(echo ${payload} | jq ".exp")
   local current=$(date +"%s")
 
-  trace "[verify] payload=${payload}"
-  trace "[verify] exp=${exp}"
-  trace "[verify] current=${current}"
+  trace "[verify_sign] payload=${payload}"
+  trace "[verify_sign] exp=${exp}"
+  trace "[verify_sign] current=${current}"
 
   if [ ${exp} -gt ${current} ]; then
-  trace "[verify] Not expired, let's validate signature"
-  local id=$(echo ${payload} | jq ".id" | tr -d '"')
-  trace "[verify] id=${id}"
+    trace "[verify_sign] Not expired, let's validate signature"
+    local id=$(echo ${payload} | jq ".id" | tr -d '"')
+    trace "[verify_sign] id=${id}"
 
-  # It is so much faster to include the keys here instead of grep'ing the file for key.
-  . ./keys.properties
+    # It is so much faster to include the keys here instead of grep'ing the file for key.
+    . ./keys.properties
 
-  local key
-  eval key='$key'$id
-  trace "[verify] key=${key}"
+    local key
+    eval key='$ukey_'$id
+    trace "[verify_sign] key=${key}"
     local comp_sign=$(echo "${header64}.${payload64}" | openssl dgst -hmac "${key}" -sha256 -r | cut -sd ' ' -f1)
 
-    trace "[verify] comp_sign=${comp_sign}"
+    trace "[verify_sign] comp_sign=${comp_sign}"
 
-  if [ "${comp_sign}" = "${signature}" ]; then
-  trace "[verify] Valid signature!"
-  echo -en "Status: 200 OK\r\n\r\n"
-  return
+    if [ "${comp_sign}" = "${signature}" ]; then
+      trace "[verify_sign] Valid signature!"
+
+      verify_group ${id}
+      returncode=$?
+
+      if [ "${returncode}" -eq 0 ]; then
+        echo -en "Status: 200 OK\r\n\r\n"
+        return
+      fi
+      trace "[verify_sign] Invalid group!"
+      return 1
+    fi
+    trace "[verify_sign] Invalid signature!"
+    return 1
   fi
-  trace "[verify] Invalid signature!"
-  return 1
-  fi
 
-  trace "[verify] Expired!"
-
+  trace "[verify_sign] Expired!"
   return 1
 }
 
+verify_group()
+{
+  trace "[verify_group] Verifying group..."
+
+  local id=${1}
+  local action=${REQUEST_URI:1}
+
+  # It is so much faster to include the keys here instead of grep'ing the file for key.
+  . ./api.properties
+
+  local needed_group
+  local ugroups
+
+  eval needed_group='$action_'${action}
+  trace "[verify_group] needed_group=${needed_group}"
+
+  eval ugroups='$ugroups_'$id
+  trace "[verify_group] user groups=${ugroups}"
+
+  case "${ugroups}" in
+    *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+  esac
+
+  trace "[verify_group] Access NOT granted"
+  return 1
+}
+
+
 # $HTTP_AUTHORIZATION = Bearer <token>
+# If this is not found in header, we leave
 trace "[auth.sh] HTTP_AUTHORIZATION=${HTTP_AUTHORIZATION}"
 if [ "${HTTP_AUTHORIZATION:0:6}" = "Bearer" ]; then
   token="${HTTP_AUTHORIZATION:6}"
 
   if [ -n "$token" ]; then
   trace "[auth.sh] Valid format for authorization header"
-  verify "${token}"
+  verify_sign "${token}"
   [ "$?" -eq "0" ] && return
   fi
 fi
