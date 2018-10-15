@@ -191,7 +191,6 @@ install_docker() {
   fi
 
   local sourceDataPath=./
-  local topLevel=./
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -230,9 +229,9 @@ install_docker() {
     next
   fi
 
-  copy_file $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
-  copy_file $sourceDataPath/installer/start.sh $topLevel/start.sh 0
-  copy_file $sourceDataPath/installer/stop.sh $topLevel/stop.sh 0
+  copy_file $sourceDataPath/installer/docker/docker-compose.yaml docker-compose.yaml
+  copy_file $sourceDataPath/installer/start.sh start.sh 0
+  copy_file $sourceDataPath/installer/stop.sh stop.sh 0
 
   if [[ ! -x start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
