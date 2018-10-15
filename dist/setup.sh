@@ -12,19 +12,82 @@
 # ./setup.sh -ci
 # docker-compose -f docker-compose.yaml up [-d]
 
+
+## utils -----
 trace()
 {
   if [ -n "${TRACING}" ]; then
-    echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}" > /dev/stderr
+    echo -n "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}" > /dev/stderr
   fi
+}
+# FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
+# Use step(), try(), and next() to perform a series of commands and print
+# [  OK  ] or [FAILED] at the end. The step as a whole fails if any individual
+# command fails.
+#
+# Example:
+#     step "Remounting / and /boot as read-write:"
+#     try mount -o remount,rw /
+#     try mount -o remount,rw /boot
+#     next
+step() {
+    trace "$@"
+
+    STEP_OK=0
+    [[ -w /tmp ]] && echo $STEP_OK > /tmp/step.$$
 }
 
-trace_rc()
-{
-  if [ -n "${TRACING}" ]; then
-    echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] Last return code: ${1}" > /dev/stderr
-  fi
+try() {
+    # Check for `-b' argument to run command in the background.
+    local BG=
+
+    [[ $1 == -b ]] && { BG=1; shift; }
+    [[ $1 == -- ]] && {       shift; }
+
+    # Run the command.
+    if [[ -z $BG ]]; then
+        "$@"
+    else
+        "$@" &
+    fi
+
+    # Check if command failed and update $STEP_OK if so.
+    local EXIT_CODE=$?
+
+    if [[ $EXIT_CODE -ne 0 ]]; then
+        STEP_OK=$EXIT_CODE
+        [[ -w /tmp ]] && echo $STEP_OK > /tmp/step.$$
+
+        if [[ -n $LOG_STEPS ]]; then
+            local FILE=$(readlink -m "${BASH_SOURCE[1]}")
+            local LINE=${BASH_LINENO[0]}
+
+            echo "$FILE: line $LINE: Command \`$*' failed with exit code $EXIT_CODE." >> "$LOG_STEPS"
+        fi
+    fi
+
+    return $EXIT_CODE
 }
+
+echo_success() {
+  echo -n "[73G[   [32mOK[0m   ]"
+}
+
+echo_failure() {
+  echo -n "[73G[ [31mFAILED[0m ]"
+}
+
+next() {
+    [[ -f /tmp/step.$$ ]] && { STEP_OK=$(< /tmp/step.$$); rm -f /tmp/step.$$; }
+    [[ $STEP_OK -eq 0 ]]  && echo_success || echo_failure
+    echo
+
+    return $STEP_OK
+}
+
+## /utils ----
+
+
 
 configure() {
   local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -49,7 +112,6 @@ configure() {
   docker run -v $current_path:/data \
              --log-driver=none\
              --rm -it cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
-  
 }
 
 install_docker() {
@@ -59,17 +121,20 @@ install_docker() {
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
-      trace "Creating $BITCOIN_DATAPATH"
-      mkdir -p $BITCOIN_DATAPATH
+      step "Creating $BITCOIN_DATAPATH"
+      try mkdir -p $BITCOIN_DATAPATH
+      next
     fi
 
     if [[ -f $BITCOIN_DATAPATH/bitcoin.conf ]]; then
-      trace "Creating backup of $BITCOIN_DATAPATH/bitcoin.conf"
-      cp $BITCOIN_DATAPATH/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf-$(date +"%y-%m-%d-%T")
+      step "Creating backup of $BITCOIN_DATAPATH/bitcoin.conf"
+      try cp $BITCOIN_DATAPATH/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf-$(date +"%y-%m-%d-%T")
+      next
     fi
 
-    trace "Copying bitcoin core node config"
-    cp $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH
+    step "Copying bitcoin core node config"
+    try cp $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH
+    next
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
@@ -79,44 +144,55 @@ install_docker() {
           dockerfile="Dockerfile-alpine"
         fi
         if [ ! -d $LIGHTNING_DATAPATH ]; then
-          trace "Creating $LIGHTNING_DATAPATH"
-          mkdir -p $LIGHTNING_DATAPATH
+          step "Creating $LIGHTNING_DATAPATH"
+          try mkdir -p $LIGHTNING_DATAPATH
+          next
         fi
 
         if [[ -f $LIGHTNING_DATAPATH/config ]]; then
-          trace "Creating backup of $LIGHTNING_DATAPATH/config"
-          cp $LIGHTNING_DATAPATH/config $LIGHTNING_DATAPATH/config-$(date +"%y-%m-%d-%T")
+          step "Creating backup of $LIGHTNING_DATAPATH/config"
+          try cp $LIGHTNING_DATAPATH/config $LIGHTNING_DATAPATH/config-$(date +"%y-%m-%d-%T")
+          next
         fi
 
-        trace "Copying c-lightning config"
-        cp $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH
+        step "Copying c-lightning config"
+        try cp $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH
+        next
     fi
   fi
 
   if [[ $FEATURE_OTSCLIENT == true ]]; then
-    trace "opentimestamps not supported yet."
+    trace "opentimestamps not supported yet." && echo
   fi 
   
   # build cyphernode images
   if [ ! -d $PROXY_DATAPATH ]; then
-    trace "Creating $PROXY_DATAPATH"
-    mkdir -p $PROXY_DATAPATH
+    step "Creating $PROXY_DATAPATH"
+    try mkdir -p $PROXY_DATAPATH
+    next
   fi
-  trace "Creating cyphernode network"
-  docker network create cyphernodenet > /dev/null 2>&1
+
+  if [[ ! $(docker network ls | grep cyphernodenet) =~ cyphernodenet ]]; then
+    step "Creating cyphernode network"
+    try docker network create cyphernodenet > /dev/null 2>&1
+    next
+  fi
 
   if [[ -f $topLevel/docker-compose.yaml ]]; then
-    trace "Creating backup of docker-compose.yaml"
-    cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
+    step "Creating backup of docker-compose.yaml"
+    try cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
+    next
   fi
 
-  trace "Copying docker-compose.yaml"
-  cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
+  step "Copying docker-compose.yaml"
+  try cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
+  next
 
-  trace "Copying start and stop scripts"
-  cp $sourceDataPath/installer/start.sh $topLevel
-  cp $sourceDataPath/installer/stop.sh $topLevel
-  chmod +x start.sh stop.sh
+  step "Copying start and stop scripts"
+  try cp $sourceDataPath/installer/start.sh $topLevel
+  try cp $sourceDataPath/installer/stop.sh $topLevel
+  try chmod +x start.sh stop.sh
+  next
 
   echo "+--------------------------+"
   echo "| To start cyphernode run: |"
@@ -169,12 +245,12 @@ if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
 fi
 
 if [[ $CONFIGURE == 1 ]]; then
-  trace "Starting configuration phase"
+  trace "Starting configuration phase" && echo
   configure $RECREATE
 fi
 
 if [[ $INSTALL == 1 ]]; then
-  trace "Starting installation phase"
+  trace "Starting installation phase" && echo
   install
 fi
 
