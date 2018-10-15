@@ -199,10 +199,6 @@ install_docker() {
     fi
   fi
 
-  if [[ $FEATURE_OTSCLIENT == true ]]; then
-    trace "opentimestamps not supported yet." && echo
-  fi 
-  
   # build cyphernode images
   if [ ! -d $PROXY_DATAPATH ]; then
     step "Creating $PROXY_DATAPATH"
