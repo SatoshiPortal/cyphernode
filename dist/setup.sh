@@ -20,6 +20,17 @@ trace()
     echo -n "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}" > /dev/stderr
   fi
 }
+
+log()
+{
+  echo -n "${1}" > /dev/stderr
+}
+
+logline()
+{
+  echo "${1}" > /dev/stderr
+}
+
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 # Use step(), try(), and next() to perform a series of commands and print
 # [  OK  ] or [FAILED] at the end. The step as a whole fails if any individual
@@ -31,7 +42,7 @@ trace()
 #     try mount -o remount,rw /boot
 #     next
 step() {
-    trace "$@"
+    log "$@"
 
     STEP_OK=0
     [[ -w /tmp ]] && echo $STEP_OK > /tmp/step.$$
@@ -264,12 +275,12 @@ if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
 fi
 
 if [[ $CONFIGURE == 1 ]]; then
-  trace "Starting configuration phase" && echo
+  logline "Configuration phase"
   configure $RECREATE
 fi
 
 if [[ $INSTALL == 1 ]]; then
-  trace "Starting installation phase" && echo
+  logline "Starting installation phase"
   install
 fi
 
