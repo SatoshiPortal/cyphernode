@@ -93,12 +93,13 @@ module.exports = class extends Generator {
   }
 
   async prompting() {
+
+    await splash();
+
     if( this.recreate ) {
       // no prompts
       return;
     }
-
-    await splash();
     
     let prompts = [];
     for( let m of prompters ) {
