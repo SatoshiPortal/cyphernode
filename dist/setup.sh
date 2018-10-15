@@ -114,7 +114,52 @@ configure() {
              --rm -it cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
 }
 
+copy_file() {
+  local doCopy=0
+  local sourceFile=$1
+  local targetFile=$2
+  local createBackup=1
+
+  if [[ ! ''$3 == '' ]]; then
+    createBackup=$3
+  fi
+
+  if [[ ! -f $sourceFile ]]; then
+    return 1;
+  fi
+  
+  if [[ -f $targetFile ]]; then
+    cmp --silent $sourceFile $targetFile
+    if [[ $? == 1 ]]; then
+      # different content
+      if [[ $createBackup == 1 ]]; then
+        step "Creating backup of $targetFile"
+        try cp $targetFile $targetFile-$(date +"%y-%m-%d-%T")
+        next
+      fi
+      doCopy=1
+    fi
+  else
+    doCopy=1
+  fi
+
+  if [[ $doCopy == 1 ]]; then
+    local basename=$(basename "$sourceFile")
+    step "Copying $basename"
+    try cp $sourceFile $targetFile
+    next
+  fi
+}
+
 install_docker() {
+
+  local archpath=$(uname -m)
+
+  # compat mode for SatoshiPortal repo
+  # TODO: add more mappings?
+  if [[ $archpath == 'armv7l' ]]; then
+    archpath="rpi"
+  fi
 
   local sourceDataPath=./
   local topLevel=./
@@ -125,16 +170,7 @@ install_docker() {
       try mkdir -p $BITCOIN_DATAPATH
       next
     fi
-
-    if [[ -f $BITCOIN_DATAPATH/bitcoin.conf ]]; then
-      step "Creating backup of $BITCOIN_DATAPATH/bitcoin.conf"
-      try cp $BITCOIN_DATAPATH/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf-$(date +"%y-%m-%d-%T")
-      next
-    fi
-
-    step "Copying bitcoin core node config"
-    try cp $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH
-    next
+    copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
@@ -148,16 +184,7 @@ install_docker() {
           try mkdir -p $LIGHTNING_DATAPATH
           next
         fi
-
-        if [[ -f $LIGHTNING_DATAPATH/config ]]; then
-          step "Creating backup of $LIGHTNING_DATAPATH/config"
-          try cp $LIGHTNING_DATAPATH/config $LIGHTNING_DATAPATH/config-$(date +"%y-%m-%d-%T")
-          next
-        fi
-
-        step "Copying c-lightning config"
-        try cp $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH
-        next
+        copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config
     fi
   fi
 
@@ -178,19 +205,11 @@ install_docker() {
     next
   fi
 
-  if [[ -f $topLevel/docker-compose.yaml ]]; then
-    step "Creating backup of docker-compose.yaml"
-    try cp $topLevel/docker-compose.yaml $topLevel/docker-compose.yaml-$(date +"%y-%m-%d-%T")
-    next
-  fi
+  copy_file $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
+  copy_file $sourceDataPath/installer/start.sh $topLevel/start.sh
+  copy_file $sourceDataPath/installer/stop.sh $topLevel/stop.sh
 
-  step "Copying docker-compose.yaml"
-  try cp $sourceDataPath/installer/docker/docker-compose.yaml $topLevel/docker-compose.yaml
-  next
-
-  step "Copying start and stop scripts"
-  try cp $sourceDataPath/installer/start.sh $topLevel
-  try cp $sourceDataPath/installer/stop.sh $topLevel
+  step "Making scripts executable"  
   try chmod +x start.sh stop.sh
   next
 
