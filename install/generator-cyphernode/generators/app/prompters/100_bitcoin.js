@@ -77,7 +77,7 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_uacomment' ),
       message: prefix()+'Any UA comment?'+'\n',
       filter: utils._trimFilter,
-      validate: utils._UACommentValidator
+      validate: (input)=> {return utils._optional(input,utils._UACommentValidator) }
     }];
   },
   env: function( props ) {

@@ -139,6 +139,15 @@ module.exports = class extends Generator {
     return this.props && this.props[name];
   }
 
+  _optional(input,validator) {
+    if( input === undefined || 
+        input === null || 
+        input === '' ) {
+      return true;
+    }
+    return validator(input);
+  }
+
   _ipOrFQDNValidator( host ) {
     host = (host+"").trim();
     if( !(validator.isIP(host) || 
