@@ -1,0 +1,131 @@
+#!/bin/sh
+
+#
+# This is not designed to serve thousands of API key!
+#
+# header = {"alg":"HS256","typ":"JWT"}
+# header64 = base64(header) = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg==
+#
+# payload = {"id":"001","exp":1538528077}
+# payload64 = base64(payload) = eyJpZCI6IjAwMSIsImV4cCI6MTUzODUyODA3N30K
+#
+# signature = hmacsha256(header64.payload64, key)
+#
+# token = header64.payload64.signature = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg==.eyJpZCI6IjAwMSIsImV4cCI6MTUzODUyODA3N30K.signature
+#
+
+. ./trace.sh
+
+verify_sign()
+{
+  local returncode
+
+  local header64=$(echo ${1} | cut -sd '.' -f1)
+  local payload64=$(echo ${1} | cut -sd '.' -f2)
+  local signature=$(echo ${1} | cut -sd '.' -f3)
+
+  trace "[verify_sign] header64=${header64}"
+  trace "[verify_sign] payload64=${payload64}"
+  trace "[verify_sign] signature=${signature}"
+
+  local payload=$(echo ${payload64} | base64 -d)
+  local exp=$(echo ${payload} | jq ".exp")
+  local current=$(date +"%s")
+
+  trace "[verify_sign] payload=${payload}"
+  trace "[verify_sign] exp=${exp}"
+  trace "[verify_sign] current=${current}"
+
+  if [ ${exp} -gt ${current} ]; then
+    trace "[verify_sign] Not expired, let's validate signature"
+    local id=$(echo ${payload} | jq ".id" | tr -d '"')
+		trace "[verify_sign] id=${id}"
+
+		# Check for code injection
+		# id will usually be an int, but could be alphanum... nothing else
+		if ! [[ $id =~ '^[A-Za-z0-9]$']]; then
+			trace "[verify_sign] Potential code injection, exiting"
+			return 1
+		fi
+
+    # It is so much faster to include the keys here instead of grep'ing the file for key.
+    . ./keys.properties
+
+    local key
+    eval key='$ukey_'$id
+    trace "[verify_sign] key=${key}"
+    local comp_sign=$(echo "${header64}.${payload64}" | openssl dgst -hmac "${key}" -sha256 -r | cut -sd ' ' -f1)
+
+    trace "[verify_sign] comp_sign=${comp_sign}"
+
+    if [ "${comp_sign}" = "${signature}" ]; then
+      trace "[verify_sign] Valid signature!"
+
+      verify_group ${id}
+      returncode=$?
+
+      if [ "${returncode}" -eq 0 ]; then
+        echo -en "Status: 200 OK\r\n\r\n"
+        return
+      fi
+      trace "[verify_sign] Invalid group!"
+      return 1
+    fi
+    trace "[verify_sign] Invalid signature!"
+    return 1
+  fi
+
+  trace "[verify_sign] Expired!"
+  return 1
+}
+
+verify_group()
+{
+  trace "[verify_group] Verifying group..."
+
+  local id=${1}
+  local action=${REQUEST_URI:1}
+	trace "[verify_group] action=${action}"
+
+	# Check for code injection
+	# action could be alphanum... nothing else
+	if ! [[ $action =~ '^[A-Za-z]$']]; then
+		trace "[verify_group] Potential code injection, exiting"
+		return 1
+	fi
+
+  # It is so much faster to include the keys here instead of grep'ing the file for key.
+  . ./api.properties
+
+  local needed_group
+  local ugroups
+
+  eval needed_group='$action_'${action}
+  trace "[verify_group] needed_group=${needed_group}"
+
+  eval ugroups='$ugroups_'$id
+  trace "[verify_group] user groups=${ugroups}"
+
+  case "${ugroups}" in
+    *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+  esac
+
+  trace "[verify_group] Access NOT granted"
+  return 1
+}
+
+
+# $HTTP_AUTHORIZATION = Bearer <token>
+# If this is not found in header, we leave
+trace "[auth.sh] HTTP_AUTHORIZATION=${HTTP_AUTHORIZATION}"
+if [ "${HTTP_AUTHORIZATION:0:6}" = "Bearer" ]; then
+  token="${HTTP_AUTHORIZATION:6}"
+
+  if [ -n "$token" ]; then
+  trace "[auth.sh] Valid format for authorization header"
+  verify_sign "${token}"
+  [ "$?" -eq "0" ] && return
+  fi
+fi
+
+echo -en "Status: 403 Forbidden\r\n\r\n"
