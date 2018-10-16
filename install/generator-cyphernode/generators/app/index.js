@@ -10,7 +10,7 @@ const coinstring = require('coinstring');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 
-const reset = '\u001B[u';
+const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
 
