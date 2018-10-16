@@ -15,6 +15,7 @@ COPY keys.properties /etc/nginx/conf.d
 COPY api.properties /etc/nginx/conf.d
 COPY trace.sh /etc/nginx/conf.d
 COPY tests.sh /etc/nginx/conf.d
+COPY ip-whitelist.conf /etc/nginx/conf.d
 
 RUN chmod +x /etc/nginx/conf.d/auth.sh entrypoint.sh
 

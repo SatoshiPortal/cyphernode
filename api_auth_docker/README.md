@@ -34,6 +34,19 @@ kapi_id="006";kapi_key="19e121b698014fac638f772c4ff5775a738856bf6cbdef0dc8897105
 
 You can have multiple keys, but be aware that this container has **not** been built to support thousands of API keys!  **Cyphernode should be used locally**, not publicly as a service.
 
+## IP Addresses Whitelist (**do not use for now**)
+**Docker Swarm obfuscates real client IP, this feature is not ready for now**
+
+You can have an IP whitelist policy, denying everything except the explicit IP addresses you need.  Edit ip-whitelist.conf file:
+
+```conf
+# Leave commented if you don't want to use IP whitelist
+
+# List of white listed IP addresses...
+#allow 45.56.67.78;
+#deny all;
+```
+
 ## SSL
 
 If you already have your certificates and keystores infra, you already know what to do and your can skip this section.  Put your files in the bound volume (~/cyphernode-ssl/ see volume path in docker-compose.yml).

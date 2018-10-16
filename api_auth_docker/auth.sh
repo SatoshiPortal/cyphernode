@@ -39,7 +39,14 @@ verify_sign()
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
     local id=$(echo ${payload} | jq ".id" | tr -d '"')
-    trace "[verify_sign] id=${id}"
+		trace "[verify_sign] id=${id}"
+
+		# Check for code injection
+		# id will usually be an int, but could be alphanum... nothing else
+		if ! [[ $id =~ '^[A-Za-z0-9]$']]; then
+			trace "[verify_sign] Potential code injection, exiting"
+			return 1
+		fi
 
     # It is so much faster to include the keys here instead of grep'ing the file for key.
     . ./keys.properties
@@ -78,6 +85,14 @@ verify_group()
 
   local id=${1}
   local action=${REQUEST_URI:1}
+	trace "[verify_group] action=${action}"
+
+	# Check for code injection
+	# action could be alphanum... nothing else
+	if ! [[ $action =~ '^[A-Za-z]$']]; then
+		trace "[verify_group] Potential code injection, exiting"
+		return 1
+	fi
 
   # It is so much faster to include the keys here instead of grep'ing the file for key.
   . ./api.properties
