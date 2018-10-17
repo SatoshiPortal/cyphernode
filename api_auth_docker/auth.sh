@@ -42,11 +42,11 @@ verify_sign()
 		trace "[verify_sign] id=${id}"
 
 		# Check for code injection
-		# id will usually be an int, but could be alphanum... nothing else
-		if ! [[ $id =~ '^[A-Za-z0-9]$']]; then
+		# id will usually be an int, but can be alphanum... nothing else
+		case $id in (*[![:alnum:]]*|"")
 			trace "[verify_sign] Potential code injection, exiting"
 			return 1
-		fi
+		esac
 
     # It is so much faster to include the keys here instead of grep'ing the file for key.
     . ./keys.properties
@@ -88,11 +88,11 @@ verify_group()
 	trace "[verify_group] action=${action}"
 
 	# Check for code injection
-	# action could be alphanum... nothing else
-	if ! [[ $action =~ '^[A-Za-z]$']]; then
+	# action can be alphanum... nothing else
+	case $action in (*[![:alnum:]]*|"")
 		trace "[verify_group] Potential code injection, exiting"
 		return 1
-	fi
+	esac
 
   # It is so much faster to include the keys here instead of grep'ing the file for key.
   . ./api.properties
