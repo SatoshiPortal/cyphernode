@@ -213,6 +213,7 @@ install_docker() {
           next
         fi
         copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config
+        copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf
     fi
   fi
 
