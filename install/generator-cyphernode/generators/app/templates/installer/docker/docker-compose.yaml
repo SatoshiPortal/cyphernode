@@ -69,6 +69,7 @@ services:
       - "9735:9735"
     volumes:
       - "<%= lightning_datapath%>:/.lightning"
+      - "<%= lightning_datapath%>/bitcoin.conf:/.bitcoin/bitcoin.conf"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
