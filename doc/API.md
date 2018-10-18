@@ -87,6 +87,48 @@ Proxy response:
 }
 ```
 
+### Callbacks
+
+When cyphernode receives a transaction confirmation (/conf endpoint) on a watched address, it makes an HTTP POST request using the corresponding callback URL previously supplied in the watch call (/watch endpoint).  The POST body will contain the following information:
+
+```json
+{
+  "id":"3832",
+  "address":"2NB96fbwy8eoHttuZTtbwvvhEYrBwz494ov",
+  "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "vout_n":1,
+  "sent_amount":0.84050318,
+  "confirmations":0,
+  "received":"2018-10-18T15:41:06+0000",
+  "size":371,
+  "vsize":371,
+  "fees":0.00002992,
+  "is_replaceable":0,
+  "blockhash":"",
+  "blocktime":"",
+  "blockheight":""
+}
+```
+
+```json
+{
+  "id":"3832",
+  "address":"2NB96fbwy8eoHttuZTtbwvvhEYrBwz494ov",
+  "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "vout_n":1,
+  "sent_amount":0.84050318,
+  "confirmations":1,
+  "received":"2018-10-18T15:41:06+0000",
+  "size":371,
+  "vsize":166,
+  "fees":0.00002992,
+  "is_replaceable":0,
+  "blockhash":"00000000000000000011bb83bb9bed0f6e131d0d0c903ec3a063e00b3aa00bf6",
+  "blocktime":"2018-10-18T14:58:49+0000",
+  "blockheight":""
+}
+```
+
 ### Get the Best Block Hash (called by application)
 
 Returns the best block hash of the watching Bitcoin node.
