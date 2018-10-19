@@ -9,6 +9,7 @@ const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
+const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
 
 const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
@@ -75,15 +76,15 @@ module.exports = class extends Generator {
     if( fs.existsSync(this.destinationPath('config.json')) ) {
       this.props = require(this.destinationPath('config.json'));
     } else {
-      this.props = {
-        'derivation_path': '0/n',
-        'installer': 'docker',
-        'devmode': false,
-        'devregistry': false
-      };
+      this.props = {};
     }
 
+    this.props.derivation_path = this.props.derivation_path || '0/n';
+    this.props.installer = this.props.installer ||  'docker';
     this.props.devmode = this.props.devmode || false;
+    this.props.devregistry = this.props.devregistry || false;
+    this.props.devmode = this.props.devmode || false;
+    this.props.username = this.props.username || 'cyphernode';
 
     this.featureChoices = featureChoices;
     for( let c of this.featureChoices ) {
@@ -183,6 +184,13 @@ module.exports = class extends Generator {
   _notEmptyValidator( path ) {
     if( !path ) {
       throw new Error('Please enter something');
+    }
+    return true;
+  }
+
+  _usernameValidator( user ) {
+     if( !userRegexp.test( user ) ) {
+      throw new Error('Choose a valid username');
     }
     return true;
   }

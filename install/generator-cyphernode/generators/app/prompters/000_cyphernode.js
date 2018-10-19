@@ -38,6 +38,14 @@ module.exports = {
     },
     {
       type: 'input',
+      name: 'username',
+      default: utils._getDefault( 'username' ),
+      message: prefix()+'What username will cyphernode run under?'+'\n',
+      filter: utils._trimFilter,
+      validate: utils._usernameValidator
+    },
+    {
+      type: 'input',
       name: 'xpub',
       default: utils._getDefault( 'xpub' ),
       message: prefix()+'What is your xpub to watch?'+'\n',
