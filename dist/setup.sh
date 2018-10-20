@@ -135,9 +135,14 @@ configure() {
     clear && echo "Thinking..."
   fi
 
+  PW_ENV=''
+  if [[ $CFG_PASSWORD ]]; then
+    PW_ENV=" -e CFG_PASSWORD=$CFG_PASSWORD"
+  fi
+
   # configure features of cyphernode
   docker run -v $current_path:/data \
-             --log-driver=none\
+             --log-driver=none$PW_ENV \
              --rm -it cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
 }
 
