@@ -118,12 +118,6 @@ module.exports = class extends Generator {
         process.exit(1);
       }
 
-      this._assignConfigDefaults(this.props);
-
-      for( let c of this.featureChoices ) {
-        c.checked = this._isChecked( 'features', c.value );
-      }
-
     } else {
       let r = {};
       process.stdout.write(reset);
@@ -149,10 +143,12 @@ module.exports = class extends Generator {
 
       this.configurationPassword = r.password0;
       this.props = {};
-      this._assignConfigDefaults(this.props);
 
-      console.log(chalk.bold.green('Password is set'));
+    }
 
+    this._assignConfigDefaults(this.props);
+    for( let c of this.featureChoices ) {
+      c.checked = this._isChecked( 'features', c.value );
     }
   }
 
