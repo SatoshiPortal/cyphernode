@@ -81,16 +81,21 @@ module.exports = class extends Generator {
   async _initConfig() {
     if( fs.existsSync(this.destinationPath('config.7z')) ) {
       let r = {};
-      while( !r.password ) {
-        r = await this.prompt([{
-          type: 'password',
-          name: 'password',
-          message: chalk.bold.blue('Enter your configuration password?'),
-          filter: this._trimFilter
-        }]);
+
+      if( process.env.CFG_PASSWORD ) {
+        this.configurationPassword = process.env.CFG_PASSWORD;
+      } else {
+        process.stdout.write(reset);
+        while( !r.password ) {
+          r = await this.prompt([{
+            type: 'password',
+            name: 'password',
+            message: chalk.bold.blue('Enter your configuration password?'),
+            filter: this._trimFilter
+          }]);
+        }
+        this.configurationPassword = r.password;
       }
-      
-      this.configurationPassword = r.password;
 
       const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
 
@@ -121,6 +126,7 @@ module.exports = class extends Generator {
 
     } else {
       let r = {};
+      process.stdout.write(reset);
       while( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
 
         if( r.password0 && r.password1 && r.password0 !== r.password1 ) {
@@ -152,7 +158,6 @@ module.exports = class extends Generator {
 
   async prompting() {
 
-    process.stdout.write(reset);
     await this._initConfig();
     await sleep(1000);
     await splash();
