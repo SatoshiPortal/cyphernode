@@ -177,9 +177,7 @@ module.exports = class extends Generator {
     const configJsonString = JSON.stringify(this.props);
     const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
 
-    if( archive.writeEntry( 'config.json', configJsonString ) ) {
-      console.log(chalk.bold.green( 'config archive was written' ));
-    } else {
+    if( !archive.writeEntry( 'config.json', configJsonString ) ) {
       console.log(chalk.bold.red( 'error! config archive was not written' ));
     }
 
