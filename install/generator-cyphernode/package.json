@@ -20,6 +20,7 @@
     "npm": ">= 4.0.0"
   },
   "dependencies": {
+    "@rauschma/stringio": "^1.4.0",
     "chalk": "^2.1.0",
     "coinstring": "^2.3.0",
     "validator": "^10.8.0",
