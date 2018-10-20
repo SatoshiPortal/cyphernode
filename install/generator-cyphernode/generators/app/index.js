@@ -7,6 +7,7 @@ const validator = require('validator');
 const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
+const Archive = require('./lib/archive.js');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
@@ -73,28 +74,87 @@ module.exports = class extends Generator {
       this.recreate = true;
     }
 
-    if( fs.existsSync(this.destinationPath('config.json')) ) {
-      this.props = require(this.destinationPath('config.json'));
-    } else {
-      this.props = {};
-    }
-
-    this.props.derivation_path = this.props.derivation_path || '0/n';
-    this.props.installer = this.props.installer ||  'docker';
-    this.props.devmode = this.props.devmode || false;
-    this.props.devregistry = this.props.devregistry || false;
-    this.props.devmode = this.props.devmode || false;
-    this.props.username = this.props.username || 'cyphernode';
-
     this.featureChoices = featureChoices;
-    for( let c of this.featureChoices ) {
-      c.checked = this._isChecked( 'features', c.value );
-    }
 
+  }
+
+  async _initConfig() {
+    if( fs.existsSync(this.destinationPath('config.7z')) ) {
+      let r = {};
+      while( !r.password ) {
+        r = await this.prompt([{
+          type: 'password',
+          name: 'password',
+          message: chalk.bold.blue('Enter your configuration password?'),
+          filter: this._trimFilter
+        }]);
+      }
+      
+      this.configurationPassword = r.password;
+
+      const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
+
+      r = await archive.readEntry('config.json');
+
+      if( r.error ) {
+        console.log(chalk.bold.red('Password is wrong. Have a nice day.'));
+        process.exit(1);
+      }
+      
+      if( !r.value ) {
+        console.log(chalk.bold.red('config archive is corrupt.'));
+        process.exit(1);
+      }
+
+      try {
+        this.props = JSON.parse(r.value);
+      } catch( err ) {
+        console.log(chalk.bold.red('config archive is corrupt.'));
+        process.exit(1);
+      }
+
+      this._assignConfigDefaults(this.props);
+
+      for( let c of this.featureChoices ) {
+        c.checked = this._isChecked( 'features', c.value );
+      }
+
+    } else {
+      let r = {};
+      while( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
+
+        if( r.password0 && r.password1 && r.password0 !== r.password1 ) {
+          console.log(chalk.bold.red('Passwords do not match')+'\n');
+        }
+
+        r = await this.prompt([{
+          type: 'password',
+          name: 'password0',
+          message: chalk.bold.blue('Choose your configuration password'),
+          filter: this._trimFilter
+        },
+        {
+          type: 'password',
+          name: 'password1',
+          message: chalk.bold.blue('Confirm your configuration password'),
+          filter: this._trimFilter
+        }]);
+      }
+
+      this.configurationPassword = r.password0;
+      this.props = {};
+      this._assignConfigDefaults(this.props);
+
+      console.log(chalk.bold.green('Password is set'));
+
+    }
   }
 
   async prompting() {
 
+    process.stdout.write(reset);
+    await this._initConfig();
+    await sleep(1000);
     await splash();
 
     if( this.recreate ) {
@@ -113,7 +173,14 @@ module.exports = class extends Generator {
   }
 
   writing() {
-    fs.writeFileSync(this.destinationPath('config.json'), JSON.stringify(this.props, null, 2));
+    const configJsonString = JSON.stringify(this.props);
+    const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
+
+    if( archive.writeEntry( 'config.json', configJsonString ) ) {
+      console.log(chalk.bold.green( 'config archive was written' ));
+    } else {
+      console.log(chalk.bold.red( 'error! config archive was not written' ));
+    }
 
     for( let m of prompters ) {
       const name = m.name();      
@@ -132,6 +199,16 @@ module.exports = class extends Generator {
   }
 
   /* some utils */
+
+  _assignConfigDefaults( props ) {
+    props.derivation_path = this.props.derivation_path || '0/n';
+    props.installer = this.props.installer ||  'docker';
+    props.devmode = this.props.devmode || false;
+    props.devregistry = this.props.devregistry || false;
+    props.devmode = this.props.devmode || false;
+    props.username = this.props.username || 'cyphernode';
+  }
+
   _isChecked( name, value ) {
     return this.props && this.props[name] && this.props[name].indexOf(value) != -1 ;
   }
