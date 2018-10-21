@@ -20,14 +20,14 @@ module.exports = {
       // input, confirm, list, rawlist, expand, checkbox, password, editor
       type: 'checkbox',
       name: 'features',
-      message: prefix()+'What features do you want to add to your cyphernode?'+'\n',
+      message: prefix()+'What features do you want to add to your cyphernode?',
       choices: utils._featureChoices()
     },
     {
       type: 'list',
       name: 'net',
       default: utils._getDefault( 'net' ),
-      message: prefix()+'What net do you want to run on?'+'\n',
+      message: prefix()+'What net do you want to run on?',
       choices: [{
         name: "Testnet",
         value: "testnet"
@@ -40,7 +40,7 @@ module.exports = {
       type: 'input',
       name: 'username',
       default: utils._getDefault( 'username' ),
-      message: prefix()+'What username will cyphernode run under?'+'\n',
+      message: prefix()+'What username will cyphernode run under?',
       filter: utils._trimFilter,
       validate: utils._usernameValidator
     },
@@ -48,7 +48,7 @@ module.exports = {
       type: 'input',
       name: 'xpub',
       default: utils._getDefault( 'xpub' ),
-      message: prefix()+'What is your xpub to watch?'+'\n',
+      message: prefix()+'What is your xpub to watch?',
       filter: utils._trimFilter,
       validate: utils._xkeyValidator
     },
@@ -56,7 +56,7 @@ module.exports = {
       type: 'input',
       name: 'derivation_path',
       default: utils._getDefault( 'derivation_path' ),
-      message: prefix()+'What is your address derivation path?'+'\n',
+      message: prefix()+'What is your address derivation path?',
       filter: utils._trimFilter,
       validate: utils._derivationPathValidator
     }];

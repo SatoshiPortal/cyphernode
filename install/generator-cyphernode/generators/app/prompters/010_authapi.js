@@ -20,7 +20,7 @@ module.exports = {
       type: 'password',
       name: 'auth_clientkeyspassword',
       default: utils._getDefault( 'auth_clientkeyspassword' ),
-      message: prefix()+'Enter a password to protect your client keys with'+'\n',
+      message: prefix()+'Enter a password to protect your client keys with',
       filter: utils._trimFilter,
       validate: utils._notEmptyValidator
     },
