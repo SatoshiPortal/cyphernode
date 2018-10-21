@@ -127,23 +127,29 @@ configure() {
 
   
 
-  ARCH=$(uname -m)
+  local arch=$(uname -m)
+  local pw_env=''
+  local interactive=' -it'
 
-  if [[ $ARCH =~ ^arm ]]; then
+  if [[ $CFG_PASSWORD ]]; then
+    pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
+    if [[ ''$recreate == 'recreate' ]]; then
+      logline 'Non interactive mode...'
+      interactive=''
+    fi
+  fi
+
+
+  if [[ $arch =~ ^arm ]]; then
     clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so small. :D"
   else
     clear && echo "Thinking..."
   fi
 
-  PW_ENV=''
-  if [[ $CFG_PASSWORD ]]; then
-    PW_ENV=" -e CFG_PASSWORD=$CFG_PASSWORD"
-  fi
-
   # configure features of cyphernode
   docker run -v $current_path:/data \
-             --log-driver=none$PW_ENV \
-             --rm -it cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
+             --log-driver=none$pw_env \
+             --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
 }
 
 copy_file() {
