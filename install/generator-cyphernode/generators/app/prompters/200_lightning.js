@@ -30,7 +30,7 @@ module.exports = {
       type: 'list',
       name: 'lightning_implementation',
       default: utils._getDefault( 'lightning_implementation' ),
-      message: prefix()+'What lightning implementation do you want to use?',
+      message: prefix()+'What lightning implementation do you want to use?'+utils._getHelp('lightning_implementation'),
       choices: [
         {
           name: 'C-lightning',
@@ -51,7 +51,7 @@ module.exports = {
       default: utils._getDefault( 'lightning_external_ip' ),
       filter: utils._trimFilter,
       validate: utils._ipOrFQDNValidator,
-      message: prefix()+'What external ip does your lightning node have?',
+      message: prefix()+'What external ip does your lightning node have?'+utils._getHelp('lightning_external_ip'),
     },
     {
       when: featureCondition,
@@ -60,7 +60,7 @@ module.exports = {
       default: utils._getDefault( 'lightning_nodename' ),
       filter: utils._trimFilter,
       validate: utils._notEmptyValidator,
-      message: prefix()+'What name has your lightning node?',
+      message: prefix()+'What name has your lightning node?'+utils._getHelp('lightning_nodename'),
     },
     {
       when: featureCondition,
@@ -69,7 +69,7 @@ module.exports = {
       default: utils._getDefault( 'lightning_nodecolor' ),
       filter: utils._trimFilter,
       validate: utils._colorValidator,
-      message: prefix()+'What color has your lightning node?',
+      message: prefix()+'What color has your lightning node?'+utils._getHelp('lightning_nodecolor'),
     }];
   },
   templates: function( props ) {
