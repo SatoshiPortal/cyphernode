@@ -17,18 +17,18 @@
 trace()
 {
   if [ -n "${TRACING}" ]; then
-    echo -n "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}" > /dev/stderr
+    echo -n "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}"
   fi
 }
 
 log()
 {
-  echo -n "${1}" > /dev/stderr
+  echo -n "${1}"
 }
 
 logline()
 {
-  echo "${1}" > /dev/stderr
+  echo "${1}"
 }
 
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
