@@ -7,5 +7,5 @@ docker stack deploy -c docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
 export USER=$(id -u):$(id -g)
 export ARCH=$(uname -m)
-docker-compose -f docker-compose.yaml up -d
+docker-compose -f docker-compose.yaml up -d --remove-orphans
 <% } %>
