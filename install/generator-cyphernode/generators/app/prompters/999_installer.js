@@ -28,7 +28,7 @@ module.exports = {
       type: 'list',
       name: 'installer_mode',
       default: utils._getDefault( 'installer_mode' ),
-      message: prefix()+chalk.red('Where do you want to install cyphernode?')+'\n',
+      message: prefix()+chalk.red('Where do you want to install cyphernode?'),
       choices: [{
         name: "Docker",
         value: "docker"
@@ -47,7 +47,7 @@ module.exports = {
       default: utils._getDefault( 'proxy_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where to store your proxy db?'+'\n',
+      message: prefix()+'Where to store your proxy db?',
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
@@ -56,7 +56,7 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your blockchain data?'+'\n',
+      message: prefix()+'Where is your blockchain data?',
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
@@ -65,21 +65,21 @@ module.exports = {
       default: utils._getDefault( 'lightning_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your lightning node data?'+'\n',
+      message: prefix()+'Where is your lightning node data?',
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',
       default: utils._getDefault( 'bitcoin_expose' ),
-      message: prefix()+'Expose bitcoin full node outside of the docker network?'+'\n',
+      message: prefix()+'Expose bitcoin full node outside of the docker network?',
     },
     {
       when: installerDocker,
       type: 'list',
       name: 'docker_mode',
       default: utils._getDefault( 'docker_mode' ),
-      message: prefix()+'What docker mode: docker swarm or docker-compose?'+'\n',
+      message: prefix()+'What docker mode: docker swarm or docker-compose?',
       choices: [{
         name: "docker swarm",
         value: "swarm"
