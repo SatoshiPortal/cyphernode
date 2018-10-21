@@ -115,6 +115,15 @@ echo '[38;5;148m[39m
 ## /utils ----
 
 
+modify_permissions() {
+  local directories=("installer" "authentication" "lightning" "bitcoin" "docker-compose.yaml")
+  for d in "${directories[@]}"
+  do
+    if [[ -e $d ]]; then
+      chmod -R og-rwx $d
+    fi
+  done
+}
 
 configure() {
   local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -129,14 +138,17 @@ configure() {
 
   local arch=$(uname -m)
   local pw_env=''
-  local interactive=' -it'
+  local interactive=''
+  local gen_options=''
+
+  if [[ -t 1 ]]; then
+    interactive=' -it'
+  else
+    gen_options=' --force 2'
+  fi
 
   if [[ $CFG_PASSWORD ]]; then
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
-    if [[ ''$recreate == 'recreate' ]]; then
-      logline 'Non interactive mode...'
-      interactive=''
-    fi
   fi
 
 
@@ -149,7 +161,7 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path:/data \
              --log-driver=none$pw_env \
-             --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode $recreate
+             --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
 }
 
 copy_file() {
@@ -261,7 +273,6 @@ install_docker() {
 }
 
 install() {
-  . installer/config.sh
   if [[ ''$INSTALLER_MODE == 'none' ]]; then
     echo "Skipping installation phase"
   elif [[ ''$INSTALLER_MODE == 'docker' ]]; then
@@ -304,6 +315,12 @@ fi
 if [[ $CONFIGURE == 1 ]]; then
   configure $RECREATE
 fi
+
+if [[ -f installer/config.sh ]]; then
+  . installer/config.sh
+fi
+
+modify_permissions
 
 if [[ $INSTALL == 1 ]]; then
   install
