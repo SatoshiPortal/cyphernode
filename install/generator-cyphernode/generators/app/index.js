@@ -8,6 +8,7 @@ const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 const Archive = require('./lib/archive.js');
+const ApiKey = require('./lib/apikey.js');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
@@ -163,6 +164,9 @@ module.exports = class extends Generator {
       return;
     }
     
+    // save auth key password to check if it changed
+    this.auth_clientkeyspassword = this.props.auth_clientkeyspassword;
+
     let prompts = [];
     for( let m of prompters ) {
       prompts = prompts.concat(m.prompts(this));
@@ -173,12 +177,46 @@ module.exports = class extends Generator {
     });
   }
 
-  writing() {
-    const configJsonString = JSON.stringify(this.props);
+
+  async configuring() {
+    if( this.props.auth_recreatekeys || !this.props.auth_keys ) {
+      delete this.props.auth_recreatekeys;
+      const apikey = new ApiKey();
+
+      let configEntries = [];
+      let clientInformation = [];
+
+      apikey.setId('001');
+      apikey.setGroups(['watcher']);
+      await apikey.randomiseKey();
+      configEntries.push(apikey.getConfigEntry());
+      clientInformation.push(apikey.getClientInformation());
+
+      apikey.setId('002');
+      apikey.setGroups(['watcher','spender']);
+      await apikey.randomiseKey();
+      configEntries.push(apikey.getConfigEntry());
+      clientInformation.push(apikey.getClientInformation());
+
+      apikey.setId('003');
+      apikey.setGroups(['watcher','spender','admin']);
+      await apikey.randomiseKey();
+      configEntries.push(apikey.getConfigEntry());
+      clientInformation.push(apikey.getClientInformation());
+
+      this.props.auth_keys = {
+        configEntries: configEntries,
+        clientInformation: clientInformation
+      }
+    } 
+  }
+
+  async writing() {
+    const configJsonString = JSON.stringify(this.props, null, 4);
     const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
 
     if( !archive.writeEntry( 'config.json', configJsonString ) ) {
-      console.log(chalk.bold.red( 'error! config archive was not written' ));
+      console.log(chalk.bold.red( 'error! Config archive was not written' ));
     }
 
     for( let m of prompters ) {
@@ -192,12 +230,29 @@ module.exports = class extends Generator {
         );
       } 
     }
+
+    if( this.props.auth_keys && this.props.auth_keys.clientInformation ) {
+
+      if( this.auth_clientkeyspassword !== this.props.auth_clientkeyspassword ) {
+        fs.unlinkSync( this.destinationPath('clientKeys.7z') );
+      }
+
+      const archive = new Archive( this.destinationPath('clientKeys.7z'), this.props.auth_clientkeyspassword );
+      if( !archive.writeEntry( 'keys.txt', this.props.auth_keys.clientInformation.join('\n') ) ) {
+        console.log(chalk.bold.red( 'error! Client auth key archive was not written' ));
+      }
+    }
+
   }
 
   install() {
   }
 
   /* some utils */
+
+  _clientAuthKeysArchiveExists() {
+     return fs.existsSync( this.destinationPath('clientKeys.7z') );
+  }
 
   _assignConfigDefaults( props ) {
     props.derivation_path = this.props.derivation_path || '0/n';
