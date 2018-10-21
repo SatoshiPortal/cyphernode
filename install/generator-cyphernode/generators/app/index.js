@@ -2,13 +2,13 @@
 const Generator = require('yeoman-generator');
 const chalk = require('chalk');
 const fs = require('fs');
-const wrap = require('wordwrap')(86);
 const validator = require('validator');
 const path = require("path");
 const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 const Archive = require('./lib/archive.js');
 const ApiKey = require('./lib/apikey.js');
+const help = require('./lib/help.js');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
@@ -40,7 +40,9 @@ action_conf=internal
 action_executecallbacks=internal
 `;
 
-
+const prefix = function() {
+  return chalk.green('Cyphernode')+': ';
+};
 
 let prompters = [];
 fs.readdirSync(path.join(__dirname, "prompters")).forEach(function(file) {
@@ -116,7 +118,7 @@ module.exports = class extends Generator {
           r = await this.prompt([{
             type: 'password',
             name: 'password',
-            message: chalk.bold.blue('Enter your configuration password?'),
+            message: prefix()+chalk.bold.blue('Enter your configuration password?'),
             filter: this._trimFilter
           }]);
         }
@@ -156,13 +158,13 @@ module.exports = class extends Generator {
         r = await this.prompt([{
           type: 'password',
           name: 'password0',
-          message: chalk.bold.blue('Choose your configuration password'),
+          message: prefix()+chalk.bold.blue('Choose your configuration password'),
           filter: this._trimFilter
         },
         {
           type: 'password',
           name: 'password1',
-          message: chalk.bold.blue('Confirm your configuration password'),
+          message: prefix()+chalk.bold.blue('Confirm your configuration password'),
           filter: this._trimFilter
         }]);
       }
@@ -191,6 +193,15 @@ module.exports = class extends Generator {
     
     // save auth key password to check if it changed
     this.auth_clientkeyspassword = this.props.auth_clientkeyspassword;
+
+    let r = await this.prompt([{
+      type: 'confirm',
+      name: 'enablehelp',
+      message: prefix()+'Enable help?',
+      default: this._getDefault( 'enablehelp' ),
+    }]);
+
+    this.props.enablehelp = r.enablehelp;
 
     let prompts = [];
     for( let m of prompters ) {
@@ -286,6 +297,7 @@ module.exports = class extends Generator {
   _assignConfigDefaults() {
     this.props = Object.assign( {
       features: [],
+      enablehelp: true,
       net: 'testnet',
       xpub: '',
       derivation_path: '0/n',
@@ -387,12 +399,18 @@ module.exports = class extends Generator {
     return (input+"").trim();
   }
 
-  _wrap(text) {
-    return wrap(text);
-  }
-
   _featureChoices() {
     return this.featureChoices;
+  }
+
+  _getHelp( topic ) {
+    if( !this.props.enablehelp )
+      return '';
+    const helpText = help.text( topic );
+    if( !helpText ||helpText === '' ) {
+      return '';
+    }
+    return "\n\n"+helpText+"\n\n";
   }
 
 };

@@ -47,7 +47,7 @@ module.exports = {
       default: utils._getDefault( 'proxy_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where to store your proxy db?',
+      message: prefix()+'Where to store your proxy db?'+utils._getHelp('proxy_datapath'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
@@ -56,7 +56,7 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your blockchain data?',
+      message: prefix()+'Where is your blockchain data?'+utils._getHelp('bitcoin_datapath'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
@@ -65,21 +65,21 @@ module.exports = {
       default: utils._getDefault( 'lightning_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your lightning node data?',
+      message: prefix()+'Where is your lightning node data?'+utils._getHelp('lightning_datapath'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',
       default: utils._getDefault( 'bitcoin_expose' ),
-      message: prefix()+'Expose bitcoin full node outside of the docker network?',
+      message: prefix()+'Expose bitcoin full node outside of the docker network?'+utils._getHelp('bitcoin_expose'),
     },
     {
       when: installerDocker,
       type: 'list',
       name: 'docker_mode',
       default: utils._getDefault( 'docker_mode' ),
-      message: prefix()+'What docker mode: docker swarm or docker-compose?',
+      message: prefix()+'What docker mode: docker swarm or docker-compose?'+utils._getHelp('docker_mode'),
       choices: [{
         name: "docker swarm",
         value: "swarm"

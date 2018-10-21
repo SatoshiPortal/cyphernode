@@ -20,7 +20,7 @@ module.exports = {
       type: 'password',
       name: 'auth_clientkeyspassword',
       default: utils._getDefault( 'auth_clientkeyspassword' ),
-      message: prefix()+'Enter a password to protect your client keys with',
+      message: prefix()+'Enter a password to protect your client keys with'+utils._getHelp('auth_clientkeyspassword'),
       filter: utils._trimFilter,
       validate: utils._notEmptyValidator
     },
@@ -29,13 +29,13 @@ module.exports = {
       type: 'confirm',
       name: 'auth_recreatekeys',
       default: false,
-      message: prefix()+'Recreate auth keys?'
+      message: prefix()+'Recreate auth keys?'+utils._getHelp('auth_recreatekeys')
     },
     {
       type: 'confirm',
       name: 'auth_edit_ipwhitelist',
       default: false,
-      message: prefix()+'Edit IP whitelist?'
+      message: prefix()+'Edit IP whitelist?'+utils._getHelp('auth_edit_ipwhitelist')
     },
     {
       when: function( props ) { 
@@ -45,14 +45,14 @@ module.exports = {
       },
       type: 'editor',
       name: 'auth_ipwhitelist',
-      message: 'IP whitelist',
+      message: prefix()+'IP whitelist'+utils._getHelp('auth_ipwhitelist'),
       default: utils._getDefault( 'auth_ipwhitelist' )
     },
     {
       type: 'confirm',
       name: 'auth_edit_apiproperties',
       default: false,
-      message: prefix()+'Edit API properties?'
+      message: prefix()+'Edit API properties?'+utils._getHelp('auth_edit_apiproperties')
     },
     {
       when: function( props ) { 
@@ -62,7 +62,7 @@ module.exports = {
       },
       type: 'editor',
       name: 'auth_apiproperties',
-      message: 'API properties',
+      message: prefix()+'API properties'+utils._getHelp('auth_apiproperties'),
       default: utils._getDefault( 'auth_apiproperties' )
     }];
   },

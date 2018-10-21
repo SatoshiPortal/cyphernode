@@ -24,7 +24,7 @@ module.exports = {
       type: 'list',
       name: 'electrum_implementation',
       default: utils._getDefault( 'electrum_implementation' ),
-      message: prefix()+'What electrum implementation do you want to use?',
+      message: prefix()+'What electrum implementation do you want to use?'+utils._getHelp('electrum_implementation'),
       choices: [
         {
           name: 'Electrum personal server',

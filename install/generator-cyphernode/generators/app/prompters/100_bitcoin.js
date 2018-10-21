@@ -28,7 +28,7 @@ module.exports = {
       type: 'list',
       name: 'bitcoin_mode',
       default: utils._getDefault( 'bitcoin_mode' ),
-      message: prefix()+'Where is your bitcoin full node running?',
+      message: prefix()+'Where is your bitcoin full node running?'+utils._getHelp('bitcoin_mode'),
       choices: [
         {
           name: 'Nowhere! I want cyphernode to run one.',
@@ -47,20 +47,20 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_node_ip' ),
       filter: utils._trimFilter,
       validate: utils._ipOrFQDNValidator,
-      message: prefix()+'What is your full node ip address?',
+      message: prefix()+'What is your full node ip address?'+utils._getHelp('bitcoin_node_ip'),
     },
     {
       type: 'input',
       name: 'bitcoin_rpcuser',
       default: utils._getDefault( 'bitcoin_rpcuser' ),
-      message: prefix()+'Name of bitcoin rpc user?',
+      message: prefix()+'Name of bitcoin rpc user?'+utils._getHelp('bitcoin_rpcuser'),
       filter: utils._trimFilter,
     },
     {
       type: 'password',
       name: 'bitcoin_rpcpassword',
       default: utils._getDefault( 'bitcoin_rpcpassword' ),
-      message: prefix()+'Password of bitcoin rpc user?',
+      message: prefix()+'Password of bitcoin rpc user?'+utils._getHelp('bitcoin_rpcpassword'),
       filter: utils._trimFilter,
     },
     {
@@ -68,14 +68,14 @@ module.exports = {
       type: 'confirm',
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
-      message: prefix()+'Run bitcoin node in prune mode?',
-    },
+      message: prefix()+'Run bitcoin node in prune mode?'+utils._getHelp('bitcoin_prune'),
+    }, // TODO: ask for size of prune
     {
       when: bitcoinInternal,
       type: 'input',
       name: 'bitcoin_uacomment',
       default: utils._getDefault( 'bitcoin_uacomment' ),
-      message: prefix()+'Any UA comment?',
+      message: prefix()+'Any UA comment?'+utils._getHelp('bitcoin_uacomment'),
       filter: utils._trimFilter,
       validate: (input)=> {return utils._optional(input,utils._UACommentValidator) }
     }];
