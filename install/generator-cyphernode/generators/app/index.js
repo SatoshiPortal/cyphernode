@@ -17,6 +17,31 @@ const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
 
+const defaultAPIProperties = `
+action_watch=watcher
+action_unwatch=watcher
+action_getactivewatches=watcher
+action_getbestblockhash=watcher
+action_getbestblockinfo=watcher
+action_getblockinfo=watcher
+action_gettransaction=watcher
+action_ln_getinfo=watcher
+action_ln_create_invoice=watcher
+action_getbalance=spender
+action_getnewaddress=spender
+action_spend=spender
+action_addtobatch=spender
+action_batchspend=spender
+action_deriveindex=spender
+action_derivepubpath=spender
+action_ln_pay=spender
+action_ln_newaddr=spender
+action_conf=internal
+action_executecallbacks=internal
+`;
+
+
+
 let prompters = [];
 fs.readdirSync(path.join(__dirname, "prompters")).forEach(function(file) {
   prompters.push(require(path.join(__dirname, "prompters",file)));
@@ -147,7 +172,7 @@ module.exports = class extends Generator {
 
     }
 
-    this._assignConfigDefaults(this.props);
+    this._assignConfigDefaults();
     for( let c of this.featureChoices ) {
       c.checked = this._isChecked( 'features', c.value );
     }
@@ -179,7 +204,8 @@ module.exports = class extends Generator {
 
 
   async configuring() {
-    if( this.props.auth_recreatekeys || !this.props.auth_keys ) {
+    if( this.props.auth_recreatekeys || 
+        this.props.auth_keys.configEntries.length===0 ) {
       delete this.props.auth_recreatekeys;
       const apikey = new ApiKey();
 
@@ -215,12 +241,12 @@ module.exports = class extends Generator {
     const configJsonString = JSON.stringify(this.props, null, 4);
     const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
 
-    if( !archive.writeEntry( 'config.json', configJsonString ) ) {
+    if( !await archive.writeEntry( 'config.json', configJsonString ) ) {
       console.log(chalk.bold.red( 'error! Config archive was not written' ));
     }
 
     for( let m of prompters ) {
-      const name = m.name();      
+      const name = m.name();
       for( let t of m.templates(this.props) ) {
         const p = path.join(name,t);
         this.fs.copyTpl(
@@ -238,7 +264,7 @@ module.exports = class extends Generator {
       }
 
       const archive = new Archive( this.destinationPath('clientKeys.7z'), this.props.auth_clientkeyspassword );
-      if( !archive.writeEntry( 'keys.txt', this.props.auth_keys.clientInformation.join('\n') ) ) {
+      if( !await archive.writeEntry( 'keys.txt', this.props.auth_keys.clientInformation.join('\n') ) ) {
         console.log(chalk.bold.red( 'error! Client auth key archive was not written' ));
       }
     }
@@ -250,17 +276,41 @@ module.exports = class extends Generator {
 
   /* some utils */
 
-  _clientAuthKeysArchiveExists() {
-     return fs.existsSync( this.destinationPath('clientKeys.7z') );
+  _hasAuthKeys() {
+     return this.props && 
+      this.props.auth_keys && 
+      this.props.auth_keys.configEntries &&
+      this.props.auth_keys.configEntries.length > 0;
   }
 
-  _assignConfigDefaults( props ) {
-    props.derivation_path = this.props.derivation_path || '0/n';
-    props.installer = this.props.installer ||  'docker';
-    props.devmode = this.props.devmode || false;
-    props.devregistry = this.props.devregistry || false;
-    props.devmode = this.props.devmode || false;
-    props.username = this.props.username || 'cyphernode';
+  _assignConfigDefaults() {
+    this.props = Object.assign( {
+      features: [],
+      net: 'testnet',
+      xpub: '',
+      derivation_path: '0/n',
+      installer_mode: 'docker',
+      devmode: false,
+      devregistry: false,
+      username: 'cyphernode',
+      docker_mode: 'compose',
+      bitcoin_rpcuser: 'bitcoin',
+      bitcoin_rpcpassword: 'CHANGEME',
+      bitcoin_uacomment: '',
+      bitcoin_prune: false,
+      bitcoin_datapath: '',
+      bitcoin_node_ip: '',
+      bitcoin_mode: 'internal',
+      bitcoin_expose: false,
+      auth_apiproperties: defaultAPIProperties,
+      auth_ipwhitelist: '',
+      auth_keys: { configEntries: [], clientInformation: [] },
+      proxy_datapath: '',
+      lightning_implementation: 'c-lightning',
+      lightning_datapath: '',
+      lightning_nodename: '',
+      lightning_nodecolor: ''
+    }, this.props );
   }
 
   _isChecked( name, value ) {

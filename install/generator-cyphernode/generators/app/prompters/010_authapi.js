@@ -25,13 +25,48 @@ module.exports = {
       validate: utils._notEmptyValidator
     },
     {
+      when: utils._hasAuthKeys,
       type: 'confirm',
       name: 'auth_recreatekeys',
       default: false,
-      message: prefix()+'Recreate auth keys?'+'\n'
+      message: prefix()+'Recreate auth keys?'
+    },
+    {
+      type: 'confirm',
+      name: 'auth_edit_ipwhitelist',
+      default: false,
+      message: prefix()+'Edit IP whitelist?'
+    },
+    {
+      when: function( props ) { 
+        const r = props.auth_edit_ipwhitelist;
+        delete props.auth_edit_ipwhitelist;
+        return r;
+      },
+      type: 'editor',
+      name: 'auth_ipwhitelist',
+      message: 'IP whitelist',
+      default: utils._getDefault( 'auth_ipwhitelist' )
+    },
+    {
+      type: 'confirm',
+      name: 'auth_edit_apiproperties',
+      default: false,
+      message: prefix()+'Edit API properties?'
+    },
+    {
+      when: function( props ) { 
+        const r = props.auth_edit_apiproperties;
+        delete props.auth_edit_apiproperties;
+        return r;
+      },
+      type: 'editor',
+      name: 'auth_apiproperties',
+      message: 'API properties',
+      default: utils._getDefault( 'auth_apiproperties' )
     }];
   },
   templates: function( props ) {
-    return [ 'keys.properties' ];
+    return [ 'keys.properties', 'api.properties', 'ip-whitelist.conf' ];
   }
 };
