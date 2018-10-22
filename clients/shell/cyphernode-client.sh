@@ -8,7 +8,7 @@ invoke_cyphernode()
 	local post=${2}
 
 	local p64=$(echo "{\"id\":\"${id}\",\"exp\":$((`date +"%s"`+10))}" | base64)
-	local s=$(echo "$h64.$p64" | openssl dgst -hmac "$key" -sha256 -r | cut -sd ' ' -f1)
+	local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$key" -sha256 -r | cut -sd ' ' -f1)
 	local token="$h64.$p64.$s"
 
 	if [ -n "${post}" ]; then

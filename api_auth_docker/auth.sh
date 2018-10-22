@@ -39,14 +39,14 @@ verify_sign()
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
     local id=$(echo ${payload} | jq ".id" | tr -d '"')
-		trace "[verify_sign] id=${id}"
+  trace "[verify_sign] id=${id}"
 
-		# Check for code injection
-		# id will usually be an int, but can be alphanum... nothing else
-		case $id in (*[![:alnum:]]*|"")
-			trace "[verify_sign] Potential code injection, exiting"
-			return 1
-		esac
+  # Check for code injection
+  # id will usually be an int, but can be alphanum... nothing else
+  case $id in (*[![:alnum:]]*|"")
+  trace "[verify_sign] Potential code injection, exiting"
+  return 1
+  esac
 
     # It is so much faster to include the keys here instead of grep'ing the file for key.
     . ./keys.properties
@@ -54,8 +54,11 @@ verify_sign()
     local key
     eval key='$ukey_'$id
     trace "[verify_sign] key=${key}"
-    local comp_sign=$(echo "${header64}.${payload64}" | openssl dgst -hmac "${key}" -sha256 -r | cut -sd ' ' -f1)
 
+    local msg="${header64}.${payload64}"
+    trace "[verify_sign] msg=${msg}"
+
+    local comp_sign=$(echo -n "${msg}" | openssl dgst -hmac "${key}" -sha256 -r | cut -sd ' ' -f1)
     trace "[verify_sign] comp_sign=${comp_sign}"
 
     if [ "${comp_sign}" = "${signature}" ]; then
@@ -85,14 +88,14 @@ verify_group()
 
   local id=${1}
   local action=${REQUEST_URI:1}
-	trace "[verify_group] action=${action}"
+  trace "[verify_group] action=${action}"
 
-	# Check for code injection
-	# action can be alphanum... nothing else
-	case $action in (*[![:alnum:]]*|"")
-		trace "[verify_group] Potential code injection, exiting"
-		return 1
-	esac
+  # Check for code injection
+  # action can be alphanum... nothing else
+  case $action in (*[![:alnum:]]*|"")
+  trace "[verify_group] Potential code injection, exiting"
+  return 1
+  esac
 
   # It is so much faster to include the keys here instead of grep'ing the file for key.
   . ./api.properties
