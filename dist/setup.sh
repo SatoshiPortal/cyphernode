@@ -116,7 +116,7 @@ echo '[38;5;148m[39m
 
 
 modify_permissions() {
-  local directories=("installer" "authentication" "lightning" "bitcoin" "docker-compose.yaml")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -215,13 +215,33 @@ install_docker() {
 
   local sourceDataPath=./
 
+  if [ ! -d $GATEKEEPER_DATAPATH ]; then
+    step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
+    try mkdir -p $GATEKEEPER_DATAPATH
+    next
+  fi
+
+  if [ -d $GATEKEEPER_DATAPATH ]; then
+    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties
+    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties
+    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf
+  fi
+  
+  if [ ! -d $PROXY_DATAPATH ]; then
+    step "   [32mcreate[0m $PROXY_DATAPATH"
+    try mkdir -p $PROXY_DATAPATH
+    next
+  fi
+
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
       try mkdir -p $BITCOIN_DATAPATH
       next
     fi
-    copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf
+    if [ -d $BITCOIN_DATAPATH ]; then
+      copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf
+    fi
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
@@ -235,20 +255,15 @@ install_docker() {
           try mkdir -p $LIGHTNING_DATAPATH
           next
         fi
-        copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config
-        copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf
+        if [ -d $LIGHTNING_DATAPATH ]; then
+          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config
+          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf
+        fi
     fi
   fi
 
-  # build cyphernode images
-  if [ ! -d $PROXY_DATAPATH ]; then
-    step "   [32mcreate[0m $PROXY_DATAPATH"
-    try mkdir -p $PROXY_DATAPATH
-    next
-  fi
-
   if [[ ! $(docker network ls | grep cyphernodenet) =~ cyphernodenet ]]; then
-    step "   [32mcreate[0mcyphernode network"
+    step "   [32mcreate[0m cyphernode network"
     try docker network create cyphernodenet > /dev/null 2>&1
     next
   fi
