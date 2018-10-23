@@ -52,6 +52,7 @@ build_docker_images() {
   build_docker_image install/SatoshiPortal/dockers/$archpath/ots/otsclient cyphernode/otsclient
   
   trace "Creating cyphernode images"
+  build_docker_image api_auth_docker/ cyphernode/gatekeeper
   build_docker_image proxy_docker/ cyphernode/proxy
   build_docker_image cron_docker/ cyphernode/proxycron
   build_docker_image pycoin_docker/ cyphernode/pycoin
