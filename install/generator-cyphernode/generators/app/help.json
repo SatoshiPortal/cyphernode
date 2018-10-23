@@ -1,0 +1,36 @@
+{
+  "features": "",
+  "net": "",
+  "username": "",
+  "xpub": "",
+  "derivation_path": "",
+  "gatekeeper_clientkeyspassword": "",
+  "gatekeeper_recreatekeys": "",
+  "gatekeeper_edit_ipwhitelist": "",
+  "gatekeeper_ipwhitelist": "",
+  "gatekeeper_edit_apiproperties": "",
+  "gatekeeper_apiproperties": "",
+  "bitcoin_mode": "",
+  "bitcoin_node_ip": "",
+  "bitcoin_rpcuser": "",
+  "bitcoin_rpcpassword": "",
+  "bitcoin_prune": "",
+  "bitcoin_uacomment": "",
+  "lightning_implementation": "",
+  "lightning_external_ip": "",
+  "lightning_nodename": "",
+  "lightning_nodecolor": "",
+  "electrum_implementation": "",
+  "proxy_datapath": "",
+  "bitcoin_datapath": "",
+  "lightning_datapath": "",
+  "bitcoin_expose": "",
+  "docker_mode": "",
+  "__default__": "Lorem ipsum dolor sit amet,<br> consetetur <font color='#ff0000'>sadipscing elitr</font>, sed diam<br>nonumy eirmod tempor invidunt ut labore et <font italic='true'>dolore</font> magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam"
+}
+
+
+
+
+
+ 

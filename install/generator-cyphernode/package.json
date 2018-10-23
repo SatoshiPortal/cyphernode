@@ -23,6 +23,7 @@
     "@rauschma/stringio": "^1.4.0",
     "chalk": "^2.1.0",
     "coinstring": "^2.3.0",
+    "parse5": "^5.1.0",
     "validator": "^10.8.0",
     "wrap-ansi": "^4.0.0",
     "yeoman-generator": "^2.0.1"

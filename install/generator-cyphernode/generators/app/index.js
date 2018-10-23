@@ -1,18 +1,18 @@
 'use strict';
 const Generator = require('yeoman-generator');
 const chalk = require('chalk');
+const wrap = require('wrap-ansi');
+const html2ansi = require('./lib/html2ansi.js');
 const fs = require('fs');
 const validator = require('validator');
 const path = require("path");
-const featureChoices = require(path.join(__dirname, "features.json"));
 const coinstring = require('coinstring');
 const Archive = require('./lib/archive.js');
 const ApiKey = require('./lib/apikey.js');
-const help = require('./lib/help.js');
 
+const featureChoices = require('./features.json');
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
-
 const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
@@ -202,6 +202,10 @@ module.exports = class extends Generator {
     }]);
 
     this.props.enablehelp = r.enablehelp;
+
+    if( this.props.enablehelp ) {
+      this.help = require('./help.json');
+    }
 
     let prompts = [];
     for( let m of prompters ) {
@@ -404,13 +408,18 @@ module.exports = class extends Generator {
   }
 
   _getHelp( topic ) {
-    if( !this.props.enablehelp )
+    if( !this.props.enablehelp || !this.help ) {
       return '';
-    const helpText = help.text( topic );
+    }
+
+    // TODO: remove default later:
+    const helpText = this.help[topic] || this.help['__default__'];
+
     if( !helpText ||helpText === '' ) {
       return '';
     }
-    return "\n\n"+helpText+"\n\n";
+
+    return "\n\n"+wrap( html2ansi(helpText),82 )+"\n\n";
   }
 
 };
