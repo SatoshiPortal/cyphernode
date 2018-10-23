@@ -1,6 +1,25 @@
 version: "3"
 
 services:
+  gatekeeper:
+    # HTTP authentication API gate
+    environment:
+      - "TRACING=1"
+    image: cyphernode/gatekeeper
+    ports:
+      - "443:443"
+    volumes:
+      - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs"
+      - "<%= gatekeeper_datapath %>/private:/etc/ssl/private"
+      - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
+      - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
+
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
   proxy:
     command: $USER ./startproxy.sh
     # Bitcoin Mini Proxy

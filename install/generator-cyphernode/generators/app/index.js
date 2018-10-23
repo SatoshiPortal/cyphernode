@@ -1,4 +1,3 @@
-'use strict';
 const Generator = require('yeoman-generator');
 const chalk = require('chalk');
 const wrap = require('wrap-ansi');
@@ -191,8 +190,8 @@ module.exports = class extends Generator {
       return;
     }
     
-    // save auth key password to check if it changed
-    this.auth_clientkeyspassword = this.props.auth_clientkeyspassword;
+    // save gatekeeper key password to check if it changed
+    this.gatekeeper_clientkeyspassword = this.props.gatekeeper_clientkeyspassword;
 
     let r = await this.prompt([{
       type: 'confirm',
@@ -219,9 +218,9 @@ module.exports = class extends Generator {
 
 
   async configuring() {
-    if( this.props.auth_recreatekeys || 
-        this.props.auth_keys.configEntries.length===0 ) {
-      delete this.props.auth_recreatekeys;
+    if( this.props.gatekeeper_recreatekeys || 
+        this.props.gatekeeper_keys.configEntries.length===0 ) {
+      delete this.props.gatekeeper_recreatekeys;
       const apikey = new ApiKey();
 
       let configEntries = [];
@@ -245,7 +244,7 @@ module.exports = class extends Generator {
       configEntries.push(apikey.getConfigEntry());
       clientInformation.push(apikey.getClientInformation());
 
-      this.props.auth_keys = {
+      this.props.gatekeeper_keys = {
         configEntries: configEntries,
         clientInformation: clientInformation
       }
@@ -272,15 +271,15 @@ module.exports = class extends Generator {
       } 
     }
 
-    if( this.props.auth_keys && this.props.auth_keys.clientInformation ) {
+    if( this.props.gatekeeper_keys && this.props.gatekeeper_keys.clientInformation ) {
 
-      if( this.auth_clientkeyspassword !== this.props.auth_clientkeyspassword ) {
+      if( this.gatekeeper_clientkeyspassword !== this.props.gatekeeper_clientkeyspassword ) {
         fs.unlinkSync( this.destinationPath('clientKeys.7z') );
       }
 
-      const archive = new Archive( this.destinationPath('clientKeys.7z'), this.props.auth_clientkeyspassword );
-      if( !await archive.writeEntry( 'keys.txt', this.props.auth_keys.clientInformation.join('\n') ) ) {
-        console.log(chalk.bold.red( 'error! Client auth key archive was not written' ));
+      const archive = new Archive( this.destinationPath('clientKeys.7z'), this.props.gatekeeper_clientkeyspassword );
+      if( !await archive.writeEntry( 'keys.txt', this.props.gatekeeper_keys.clientInformation.join('\n') ) ) {
+        console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
     }
 
@@ -293,9 +292,9 @@ module.exports = class extends Generator {
 
   _hasAuthKeys() {
      return this.props && 
-      this.props.auth_keys && 
-      this.props.auth_keys.configEntries &&
-      this.props.auth_keys.configEntries.length > 0;
+      this.props.gatekeeper_keys && 
+      this.props.gatekeeper_keys.configEntries &&
+      this.props.gatekeeper_keys.configEntries.length > 0;
   }
 
   _assignConfigDefaults() {
@@ -318,9 +317,9 @@ module.exports = class extends Generator {
       bitcoin_node_ip: '',
       bitcoin_mode: 'internal',
       bitcoin_expose: false,
-      auth_apiproperties: defaultAPIProperties,
-      auth_ipwhitelist: '',
-      auth_keys: { configEntries: [], clientInformation: [] },
+      gatekeeper_apiproperties: defaultAPIProperties,
+      gatekeeper_ipwhitelist: '',
+      gatekeeper_keys: { configEntries: [], clientInformation: [] },
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
       lightning_datapath: '',

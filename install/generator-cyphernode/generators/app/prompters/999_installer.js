@@ -43,6 +43,15 @@ module.exports = {
     {
       when: installerDocker,
       type: 'input',
+      name: 'gatekeeper_datapath',
+      default: utils._getDefault( 'gatekeeper_datapath' ),
+      filter: utils._trimFilter,
+      validate: utils._pathValidator,
+      message: prefix()+'Where to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
+    },
+    {
+      when: installerDocker,
+      type: 'input',
       name: 'proxy_datapath',
       default: utils._getDefault( 'proxy_datapath' ),
       filter: utils._trimFilter,
