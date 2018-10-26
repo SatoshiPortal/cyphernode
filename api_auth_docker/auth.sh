@@ -87,13 +87,14 @@ verify_group()
   trace "[verify_group] Verifying group..."
 
   local id=${1}
-	# REQUEST_URI should look like this: /watch/2blablabla
+  # REQUEST_URI should look like this: /watch/2blablabla
   local action=$(echo "${REQUEST_URI:1}" | cut -d '/' -f1)
   trace "[verify_group] action=${action}"
 
   # Check for code injection
-  # action can be alphanum... nothing else
-  case $action in (*[![:alnum:]]*|"")
+  # action can be alphanum... and _ and - but nothing else
+	local actiontoinspect=$(echo "$action" | tr -d '_-')
+  case $actiontoinspect in (*[![:alnum:]]*|"")
   trace "[verify_group] Potential code injection, exiting"
   return 1
   esac
