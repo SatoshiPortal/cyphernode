@@ -87,7 +87,8 @@ verify_group()
   trace "[verify_group] Verifying group..."
 
   local id=${1}
-  local action=${REQUEST_URI:1}
+	# REQUEST_URI should look like this: /watch/2blablabla
+  local action=$(echo "${REQUEST_URI:1}" | cut -d '/' -f1)
   trace "[verify_group] action=${action}"
 
   # Check for code injection
