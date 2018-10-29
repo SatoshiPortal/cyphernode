@@ -120,9 +120,30 @@ modify_permissions() {
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
-      chmod -R og-rwx $d
+      step "   [32mmodify[0m permissions: $d"
+      try chmod -R og-rwx $d
+      next
     fi
   done
+}
+
+modify_owner() {
+  if [[ ! ''$RUN_AS_USER == '' ]]; then
+    local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+    local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
+    for d in "${directories[@]}"
+    do
+      if [[ -e $d ]]; then
+        step "   [32mmodify[0m owner \"$RUN_AS_USER\": $d "
+        if [[ $(id -u) == 0 ]]; then
+          try chown -R $user $d
+        else
+          try sudo chown -R $user $d
+        fi
+        next
+      fi
+    done
+  fi
 }
 
 configure() {
@@ -168,7 +189,12 @@ copy_file() {
   local doCopy=0
   local sourceFile=$1
   local targetFile=$2
+  local sudo=''
   local createBackup=1
+
+  if [[ $4 == 1 ]]; then
+    sudo='sudo '
+  fi
 
   if [[ ! ''$3 == '' ]]; then
     createBackup=$3
@@ -179,12 +205,12 @@ copy_file() {
   fi
   
   if [[ -f $targetFile ]]; then
-    cmp --silent $sourceFile $targetFile
+    ${sudo}cmp --silent $sourceFile $targetFile
     if [[ $? == 1 ]]; then
       # different content
       if [[ $createBackup == 1 ]]; then
-        step "   [32mcreate[0m backup of $targetFile"
-        try cp $targetFile $targetFile-$(date +"%y-%m-%d-%T")
+        step "   [32mcreate[0m backup of $targetFile "
+        try ${sudo}cp $targetFile $targetFile-$(date +"%y-%m-%d-%T")
         next
       fi
       doCopy=1
@@ -197,14 +223,47 @@ copy_file() {
 
   if [[ $doCopy == 1 ]]; then
     local basename=$(basename "$sourceFile")
-    step "     [32mcopy[0m $basename"
-    try cp $sourceFile $targetFile
+    step "     [32mcopy[0m $basename "
+    try ${sudo}cp $sourceFile $targetFile
     next
+  fi
+}
+
+create_user() {
+  #check if user exists
+  if [[ ! ''$RUN_AS_USER == '' ]]; then
+    local OS=$(uname -s)
+
+    if [[ $OS == 'Darwin' ]]; then
+      echo "[31mAutomatic user creation not supported on OSX.[0m"
+      echo "[31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
+    else
+      if [[ ! $RUN_AS_USER ]]; then
+        echo "[31mNo runtime user. Aborting[0m"
+        exit 1    
+      fi
+
+      id -u $RUN_AS_USER > /dev/null 2>&1 
+      if [[ $? == 1 ]]; then
+        step "   [32mcreate[0m user $RUN_AS_USER "
+        if [[ $(id -u) == 0 ]]; then
+          try useradd $RUN_AS_USER
+        else
+          try sudo useradd $RUN_AS_USER
+        fi
+        next
+      fi
+    fi
   fi
 }
 
 install_docker() {
 
+  local sudo=0
+
+  if [[ ! ''$RUN_AS_USER == '' ]]; then
+    sudo=1
+  fi
   local archpath=$(uname -m)
 
   # compat mode for SatoshiPortal repo
@@ -222,9 +281,9 @@ install_docker() {
   fi
 
   if [ -d $GATEKEEPER_DATAPATH ]; then
-    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties
-    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties
-    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf
+    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 ${sudo}
+    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 ${sudo}
+    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf 1 ${sudo}
   fi
   
   if [ ! -d $PROXY_DATAPATH ]; then
@@ -240,7 +299,7 @@ install_docker() {
       next
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
-      copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf
+      copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
     fi
   fi
 
@@ -256,8 +315,8 @@ install_docker() {
           next
         fi
         if [ -d $LIGHTNING_DATAPATH ]; then
-          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config
-          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf
+          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 ${sudo}
+          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 ${sudo}
         fi
     fi
   fi
@@ -284,6 +343,8 @@ install_docker() {
     next
   fi
 
+  create_user
+  modify_owner
   cowsay
 }
 
