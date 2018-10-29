@@ -9,4 +9,4 @@ LIGHTNING_DATAPATH=<%= lightning_datapath %>
 PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
 DOCKER_MODE=<%= docker_mode %>
-USERNAME=<%= username %>
+RUN_AS_USER=<%= run_as_different_user?username:'' %>
