@@ -13,6 +13,7 @@ services:
       - "<%= gatekeeper_datapath %>/private:/etc/ssl/private"
       - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
       - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
+    command: $USER
 
 #    deploy:
 #      placement:
