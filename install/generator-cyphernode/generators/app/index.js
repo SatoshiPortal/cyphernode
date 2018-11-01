@@ -273,7 +273,8 @@ module.exports = class extends Generator {
 
     if( this.props.gatekeeper_keys && this.props.gatekeeper_keys.clientInformation ) {
 
-      if( this.gatekeeper_clientkeyspassword !== this.props.gatekeeper_clientkeyspassword ) {
+      if( this.gatekeeper_clientkeyspassword !== this.props.gatekeeper_clientkeyspassword &&
+          fs.existsSync(this.destinationPath('clientKeys.7z')) ) {
         fs.unlinkSync( this.destinationPath('clientKeys.7z') );
       }
 
