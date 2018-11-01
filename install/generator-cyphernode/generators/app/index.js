@@ -307,6 +307,7 @@ module.exports = class extends Generator {
       installer_mode: 'docker',
       devmode: false,
       devregistry: false,
+      run_as_different_user: false,
       username: 'cyphernode',
       docker_mode: 'compose',
       bitcoin_rpcuser: 'bitcoin',
