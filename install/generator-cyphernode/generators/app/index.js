@@ -327,6 +327,7 @@ module.exports = class extends Generator {
       lightning_nodename: '',
       lightning_nodecolor: ''
     }, this.props );
+    this.props.default_username = process.env.DEFAULT_USER || '';
   }
 
   _isChecked( name, value ) {

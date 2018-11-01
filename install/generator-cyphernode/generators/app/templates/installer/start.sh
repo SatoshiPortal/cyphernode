@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # run as user <%= username %>
-export USER=$(id -u <%= run_as_different_user?username:'' %>):$(id -g <%= run_as_different_user?username:'' %>)
+export USER=$(id -u <%= run_as_different_user?username:default_username %>):$(id -g <%= run_as_different_user?username:default_username %>)
 export ARCH=$(uname -m)
 
 <% if (docker_mode == 'swarm') { %>
