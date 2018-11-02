@@ -296,11 +296,11 @@ module.exports = class extends Generator {
     if( this.props.gatekeeper_keys && this.props.gatekeeper_keys.clientInformation ) {
 
       if( this.gatekeeper_clientkeyspassword !== this.props.gatekeeper_clientkeyspassword &&
-          fs.existsSync(this.destinationPath('clientKeys.7z')) ) {
-        fs.unlinkSync( this.destinationPath('clientKeys.7z') );
+          fs.existsSync(this.destinationPath('client.7z')) ) {
+        fs.unlinkSync( this.destinationPath('client.7z') );
       }
 
-      const archive = new Archive( this.destinationPath('clientKeys.7z'), this.props.gatekeeper_clientkeyspassword );
+      const archive = new Archive( this.destinationPath('client.7z'), this.props.gatekeeper_clientkeyspassword );
       if( !await archive.writeEntry( 'keys.txt', this.props.gatekeeper_keys.clientInformation.join('\n') ) ) {
         console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
