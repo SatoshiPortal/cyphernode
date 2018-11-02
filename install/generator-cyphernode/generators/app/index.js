@@ -8,6 +8,7 @@ const path = require("path");
 const coinstring = require('coinstring');
 const Archive = require('./lib/archive.js');
 const ApiKey = require('./lib/apikey.js');
+const Cert = require('./lib/cert.js');
 
 const featureChoices = require('./features.json');
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
@@ -220,7 +221,6 @@ module.exports = class extends Generator {
   async configuring() {
     if( this.props.gatekeeper_recreatekeys || 
         this.props.gatekeeper_keys.configEntries.length===0 ) {
-      delete this.props.gatekeeper_recreatekeys;
       const apikey = new ApiKey();
 
       let configEntries = [];
@@ -248,7 +248,29 @@ module.exports = class extends Generator {
         configEntries: configEntries,
         clientInformation: clientInformation
       }
-    } 
+    }
+
+    if( this.props.gatekeeper_recreatecert ||
+        !this.props.gatekeeper_sslcert || 
+        !this.props.gatekeeper_sslkey ) {
+      const cert = new Cert();
+      console.log(chalk.bold.green( '☕ Generating gatekeeper cert. This may take a while ☕' ));
+      try {
+        const result = await cert.create();
+        if( result.code === 0 ) {
+          this.props.gatekeeper_sslkey = result.key.toString();
+          this.props.gatekeeper_sslcert = result.cert.toString();
+        } else {
+          console.log(chalk.bold.red( 'error! Gatekeeper cert was not created' ));
+        }
+      } catch( err ) {
+        console.log(chalk.bold.red( 'error! Gatekeeper cert was not created' ));
+      }
+    }
+
+    delete this.props.gatekeeper_recreatecert;
+    delete this.props.gatekeeper_recreatekeys;
+
   }
 
   async writing() {
@@ -282,6 +304,9 @@ module.exports = class extends Generator {
       if( !await archive.writeEntry( 'keys.txt', this.props.gatekeeper_keys.clientInformation.join('\n') ) ) {
         console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
+      if( !await archive.writeEntry( 'cacert.pem', this.props.gatekeeper_sslcert ) ) {
+        console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
+      }
     }
 
   }
@@ -296,6 +321,12 @@ module.exports = class extends Generator {
       this.props.gatekeeper_keys && 
       this.props.gatekeeper_keys.configEntries &&
       this.props.gatekeeper_keys.configEntries.length > 0;
+  }
+
+  _hasCert() {
+    return this.props && 
+      this.props.gatekeeper_sslkey && 
+      this.props.gatekeeper_sslcert
   }
 
   _assignConfigDefaults() {
@@ -326,7 +357,9 @@ module.exports = class extends Generator {
       lightning_implementation: 'c-lightning',
       lightning_datapath: '',
       lightning_nodename: '',
-      lightning_nodecolor: ''
+      lightning_nodecolor: '',
+      gatekeeper_sslcert: '',
+      gatekeeper_sslkey: ''
     }, this.props );
     this.props.default_username = process.env.DEFAULT_USER || '';
   }
