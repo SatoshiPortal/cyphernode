@@ -32,6 +32,13 @@ module.exports = {
       message: prefix()+'Recreate gatekeeper keys?'+utils._getHelp('gatekeeper_recreatekeys')
     },
     {
+      when: utils._hasCert,
+      type: 'confirm',
+      name: 'gatekeeper_recreatecert',
+      default: false,
+      message: prefix()+'Recreate gatekeeper ssl cert?'+utils._getHelp('gatekeeper_recreatecert')
+    },
+    {
       type: 'confirm',
       name: 'gatekeeper_edit_ipwhitelist',
       default: false,
@@ -67,6 +74,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [ 'keys.properties', 'api.properties', 'ip-whitelist.conf' ];
+    return [ 'keys.properties', 'api.properties', 'ip-whitelist.conf', 'cert.pem', 'key.pem' ];
   }
 };

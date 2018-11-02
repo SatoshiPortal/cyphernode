@@ -116,7 +116,7 @@ echo '[38;5;148m[39m
 
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml $BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -282,9 +282,19 @@ install_docker() {
   fi
 
   if [ -d $GATEKEEPER_DATAPATH ]; then
+    if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
+      mkdir $GATEKEEPER_DATAPATH/certs
+    fi
+
+    if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
+      mkdir $GATEKEEPER_DATAPATH/private
+    fi
+
     copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 ${sudo}
     copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 ${sudo}
     copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf 1 ${sudo}
+    copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 ${sudo}
+    copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 ${sudo}
   fi
   
   if [ ! -d $PROXY_DATAPATH ]; then
