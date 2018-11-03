@@ -18,6 +18,10 @@ const bitcoinInternal = function(props) {
   return props.bitcoin_mode === 'internal'
 };
 
+const bitcoinInternalAndPrune = function(props) {
+  return bitcoinInternal(props) && props.bitcoin_prune;
+};
+
 module.exports = {
   name: function() { 
     return name;
@@ -69,6 +73,22 @@ module.exports = {
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
       message: prefix()+'Run bitcoin node in prune mode?'+utils._getHelp('bitcoin_prune'),
+    },
+    {
+      when: bitcoinInternalAndPrune,
+      type: 'input',
+      name: 'bitcoin_prune_size',
+      default: utils._getDefault( 'bitcoin_prune_size' ),
+      message: prefix()+'What is the maximum size of your blockchain data in megabytes?'+utils._getHelp('bitcoin_prune_size'),
+      validate: function( input ) {
+        if( ! /^\d+$/.test(input) ) {
+          throw new Error( "Not a number");
+        }
+        if( input < 550 ) {
+          throw new Error( "At least 550 is required");
+        }
+        return true;
+      }
     }, // TODO: ask for size of prune
     {
       when: bitcoinInternal,

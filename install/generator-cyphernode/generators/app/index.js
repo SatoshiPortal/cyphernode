@@ -333,6 +333,7 @@ module.exports = class extends Generator {
       bitcoin_rpcpassword: 'CHANGEME',
       bitcoin_uacomment: '',
       bitcoin_prune: false,
+      bitcoin_prune_size: 550,
       bitcoin_datapath: '',
       bitcoin_node_ip: '',
       bitcoin_mode: 'internal',
