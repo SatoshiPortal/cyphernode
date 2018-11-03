@@ -316,19 +316,6 @@ module.exports = class extends Generator {
 
   /* some utils */
 
-  _hasAuthKeys() {
-     return this.props && 
-      this.props.gatekeeper_keys && 
-      this.props.gatekeeper_keys.configEntries &&
-      this.props.gatekeeper_keys.configEntries.length > 0;
-  }
-
-  _hasCert() {
-    return this.props && 
-      this.props.gatekeeper_sslkey && 
-      this.props.gatekeeper_sslcert
-  }
-
   _assignConfigDefaults() {
     this.props = Object.assign( {
       features: [],

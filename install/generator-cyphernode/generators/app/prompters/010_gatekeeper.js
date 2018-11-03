@@ -10,6 +10,19 @@ const prefix = function() {
   return chalk.bold.red(capitalise(name)+': ');
 };
 
+const hasAuthKeys = function( props ) {
+   return props && 
+    props.gatekeeper_keys && 
+    props.gatekeeper_keys.configEntries &&
+    props.gatekeeper_keys.configEntries.length > 0;
+}
+
+const hasCert = function( props ) {
+  return props && 
+    props.gatekeeper_sslkey && 
+    props.gatekeeper_sslcert
+}
+
 module.exports = {
   name: function() { 
     return name;
@@ -25,14 +38,14 @@ module.exports = {
       validate: utils._notEmptyValidator
     },
     {
-      when: utils._hasAuthKeys,
+      when: function() { return hasAuthKeys( utils.props ); },
       type: 'confirm',
       name: 'gatekeeper_recreatekeys',
       default: false,
       message: prefix()+'Recreate gatekeeper keys?'+utils._getHelp('gatekeeper_recreatekeys')
     },
     {
-      when: utils._hasCert,
+      when: function() { return hasCert( utils.props ); },
       type: 'confirm',
       name: 'gatekeeper_recreatecert',
       default: false,
