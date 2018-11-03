@@ -53,23 +53,6 @@ module.exports = {
     },
     {
       type: 'confirm',
-      name: 'gatekeeper_edit_ipwhitelist',
-      default: false,
-      message: prefix()+'Edit IP whitelist?'+utils._getHelp('gatekeeper_edit_ipwhitelist')
-    },
-    {
-      when: function( props ) { 
-        const r = props.gatekeeper_edit_ipwhitelist;
-        delete props.gatekeeper_edit_ipwhitelist;
-        return r;
-      },
-      type: 'editor',
-      name: 'gatekeeper_ipwhitelist',
-      message: utils._getHelp('gatekeeper_ipwhitelist')||' ',
-      default: utils._getDefault( 'gatekeeper_ipwhitelist' )
-    },
-    {
-      type: 'confirm',
       name: 'gatekeeper_edit_apiproperties',
       default: false,
       message: prefix()+'Edit API properties?'+utils._getHelp('gatekeeper_edit_apiproperties')
@@ -87,6 +70,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [ 'keys.properties', 'api.properties', 'ip-whitelist.conf', 'cert.pem', 'key.pem' ];
+    return [ 'keys.properties', 'api.properties', 'cert.pem', 'key.pem' ];
   }
 };
