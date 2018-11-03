@@ -25,7 +25,9 @@ module.exports = {
     return name;
   },
   prompts: function( utils ) {
-    return [{
+    return [
+    /*
+    {
       when: featureCondition,
       type: 'list',
       name: 'lightning_implementation',
@@ -35,15 +37,15 @@ module.exports = {
         {
           name: 'C-lightning',
           value: 'c-lightning'
-        }
-        /*,
+        },
         {
           name: 'LND',
           value: 'lnd'
         }
-        */
+        
       ]
     },
+    */
     {
       when: featureCondition,
       type: 'input',
