@@ -96,8 +96,13 @@ module.exports = {
       {
         name: "docker-compose",
         value: "compose"
-      }
-      ]
+      }]
+    },
+    {
+      type: 'confirm',
+      name: 'installer_cleanup',
+      default: utils._getDefault( 'installer_cleanup' ),
+      message: prefix()+'Cleanup installer after installation?'+utils._getHelp('installer_cleanup'),
     }];
   },
   templates: function( props ) {
