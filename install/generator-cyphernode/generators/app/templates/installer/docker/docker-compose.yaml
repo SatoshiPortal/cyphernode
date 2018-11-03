@@ -85,8 +85,11 @@ services:
   lightning:
     command: $USER lightningd
     image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/clightning
+
+<% if( lightning_expose ) { %>
     ports:
       - "9735:9735"
+<% } %>
     volumes:
       - "<%= lightning_datapath%>:/.lightning"
       - "<%= lightning_datapath%>/bitcoin.conf:/.bitcoin/bitcoin.conf"
