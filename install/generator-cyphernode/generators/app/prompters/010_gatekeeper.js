@@ -23,6 +23,8 @@ const hasCert = function( props ) {
     props.gatekeeper_sslcert
 }
 
+let password = '';
+
 module.exports = {
   name: function() { 
     return name;
@@ -36,6 +38,24 @@ module.exports = {
       message: prefix()+'Enter a password to protect your client keys with'+utils._getHelp('gatekeeper_clientkeyspassword'),
       filter: utils._trimFilter,
       validate: utils._notEmptyValidator
+    },
+    {
+      when: function( props ) {
+        // hacky hack
+        password = props.gatekeeper_clientkeyspassword;
+        return true;
+      },
+      type: 'password',
+      name: 'gatekeeper_clientkeyspassword_c',
+      default: utils._getDefault( 'gatekeeper_clientkeyspassword_c' ),
+      message: prefix()+'Config your client keys password.'+utils._getHelp('gatekeeper_clientkeyspassword_c'),
+      filter: utils._trimFilter,
+      validate: function( input ) { 
+        if(input !== password) {
+          throw new Error( 'Client keys passwords do not match' );
+        }
+        return true; 
+      }
     },
     {
       when: function() { return hasAuthKeys( utils.props ); },
