@@ -427,6 +427,12 @@ if [[ -f installer/config.sh ]]; then
   . installer/config.sh
 fi
 
+if [[ $CLEANUP && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then
+  step "    [32mclean[0m cyphernodeconf image"
+  try docker image rm cyphernodeconf > /dev/null 2>&1
+  next
+fi
+
 modify_permissions
 
 if [[ $INSTALL == 1 ]]; then
