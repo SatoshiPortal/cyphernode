@@ -359,7 +359,8 @@ module.exports = class extends Generator {
       lightning_nodename: '',
       lightning_nodecolor: '',
       gatekeeper_sslcert: '',
-      gatekeeper_sslkey: ''
+      gatekeeper_sslkey: '',
+      installer_cleanup: false
     }, this.props );
     this.props.default_username = process.env.DEFAULT_USER || '';
   }
