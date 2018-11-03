@@ -2,10 +2,5 @@
   {
     "name": "Lightning node",
     "value": "lightning"
-
-  },
-  {
-    "name": "Electrum server",
-    "value": "electrum"
   }
 ]
