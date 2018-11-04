@@ -40,7 +40,7 @@ module.exports = {
       type: 'confirm',
       name: 'run_as_different_user',
       default: utils._getDefault( 'run_as_different_user' ),
-      message: prefix()+'Run as different user?'+utils._getHelp('gatekeeper_edit_ipwhitelist')
+      message: prefix()+'Run as different user?'+utils._getHelp('run_as_different_user')
     },
     {
       when: function( props ) { 
