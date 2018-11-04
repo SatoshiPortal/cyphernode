@@ -128,7 +128,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  if [[ ! ''$RUN_AS_USER == '' ]]; then
+  if [[ ! $RUN_AS_USER == $USER ]]; then
     local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
     local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
     for d in "${directories[@]}"
@@ -232,15 +232,15 @@ copy_file() {
 
 create_user() {
   #check if user exists
-  if [[ ! ''$RUN_AS_USER == '' ]]; then
+  if [[ ! $RUN_AS_USER == $USER ]]; then
     local OS=$(uname -s)
 
     if [[ $OS == 'Darwin' ]]; then
-      echo "[31mAutomatic user creation not supported on OSX.[0m"
-      echo "[31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
+      echo "          [31mAutomatic user creation not supported on OSX.[0m"
+      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
     else
       if [[ ! $RUN_AS_USER ]]; then
-        echo "[31mNo runtime user. Aborting[0m"
+        echo "          [31mNo runtime user. Aborting[0m"
         exit 1    
       fi
 
@@ -257,7 +257,6 @@ create_user() {
     fi
   fi
 }
-
 
 process_bitcoinconf() {
 
@@ -338,11 +337,6 @@ compare_bitcoinconf() {
 
 install_docker() {
 
-  local sudo=0
-
-  if [[ ! ''$RUN_AS_USER == '' ]]; then
-    sudo=1
-  fi
   local archpath=$(uname -m)
 
   # compat mode for SatoshiPortal repo
@@ -368,11 +362,11 @@ install_docker() {
       mkdir $GATEKEEPER_DATAPATH/private
     fi
 
-    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 ${sudo}
-    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 ${sudo}
-    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf 1 ${sudo}
-    copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 ${sudo}
-    copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 ${sudo}
+    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
   fi
   
   if [ ! -d $PROXY_DATAPATH ]; then
@@ -393,14 +387,14 @@ install_docker() {
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
+          copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}; break;;
-              [Nn]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 ${sudo}
+              [Yy]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
+              [Nn]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -409,7 +403,7 @@ install_docker() {
           done
         fi
       elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 ${sudo}
+        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
         echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
         echo "          [31mYour cyphernode installation is most likely broken.[0m"
         echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
@@ -417,7 +411,7 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
+        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
       fi
     fi
   fi
@@ -434,8 +428,8 @@ install_docker() {
           next
         fi
         if [ -d $LIGHTNING_DATAPATH ]; then
-          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 ${sudo}
-          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 ${sudo}
+          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
         fi
     fi
   fi
@@ -487,6 +481,91 @@ install_docker() {
   cowsay
 }
 
+check_directory_owner() {
+  # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+  local status=0
+  for d in "${directories[@]}"
+  do
+    if [[ -e $d ]]; then
+      # is it mine and does it have rw ?
+      # don't care about group rights
+      if [[ ! -r $d || ! -w $d ]]; then
+        status=1
+        break;
+      fi
+      # TODO: does parent exist and do we have rw on that?
+    fi
+  done
+  echo $status
+}
+
+check_is_sudoer() {
+  echo "    [32mcheck[0m Cyphernode installer has determined that it needs sudo to continue."
+  echo "          Let's verify that you have sudo rights..."
+  sudo echo "     [32mYes![0m You have what it takes to run cyphernode."
+
+  if [[ $? == 1 ]]; then
+    echo "   [31mAARGH![0m Mein Leben..."
+    return 1
+  fi
+}
+
+check_bitcoind() {
+  echo 0
+}
+
+sanity_checks() {
+
+  echo "    [32mcheck[0m requirements."
+
+  if [[ ''$RUN_AS_USER == '' ]]; then
+    RUN_AS_USER=$USER
+  fi
+
+  local sudo=0
+  local sudo_reason
+
+  if [[ ! ''$RUN_AS_USER == ''$USER ]]; then
+    sudo=1
+    sudo_reason='user'
+  fi
+  
+  if [[ $sudo == 0 ]]; then
+    # we still don't need sudo. Let's check access to directories
+    sudo=$(check_directory_owner)
+    sudo_reason='directories'
+  fi 
+
+  if [[ $sudo == 1 ]]; then
+    check_is_sudoer
+    if [[ $?==1 ]]; then
+      echo "          [31mTo fix this, either ask your administrator to add you to the sudo group[0m"
+      if [[ $sudo_reason == 'user' ]]; then
+        echo "          [31mor do not use the 'run as different user' option.[0m"
+      fi
+      if [[ $sudo_reason == 'directories' ]]; then
+        echo "          [31mor check your data volumes if they have the right owner.[0m"
+        echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+          local status=0
+          for d in "${directories[@]}"
+          do
+            if [[ -e $d ]]; then
+              echo "          [31m$d[0m"
+            fi
+          done
+
+      fi
+      exit
+    else 
+      SUDO_REQUIRED=1
+    fi
+  else
+    echo "    [32mcheck[0m everything seems to be ok."
+  fi
+}
+
 install() {
   if [[ ''$INSTALLER_MODE == 'none' ]]; then
     echo "Skipping installation phase"
@@ -495,12 +574,20 @@ install() {
   fi
 }
 
-
 CONFIGURE=0
 INSTALL=0
 RECREATE=0
 TRACING=1
 ALWAYSYES=0
+SUDO_REQUIRED=0
+
+# trap ctrl-c and call ctrl_c()
+trap ctrl_c INT
+
+function ctrl_c() {
+  echo "          [31mCanceling installation process.[0m"
+  exit
+}
 
 while getopts ":cirhy" opt; do
   case $opt in
@@ -538,6 +625,8 @@ fi
 if [[ -f installer/config.sh ]]; then
   . installer/config.sh
 fi
+
+sanity_checks
 
 if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then
   step "    [32mclean[0m cyphernodeconf image"
