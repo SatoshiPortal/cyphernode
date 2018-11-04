@@ -174,7 +174,7 @@ configure() {
 
 
   if [[ $arch =~ ^arm ]]; then
-    clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so small. :D"
+    clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so tiny. :("
   else
     clear && echo "Thinking..."
   fi
