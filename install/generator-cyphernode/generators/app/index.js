@@ -342,13 +342,13 @@ module.exports = class extends Generator {
       gatekeeper_apiproperties: defaultAPIProperties,
       gatekeeper_ipwhitelist: '',
       gatekeeper_keys: { configEntries: [], clientInformation: [] },
+      gatekeeper_sslcert: '',
+      gatekeeper_sslkey: '',
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
       lightning_datapath: '',
       lightning_nodename: '',
       lightning_nodecolor: '',
-      gatekeeper_sslcert: '',
-      gatekeeper_sslkey: '',
       installer_cleanup: false
     }, this.props );
     this.props.default_username = process.env.DEFAULT_USER || '';
