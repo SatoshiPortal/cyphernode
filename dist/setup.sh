@@ -489,7 +489,7 @@ sanity_checks() {
     id -u $RUN_AS_USER > /dev/null 2>&1 
     if [[ $OS == 'Darwin' && $? == 1 ]]; then
       echo "          [31mAutomatic user creation not supported on OSX.[0m"
-      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
+      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand and run: ./setup.sh -i[0m"
       exit  
     fi
   fi
