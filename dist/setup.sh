@@ -300,6 +300,12 @@ compare_bitcoinconf() {
 
   local new_bitcoinconf=$1
   local old_bitcoinconf=$2
+  local status
+
+  if [[ ! -f $old_bitcoinconf || ! -f $new_bitcoinconf ]]; then
+    return 1
+  fi
+
 
   local old_config=$(process_bitcoinconf $old_bitcoinconf )
   local new_config=$(process_bitcoinconf $new_bitcoinconf )
@@ -313,7 +319,6 @@ compare_bitcoinconf() {
   local new_testnet=$((($new_config>>2)&1))
   local new_regtest=$((($new_config>>3)&1))
 
-  local status
 
   if [[ $new_prune == 1 && $old_prune == 0 ]]; then
     # warn about data loss
