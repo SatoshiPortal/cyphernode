@@ -28,7 +28,7 @@ module.exports = {
       type: 'list',
       name: 'installer_mode',
       default: utils._getDefault( 'installer_mode' ),
-      message: prefix()+chalk.red('Where do you want to install cyphernode?'),
+      message: prefix()+chalk.red('Where do you want to install cyphernode?')+utils._getHelp('installer_mode'),
       choices: [{
         name: "Docker",
         value: "docker"
