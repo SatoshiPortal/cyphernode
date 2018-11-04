@@ -216,7 +216,7 @@ copy_file() {
       fi
       doCopy=1
     else 
-      logline "[36midentical[0m $targetFile"
+      logline "[36midentical[0m $sourceFile == $targetFile"
     fi
   else
     doCopy=1
@@ -224,7 +224,7 @@ copy_file() {
 
   if [[ $doCopy == 1 ]]; then
     local basename=$(basename "$sourceFile")
-    step "     [32mcopy[0m $basename "
+    step "     [32mcopy[0m $sourceFile => $targetFile "
     try ${sudo}cp $sourceFile $targetFile
     next
   fi
@@ -258,6 +258,84 @@ create_user() {
   fi
 }
 
+
+process_bitcoinconf() {
+
+  local bitcoinconf=$1
+
+  # grep for prune entry and delete all whitespaces
+  local pruneEntry=$(grep -e ^prune $bitcoinconf | tr -d '[:space:]')
+  local txindexEntry=$(grep -e ^txindex $bitcoinconf | tr -d '[:space:]')
+  local testnetEntry=$(grep -e ^testnet $bitcoinconf | tr -d '[:space:]')
+  local regtestEntry=$(grep -e ^regtest $bitcoinconf | tr -d '[:space:]')
+
+  local prune=0
+  local txindex=0
+  local testnet=0
+  local regtest=0
+
+  if [[ $pruneEntry =~ ^prune && ! $pruneEntry == 'prune=0' ]]; then
+    prune=1
+  fi
+
+  if [[ $txindexEntry =~ ^txindex && ! $txindexEntry == 'txindex=0' ]]; then
+    txindex=1
+  fi
+
+  if [[ $testnetEntry =~ ^testnet && ! $testnetEntry == 'testnet=0' ]]; then
+    testnet=1
+  fi
+
+  if [[ $regtestEntry =~ ^regtest && ! $regtestEntry == 'regtest=0' ]]; then
+    regtest=1
+  fi
+  #  prune &  txindex: 3
+  # !prune &  txindex: 2
+  #  prune & !txindex: 1
+  # !prune & !txindex: 0
+  echo $(($prune|$txindex<<1|$testnet<<2|$regtest<<3))
+}
+
+
+compare_bitcoinconf() {
+
+  local new_bitcoinconf=$1
+  local old_bitcoinconf=$2
+
+  local old_config=$(process_bitcoinconf $old_bitcoinconf )
+  local new_config=$(process_bitcoinconf $new_bitcoinconf )
+
+  local old_prune=$(($old_config&1))
+  local old_txindex=$((($old_config>>1)&1))
+  local old_testnet=$((($old_config>>2)&1))
+  local old_regtest=$((($old_config>>3)&1))
+  local new_prune=$(($new_config&1))
+  local new_txindex=$((($new_config>>1)&1))
+  local new_testnet=$((($new_config>>2)&1))
+  local new_regtest=$((($new_config>>3)&1))
+
+  local status
+
+  if [[ $new_prune == 1 && $old_prune == 0 ]]; then
+    # warn about data loss
+    # ask for user permission
+    status='dataloss'
+  fi
+
+  if [[ $new_txindex == 1 && $old_txindex == 0 ]]; then
+    # warn about reindexing
+    status='reindex'
+  fi
+
+  if [[ ! $new_testnet == $old_testnet || ! $new_regtest == $old_regtest ]]; then
+    # warn about reindexing
+    status='incompatible'
+  fi
+
+  echo $status
+
+}
+
 install_docker() {
 
   local sudo=0
@@ -273,7 +351,7 @@ install_docker() {
     archpath="rpi"
   fi
 
-  local sourceDataPath=./
+  local sourceDataPath=.
 
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
@@ -310,7 +388,37 @@ install_docker() {
       next
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
-      copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
+
+      local cmpStatus=$(compare_bitcoinconf $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf) 
+
+      if [[ $cmpStatus == 'dataloss' ]]; then
+        if [[ $ALWAYSYES == 1 ]]; then
+          copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
+        else
+          while true; do
+            echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
+            read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
+            case $yn in
+              [Yy]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}; break;;
+              [Nn]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 ${sudo}
+                      echo "          [31mYour cyphernode installation is most likely broken.[0m"
+                      echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
+                      break;;
+              * ) echo "Please answer yes or no.";;
+            esac
+          done
+        fi
+      elif [[ $cmpStatus == 'incompatible' ]]; then
+        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 ${sudo}
+        echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
+        echo "          [31mYour cyphernode installation is most likely broken.[0m"
+        echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
+      else
+        if [[ $cmpStatus == 'reindex' ]]; then
+          echo "  [33mWarning[0m Reindexing will take some time."
+        fi
+        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 ${sudo}
+      fi
     fi
   fi
 
@@ -392,8 +500,9 @@ CONFIGURE=0
 INSTALL=0
 RECREATE=0
 TRACING=1
+ALWAYSYES=0
 
-while getopts ":cirh" opt; do
+while getopts ":cirhy" opt; do
   case $opt in
     r)
       RECREATE=1
@@ -403,6 +512,9 @@ while getopts ":cirh" opt; do
       ;;
     i)
       INSTALL=1
+      ;;
+    y)
+      ALWAYSYES=1
       ;;
     h)
       echo "Use -c to configure and -i to install or -r to recreate from config.json." >&2
