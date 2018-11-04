@@ -505,17 +505,6 @@ check_directory_owner() {
   echo $status
 }
 
-check_is_sudoer() {
-  echo "    [32mcheck[0m Cyphernode installer has determined that it needs sudo to continue."
-  echo "          Let's verify that you have sudo rights..."
-  sudo echo "     [32mYes![0m You have what it takes to run cyphernode."
-
-  if [[ $? == 1 ]]; then
-    echo "   [31mAARGH![0m Mein Leben..."
-    return 1
-  fi
-}
-
 check_bitcoind() {
   echo 0
 }
@@ -543,8 +532,12 @@ sanity_checks() {
   fi 
 
   if [[ $sudo == 1 ]]; then
-    check_is_sudoer
-    if [[ $?==1 ]]; then
+    echo "    [32mcheck[0m Cyphernode installer has determined that it needs sudo to continue."
+    echo "          Let's verify that you have sudo rights..."
+    sudo echo "     [32mYes![0m You have what it takes to run cyphernode."
+
+    if [[ $? == 1 ]]; then
+      echo "   [31mAARGH![0m Mein Leben..."
       echo "          [31mTo fix this, either ask your administrator to add you to the sudo group[0m"
       if [[ $sudo_reason == 'user' ]]; then
         echo "          [31mor do not use the 'run as different user' option.[0m"
@@ -629,6 +622,7 @@ fi
 
 if [[ -f installer/config.sh ]]; then
   . installer/config.sh
+  RUN_AS_USER="blah"
 fi
 
 sanity_checks
