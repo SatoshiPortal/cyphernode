@@ -114,6 +114,13 @@ echo '[38;5;148m[39m
 
 ## /utils ----
 
+sudo_if_required() {
+  if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
+    try sudo $@
+  else 
+    try $@
+  fi
+}
 
 modify_permissions() {
   local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml $BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
@@ -121,37 +128,23 @@ modify_permissions() {
   do
     if [[ -e $d ]]; then
       step "   [32mmodify[0m permissions: $d"
-      if [[ $SUDO_REQUIRED == 1 ]]; then
-        if [[ $(id -u) == 0 ]]; then
-          try chmod -R og-rwx $d
-        else
-          try sudo chmod -R og-rwx $d
-        fi
-      else 
-        try chmod -R og-rwx $d
-      fi
+      sudo_if_required chmod -R og-rwx $d
       next
     fi
   done
 }
 
 modify_owner() {
-  if [[ ! $RUN_AS_USER == $USER ]]; then
-    local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
-    local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
-    for d in "${directories[@]}"
-    do
-      if [[ -e $d ]]; then
-        step "   [32mmodify[0m owner \"$RUN_AS_USER\": $d "
-        if [[ $(id -u) == 0 ]]; then
-          try chown -R $user $d
-        else
-          try sudo chown -R $user $d
-        fi
-        next
-      fi
-    done
-  fi
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+  local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
+  for d in "${directories[@]}"
+  do
+    if [[ -e $d ]]; then
+      step "   [32mmodify[0m owner \"$RUN_AS_USER\": $d "
+      sudo_if_required chown -R $user $d
+      next
+    fi
+  done
 }
 
 configure() {
@@ -241,27 +234,15 @@ copy_file() {
 create_user() {
   #check if user exists
   if [[ ! $RUN_AS_USER == $USER ]]; then
-    local OS=$(uname -s)
-
-    if [[ $OS == 'Darwin' ]]; then
-      echo "          [31mAutomatic user creation not supported on OSX.[0m"
-      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
-    else
-      if [[ ! $RUN_AS_USER ]]; then
-        echo "          [31mNo runtime user. Aborting[0m"
-        exit 1    
+    id -u $RUN_AS_USER > /dev/null 2>&1 
+    if [[ $? == 1 ]]; then
+      step "   [32mcreate[0m user $RUN_AS_USER "
+      if [[ $(id -u) == 0 ]]; then
+        try useradd $RUN_AS_USER
+      else
+        try sudo useradd $RUN_AS_USER
       fi
-
-      id -u $RUN_AS_USER > /dev/null 2>&1 
-      if [[ $? == 1 ]]; then
-        step "   [32mcreate[0m user $RUN_AS_USER "
-        if [[ $(id -u) == 0 ]]; then
-          try useradd $RUN_AS_USER
-        else
-          try sudo useradd $RUN_AS_USER
-        fi
-        next
-      fi
+      next
     fi
   fi
 }
@@ -271,10 +252,10 @@ process_bitcoinconf() {
   local bitcoinconf=$1
 
   # grep for prune entry and delete all whitespaces
-  local pruneEntry=$(grep -e ^prune $bitcoinconf | tr -d '[:space:]')
-  local txindexEntry=$(grep -e ^txindex $bitcoinconf | tr -d '[:space:]')
-  local testnetEntry=$(grep -e ^testnet $bitcoinconf | tr -d '[:space:]')
-  local regtestEntry=$(grep -e ^regtest $bitcoinconf | tr -d '[:space:]')
+  local pruneEntry=$(sudo_if_required grep -e ^prune $bitcoinconf | tr -d '[:space:]')
+  local txindexEntry=$(sudo_if_required grep -e ^txindex $bitcoinconf | tr -d '[:space:]')
+  local testnetEntry=$(sudo_if_required grep -e ^testnet $bitcoinconf | tr -d '[:space:]')
+  local regtestEntry=$(sudo_if_required grep -e ^regtest $bitcoinconf | tr -d '[:space:]')
 
   local prune=0
   local txindex=0
@@ -368,11 +349,11 @@ install_docker() {
 
   if [ -d $GATEKEEPER_DATAPATH ]; then
     if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
-      mkdir $GATEKEEPER_DATAPATH/certs
+      sudo_if_required mkdir $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
     fi
 
     if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
-      mkdir $GATEKEEPER_DATAPATH/private
+      sudo_if_required mkdir $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
     fi
 
     copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
@@ -489,8 +470,6 @@ install_docker() {
     next
   fi
 
-  create_user
-  modify_owner
   cowsay
 }
 
@@ -523,6 +502,14 @@ sanity_checks() {
 
   if [[ ''$RUN_AS_USER == '' ]]; then
     RUN_AS_USER=$USER
+  else
+    local OS=$(uname -s)
+    id -u $RUN_AS_USER > /dev/null 2>&1 
+    if [[ $OS == 'Darwin' && $? == 1 ]]; then
+      echo "          [31mAutomatic user creation not supported on OSX.[0m"
+      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand.[0m"
+      exit  
+    fi
   fi
 
   local sudo=0
@@ -630,10 +617,7 @@ fi
 
 if [[ -f installer/config.sh ]]; then
   . installer/config.sh
-  RUN_AS_USER="blah"
 fi
-
-sanity_checks
 
 if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then
   step "    [32mclean[0m cyphernodeconf image"
@@ -641,9 +625,11 @@ if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cypherno
   next
 fi
 
-modify_permissions
-
 if [[ $INSTALL == 1 ]]; then
+  sanity_checks
+  create_user
+  modify_owner
+  modify_permissions
   install
 fi
 
