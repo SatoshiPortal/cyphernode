@@ -13,24 +13,6 @@
 # docker-compose -f docker-compose.yaml up [-d]
 
 
-## utils -----
-trace()
-{
-  if [ -n "${TRACING}" ]; then
-    echo -n "[$(date +%Y-%m-%dT%H:%M:%S%z)] ${1}"
-  fi
-}
-
-log()
-{
-  echo -n "${1}"
-}
-
-logline()
-{
-  echo "${1}"
-}
-
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 # Use step(), try(), and next() to perform a series of commands and print
 # [  OK  ] or [FAILED] at the end. The step as a whole fails if any individual
@@ -42,7 +24,7 @@ logline()
 #     try mount -o remount,rw /boot
 #     next
 step() {
-    log "$@"
+    echo -n "$@"
 
     STEP_OK=0
     [[ -w /tmp ]] && echo $STEP_OK > /tmp/step.$$
@@ -217,7 +199,7 @@ copy_file() {
       fi
       doCopy=1
     else 
-      logline "[36midentical[0m $sourceFile == $targetFile"
+      echo "[36midentical[0m $sourceFile == $targetFile"
     fi
   else
     doCopy=1
