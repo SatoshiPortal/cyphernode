@@ -7,7 +7,7 @@ const capitalise = function( txt ) {
 };
 
 const prefix = function() {
-  return chalk.bold.red(capitalise(name)+': ');
+  return chalk.green(capitalise(name)+': ');
 };
 
 const hasAuthKeys = function( props ) {
