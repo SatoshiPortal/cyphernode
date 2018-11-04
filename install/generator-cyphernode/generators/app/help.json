@@ -20,7 +20,7 @@
   "bitcoin_rpcuser": "** bitcoin_rpcuser **",
   "bitcoin_rpcpassword": "** bitcoin_rpcpassword **",
   "bitcoin_prune": "** bitcoin_prune **",
-  "bitcoin_prunesize": "** bitcoin_prunesize **",
+  "bitcoin_prune_size": "** bitcoin_prune_size **",
   "bitcoin_uacomment": "** bitcoin_uacomment **",
   "bitcoin_datapath": "** bitcoin_datapath **",
   "bitcoin_expose": "** bitcoin_expose **",
