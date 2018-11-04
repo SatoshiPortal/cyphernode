@@ -121,7 +121,7 @@ modify_permissions() {
   do
     if [[ -e $d ]]; then
       step "   [32mmodify[0m permissions: $d"
-      if [[ $SUDO_REQUIRED ]]; then
+      if [[ $SUDO_REQUIRED == 1 ]]; then
         if [[ $(id -u) == 0 ]]; then
           try chmod -R og-rwx $d
         else
