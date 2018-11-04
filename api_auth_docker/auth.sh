@@ -28,7 +28,7 @@ verify_sign()
   trace "[verify_sign] payload64=${payload64}"
   trace "[verify_sign] signature=${signature}"
 
-  local payload=$(echo ${payload64} | base64 -d)
+  local payload=$(echo -n ${payload64} | base64 -d)
   local exp=$(echo ${payload} | jq ".exp")
   local current=$(date +"%s")
 
