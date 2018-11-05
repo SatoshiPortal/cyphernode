@@ -49,7 +49,6 @@ build_docker_images() {
   trace "Creating SatoshiPortal images"
   build_docker_image install/SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin
   build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $dockerfile
-  build_docker_image install/SatoshiPortal/dockers/$archpath/ots/otsclient cyphernode/otsclient
   
   trace "Creating cyphernode images"
   build_docker_image api_auth_docker/ cyphernode/gatekeeper
