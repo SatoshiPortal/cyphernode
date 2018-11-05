@@ -15,6 +15,7 @@
   "gatekeeper_apiproperties": "** gatekeeper_apiproperties **",
   "gatekeeper_sslcert": "** gatekeeper_sslcert **",
   "gatekeeper_sslkey": "** gatekeeper_sslkey **",
+  "gatekeeper_cns": "** gatekeeper_cns **",
   "bitcoin_mode": "** bitcoin_mode **",
   "bitcoin_node_ip": "** bitcoin_node_ip **",
   "bitcoin_rpcuser": "** bitcoin_rpcuser **",

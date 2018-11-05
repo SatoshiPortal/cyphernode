@@ -66,10 +66,10 @@ module.exports = {
     },
     {
       when: function() { return hasCert( utils.props ); },
-      type: 'confirm',
-      name: 'gatekeeper_recreatecert',
-      default: false,
-      message: prefix()+'Recreate gatekeeper ssl cert?'+utils._getHelp('gatekeeper_recreatecert')
+      type: 'input',
+      name: 'gatekeeper_cns',
+      default: utils._getDefault( 'gatekeeper_cns' ),
+      message: prefix()+'Gatekeeper cert CNS (ips, domains, wildcard domains seperated by comma)?'+utils._getHelp('gatekeeper_cns')
     },
     {
       type: 'confirm',
