@@ -143,56 +143,68 @@ test_authorization_spender()
   # getbalance
   echo -n "  Testing getbalance... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/getbalance)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 130
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 135
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 430
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 435
 
   # getnewaddress
   echo -n "  Testing getnewaddress... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/getnewaddress)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 140
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 145
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 440
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 445
 
   # spend
   echo -n "  Testing spend... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/spend)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 150
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 155
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 450
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 455
 
   # addtobatch
   echo -n "  Testing addtobatch... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/addtobatch)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 160
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 165
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 460
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 465
 
   # batchspend
   echo -n "  Testing batchspend... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/batchspend)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 170
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 175
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 470
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 475
 
   # deriveindex
   echo -n "  Testing deriveindex... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/deriveindex)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 180
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 185
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 480
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 485
 
   # derivepubpath
   echo -n "  Testing derivepubpath... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/derivepubpath)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 190
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 195
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 490
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 495
 
   # ln_pay
   echo -n "  Testing ln_pay... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/ln_pay)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 200
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 205
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 500
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 505
 
   # ln_newaddr
   echo -n "  Testing ln_newaddr... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/ln_newaddr)
-  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 210
-  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 215
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 510
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 515
+
+  # ots_stamp
+  echo -n "  Testing ots_stamp... "
+  rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/ots_stamp)
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 520
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 525
+
+  # ots_getfile
+  echo -n "  Testing ots_getfile... "
+  rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/ots_getfile)
+  [ ${is_spender} = true ] && [ "${rc}" -eq "403" ] && return 530
+  [ ${is_spender} = false ] && [ "${rc}" -ne "403" ] && return 535
 
   return 0
 }
@@ -216,12 +228,17 @@ test_authorization_internal()
   # conf
   echo -n "  Testing conf... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/conf)
-  [ "${rc}" -ne "403" ] && return 220
+  [ "${rc}" -ne "403" ] && return 920
 
   # executecallbacks
   echo -n "  Testing executecallbacks... "
   rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/executecallbacks)
-  [ "${rc}" -ne "403" ] && return 230
+  [ "${rc}" -ne "403" ] && return 930
+
+  # ots_backoffice
+  echo -n "  Testing ots_backoffice... "
+  rc=$(time -f "%E" curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" -k https://localhost/ots_backoffice)
+  [ "${rc}" -ne "403" ] && return 940
 
   return 0
 }

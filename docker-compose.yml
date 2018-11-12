@@ -29,6 +29,8 @@ services:
       - "~/btcproxydb:/proxy/db"
       # c-lightning looks for $HOME/.lightning/, and $HOME is set to / in the container
       - "~/lndata:/.lightning"
+      # OTS files, shared with otsclient container
+      - "~/otsfiles:/otsfiles"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -56,6 +58,20 @@ services:
 #      placement:
 #        constraints: [node.hostname==dev]
     command: $USER ./startpycoin.sh
+    networks:
+      - cyphernodenet
+
+  otsclient:
+    # otsclient JS
+    env_file:
+      - otsclient_docker/env.properties
+    image: otsclientimg
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    volumes:
+      - "~/otsfiles:/otsfiles"
+    command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
 

@@ -12,6 +12,7 @@ COPY app/script/callbacks_job.sh ${HOME}/callbacks_job.sh
 COPY app/script/blockchainrpc.sh ${HOME}/blockchainrpc.sh
 COPY app/script/call_lightningd.sh ${HOME}/call_lightningd.sh
 COPY app/script/bitcoin.sh ${HOME}/bitcoin.sh
+COPY app/script/ots.sh ${HOME}/ots.sh
 COPY app/script/requesthandler.sh ${HOME}/requesthandler.sh
 COPY app/script/watchrequest.sh ${HOME}/watchrequest.sh
 COPY app/script/walletoperations.sh ${HOME}/walletoperations.sh

@@ -38,6 +38,7 @@ vi proxy_docker/env.properties
 ```shell
 vi cron_docker/env.properties
 vi pycoin_docker/env.properties
+vi otsclient_docker/env.properties
 vi api_auth_docker/env.properties
 ```
 
@@ -52,6 +53,7 @@ docker build -t authapi api_auth_docker/.
 docker build -t proxycronimg cron_docker/.
 docker build -t btcproxyimg proxy_docker/.
 docker build -t pycoinimg pycoin_docker/.
+docker build -t otsclientimg otsclient_docker/.
 ```
 
 ## Build images from Satoshi Portal's dockers repo
@@ -137,6 +139,7 @@ sudo find ~/btcdata -type d -exec chmod 2775 {} \; ; sudo find ~/btcdata -type f
 ```shell
 id="001";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64);k="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -H "Authorization: Bearer $token" -k https://localhost/getbestblockhash
 id="003";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64);k="b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -H "Authorization: Bearer $token" -k https://localhost/getbalance
+id="003";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64);k="b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -v -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' -H "Authorization: Bearer $token" -k https://localhost/ots_stamp
 ```
 
 ```shell

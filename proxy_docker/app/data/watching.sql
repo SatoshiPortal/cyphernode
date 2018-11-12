@@ -53,3 +53,13 @@ CREATE TABLE recipient (
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
+
+CREATE TABLE stamp (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  hash TEXT UNIQUE,
+  callbackUrl TEXT,
+  requested INTEGER DEFAULT FALSE,
+  upgraded INTEGER DEFAULT FALSE,
+  calledback INTEGER DEFAULT FALSE,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
