@@ -3,7 +3,8 @@
 ## Configure your container by modifying `env.properties` file
 
 ```properties
-PROXY_URL=cyphernode:8888/executecallbacks
+TX_CONF_URL=cyphernode:8888/executecallbacks
+OTS_URL=cyphernode:8888/ots_backoffice
 ```
 
 ## Building docker image

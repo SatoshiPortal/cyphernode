@@ -18,4 +18,23 @@ response_to_client()
 	sleep 0.2s
 }
 
+file_response_to_client()
+{
+	trace "Entering bin_response_to_client()..."
+
+	local path=${1}
+	local filename=${2}
+	local pathfile="${path}${filename}"
+	local returncode
+
+	[ -r "${pathfile}" ] \
+	&& echo -ne "HTTP/1.1 200 OK\r\nContent-Disposition: inline; filename=\"${filename}\"\r\nContent-Length: $(stat -c'%s' ${pathfile})\r\n\r\n" \
+	&& cat ${pathfile}
+
+	[ ! -r "${pathfile}" ] && echo -ne "HTTP/1.1 404 Not Found\r\n"
+
+	# Small delay needed for the data to be processed correctly by peer
+	sleep 0.2s
+}
+
 case "${0}" in *responsetoclient.sh) response_to_client $@;; esac
