@@ -57,6 +57,7 @@ build_docker_images() {
   build_docker_image proxy_docker/ cyphernode/proxy
   build_docker_image cron_docker/ cyphernode/proxycron
   build_docker_image pycoin_docker/ cyphernode/pycoin
+  build_docker_image otsclient_docker/ cyphernode/otsclient
   
 }
 
