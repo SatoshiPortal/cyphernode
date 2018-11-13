@@ -36,11 +36,13 @@ build_docker_images() {
   git submodule update --recursive --remote
 
   local archpath=$(uname -m)
+  local clightning_dockerfile=Dockerfile
 
   # compat mode for SatoshiPortal repo
   # TODO: add more mappings?
   if [[ $archpath == 'armv7l' ]]; then
     archpath="rpi"
+    clightning_dockerfile="Dockerfile-alpine"
   fi
 
   trace "Creating cyphernodeconf image"
@@ -48,7 +50,7 @@ build_docker_images() {
 
   trace "Creating SatoshiPortal images"
   build_docker_image install/SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin
-  build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $dockerfile
+  build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $clightning_dockerfile
   
   trace "Creating cyphernode images"
   build_docker_image api_auth_docker/ cyphernode/gatekeeper
