@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:11.1-alpine
 
 RUN apk add --update bash su-exec p7zip openssl nano && rm -rf /var/cache/apk/*
 RUN mkdir -p /app
