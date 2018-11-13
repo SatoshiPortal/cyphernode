@@ -325,7 +325,7 @@ install_docker() {
 
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
-    try mkdir -p $GATEKEEPER_DATAPATH
+    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
     next
   fi
 
@@ -347,14 +347,14 @@ install_docker() {
   
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
-    try mkdir -p $PROXY_DATAPATH
+    sudo_if_required mkdir -p $PROXY_DATAPATH
     next
   fi
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
-      try mkdir -p $BITCOIN_DATAPATH
+      sudo_if_required mkdir -p $BITCOIN_DATAPATH
       next
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
@@ -400,7 +400,7 @@ install_docker() {
         fi
         if [ ! -d $LIGHTNING_DATAPATH ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          try mkdir -p $LIGHTNING_DATAPATH
+          sudo_if_required mkdir -p $LIGHTNING_DATAPATH
           next
         fi
         if [ -d $LIGHTNING_DATAPATH ]; then
