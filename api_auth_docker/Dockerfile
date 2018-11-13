@@ -1,4 +1,4 @@
-FROM nginx:alpine # should be 3.8
+FROM nginx:alpine
 
 RUN apk add --update --no-cache \
 		bash \
