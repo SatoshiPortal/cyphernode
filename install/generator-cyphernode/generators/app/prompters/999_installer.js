@@ -77,6 +77,15 @@ module.exports = {
       message: prefix()+'Where is your lightning node data?'+utils._getHelp('lightning_datapath'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('opentimestamps') !== -1 },
+      type: 'input',
+      name: 'opentimestamps_datapath',
+      default: utils._getDefault( 'opentimestamps_datapath' ),
+      filter: utils._trimFilter,
+      validate: utils._pathValidator,
+      message: prefix()+'Where is your opentimestamps data?'+utils._getHelp('opentimestamps_datapath'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',

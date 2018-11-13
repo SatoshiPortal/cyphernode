@@ -48,6 +48,7 @@ services:
     volumes:
       - "<%= proxy_datapath %>:/proxy/db"
       - "<%= lightning_datapath %>:/proxy/.lightning"
+      - "<%= opentimestamps_datapath %>:/otsfiles"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -100,6 +101,23 @@ services:
       - cyphernodenet
     restart: always
 <% } %>
+<% if ( features.indexOf('opentimestamps') !== -1 ) { %>
+  opentimestamps:
+    environment:
+      - "TRACING=1"
+      - "OTSCLIENT_LISTENING_PORT=6666"
+    image: cyphernode/opentimestamps
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    volumes:
+      - "<%= opentimestamps_datapath%>:/otsfiles"
+    command: $USER /script/startotsclient.sh
+    networks:
+      - cyphernodenet
+    restart: always
+<% } %>
+
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
     command: $USER bitcoind
