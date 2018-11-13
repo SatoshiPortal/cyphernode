@@ -2,5 +2,9 @@
   {
     "name": "Lightning node",
     "value": "lightning"
+  },
+  {
+    "name": "Opentimestamps client",
+    "value": "opentimestamps"
   }
 ]
