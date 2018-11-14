@@ -40,6 +40,8 @@ services:
       - "DERIVATION_PUB32=<%= xpub %>"
       - "DERIVATION_PATH=<%= derivation_path %>"
       - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
+      - "OTSCLIENT_CONTAINER=opentimestamps:6666"
+      - "OTS_FILES=/otsfiles"
     image: <%= devregistry?'registry.skp.rocks:5000/$ARCH/':'' %>cyphernode/proxy
 <% if ( devmode ) { %>
     ports:
