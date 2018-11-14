@@ -152,7 +152,7 @@ module.exports = class extends Generator {
 
     } else {
       let r = {};
-      process.stdout.write(reset);
+      process.stdout.write(clear+reset);
       while( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
 
         if( r.password0 && r.password1 && r.password0 !== r.password1 ) {
