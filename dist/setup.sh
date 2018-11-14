@@ -418,6 +418,15 @@ install_docker() {
     fi
   fi
 
+  docker swarm join-token worker > /dev/null 2>&1
+  local noSwarm=$?;
+
+  if [[ $DOCKER_MODE == 'swarm' && $noSwarm == 1 ]]; then
+    step "     [32minit[0m docker swarm"
+    try docker swarm init > /dev/null 2>&1
+    next
+  fi
+
   local net_entry=$(docker network ls | grep cyphernodenet);
 
   if [[ $net_entry =~ 'cyphernodenet' ]]; then
