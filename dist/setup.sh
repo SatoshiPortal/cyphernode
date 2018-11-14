@@ -167,6 +167,14 @@ configure() {
              -e DEFAULT_USER=$USER \
              --log-driver=none$pw_env \
              --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
+  if [[ -f exitStatus.sh ]]; then
+    . ./exitStatus.sh
+    rm ./exitStatus.sh
+  fi
+
+  if [[ ! $EXIT_STATUS == 0 ]]; then
+    exit 1
+  fi
 }
 
 copy_file() {
