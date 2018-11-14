@@ -104,6 +104,10 @@ module.exports = class extends Generator {
 
     this.featureChoices = featureChoices;
 
+    if( fs.existsSync(path.join('/data', 'exitStatus.sh')) ) {
+      fs.unlinkSync(path.join('/data', 'exitStatus.sh'));
+    }
+
   }
 
   async _initConfig() {
@@ -310,6 +314,9 @@ module.exports = class extends Generator {
         console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
     }
+
+    fs.writeFileSync(path.join('/data', 'exitStatus.sh'), 'EXIT_STATUS=0');
+
 
   }
 
