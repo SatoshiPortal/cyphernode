@@ -193,7 +193,6 @@ module.exports = class extends Generator {
     
     // save gatekeeper key password to check if it changed
     this.gatekeeper_clientkeyspassword = this.props.gatekeeper_clientkeyspassword;
-    this.gatekeeper_cns = this.props.gatekeeper_cns;
 
     let r = await this.prompt([{
       type: 'confirm',
@@ -251,16 +250,15 @@ module.exports = class extends Generator {
       }
     }
 
-    const oldCNS = (this.gatekeeper_cns||'').split(',').map(e=>e.trim().toLowerCase()).filter(e=>!!e);
-    const newCNS = (this.props.gatekeeper_cns||'').split(',').map(e=>e.trim().toLowerCase()).filter(e=>!!e);
-
-    if( oldCNS.sort().join('') !== newCNS.sort().join('') ||
+    if( this.props.gatekeeper_recreatecert ||
         !this.props.gatekeeper_sslcert || 
         !this.props.gatekeeper_sslkey ) {
+      delete this.props.gatekeeper_recreatecert;
       const cert = new Cert();
       console.log(chalk.bold.green( '☕ Generating gatekeeper cert. This may take a while ☕' ));
       try {
-        const result = await cert.create(newCNS);
+        const cns = (this.props.gatekeeper_cns||'').split(',').map(e=>e.trim().toLowerCase()).filter(e=>!!e);
+        const result = await cert.create(cns);
         if( result.code === 0 ) {
           this.props.gatekeeper_sslkey = result.key.toString();
           this.props.gatekeeper_sslcert = result.cert.toString();
