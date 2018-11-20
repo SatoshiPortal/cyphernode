@@ -1,14 +1,12 @@
-# Does not work on ARM / Raspberry Pi
+FROM nginx:1.14
 
-FROM cyphernode/nginx:1.14.1-alpine
-
-RUN apk add --update --no-cache \
-    git \
+RUN apt-get update \
+ && apt-get install -y \
     openssl \
-    fcgiwrap \
     spawn-fcgi \
-    curl \
-    jq
+    fcgiwrap \
+    jq \
+    curl
 
 COPY auth.sh /etc/nginx/conf.d
 COPY default-ssl.conf /etc/nginx/conf.d/default.conf

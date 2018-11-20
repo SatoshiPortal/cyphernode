@@ -4,7 +4,7 @@
 # Replace
 #   proxy_pass http://cyphernode:8888;
 # by
-#   proxy_pass http://tests:8888;
+#   proxy_pass http://cyphernode:1111;
 # in /etc/nginx/conf.d/default.conf to run the tests
 
 test_expiration()
