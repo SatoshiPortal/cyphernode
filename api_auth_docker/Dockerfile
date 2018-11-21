@@ -1,6 +1,4 @@
-# Does not work on ARM / Raspberry Pi
-
-FROM cyphernode/nginx:1.14.1-alpine
+FROM nginx:alpine
 
 RUN apk add --update --no-cache \
     git \
