@@ -1,11 +1,11 @@
 version: "3"
 
 services:
-  authapi:
+  gatekeeper:
     # HTTP authentication API gate
     env_file:
       - api_auth_docker/env.properties
-    image: authapi
+    image: cyphernode/gatekeeper:cyphernode-0.05
     ports:
 #      - "80:80"
       - "443:443"
@@ -18,11 +18,11 @@ services:
     networks:
       - cyphernodenet
 
-  cyphernode:
+  proxy:
     # Bitcoin Mini Proxy
     env_file:
       - proxy_docker/env.properties
-    image: btcproxyimg
+    image: cyphernode/proxy:cyphernode-0.05
     volumes:
       # Variable substitutions don't work
       # Match with DB_PATH in proxy_docker/env.properties
@@ -38,18 +38,18 @@ services:
     networks:
       - cyphernodenet
 
-  proxycronnode:
+  proxycron:
     # Async jobs
     env_file:
       - cron_docker/env.properties
-    image: proxycronimg
+    image: cyphernode/proxycron:cyphernode-0.05
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
 
-  pycoinnode:
+  pycoin:
     # Pycoin
     env_file:
       - pycoin_docker/env.properties
@@ -65,7 +65,7 @@ services:
     # otsclient JS
     env_file:
       - otsclient_docker/env.properties
-    image: otsclientimg
+    image: cyphernode/ots:cyphernode-0.05
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -75,9 +75,9 @@ services:
     networks:
       - cyphernodenet
 
-  clightningnode:
+  lightning:
     # c-lightning lightning network node
-    image: clnimg
+    image: cyphernode/clightning:dev
     ports:
       - "9735:9735"
     volumes:
@@ -89,9 +89,9 @@ services:
     networks:
       - cyphernodenet
 
-  btcnode:
+  bitcoin:
     # Bitcoin node
-    image: btcnode
+    image: cyphernode/bitcoin:0.17.0
 #    ports:
 #      - "18333:18333"
 #      - "29000:29000"
