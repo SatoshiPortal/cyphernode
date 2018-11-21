@@ -1,6 +1,24 @@
 # Cyphernode Proxy
 
-We assume you are the user pi on a Raspberry Pi.
+## Pull our Cyphernode image
+
+```shell
+docker pull cyphernode/proxy:cyphernode-0.05
+```
+
+## Build yourself the image
+
+```shell
+docker build -t cyphernode/proxy:cyphernode-0.05 .
+```
+
+## Run image
+
+If you want to run this container independently from Cyphernode:
+
+```shell
+docker run --rm -d -p 8888:8888 --network cyphernodenet --env-file env.properties cyphernode/proxy:cyphernode-0.05 `id -u cyphernode`:`id -g cyphernode` ./startproxy.sh
+```
 
 ## Configure your container by modifying `env.properties` file
 
@@ -45,7 +63,7 @@ docker build -t btcproxyimg .
 ## Create sqlite3 database path and give rights
 
 ```shell
-mkdir ~/btcproxydb ; sudo chown -R cyphernode:pi ~/btcproxydb ; sudo chmod g+ws ~/btcproxydb
+mkdir ~/proxydb ; sudo chown -R cyphernode:cyphernode ~/proxydb ; sudo chmod g+ws ~/proxydb
 ```
 
 ## What you MUST have in your Watching Bitcoin node's bitcoin.conf file

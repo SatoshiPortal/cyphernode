@@ -53,7 +53,7 @@ services:
     # Pycoin
     env_file:
       - pycoin_docker/env.properties
-    image: pycoinimg
+    image: cyphernode/pycoin:cyphernode-0.05
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
