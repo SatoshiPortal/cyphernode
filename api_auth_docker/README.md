@@ -2,7 +2,27 @@
 
 So all the other containers are in the Docker Swarm and we want to expose a real HTTP/S interface to clients outside of the Swarm, that makes sense.  Clients have to get an API key first.
 
-## Build
+## Pull our Cyphernode image
+
+```shell
+docker pull cyphernode/gatekeeper:cyphernode-0.05
+```
+
+## Build yourself the image
+
+```shell
+docker build -t cyphernode/gatekeeper:cyphernode-0.05 .
+```
+
+## Run image
+
+If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
+
+```shell
+docker run -d --rm --name gatekeeper -p 80:80 -p 443:443 --network cyphernodenet -v "~/cyphernode-ssl/certs:/etc/ssl/certs" -v "~/cyphernode-ssl/private:/etc/ssl/private" --env-file env.properties cyphernode/gatekeeper:cyphernode-0.05 `id -u cyphernode`:`id -g cyphernode`
+```
+
+## Prepare
 
 ### Create your API key and put it in keys.properties
 
