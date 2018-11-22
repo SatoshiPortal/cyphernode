@@ -123,7 +123,7 @@ build_callback()
 	else
 		data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
 	fi
-	data="${data}\"blockheight\":\"${blockheight}\"}"
+	data="${data}\"blockheight\":${blockheight}}"
 	trace "[build_callback] data=${data}"
 
 	curl_callback "${url}" "${data}"
