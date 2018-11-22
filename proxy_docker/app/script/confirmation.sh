@@ -92,13 +92,13 @@ confirmation()
     trace "[confirmation] fees=${fees}"
 
     # If we missed 0-conf...
-    local tx_blockhash=
-    local tx_blockheight=
-    local tx_blocktime=
+    local tx_blockhash=null
+    local tx_blockheight=null
+    local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
       tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
-      tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | cut -d '"') | jq '.result.height')
+      tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
       tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
     fi
 
@@ -113,7 +113,7 @@ confirmation()
     # 1-conf or spending watched address (in this case, we probably missed conf)
 
     local tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
-    local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | cut -d '"') | jq '.result.height')
+    local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
     local tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
 
     sql "UPDATE tx SET
