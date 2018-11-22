@@ -110,23 +110,27 @@ confirmation()
 
   else
     # TX found in our DB.
-    # 1-conf or spending watched address (in this case, we probably missed conf)
+    # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf)
 
     local tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
-    local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
-    local tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
+    trace "[confirmation] tx_blockhash=${tx_blockhash}"
+    if [ "${tx_blockhash}" = "null" ]; then
+      trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
+    else
+      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      local tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
 
-    sql "UPDATE tx SET
-      confirmations=${tx_nb_conf},
-      blockhash=${tx_blockhash},
-      blockheight=${tx_blockheight},
-      blocktime=${tx_blocktime},
-      raw_tx=readfile('rawtx-${txid}.blob')
-      WHERE txid=\"${txid}\""
-    trace_rc $?
+      sql "UPDATE tx SET
+        confirmations=${tx_nb_conf},
+        blockhash=${tx_blockhash},
+        blockheight=${tx_blockheight},
+        blocktime=${tx_blocktime},
+        raw_tx=readfile('rawtx-${txid}.blob')
+        WHERE txid=\"${txid}\""
+      trace_rc $?
 
-    id_inserted=${tx}
-
+      id_inserted=${tx}
+    fi
   fi
   # Delete the temp file containing the raw tx (see above)
   rm rawtx-${txid}.blob
