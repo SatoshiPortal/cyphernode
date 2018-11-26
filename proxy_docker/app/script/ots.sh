@@ -79,9 +79,11 @@ request_ots_stamp()
 
   if [ "${returncode}" -eq 0 ]; then
     # jq -e will have a return code of 1 if the supplied tag is null.
-    errorstring=$(echo "${result}" | tr '\r\n' ' ' | jq -e ".error" | tr -d '"')
+    errorstring=$(echo "${result}" | tr '\r\n' ' ' | jq -e ".error")
     if [ "$?" -eq "0" ]; then
       # Error tag not null, so there's an error
+
+      errorstring=$(echo "${errorstring}" | tr -d '"')
 
       # If the error message is "Already exists"
       trace "[request_ots_stamp] grepping 'already exists'..."
@@ -161,12 +163,23 @@ serve_ots_backoffice()
         returncode=$?
         trace_rc ${returncode}
         trace "[serve_ots_backoffice] result=${result}"
-        if [ "${returncode}" -eq 0 ]; then
-          trace "[serve_ots_backoffice] just upgraded!"
-          sql "UPDATE stamp SET upgraded=1 WHERE hash=\"${hash}\""
-          trace_rc $?
 
-          upgraded=1
+        if [ "${returncode}" -eq 0 ]; then
+          # CURL success... let's see if error in response
+          errorstring=$(echo "${result}" | tr '\r\n' ' ' | jq -e ".error")
+          if [ "$?" -eq "0" ]; then
+            # Error tag not null, so there's an error
+            trace "[serve_ots_backoffice] not upgraded!"
+
+            upgraded=0
+          else
+            # No failure, upgraded
+            trace "[serve_ots_backoffice] just upgraded!"
+            sql "UPDATE stamp SET upgraded=1 WHERE hash=\"${hash}\""
+            trace_rc $?
+
+            upgraded=1
+          fi
         fi
       fi
       if [ "${upgraded}" -eq "1" ]; then
