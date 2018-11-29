@@ -16,13 +16,22 @@ serve_ots_stamp()
   local result
   local returncode
   local errorstring
+  local id_inserted
+  local requested
+  local row
 
   # Already requested?
-  local requested
-  requested=$(sql "SELECT requested FROM stamp WHERE hash='${hash}'")
-  if [ -n "${requested}" ]; then
+  row=$(sql "SELECT id, requested FROM stamp WHERE hash='${hash}'")
+  trace "[serve_ots_stamp] row=${row}"
+
+  if [ -n "${row}" ]; then
     # Hash exists in DB...
     trace "[serve_ots_stamp] Hash already exists in DB."
+
+    requested=$(echo "${row}" | cut -d '|' -f2)
+    trace "[serve_ots_stamp] requested=${requested}"
+    id_inserted=$(echo "${row}" | cut -d '|' -f1)
+    trace "[serve_ots_stamp] id_inserted=${id_inserted}"
 
     if [ "${requested}" -eq "1" ]; then
       # Stamp already requested
@@ -38,6 +47,8 @@ serve_ots_stamp()
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
+      id_inserted=$(sql "SELECT id FROM stamp WHERE hash='${hash}'")
+      trace_rc $?
       errorstring=$(request_ots_stamp "${hash}")
       returncode=$?
       trace_rc ${returncode}
@@ -48,10 +59,12 @@ serve_ots_stamp()
     fi
   fi
 
+  result="{\"method\":\"ots_stamp\",\"hash\":\"${hash}\",\"id\":\"${id_inserted}\",\"result\":\""
+
   if [ "${returncode}" -eq "0" ]; then
-    result="{\"method\":\"ots_stamp\",\"hash\":\"${hash}\",\"result\":\"success\""
+    result="${result}success\"}"
   else
-    result="{\"method\":\"ots_stamp\",\"hash\":\"${hash}\",\"result\":\"error\",\"error\":\"${errorstring}\""
+    result="${result}error\",\"error\":\"${errorstring}\"}"
   fi
 
   trace "[serve_ots_stamp] result=${result}"
