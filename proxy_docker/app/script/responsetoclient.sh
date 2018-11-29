@@ -27,14 +27,20 @@ file_response_to_client()
   local pathfile="${path}${filename}"
   local returncode
 
+  trace "[file_response_to_client] path=${path}"
+  trace "[file_response_to_client] filename=${filename}"
+  trace "[file_response_to_client] pathfile=${pathfile}"
+  local file_length=$(stat -c'%s' ${pathfile})
+  trace "[file_response_to_client] file_length=${file_length}"
+
   [ -r "${pathfile}" ] \
-  && echo -ne "HTTP/1.1 200 OK\r\nContent-Disposition: inline; filename=\"${filename}\"\r\nContent-Length: $(stat -c'%s' ${pathfile})\r\n\r\n" \
+  && echo -ne "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Disposition: inline; filename=\"${filename}\"\r\nContent-Length: ${file_length}\r\n\r\n" \
   && cat ${pathfile}
 
   [ ! -r "${pathfile}" ] && echo -ne "HTTP/1.1 404 Not Found\r\n"
 
   # Small delay needed for the data to be processed correctly by peer
-  sleep 0.2s
+  sleep 0.5s
 }
 
 case "${0}" in *responsetoclient.sh) response_to_client $@;; esac
