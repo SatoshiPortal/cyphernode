@@ -196,7 +196,7 @@ serve_ots_backoffice()
         fi
       fi
       if [ "${upgraded}" -eq "1" ]; then
-        trace "[serve_ots_backoffice] upgraded!  Let's send the OTS file to callback..."
+        trace "[serve_ots_backoffice] upgraded!  Let's call the callback..."
         url=$(echo "${row}" | cut -d '|' -f2)
         trace "[serve_ots_backoffice] url=${url}"
 
