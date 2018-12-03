@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml $BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
