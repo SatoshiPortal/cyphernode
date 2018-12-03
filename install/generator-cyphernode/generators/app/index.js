@@ -12,12 +12,13 @@ const Cert = require('./lib/cert.js');
 
 const featureChoices = require('./features.json');
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
-const userRegexp = /^[a-zA-Z0-9\._\-]+$/; 
+const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
 const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
 
 const defaultAPIProperties = `
+# Watcher can:
 action_watch=watcher
 action_unwatch=watcher
 action_getactivewatches=watcher
@@ -27,6 +28,8 @@ action_getblockinfo=watcher
 action_gettransaction=watcher
 action_ln_getinfo=watcher
 action_ln_create_invoice=watcher
+
+# Spender can do what the watcher can do  plus:
 action_getbalance=spender
 action_getnewaddress=spender
 action_spend=spender
@@ -36,8 +39,16 @@ action_deriveindex=spender
 action_derivepubpath=spender
 action_ln_pay=spender
 action_ln_newaddr=spender
+action_ots_stamp=spender
+action_ots_getfile=spender
+
+# Admin can do what the spender can do  plus:
+
+
+# Should be called from inside the Swarm:
 action_conf=internal
 action_executecallbacks=internal
+action_ots_backoffice=internal
 `;
 
 const prefix = function() {
@@ -137,7 +148,7 @@ module.exports = class extends Generator {
         console.log(chalk.bold.red('Password is wrong. Have a nice day.'));
         process.exit(1);
       }
-      
+
       if( !r.value ) {
         console.log(chalk.bold.red('config archive is corrupt.'));
         process.exit(1);
@@ -194,7 +205,7 @@ module.exports = class extends Generator {
       // no prompts
       return;
     }
-    
+
     // save gatekeeper key password to check if it changed
     this.gatekeeper_clientkeyspassword = this.props.gatekeeper_clientkeyspassword;
 
@@ -223,7 +234,7 @@ module.exports = class extends Generator {
 
 
   async configuring() {
-    if( this.props.gatekeeper_recreatekeys || 
+    if( this.props.gatekeeper_recreatekeys ||
         this.props.gatekeeper_keys.configEntries.length===0 ) {
       const apikey = new ApiKey();
 
@@ -255,7 +266,7 @@ module.exports = class extends Generator {
     }
 
     if( this.props.gatekeeper_recreatecert ||
-        !this.props.gatekeeper_sslcert || 
+        !this.props.gatekeeper_sslcert ||
         !this.props.gatekeeper_sslkey ) {
       delete this.props.gatekeeper_recreatecert;
       const cert = new Cert();
@@ -296,7 +307,7 @@ module.exports = class extends Generator {
           this.destinationPath(p),
           this.props
         );
-      } 
+      }
     }
 
     if( this.props.gatekeeper_keys && this.props.gatekeeper_keys.clientInformation ) {
@@ -374,8 +385,8 @@ module.exports = class extends Generator {
   }
 
   _optional(input,validator) {
-    if( input === undefined || 
-        input === null || 
+    if( input === undefined ||
+        input === null ||
         input === '' ) {
       return true;
     }
@@ -384,7 +395,7 @@ module.exports = class extends Generator {
 
   _ipOrFQDNValidator( host ) {
     host = (host+"").trim();
-    if( !(validator.isIP(host) || 
+    if( !(validator.isIP(host) ||
       validator.isFQDN(host)) ) {
       throw new Error( 'No IP address or fully qualified domain name' )
     }
