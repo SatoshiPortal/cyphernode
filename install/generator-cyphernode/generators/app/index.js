@@ -370,7 +370,7 @@ module.exports = class extends Generator {
       lightning_datapath: '',
       lightning_nodename: '',
       lightning_nodecolor: '',
-      opentimestamps_datapath: '',
+      otsclient_datapath: '',
       installer_cleanup: false
     }, this.props );
     this.props.default_username = process.env.DEFAULT_USER || '';

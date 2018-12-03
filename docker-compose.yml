@@ -65,7 +65,7 @@ services:
     # otsclient JS
     env_file:
       - otsclient_docker/env.properties
-    image: cyphernode/ots:cyphernode-0.05
+    image: cyphernode/otsclient:cyphernode-0.05
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
