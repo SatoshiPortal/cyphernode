@@ -128,13 +128,13 @@ id="003";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(ech
 ## Test deployment from any host of the swarm
 
 ```shell
-echo "GET /getbestblockinfo" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-echo "GET /getbalance" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-echo "GET /getbestblockhash" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-echo "GET /getblockinfo/00000000a64e0d1ae0c39166f4e8717a672daf3d61bf7bbb41b0f487fcae74d2" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-curl -v -H "Content-Type: application/json" -d '{"address":"2MsWyaQ8APbnqasFpWopqUKqsdpiVY3EwLE","amount":0.2}' cyphernode:8888/spend
-echo "GET /ln_getinfo" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-echo "GET /ln_newaddr" | docker run --rm -i --network=cyphernodenet alpine nc cyphernode:8888 -
-curl -v -H "Content-Type: application/json" -d '{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}' cyphernode:8888/ln_create_invoice
-curl -v -H "Content-Type: application/json" -d '{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3","msatoshi":10000,"description":"Bitcoin Outlet order #7082"}' cyphernode:8888/ln_pay
+echo "GET /getbestblockinfo" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+echo "GET /getbalance" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+echo "GET /getbestblockhash" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+echo "GET /getblockinfo/00000000a64e0d1ae0c39166f4e8717a672daf3d61bf7bbb41b0f487fcae74d2" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+curl -v -H "Content-Type: application/json" -d '{"address":"2MsWyaQ8APbnqasFpWopqUKqsdpiVY3EwLE","amount":0.2}' proxy:8888/spend
+echo "GET /ln_getinfo" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+echo "GET /ln_newaddr" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
+curl -v -H "Content-Type: application/json" -d '{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}' proxy:8888/ln_create_invoice
+curl -v -H "Content-Type: application/json" -d '{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3","msatoshi":10000,"description":"Bitcoin Outlet order #7082"}' proxy:8888/ln_pay
 ```
