@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml $BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OPENTIMESTAMPS_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml $BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OPENTIMESTAMPS_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -431,10 +431,10 @@ install_docker() {
     fi
   fi
 
-  if [[ $FEATURE_OPENTIMESTAMPS == true ]]; then
-    if [ ! -d $OPENTIMESTAMPS_DATAPATH ]; then
-      step "   [32mcreate[0m $OPENTIMESTAMPS_DATAPATH"
-      sudo_if_required mkdir -p $OPENTIMESTAMPS_DATAPATH
+  if [[ $FEATURE_OTSCLIENT == true ]]; then
+    if [ ! -d $OTSCLIENT_DATAPATH ]; then
+      step "   [32mcreate[0m $OTSCLIENT_DATAPATH"
+      sudo_if_required mkdir -p $OTSCLIENT_DATAPATH
       next
     fi
   fi
@@ -652,4 +652,3 @@ if [[ $INSTALL == 1 ]]; then
   modify_permissions
   install
 fi
-

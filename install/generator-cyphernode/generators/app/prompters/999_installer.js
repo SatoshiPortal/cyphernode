@@ -20,7 +20,7 @@ const installerLunanode = function(props) {
 };
 
 module.exports = {
-  name: function() { 
+  name: function() {
     return name;
   },
   prompts: function( utils ) {
@@ -77,13 +77,13 @@ module.exports = {
       message: prefix()+'Where is your lightning node data?'+utils._getHelp('lightning_datapath'),
     },
     {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('opentimestamps') !== -1 },
+      when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
       type: 'input',
-      name: 'opentimestamps_datapath',
-      default: utils._getDefault( 'opentimestamps_datapath' ),
+      name: 'otsclient_datapath',
+      default: utils._getDefault( 'otsclient_datapath' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your opentimestamps data?'+utils._getHelp('opentimestamps_datapath'),
+      message: prefix()+'Where is your otsclient data?'+utils._getHelp('otsclient_datapath'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
@@ -98,7 +98,7 @@ module.exports = {
       name: 'lightning_expose',
       default: utils._getDefault( 'lightning_expose' ),
       message: prefix()+'Expose lightning node outside of the docker network?'+utils._getHelp('lightning_expose'),
-    },    
+    },
     {
       when: installerDocker,
       type: 'list',
