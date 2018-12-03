@@ -79,6 +79,11 @@ next() {
     return $STEP_OK
 }
 
+#function finish {
+#
+#}
+#trap finish EXIT
+
 cowsay() {
 echo '[38;5;148m[39m
 [38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;184m [39m[38;5;178m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;214m [39m[38;5;208m [39m[38;5;208m [39m[38;5;208m_[39m[38;5;208m_[39m[38;5;208m_[39m[38;5;208m_[39m[38;5;208m_[39m[38;5;208m_[39m[38;5;208m_[39m[38;5;209m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;203m_[39m[38;5;204m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;198m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m_[39m[38;5;199m [39m[38;5;163m[39m
@@ -99,7 +104,7 @@ echo '[38;5;148m[39m
 sudo_if_required() {
   if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
     try sudo $@
-  else 
+  else
     try $@
   fi
 }
@@ -138,7 +143,7 @@ configure() {
     recreate="recreate"
   fi
 
-  
+
 
   local arch=$(uname -m)
   local pw_env=''
@@ -162,10 +167,18 @@ configure() {
     clear && echo "Thinking..."
   fi
 
+  # before starting a new cyphernodeconf, kill all the others
+  local otherCyphernodeconf=$(docker ps | grep "cyphernodeconf" | awk '{ print $1 }');
+
+  if [[ ! ''$otherCyphernodeconf == '' ]]; then
+    docker rm -f $otherCyphernodeconf > /dev/null 2>&1
+  fi
+
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
              --log-driver=none$pw_env \
+             --network none \
              --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
   if [[ -f exitStatus.sh ]]; then
     . ./exitStatus.sh
@@ -195,7 +208,7 @@ copy_file() {
   if [[ ! -f $sourceFile ]]; then
     return 1;
   fi
-  
+
   if [[ -f $targetFile ]]; then
     ${sudo}cmp --silent $sourceFile $targetFile
     if [[ $? == 1 ]]; then
@@ -206,7 +219,7 @@ copy_file() {
         next
       fi
       doCopy=1
-    else 
+    else
       echo "[36midentical[0m $sourceFile == $targetFile"
     fi
   else
@@ -224,7 +237,7 @@ copy_file() {
 create_user() {
   #check if user exists
   if [[ ! $RUN_AS_USER == $USER ]]; then
-    id -u $RUN_AS_USER > /dev/null 2>&1 
+    id -u $RUN_AS_USER > /dev/null 2>&1
     if [[ $? == 1 ]]; then
       step "   [32mcreate[0m user $RUN_AS_USER "
       if [[ $(id -u) == 0 ]]; then
@@ -352,7 +365,7 @@ install_docker() {
     copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
     copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
   fi
-  
+
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
     sudo_if_required mkdir -p $PROXY_DATAPATH
@@ -367,7 +380,7 @@ install_docker() {
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
 
-      local cmpStatus=$(compare_bitcoinconf $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf) 
+      local cmpStatus=$(compare_bitcoinconf $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
@@ -511,11 +524,11 @@ sanity_checks() {
     RUN_AS_USER=$USER
   else
     local OS=$(uname -s)
-    id -u $RUN_AS_USER > /dev/null 2>&1 
+    id -u $RUN_AS_USER > /dev/null 2>&1
     if [[ $OS == 'Darwin' && $? == 1 ]]; then
       echo "          [31mAutomatic user creation not supported on OSX.[0m"
       echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand and run: ./setup.sh -i[0m"
-      exit  
+      exit
     fi
   fi
 
@@ -526,12 +539,12 @@ sanity_checks() {
     sudo=1
     sudo_reason='user'
   fi
-  
+
   if [[ $sudo == 0 ]]; then
     # we still don't need sudo. Let's check access to directories
     sudo=$(check_directory_owner)
     sudo_reason='directories'
-  fi 
+  fi
 
   if [[ $sudo == 1 ]]; then
     echo "    [32mcheck[0m Cyphernode installer has determined that it needs sudo to continue."
@@ -558,7 +571,7 @@ sanity_checks() {
 
       fi
       exit
-    else 
+    else
       SUDO_REQUIRED=1
     fi
   else
