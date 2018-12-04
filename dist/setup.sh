@@ -444,7 +444,7 @@ install_docker() {
 
   if [[ $DOCKER_MODE == 'swarm' && $noSwarm == 1 ]]; then
     step "     [32minit[0m docker swarm"
-    try docker swarm init > /dev/null 2>&1
+    try docker swarm init --task-history-limit 1 > /dev/null 2>&1
     next
   fi
 
@@ -454,7 +454,7 @@ install_docker() {
     if [[ $net_entry =~ 'local' && $DOCKER_MODE == 'swarm' ]]; then
       step " [32mrecreate[0m cyphernode network"
       try docker network rm cyphernodenet > /dev/null 2>&1
-      try docker network create -d overlay cyphernodenet > /dev/null 2>&1
+      try docker network create -d overlay --attachable --opt encrypted cyphernodenet > /dev/null 2>&1
       next
     elif [[ $net_entry =~ 'swarm' && $DOCKER_MODE == 'compose' ]]; then
       step " [32mrecreate[0m cyphernode network"
@@ -465,7 +465,7 @@ install_docker() {
   else
     if [[ $DOCKER_MODE == 'swarm' ]]; then
       step "   [32mcreate[0m cyphernode network"
-      try docker network create -d overlay cyphernodenet > /dev/null 2>&1
+      try docker network create -d overlay --attachable --opt encrypted cyphernodenet > /dev/null 2>&1
       next
     elif [[ $DOCKER_MODE == 'compose' ]]; then
       step "   [32mcreate[0m cyphernode network"
