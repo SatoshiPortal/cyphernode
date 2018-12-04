@@ -179,7 +179,7 @@ configure() {
              -e DEFAULT_USER=$USER \
              --log-driver=none$pw_env \
              --network none \
-             --rm$interactive cyphernodeconf:latest $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
+             --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
   if [[ -f exitStatus.sh ]]; then
     . ./exitStatus.sh
     rm ./exitStatus.sh
