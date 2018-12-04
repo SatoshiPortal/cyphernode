@@ -122,7 +122,7 @@ services:
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
     command: $USER bitcoind
-    image: cyphernode/bitcoin:0.17.0
+    image: cyphernode/bitcoin:v0.17.0
 <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
