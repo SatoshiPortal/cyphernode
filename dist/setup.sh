@@ -489,8 +489,6 @@ install_docker() {
     try chmod +x stop.sh
     next
   fi
-
-  cowsay
 }
 
 check_directory_owner() {
@@ -648,7 +646,9 @@ fi
 if [[ $INSTALL == 1 ]]; then
   sanity_checks
   create_user
+  install
   modify_owner
   modify_permissions
-  install
 fi
+
+cowsay
