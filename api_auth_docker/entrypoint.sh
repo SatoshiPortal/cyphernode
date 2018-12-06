@@ -11,9 +11,6 @@ if [[ $1 ]]; then
 
 fi
 
-# create files with -rw-rw----
-# this will allow /var/run/fcgiwrap.socket to be accessed rw for group
-su -c "umask 0006" $user
-
 spawn-fcgi -M 0660 -s /var/run/fcgiwrap.socket -u $user -g nginx -U $user -- `which fcgiwrap`
+chmod g+rw /var/run/fcgiwrap.socket
 nginx -g "daemon off;"
