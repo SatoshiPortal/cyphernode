@@ -364,7 +364,7 @@ module.exports = class extends Generator {
       gatekeeper_keys: { configEntries: [], clientInformation: [] },
       gatekeeper_sslcert: '',
       gatekeeper_sslkey: '',
-      gatekeeper_cns: '',
+      gatekeeper_cns: process.env['DEFAULT_CERT_HOSTNAME'] || '',
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
       lightning_datapath: '',
