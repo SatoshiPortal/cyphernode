@@ -16,6 +16,8 @@ const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
 const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
+const configFileVersion='0.0.1';
+
 
 const defaultAPIProperties = `
 # Watcher can:
@@ -156,6 +158,7 @@ module.exports = class extends Generator {
 
       try {
         this.props = JSON.parse(r.value);
+        this.props.__version = this.props.__version || configFileVersion;
       } catch( err ) {
         console.log(chalk.bold.red('config archive is corrupt.'));
         process.exit(1);
@@ -185,8 +188,14 @@ module.exports = class extends Generator {
       }
 
       this.configurationPassword = r.password0;
-      this.props = {};
+      this.props = {
+        __version: configFileVersion
+      };
 
+    }
+
+    if( this.props.__version !== configFileVersion ) {
+      // migrate here
     }
 
     this._assignConfigDefaults();
