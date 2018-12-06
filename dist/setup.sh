@@ -591,6 +591,7 @@ RECREATE=0
 TRACING=1
 ALWAYSYES=0
 SUDO_REQUIRED=0
+AUTOSTART=0
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
@@ -600,7 +601,7 @@ function ctrl_c() {
   exit
 }
 
-while getopts ":cirhy" opt; do
+while getopts ":cirhys" opt; do
   case $opt in
     r)
       RECREATE=1
@@ -614,8 +615,15 @@ while getopts ":cirhy" opt; do
     y)
       ALWAYSYES=1
       ;;
+    s)
+      AUTOSTART=1
+      ;;
     h)
-      echo "Use -c to configure and -i to install or -r to recreate from config.json." >&2
+      echo "-c configure" >&2
+      echo "-r recreate" >&2
+      echo "-i install" >&2
+      echo "-y assume yes to all questions" >&2
+      echo "-s autostart" >&2
       exit
       ;;
     \?)
@@ -651,4 +659,9 @@ if [[ $INSTALL == 1 ]]; then
   modify_permissions
 fi
 
-cowsay
+if [[ $AUTOSTART == 1 ]]; then
+  exec ./start.sh
+else
+  cowsay
+fi
+
