@@ -43,7 +43,7 @@ dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -ps -c 32
 Put the id, key and groups in keys.properties and give the id and key to the client.  The key is a secret.  keys.properties looks like this:
 
 ```property
-#kappiid="id";kapi_key="key";kapi_groups="group1,group2";leave the rest intact
+# kapi_id="id";kapi_key="key";kapi_groups="group1,group2";leave the rest intact
 kapi_id="001";kapi_key="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36";kapi_groups="watcher";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}
 kapi_id="002";kapi_key="50c5e483b80964595508f214229b014aa6c013594d57d38bcb841093a39f1d83";kapi_groups="watcher";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}
 kapi_id="003";kapi_key="b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af";kapi_groups="watcher,spender";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}
