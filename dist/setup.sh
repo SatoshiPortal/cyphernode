@@ -174,13 +174,19 @@ configure() {
     docker rm -f $otherCyphernodeconf > /dev/null 2>&1
   fi
 
+  local user=$(id -u):$(id -g)
+
+  if [[ ! ''$CONFIGURE_AS_USER == '' ]]; then
+      user=$CONFIGURE_AS_USER
+  fi
+
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              --log-driver=none$pw_env \
              --network none \
-             --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
+             --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $user yo --no-insight cyphernode$gen_options $recreate
   if [[ -f exitStatus.sh ]]; then
     . ./exitStatus.sh
     rm ./exitStatus.sh
