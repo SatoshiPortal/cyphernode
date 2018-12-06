@@ -18,16 +18,16 @@ trace_rc()
 
 
 build_docker_image() {
-  
+
   local dockerfile="Dockerfile"
 
   if [[ ""$3 != "" ]]; then
     dockerfile=$3
   fi
 
-  trace "building docker image: $2:latest"
+  trace "building docker image: $2"
   #docker build -q $1 -f $1/$dockerfile -t $2:latest > /dev/null
-  docker build $1 -f $1/$dockerfile -t $2:latest
+  docker build $1 -f $1/$dockerfile -t $2
 
 }
 
@@ -46,19 +46,19 @@ build_docker_images() {
   fi
 
   trace "Creating cyphernodeconf image"
-  build_docker_image install/ cyphernodeconf
+  build_docker_image install/ cyphernode/cyphernodeconf:cyphernode-0.05
 
   trace "Creating SatoshiPortal images"
-  build_docker_image install/SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin
-  build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning $clightning_dockerfile
-  
+  build_docker_image install/SatoshiPortal/dockers/$archpath/bitcoin-core cyphernode/bitcoin:cyphernode-0.05
+  build_docker_image install/SatoshiPortal/dockers/$archpath/LN/c-lightning cyphernode/clightning:cyphernode-0.05 $clightning_dockerfile
+
   trace "Creating cyphernode images"
-  build_docker_image api_auth_docker/ cyphernode/gatekeeper
-  build_docker_image proxy_docker/ cyphernode/proxy
-  build_docker_image cron_docker/ cyphernode/proxycron
-  build_docker_image pycoin_docker/ cyphernode/pycoin
-  build_docker_image otsclient_docker/ cyphernode/otsclient
-  
+  build_docker_image api_auth_docker/ cyphernode/gatekeeper:cyphernode-0.05
+  build_docker_image proxy_docker/ cyphernode/proxy:cyphernode-0.05
+  build_docker_image cron_docker/ cyphernode/proxycron:cyphernode-0.05
+  build_docker_image pycoin_docker/ cyphernode/pycoin:cyphernode-0.05
+  build_docker_image otsclient_docker/ cyphernode/otsclient:cyphernode-0.05
+
 }
 
 build_docker_images
