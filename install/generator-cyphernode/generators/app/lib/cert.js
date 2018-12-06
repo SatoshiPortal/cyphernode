@@ -64,6 +64,8 @@ module.exports = class Cert {
 	async create( cns ) {
 		cns = cns || [];
 
+		cns = cns.concat(['127.0.0.1','localhost']);
+
 		let args = defaultArgs.slice();
 
 		const certFileTmp = tmp.fileSync();
@@ -84,9 +86,9 @@ module.exports = class Cert {
 
 		const conf = this.buildConfig( cns );
 		fs.writeFileSync( confFileTmp.name, conf );
-		
+
 		const openssl = spawn('openssl', args,  { stdio: ['ignore', 'ignore', 'ignore'] } );
-		
+
 		let code = await new Promise( function(resolve, reject) {
 			openssl.on('exit', (code) => {
 				resolve(code);

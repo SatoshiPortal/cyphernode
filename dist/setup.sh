@@ -177,6 +177,7 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
+             -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $(id -u):$(id -g) yo --no-insight cyphernode$gen_options $recreate
