@@ -29,7 +29,7 @@ action_gettransaction=watcher
 action_ln_getinfo=watcher
 action_ln_create_invoice=watcher
 
-# Spender can do what the watcher can do  plus:
+# Spender can do what the watcher can do, plus:
 action_getbalance=spender
 action_getnewaddress=spender
 action_spend=spender
@@ -42,10 +42,10 @@ action_ln_newaddr=spender
 action_ots_stamp=spender
 action_ots_getfile=spender
 
-# Admin can do what the spender can do  plus:
+# Admin can do what the spender can do, plus:
 
 
-# Should be called from inside the Swarm:
+# Should be called from inside the Docker network only:
 action_conf=internal
 action_executecallbacks=internal
 action_ots_backoffice=internal
@@ -346,7 +346,7 @@ module.exports = class extends Generator {
       installer_mode: 'docker',
       devmode: false,
       devregistry: false,
-      run_as_different_user: false,
+      run_as_different_user: true,
       username: 'cyphernode',
       docker_mode: 'compose',
       bitcoin_rpcuser: 'bitcoin',
