@@ -530,13 +530,11 @@ sanity_checks() {
 
   local OS=$(uname -s)
 
-  if [[ $OS == 'Darwin' ]]; then
-    echo "           Run as user option is not supported on OSX.[0m"
-    echo "           [33mPlease run start.sh later as the user you are running this setup utility under.[0m"
-    RUN_AS_USER=$USER
-  fi
-
   if [[ ''$RUN_AS_USER == '' ]]; then
+    RUN_AS_USER=$USER
+  elif [[ $OS == 'Darwin' ]]; then
+    echo "          Run as user option is not supported on OSX.[0m"
+    echo "          [33mPlease run start.sh later as the user you are running this setup utility under.[0m"
     RUN_AS_USER=$USER
   fi
 
