@@ -528,6 +528,16 @@ sanity_checks() {
 
   echo "    [32mcheck[0m requirements."
 
+  if ! [ -x "$(command -v docker)" ]; then
+    echo "          [31mdocker is not installed on your system. Please check https://www.docker.com/get-started.[0m"
+    exit
+  fi
+
+  if ! [ -x "$(command -v docker-compose)" ]; then
+    echo "          [31mdocker-compose is not installed on your system. Please check https://docs.docker.com/compose/install/.[0m"
+    exit
+  fi
+
   local OS=$(uname -s)
 
   if [[ ''$RUN_AS_USER == '' ]]; then
@@ -581,7 +591,7 @@ sanity_checks() {
       SUDO_REQUIRED=1
     fi
   else
-    echo "    [32mcheck[0m everything seems to be ok."
+    echo "    [32mnice![0m everything seems to be ok."
   fi
 }
 
