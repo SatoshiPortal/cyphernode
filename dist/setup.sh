@@ -368,7 +368,8 @@ install_docker() {
 
     copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
     copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/gatekeeper/ip-whitelist.conf $GATEKEEPER_DATAPATH/ip-whitelist.conf 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+    copy_file $sourceDataPath/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
     copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
     copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
   fi
@@ -378,6 +379,8 @@ install_docker() {
     sudo_if_required mkdir -p $PROXY_DATAPATH
     next
   fi
+
+  copy_file $sourceDataPath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
