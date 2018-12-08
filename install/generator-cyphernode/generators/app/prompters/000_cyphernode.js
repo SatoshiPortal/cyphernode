@@ -11,7 +11,7 @@ const prefix = function() {
 };
 
 module.exports = {
-  name: function() { 
+  name: function() {
     return name;
   },
   prompts: function( utils ) {
@@ -43,7 +43,7 @@ module.exports = {
       message: prefix()+'Run as different user?'+utils._getHelp('run_as_different_user')
     },
     {
-      when: function( props ) { 
+      when: function( props ) {
         return props.run_as_different_user;
       },
       type: 'input',
@@ -54,14 +54,26 @@ module.exports = {
       validate: utils._usernameValidator
     },
     {
+      type: 'confirm',
+      name: 'use_xpub',
+      default: utils._getDefault( 'want_xpub' )||false,
+      message: prefix()+'Use an xpub key to watch or generate adresses?'+utils._getHelp('use_xpub'),
+    },
+    {
+      when: function( props ) {
+        return props.use_xpub;
+      },
       type: 'input',
       name: 'xpub',
       default: utils._getDefault( 'xpub' ),
-      message: prefix()+'What is your xpub to watch?'+utils._getHelp('xpub'),
+      message: prefix()+'What is your xpub key?'+utils._getHelp('xpub'),
       filter: utils._trimFilter,
       validate: utils._xkeyValidator
     },
     {
+      when: function( props ) {
+        return props.use_xpub;
+      },
       type: 'input',
       name: 'derivation_path',
       default: utils._getDefault( 'derivation_path' ),
