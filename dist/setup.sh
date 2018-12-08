@@ -528,16 +528,16 @@ sanity_checks() {
 
   echo "    [32mcheck[0m requirements."
 
+  local OS=$(uname -s)
+
+  if [[ $OS == 'Darwin' ]]; then
+    echo "           Run as user option is not supported on OSX.[0m"
+    echo "           [33mPlease run start.sh later as the user you are running this setup utility under.[0m"
+    RUN_AS_USER=$USER
+  fi
+
   if [[ ''$RUN_AS_USER == '' ]]; then
     RUN_AS_USER=$USER
-  else
-    local OS=$(uname -s)
-    id -u $RUN_AS_USER > /dev/null 2>&1
-    if [[ $OS == 'Darwin' && $? == 1 ]]; then
-      echo "          [31mAutomatic user creation not supported on OSX.[0m"
-      echo "          [31mPlease create the user \"$RUN_AS_USER\" by hand and run: ./setup.sh -i[0m"
-      exit
-    fi
   fi
 
   local sudo=0
