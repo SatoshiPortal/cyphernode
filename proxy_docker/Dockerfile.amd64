@@ -54,6 +54,6 @@ RUN chmod +x startproxy.sh requesthandler.sh lightning-cli \
  && chmod o+w . \
  && mkdir db
 
-VOLUME ["${HOME}/db", "${HOME}/.lightning"]
+VOLUME ["${HOME}/db", "/.lightning"]
 
 ENTRYPOINT ["su-exec"]
