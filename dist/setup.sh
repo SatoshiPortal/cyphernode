@@ -178,6 +178,7 @@ configure() {
 
   if [[ ! ''$CONFIGURE_AS_USER == '' ]]; then
       user=$CONFIGURE_AS_USER
+      step "[32mconfigure[0m as user \"$CONFIGURE_AS_USER\""
   fi
 
   # configure features of cyphernode
