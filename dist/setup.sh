@@ -485,6 +485,8 @@ install_docker() {
   fi
 
   copy_file $sourceDataPath/installer/docker/docker-compose.yaml docker-compose.yaml
+  copy_file $sourceDataPath/installer/testinstall.sh testinstall.sh 0
+  copy_file $sourceDataPath/installer/testfeatures.sh testfeatures.sh 0
   copy_file $sourceDataPath/installer/start.sh start.sh 0
   copy_file $sourceDataPath/installer/stop.sh stop.sh 0
 
@@ -499,6 +501,18 @@ install_docker() {
     try chmod +x stop.sh
     next
   fi
+
+    if [[ ! -x testinstall.sh ]]; then
+      step "     [32mmake[0m testinstall.sh executable"
+      try chmod +x testinstall.sh
+      next
+    fi
+
+    if [[ ! -x testfeatures.sh ]]; then
+      step "     [32mmake[0m testfeatures.sh executable"
+      try chmod +x testfeatures.sh
+      next
+    fi
 }
 
 check_directory_owner() {
@@ -682,4 +696,3 @@ if [[ $AUTOSTART == 1 ]]; then
 else
   cowsay
 fi
-
