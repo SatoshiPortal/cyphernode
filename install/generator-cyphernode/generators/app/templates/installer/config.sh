@@ -9,10 +9,10 @@ DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>
 CLEANUP=<%= installer_cleanup?'true':'false' %>
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
-OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
+OTSCLIENT_DATAPATH=<%= lightning_datapath %>
 <% } %>
 <% if ( features.indexOf('otsclient') !== -1 ) { %>
-LIGHTNING_DATAPATH=<%= lightning_datapath %>
+LIGHTNING_DATAPATH=<%= otsclient_datapath %>
 <% } %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
