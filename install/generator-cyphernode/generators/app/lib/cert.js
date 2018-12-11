@@ -64,7 +64,7 @@ module.exports = class Cert {
 	async create( cns ) {
 		cns = cns || [];
 
-		cns = cns.concat(['127.0.0.1','localhost']);
+		cns = cns.concat(['127.0.0.1','localhost','gatekeeper']);
 
 		let args = defaultArgs.slice();
 
