@@ -5,7 +5,7 @@ apk add --update --no-cache openssl curl
 . keys.properties
 
 checkgatekeeper() {
-  echo ; echo "Testing Gatekeeper..." > /dev/console
+  echo -e "\r\nTesting Gatekeeper..." > /dev/console
 
   local rc
   local id="001"
@@ -72,7 +72,7 @@ checkgatekeeper() {
 }
 
 checkpycoin() {
-  echo ; echo "Testing Pycoin..." > /dev/console
+  echo -e "\r\nTesting Pycoin..." > /dev/console
   local rc
   local id="002"
   local k
@@ -94,7 +94,7 @@ checkpycoin() {
 }
 
 checkots() {
-  echo ; echo "Testing OTSclient..." > /dev/console
+  echo -e "\r\nTesting OTSclient..." > /dev/console
   local rc
   local id="002"
   local k
@@ -117,7 +117,7 @@ checkots() {
 }
 
 checkbitcoinnode() {
-  echo ; echo "Testing Bitcoin..." > /dev/console
+  echo -e "\r\nTesting Bitcoin..." > /dev/console
   local rc
   local id="002"
   local k
@@ -139,7 +139,7 @@ checkbitcoinnode() {
 }
 
 checklnnode() {
-  echo ; echo "Testing Lightning..." > /dev/console
+  echo -e "\r\nTesting Lightning..." > /dev/console
   local rc
   local id="002"
   local k
@@ -161,7 +161,7 @@ checklnnode() {
 }
 
 checkservice() {
-  echo ; echo "Testing if Cyphernode is up and running... I will keep trying during up to 5 minutes to give time to Docker to deploy everything..." > /dev/console
+  echo -e "\r\nTesting if Cyphernode is up and running... I will keep trying during up to 5 minutes to give time to Docker to deploy everything..." > /dev/console
 
   local outcome
   local returncode=0
@@ -197,7 +197,7 @@ checkservice() {
   #    "lightning":true
   #  }
   for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
-    echo "  Analyzing ${container} results..." > /dev/console
+    echo "  Building ${container} results..." > /dev/console
     [ -n "${result}" ] && result="${result},"
     result="${result}\"${container}\":"
     eval "returncode=\$c_${container}"
@@ -213,6 +213,35 @@ checkservice() {
   echo $result
 
   return ${outcome}
+}
+
+timeout_feature() {
+  local testwhat=${1}
+  local returncode
+  local endtime=$(($(date +%s) + 120))
+
+  while :
+  do
+    eval ${testwhat}
+    returncode=$?
+
+    # If no error or 2 minutes passed, we get out of this loop
+    ([ "${returncode}" -eq "0" ] || [ $(date +%s) -gt ${endtime} ]) && break
+
+    echo "xxxxx Maybe it's too early, I'll retry in 5 seconds (for max 2 minutes total)." > /dev/console
+
+    sleep 5
+  done
+
+  return ${returncode}
+}
+
+feature_status() {
+  local returncode=${1}
+  local errormsg=${2}
+
+  [ "${returncode}" -eq "0" ] && echo "true"
+  [ "${returncode}" -ne "0" ] && echo "false" && echo ${errormsg} > /dev/console
 }
 
 # /proxy/installation.json will contain something like that:
@@ -255,37 +284,32 @@ fi
 #  }
 
 result="${result},\"features\":{\"gatekeeper\":"
-checkgatekeeper
+timeout_feature checkgatekeeper
 returncode=$?
-[ "${returncode}" -eq "0" ] && result="${result}true"
-[ "${returncode}" -ne "0" ] && result="${result}false" && echo "xxxxx Gatekeeper error!" > /dev/console
+result="${result}$(feature_status ${returncode} 'xxxxx Gatekeeper error!')"
 
 result="${result},\"pycoin\":"
-checkpycoin
+timeout_feature checkpycoin
 returncode=$?
-[ "${returncode}" -eq "0" ] && result="${result}true"
-[ "${returncode}" -ne "0" ] && result="${result}false" && echo "xxxxx Pycoin error!" > /dev/console
+result="${result}$(feature_status ${returncode} 'xxxxx Pycoin error!')"
 
 <% if (features.indexOf('otsclient') != -1) { %>
 result="${result},\"otsclient\":"
-checkots
+timeout_feature checkots
 returncode=$?
-[ "${returncode}" -eq "0" ] && result="${result}true"
-[ "${returncode}" -ne "0" ] && result="${result}false" && echo "xxxxx OTSclient error!" > /dev/console
+result="${result}$(feature_status ${returncode} 'xxxxx OTSclient error!')"
 <% } %>
 
 result="${result},\"bitcoin\":"
-checkbitcoinnode
+timeout_feature checkbitcoinnode
 returncode=$?
-[ "${returncode}" -eq "0" ] && result="${result}true"
-[ "${returncode}" -ne "0" ] && result="${result}false" && echo "xxxxx Bitcoin error!" > /dev/console
+result="${result}$(feature_status ${returncode} 'xxxxx Bitcoin error!')"
 
 <% if (features.indexOf('lightning') != -1) { %>
 result="${result},\"lightning\":"
-checklnnode
+timeout_feature checklnnode
 returncode=$?
-[ "${returncode}" -eq "0" ] && result="${result}true"
-[ "${returncode}" -ne "0" ] && result="${result}false" && echo "xxxxx Lightning error!" > /dev/console
+result="${result}$(feature_status ${returncode} 'xxxxx Lightning error!')"
 <% } %>
 
 result="{${result}}}"
