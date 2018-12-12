@@ -6,5 +6,9 @@
   {
     "name": "Opentimestamps client",
     "value": "otsclient"
+  },
+  {
+    "name": "Grafana",
+    "value": "grafana"
   }
 ]

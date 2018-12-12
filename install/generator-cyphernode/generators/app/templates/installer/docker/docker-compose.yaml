@@ -131,6 +131,26 @@ services:
     restart: always
 <% } %>
 
+<% if ( features.indexOf('grafana') !== -1 ) { %>
+  grafana:
+    image: cyphernode/grafana:cyphernode-0.05
+    #    deploy:
+    #      placement:
+    #        constraints: [node.hostname==dev]
+    volumes:
+    - "<%= grafana_datapath%>/grafana/grafana.ini:/etc/grafana/grafana.ini"
+    - "<%= grafana_datapath%>/grafana/data:/var/lib/grafana"
+    - "<%= grafana_datapath%>/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
+    - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
+    - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
+    # not ideal ... should be behind traefik or gatekeeper
+    ports:
+    - "3000:3000"
+    networks:
+    - cyphernodenet
+    restart: always
+<% } %>
+
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
     command: $USER bitcoind
