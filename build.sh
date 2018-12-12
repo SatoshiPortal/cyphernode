@@ -73,7 +73,7 @@ build_docker_images() {
   build_docker_image cron_docker/ cyphernode/proxycron:$PROXYCRON_VERSION
   build_docker_image pycoin_docker/ cyphernode/pycoin:$PYCOIN_VERSION
   build_docker_image otsclient_docker/ cyphernode/otsclient:$OTSCLIENT_VERSION
-
+  build_docker_image grafana_docker/ cyphernode/grafana:$GRAFANA_VERSION
 }
 
 build_docker_images

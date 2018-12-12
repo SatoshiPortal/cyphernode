@@ -3,6 +3,12 @@ const chalk = require('chalk');
 
 const name = 'installer';
 
+const grafana_templates = [
+  path.join('grafana', 'grafana.ini' ),
+  path.join('grafana', 'influxdb.conf' ),
+  path.join('grafana', 'telegraf.conf' ),
+]
+
 const capitalise = function( txt ) {
   return txt.charAt(0).toUpperCase() + txt.substr(1);
 };
@@ -259,6 +265,15 @@ module.exports = {
       message: prefix()+'Where is your otsclient data?'+utils._getHelp('otsclient_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('grafana') !== -1 },
+      type: 'input',
+      name: 'grafana_datapath',
+      default: utils._getDefault( 'grafana_datapath' ),
+      filter: utils._trimFilter,
+      validate: utils._pathValidator,
+      message: prefix()+'Where is your grafana data?'+utils._getHelp('grafana_datapath'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',
@@ -295,9 +310,17 @@ module.exports = {
     }];
   },
   templates: function( props ) {
+    let templates = [];
     if( props.installer_mode === 'docker' ) {
-      return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', path.join('docker', 'docker-compose.yaml')];
+      templates = ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', path.join('docker', 'docker-compose.yaml')];
+    } else {
+      templates = ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh'];
     }
-    return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh'];
+
+    if( installerDocker(props) && props.features.indexOf('grafana') !== -1 ) {
+      templates = templates.concat(grafana_templates);
+    }
+
+    return templates;
   }
 };
