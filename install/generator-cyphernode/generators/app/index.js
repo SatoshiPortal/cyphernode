@@ -475,7 +475,7 @@ module.exports = class extends Generator {
       return '';
     }
 
-    return "\n\n"+wrap( html2ansi(helpText),82 )+"\n\n";
+    return "\n\n"+chalk.reset.cyan(wrap( html2ansi(helpText),82 ))+"\n\n";
   }
 
 };
