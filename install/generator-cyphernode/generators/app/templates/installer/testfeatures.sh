@@ -84,7 +84,6 @@ checkpycoin() {
   local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
   local token="$h64.$p64.$s"
 
-  echo "  Testing pycoin... " > /dev/console
   rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/derivepubpath)
   [ "${rc}" -ne "200" ] && return 100
 
@@ -106,7 +105,6 @@ checkots() {
   local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
   local token="$h64.$p64.$s"
 
-  echo "  Testing otsclient... " > /dev/console
   rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ots_stamp)
   echo "${rc}" | grep "Invalid hash 123 for sha256" > /dev/null
   [ "$?" -ne "0" ] && return 200
@@ -129,7 +127,6 @@ checkbitcoinnode() {
   local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
   local token="$h64.$p64.$s"
 
-  echo "  Testing bitcoin node... " > /dev/console
   rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getbestblockhash)
   [ "${rc}" -ne "200" ] && return 300
 
@@ -151,7 +148,6 @@ checklnnode() {
   local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
   local token="$h64.$p64.$s"
 
-  echo "  Testing LN node... " > /dev/console
   rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ln_getinfo)
   [ "${rc}" -ne "200" ] && return 400
 
@@ -184,31 +180,32 @@ checkservice() {
     # If '0% packet loss' everywhere or 5 minutes passed, we get out of this loop
     ([ "${outcome}" -eq "0" ] || [ $(date +%s) -gt ${endtime} ]) && break
 
+    echo "  Cyphernode still not ready, will retry in 5 seconds for max 5 minutes..." > /dev/console
+
     sleep 5
   done
 
-  #  "containers": {
-  #    "gatekeeper":true,
-  #    "proxy":true,
-  #    "proxycron":true,
-  #    "pycoin":true,
-  #    "otsclient":true,
-  #    "bitcoin":true,
-  #    "lightning":true
-  #  }
+  #  "containers": [
+  #    { "name": "gatekeeper", "active":true },
+  #    { "name": "proxy", "active":true },
+  #    { "name": "proxycron", "active":true },
+  #    { "name": "pycoin", "active":true },
+  #    { "name": "otsclient", "active":true },
+  #    { "name": "bitcoin", "active":true },
+  #    { "name": "lightning", "active":true }
+  #  ]
   for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
-    echo "  Building ${container} results..." > /dev/console
     [ -n "${result}" ] && result="${result},"
-    result="${result}\"${container}\":"
+    result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
     if [ "${returncode}" -eq "0" ]; then
-      result="${result}true"
+      result="${result}true}"
     else
-      result="${result}false"
+      result="${result}false}"
     fi
   done
 
-  result="\"containers\":{${result}}"
+  result="\"containers\":[${result}]"
 
   echo $result
 
@@ -246,22 +243,22 @@ feature_status() {
 
 # /proxy/installation.json will contain something like that:
 #{
-#  "containers": {
-#    "gatekeeper":true,
-#    "proxy":true,
-#    "proxycron":true,
-#    "pycoin":true,
-#    "otsclient":true,
-#    "bitcoin":true,
-#    "lightning":true
-#  },
-#  "features": {
-#    "gatekeeper":true,
-#    "pycoin":true,
-#    "otsclient":true,
-#    "bitcoin":true,
-#    "lightning":true
-#  }
+#  "containers": [
+#    { "name": "gatekeeper", "active":true },
+#    { "name": "proxy", "active":true },
+#    { "name": "proxycron", "active":true },
+#    { "name": "pycoin", "active":true },
+#    { "name": "otsclient", "active":true },
+#    { "name": "bitcoin", "active":true },
+#    { "name": "lightning", "active":true }
+#  ],
+#  "features": [
+#    { "name": "gatekeeper", "working":true },
+#    { "name": "pycoin", "working":true },
+#    { "name": "otsclient", "working":true },
+#    { "name": "bitcoin", "working":true },
+#    { "name": "lightning", "working":true }
+#  ]
 #}
 
 # Let's first see if everything is up.
@@ -275,44 +272,44 @@ else
 fi
 
 # Let's now check each feature fonctionality...
-#  "features": {
-#    "gatekeeper":true,
-#    "pycoin":true,
-#    "otsclient":true,
-#    "bitcoin":true,
-#    "lightning":true
-#  }
+#  "features": [
+#    { "name": "gatekeeper", "working":true },
+#    { "name": "pycoin", "working":true },
+#    { "name": "otsclient", "working":true },
+#    { "name": "bitcoin", "working":true },
+#    { "name": "lightning", "working":true }
+#  ]
 
-result="${result},\"features\":{\"gatekeeper\":"
+result="${result},\"features\":[{\"name\":\"gatekeeper\",\"working\":"
 timeout_feature checkgatekeeper
 returncode=$?
-result="${result}$(feature_status ${returncode} 'xxxxx Gatekeeper error!')"
+result="${result}$(feature_status ${returncode} 'xxxxx Gatekeeper error!')}"
 
-result="${result},\"pycoin\":"
+result="${result},{\"name\":\"pycoin\",\"working\":"
 timeout_feature checkpycoin
 returncode=$?
-result="${result}$(feature_status ${returncode} 'xxxxx Pycoin error!')"
+result="${result}$(feature_status ${returncode} 'xxxxx Pycoin error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
-result="${result},\"otsclient\":"
+result="${result},{\"name\":\"otsclient\",\"working\":"
 timeout_feature checkots
 returncode=$?
-result="${result}$(feature_status ${returncode} 'xxxxx OTSclient error!')"
+result="${result}$(feature_status ${returncode} 'xxxxx OTSclient error!')}"
 <% } %>
 
-result="${result},\"bitcoin\":"
+result="${result},{\"name\":\"bitcoin\",\"working\":"
 timeout_feature checkbitcoinnode
 returncode=$?
-result="${result}$(feature_status ${returncode} 'xxxxx Bitcoin error!')"
+result="${result}$(feature_status ${returncode} 'xxxxx Bitcoin error!')}"
 
 <% if (features.indexOf('lightning') != -1) { %>
-result="${result},\"lightning\":"
+result="${result},{\"name\":\"lightning\",\"working\":"
 timeout_feature checklnnode
 returncode=$?
-result="${result}$(feature_status ${returncode} 'xxxxx Lightning error!')"
+result="${result}$(feature_status ${returncode} 'xxxxx Lightning error!')}"
 <% } %>
 
-result="{${result}}}"
+result="{${result}]}"
 
 echo "${result}" > /proxy/installation.json
 
