@@ -11,7 +11,7 @@ const convert = function(data){
 	let v = data.childNodes && data.childNodes.length?
 		data.childNodes.map(d=> convert(d)).join(''):
 		data.value?data.value:'';
-		
+
 	switch(data.tagName){
 		case 'br':
 			v += '\n'
@@ -27,6 +27,9 @@ const convert = function(data){
 					}
 					if( attr.name === 'italic' && attr.value === 'true' ) {
 						v = chalk.italic(v);
+					}
+					if( attr.name === 'underline' && attr.value === 'true' ) {
+						v = chalk.underline(v);
 					}
 					if( attr.name === 'strikethrough' && attr.value === 'true' ) {
 						v = chalk.strikethrough(v);
