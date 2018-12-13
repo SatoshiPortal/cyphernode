@@ -7,6 +7,9 @@
 . ./otsclient.sh
 . ./responsetoclient.sh
 . ./trace.sh
+. ./monitoring.sh
+
+GRAFANA_PREFIX=otsclient
 
 main()
 {
@@ -33,6 +36,7 @@ main()
 			trace "[main] cmd=${cmd}"
 			http_method=$(echo "${line}" | cut -d ' ' -f1)
 			trace "[main] http_method=${http_method}"
+			monitoring_count "requesthandler.request.${http_method}" 1 $GRAFANA_PREFIX
 			if [ "${http_method}" = "GET" ]; then
 				step=1
 			fi
@@ -63,14 +67,14 @@ main()
 				stamp)
 					# GET http://192.168.111.152:8080/stamp/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
-					response=$(stamp $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+					response=$(monitor_command $GRAFANA_PREFIX requesthandler.stamp stamp $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
 					response_to_client "${response}" ${?}
 					break
 					;;
 				upgrade)
 					# GET http://192.168.111.152:8080/upgrade/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
-					response=$(upgrade $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+					response=$(monitor_command $GRAFANA_PREFIX requesthandler.upgrade upgrade $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
 					response_to_client "${response}" ${?}
 					break
 					;;

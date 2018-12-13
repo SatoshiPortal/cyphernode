@@ -14,10 +14,16 @@
 # token = header64.payload64.signature = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg==.eyJpZCI6IjAwMSIsImV4cCI6MTUzODUyODA3N30K.signature
 #
 
+GRAFANA_PREFIX=gatekeeper
+
 . ./trace.sh
+. ./monitoring.sh
 
 verify_sign()
 {
+
+  monitoring_count "verify_sign.call" 1 $GRAFANA_PREFIX
+
   local returncode
 
   local header64=$(echo ${1} | cut -sd '.' -f1)
@@ -44,6 +50,7 @@ verify_sign()
     # Check for code injection
     # id will usually be an int, but can be alphanum... nothing else
     case $id in (*[![:alnum:]]*|"")
+      monitoring_count "error.verify_sign.codeinjection" 1 $GRAFANA_PREFIX
       trace "[verify_sign] Potential code injection, exiting"
       return 1
     esac
@@ -62,28 +69,35 @@ verify_sign()
     trace "[verify_sign] comp_sign=${comp_sign}"
 
     if [ "${comp_sign}" = "${signature}" ]; then
+      monitoring_count "verify_sign.validsig" 1 $GRAFANA_PREFIX
       trace "[verify_sign] Valid signature!"
 
       verify_group ${id}
       returncode=$?
 
       if [ "${returncode}" -eq 0 ]; then
+        monitoring_count "verify_sign.granted" 1 $GRAFANA_PREFIX
         echo -en "Status: 200 OK\r\n\r\n"
         return
       fi
+      monitoring_count "error.verify_sign.invalidgroup" 1 $GRAFANA_PREFIX
       trace "[verify_sign] Invalid group!"
       return 1
     fi
+    monitoring_count "error.verify_sign.invalidsig" 1 $GRAFANA_PREFIX
     trace "[verify_sign] Invalid signature!"
     return 1
   fi
 
+  monitoring_count "error.verify_sign.expired" 1 $GRAFANA_PREFIX
   trace "[verify_sign] Expired!"
   return 1
 }
 
 verify_group()
 {
+
+  monitoring_count "verify_group.call" 1 $GRAFANA_PREFIX
   trace "[verify_group] Verifying group..."
 
   local id=${1}
@@ -95,6 +109,7 @@ verify_group()
   # action can be alphanum... and _ and - but nothing else
 	local actiontoinspect=$(echo "$action" | tr -d '_-')
   case $actiontoinspect in (*[![:alnum:]]*|"")
+    monitoring_count "error.verify_group.codeinjection" 1 $GRAFANA_PREFIX
     trace "[verify_group] Potential code injection, exiting"
     return 1
   esac
@@ -112,9 +127,14 @@ verify_group()
   trace "[verify_group] user groups=${ugroups}"
 
   case "${ugroups}" in
-    *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+    *${needed_group}*)
+      monitoring_count "verify_group.granted" 1 $GRAFANA_PREFIX
+      trace "[verify_group] Access granted"
+      return 0
+      ;;
   esac
 
+  monitoring_count "error.verify_group.denied" 1 $GRAFANA_PREFIX
   trace "[verify_group] Access NOT granted"
   return 1
 }
@@ -135,4 +155,5 @@ if [ "-${HTTP_AUTHORIZATION%% *}" = "-Bearer" ]; then
   fi
 fi
 
+monitoring_count "error.main.forbidden" 1 $GRAFANA_PREFIX
 echo -en "Status: 403 Forbidden\r\n\r\n"

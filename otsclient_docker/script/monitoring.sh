@@ -1,10 +1,13 @@
 #!/bin/sh
 
-GRAFANA_PREFIX=proxycron
-
 monitoring_count() {
   # type label count prefix
   monitoring_fireAndForget "c" $1 $2 $3
+}
+
+monitoring_gauge() {
+  # type label count prefix
+  monitoring_fireAndForget "g" $1 $2 $3
 }
 
 monitoring_fireAndForget() {
@@ -28,7 +31,17 @@ monitoring_fireAndForget() {
   fi
 }
 
-monitoring_count "main.callbacks" 1 $GRAFANA_PREFIX
+monitor_command() {
+  local prefix=$1; shift
+  local label=$1; shift
 
-curl ${TX_CONF_URL}
-curl ${OTS_URL}
+  "$@"
+  local return_code=$?
+
+  monitoring_count $label 1 $prefix
+  if [[ $return_code -ne 0 ]]; then
+    monitoring_count "error.${label}" 1 $prefix
+  fi
+
+  return $return_code
+}

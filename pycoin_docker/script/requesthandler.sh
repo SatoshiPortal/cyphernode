@@ -7,6 +7,9 @@
 . ./pycoin.sh
 . ./responsetoclient.sh
 . ./trace.sh
+. ./monitoring.sh
+
+GRAFANA_PREFIX=pycoin
 
 main()
 {
@@ -33,6 +36,7 @@ main()
 			trace "[main] cmd=${cmd}"
 			http_method=$(echo "${line}" | cut -d ' ' -f1)
 			trace "[main] http_method=${http_method}"
+			monitoring_count "requesthandler.request.${http_method}" 1 $GRAFANA_PREFIX
 			if [ "${http_method}" = "GET" ]; then
 				step=1
 			fi
@@ -66,7 +70,7 @@ main()
 					# BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
 					# BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
 
-					response=$(derive "${line}")
+					response=$(monitor_command $GRAFANA_PREFIX requesthandler.derive derive "${line}")
 					response_to_client "${response}" ${?}
 					break
 					;;
