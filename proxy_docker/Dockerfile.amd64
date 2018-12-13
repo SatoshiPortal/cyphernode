@@ -24,33 +24,34 @@ RUN apk add --update --no-cache \
     curl \
     su-exec
 
-COPY app/script/callbacks_job.sh ${HOME}/callbacks_job.sh
-COPY app/script/blockchainrpc.sh ${HOME}/blockchainrpc.sh
-COPY app/script/call_lightningd.sh ${HOME}/call_lightningd.sh
-COPY app/script/bitcoin.sh ${HOME}/bitcoin.sh
-COPY app/script/ots.sh ${HOME}/ots.sh
-COPY app/script/requesthandler.sh ${HOME}/requesthandler.sh
-COPY app/script/watchrequest.sh ${HOME}/watchrequest.sh
-COPY app/script/walletoperations.sh ${HOME}/walletoperations.sh
-COPY app/script/confirmation.sh ${HOME}/confirmation.sh
-COPY app/script/startproxy.sh ${HOME}/startproxy.sh
-COPY app/script/trace.sh ${HOME}/trace.sh
-COPY app/script/sendtobitcoinnode.sh ${HOME}/sendtobitcoinnode.sh
-COPY app/script/responsetoclient.sh ${HOME}/responsetoclient.sh
-COPY app/script/importaddress.sh ${HOME}/importaddress.sh
-COPY app/script/sql.sh ${HOME}/sql.sh
-COPY app/data/watching.sql ${HOME}/watching.sql
-COPY app/script/computefees.sh ${HOME}/computefees.sh
-COPY app/script/unwatchrequest.sh ${HOME}/unwatchrequest.sh
-COPY app/script/getactivewatches.sh ${HOME}/getactivewatches.sh
-COPY app/script/manage_missed_conf.sh ${HOME}/manage_missed_conf.sh
-COPY app/script/tests.sh ${HOME}/tests.sh
-COPY app/script/tests-cb.sh ${HOME}/tests-cb.sh
-COPY --from=cyphernode/clightning:v0.6.2 /usr/bin/lightning-cli ${HOME}/lightning-cli
+COPY app/data/cyphernode.sql ${HOME}
+COPY app/data/sqlmigrate* ${HOME}
+COPY app/script/callbacks_job.sh ${HOME}
+COPY app/script/blockchainrpc.sh ${HOME}
+COPY app/script/call_lightningd.sh ${HOME}
+COPY app/script/bitcoin.sh ${HOME}
+COPY app/script/ots.sh ${HOME}
+COPY app/script/requesthandler.sh ${HOME}
+COPY app/script/watchrequest.sh ${HOME}
+COPY app/script/walletoperations.sh ${HOME}
+COPY app/script/confirmation.sh ${HOME}
+COPY app/script/startproxy.sh ${HOME}
+COPY app/script/trace.sh ${HOME}
+COPY app/script/sendtobitcoinnode.sh ${HOME}
+COPY app/script/responsetoclient.sh ${HOME}
+COPY app/script/importaddress.sh ${HOME}
+COPY app/script/sql.sh ${HOME}
+COPY app/script/computefees.sh ${HOME}
+COPY app/script/unwatchrequest.sh ${HOME}
+COPY app/script/getactivewatches.sh ${HOME}
+COPY app/script/manage_missed_conf.sh ${HOME}
+COPY app/script/tests.sh ${HOME}
+COPY app/script/tests-cb.sh ${HOME}
+COPY --from=cyphernode/clightning:v0.6.2 /usr/bin/lightning-cli ${HOME}
 
 WORKDIR ${HOME}
 
-RUN chmod +x startproxy.sh requesthandler.sh lightning-cli \
+RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh \
  && chmod o+w . \
  && mkdir db
 
