@@ -20,6 +20,14 @@ Or you can simply run this magic command to start setup and installation:
 curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/master/dist/setup.sh -o setup_cyphernode.sh && chmod +x setup_cyphernode.sh && ./setup_cyphernode.sh
 ```
 
+## Upgrading
+
+Your proxy's database won't be lost.  Migration scripts are taking care of automatically migrating the database when starting the proxy.
+
+```
+proxy_docker/app/data/sqlmigrate*
+```
+
 ## Manually test your installation through the Gatekeeper
 
 If you need the authorization header to copy/paste in another tool, put your API ID (id=) and API key (k=) in the following command:
