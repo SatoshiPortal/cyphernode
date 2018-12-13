@@ -7,14 +7,16 @@ RUN apk add --update --no-cache \
     fcgiwrap \
     spawn-fcgi \
     curl \
+    socat \
     jq \
     su-exec
 
 COPY auth.sh /etc/nginx/conf.d/
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh entrypoint.sh
-COPY trace.sh /etc/nginx/conf.d/
-COPY tests.sh /etc/nginx/conf.d/
+COPY trace.sh /etc/nginx/conf.d
+COPY tests.sh /etc/nginx/conf.d
+COPY monitoring.sh /etc/nginx/conf.d
 
 RUN chmod +x /etc/nginx/conf.d/auth.sh entrypoint.sh
 

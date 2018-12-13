@@ -5,6 +5,9 @@ services:
     # HTTP authentication API gate
     environment:
       - "TRACING=1"
+<% if (features.indexOf('grafana') !== -1) { %>
+      - "FEATURE_GRAFANA=true"
+<% } %>
     image: cyphernode/gatekeeper:<%= gatekeeper_version %>
     ports:
       - "<%= gatekeeper_port %>:443"
@@ -67,6 +70,9 @@ services:
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
+<% if (features.indexOf('grafana') !== -1) { %>
+      - "FEATURE_GRAFANA=true"
+<% } %>
     image: cyphernode/proxy:<%= proxy_version %>
 <% if ( devmode ) { %>
     ports:
@@ -91,6 +97,9 @@ services:
     environment:
       - "TX_CONF_URL=proxy:8888/executecallbacks"
       - "OTS_URL=proxy:8888/ots_backoffice"
+<% if (features.indexOf('grafana') !== -1) { %>
+      - "FEATURE_GRAFANA=true"
+<% } %>
     image: cyphernode/proxycron:<%= proxycron_version %>
 #    deploy:
 #      placement:
@@ -140,6 +149,9 @@ services:
     environment:
       - "TRACING=1"
       - "OTSCLIENT_LISTENING_PORT=6666"
+<% if (features.indexOf('grafana') !== -1) { %>
+      - "FEATURE_GRAFANA=true"
+<% } %>
     image: cyphernode/otsclient:<%= otsclient_version %>
 #    deploy:
 #      placement:
@@ -179,6 +191,8 @@ services:
     - "<%= grafana_datapath%>/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
     - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
     - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
+    - "/var/run/docker.sock:/var/run/docker.sock"
+
     # not ideal ... should be behind traefik or gatekeeper
     ports:
     - "3000:3000"
