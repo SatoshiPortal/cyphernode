@@ -1,3 +1,5 @@
+# This README file can be used if you want to install manually.  This is the old documentation before there was the installer.
+
 # Here are the exact steps I did to install cyphernode on a debian server running on x86 arch, as user debian.
 
 ## Update server and install git
