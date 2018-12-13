@@ -135,7 +135,6 @@ modify_owner() {
 }
 
 configure() {
-  local current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
   ## build setup docker image
   local recreate=""
 
@@ -188,9 +187,9 @@ configure() {
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $user yo --no-insight cyphernode$gen_options $recreate
-  if [[ -f exitStatus.sh ]]; then
-    . ./exitStatus.sh
-    rm ./exitStatus.sh
+  if [[ -f $current_path/exitStatus.sh ]]; then
+    . $current_path/exitStatus.sh
+    rm $current_path/exitStatus.sh
   fi
 
   if [[ ! $EXIT_STATUS == 0 ]]; then
@@ -350,8 +349,6 @@ install_docker() {
     archpath="rpi"
   fi
 
-  local sourceDataPath=.
-
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
@@ -367,12 +364,12 @@ install_docker() {
       sudo_if_required mkdir $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
     fi
 
-    copy_file $sourceDataPath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
-    copy_file $sourceDataPath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+    copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+    copy_file $current_path/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+    copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+    copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+    copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+    copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
   fi
 
   if [ ! -d $PROXY_DATAPATH ]; then
@@ -381,7 +378,7 @@ install_docker() {
     next
   fi
 
-  copy_file $sourceDataPath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
+  copy_file $current_path/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -391,18 +388,18 @@ install_docker() {
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
 
-      local cmpStatus=$(compare_bitcoinconf $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
+      local cmpStatus=$(compare_bitcoinconf $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
-              [Nn]* ) copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+              [Yy]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
+              [Nn]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -411,7 +408,7 @@ install_docker() {
           done
         fi
       elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
         echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
         echo "          [31mYour cyphernode installation is most likely broken.[0m"
         echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
@@ -419,7 +416,7 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $sourceDataPath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
       fi
     fi
   fi
@@ -436,8 +433,8 @@ install_docker() {
           next
         fi
         if [ -d $LIGHTNING_DATAPATH ]; then
-          copy_file $sourceDataPath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-          copy_file $sourceDataPath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+          copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
         fi
     fi
   fi
@@ -485,26 +482,26 @@ install_docker() {
     fi
   fi
 
-  copy_file $sourceDataPath/installer/docker/docker-compose.yaml docker-compose.yaml
-  copy_file $sourceDataPath/installer/testfeatures.sh testfeatures.sh 0
-  copy_file $sourceDataPath/installer/start.sh start.sh 0
-  copy_file $sourceDataPath/installer/stop.sh stop.sh 0
+  copy_file $current_path/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
+  copy_file $current_path/installer/testfeatures.sh $current_path/testfeatures.sh 0
+  copy_file $current_path/installer/start.sh $current_path/start.sh 0
+  copy_file $current_path/installer/stop.sh $current_path/stop.sh 0
 
-  if [[ ! -x start.sh ]]; then
+  if [[ ! -x $current_path/start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
-    try chmod +x start.sh
+    try chmod +x $current_path/start.sh
     next
   fi
 
-  if [[ ! -x stop.sh ]]; then
+  if [[ ! -x $current_path/stop.sh ]]; then
     step "     [32mmake[0m stop.sh executable"
-    try chmod +x stop.sh
+    try chmod +x $current_path/stop.sh
     next
   fi
 
-  if [[ ! -x testfeatures.sh ]]; then
+  if [[ ! -x $current_path/testfeatures.sh ]]; then
     step "     [32mmake[0m testfeatures.sh executable"
-    try chmod +x testfeatures.sh
+    try chmod +x $current_path/testfeatures.sh
     next
   fi
 }
@@ -627,6 +624,8 @@ function ctrl_c() {
   exit
 }
 
+export current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
 while getopts ":cirhys" opt; do
   case $opt in
     r)
@@ -667,8 +666,8 @@ if [[ $CONFIGURE == 1 ]]; then
   configure $RECREATE
 fi
 
-if [[ -f installer/config.sh ]]; then
-  . installer/config.sh
+if [[ -f $current_path/installer/config.sh ]]; then
+  . $current_path/installer/config.sh
 fi
 
 if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then
@@ -686,7 +685,7 @@ if [[ $INSTALL == 1 ]]; then
 fi
 
 if [[ $AUTOSTART == 1 ]]; then
-  exec ./start.sh
+  exec $current_path/start.sh
 else
   cowsay
 fi
