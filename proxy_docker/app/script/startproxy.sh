@@ -32,7 +32,12 @@ createCurlConfig() {
 
 if [ ! -e ${DB_FILE} ]; then
 	echo "DB not found, creating..."
-	cat watching.sql | sqlite3 $DB_FILE
+	cat cyphernode.sql | sqlite3 $DB_FILE
+else
+	echo "DB found, migrating..."
+	for script in sqlmigrate*.sh; do
+	  sh $script
+	done
 fi
 
 chmod 0600 $DB_FILE

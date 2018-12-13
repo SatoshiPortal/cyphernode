@@ -1,5 +1,13 @@
 # This README file can be used if you want to install manually.  This is the old documentation before there was the installer.
 
+## Upgrading
+
+Your proxy's database won't be lost.  Migration scripts are taking care of automatically migrating the database when starting the proxy.
+
+```
+proxy_docker/app/data/sqlmigrate*
+```
+
 # Cyphernode
 
 Indirection layer between client and Bitcoin-related services.
