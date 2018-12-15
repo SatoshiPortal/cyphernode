@@ -18,6 +18,7 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
+. ./statuspage.sh
 
 main()
 {
@@ -241,6 +242,12 @@ main()
           # curl (GET) http://192.168.111.152:8080/ots_getfile/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
           serve_ots_getfile $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          break
+          ;;
+        status)
+          # curl (GET) http://192.168.111.152:8080/status
+
+          status_page
           break
           ;;
       esac
