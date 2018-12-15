@@ -198,6 +198,8 @@ module.exports = class extends Generator {
       // migrate here
     }
 
+    this.props.gatekeeper_statuspw = await new Cert().passwd(this.configurationPassword);
+
     this._assignConfigDefaults();
     for( let c of this.featureChoices ) {
       c.checked = this._isChecked( 'features', c.value );
