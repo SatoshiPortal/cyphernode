@@ -244,12 +244,6 @@ main()
           serve_ots_getfile $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           break
           ;;
-        status)
-          # curl (GET) http://192.168.111.152:8080/status
-
-          status_page
-          break
-          ;;
       esac
       break
     fi

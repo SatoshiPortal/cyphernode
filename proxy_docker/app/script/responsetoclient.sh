@@ -18,7 +18,7 @@ response_to_client()
   echo -en "Content-Type: ${contenttype}\r\nContent-Length: ${#response}\r\n\r\n${response}"
 
   # Small delay needed for the data to be processed correctly by peer
-  sleep 0.2s
+  sleep 0.5s
 }
 
 htmlfile_response_to_client()
