@@ -311,6 +311,6 @@ result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 
 result="{${result}]}"
 
-echo "${result}" > /proxy/installation.json
+echo "${result}" > /gatekeeper/installation.json
 
 echo -e "\r\n\e[1;32mTests finished.\e[0m" > /dev/console
