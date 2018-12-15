@@ -22,6 +22,7 @@ RUN apk add --update --no-cache \
 
 COPY app/data/cyphernode.sql ${HOME}
 COPY app/data/sqlmigrate* ${HOME}
+COPY app/html/statuspage.sh ${HOME}
 COPY app/script/callbacks_job.sh ${HOME}
 COPY app/script/blockchainrpc.sh ${HOME}
 COPY app/script/call_lightningd.sh ${HOME}

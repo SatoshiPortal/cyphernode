@@ -17,3 +17,7 @@ docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v $current_path/gatekeeper/cert.pem:/cert.pem \
 -v <%= proxy_datapath %>:/proxy \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
+
+echo "Point your favorite browser to one of the following URLs to access Cyphernode's status page:"
+echo
+echo

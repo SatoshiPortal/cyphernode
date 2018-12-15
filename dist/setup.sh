@@ -370,6 +370,7 @@ install_docker() {
     copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
     copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
     copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+    copy_file $current_path/gatekeeper/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
   fi
 
   if [ ! -d $PROXY_DATAPATH ]; then
