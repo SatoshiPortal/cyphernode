@@ -14,6 +14,7 @@ services:
       - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
       - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
       - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd"
+      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/status/installation.json"
     command: $USER
 
 #    deploy:

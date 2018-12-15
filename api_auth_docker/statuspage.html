@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script type="text/javascript">
+
+  trace=true;
+
+  function log() {
+    if (trace) {
+      console.log(arguments.callee.caller.name, arguments.callee.caller.arguments);
+    }
+  }
+
+  function httpget(url) {
+    log();
+
+    return fetch(url, { method: "GET" })
+    .catch(err => {
+      console.log('HTTP GET Error: ' + err.message + ' :: STACK : ' + err.stack);
+      $("#result").text((JSON.stringify(err.message)));
+      return Promise.reject(err.message);
+    })
+    .then(res => {
+      if (!res.ok) {
+        return res.json().then(data => {
+          console.log('HTTP GET Error: ' + data.error.message);
+          $("#result").text(JSON.stringify(data.error.message));
+          return Promise.reject(data.error.message);
+        });
+      }
+      return res.json();
+    })
+    .then(data => Promise.resolve(JSON.stringify(data)))
+  }
+
+  function installation_status() {
+    log();
+    httpget("installation.json")
+    .then(result => {
+      $("#result").text(result);
+    });
+  }
+
+  </script>
+</head>
+<body>
+  <button onclick="installation_status();">Installation Status</button>
+  <p/>
+  <pre lang="xml" id="result" style="white-space: pre-wrap"></pre>
+</body>
+</html>
