@@ -52,7 +52,7 @@ ENV PATH=/usr/share/grafana/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bi
 
 WORKDIR $GF_PATHS_HOME
 
-RUN apk add --update --no-cache fontconfig ca-certificates shadow bash
+RUN apk add --update --no-cache ca-certificates shadow bash iputils
 
 #RUN apt-get update && apt-get upgrade -y && \
 #    apt-get install -qq -y libfontconfig ca-certificates && \
@@ -77,7 +77,6 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
 COPY --from=0 /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-server /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-cli ./bin/
 COPY --from=1 /usr/src/app/public ./public
 COPY --from=1 /usr/src/app/tools ./tools
-COPY tools/phantomjs/render.js ./tools/phantomjs/render.js
 
 EXPOSE 3000
 
