@@ -1,6 +1,6 @@
 #!/bin/sh
 
-apk add --update --no-cache openssl curl > /dev/null
+apk add --update --no-cache openssl curl jq > /dev/null
 
 . keys.properties
 
@@ -74,17 +74,18 @@ checkgatekeeper() {
 checkpycoin() {
   echo -en "\r\n\e[1;36mTesting Pycoin... " > /dev/console
   local rc
-  local id="002"
-  local k
-  eval k='$ukey_'$id
+#  local id="002"
+#  local k
+#  eval k='$ukey_'$id
 
-  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
+#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
 
-  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-  local token="$h64.$p64.$s"
+#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
+#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+#  local token="$h64.$p64.$s"
 
-  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/derivepubpath)
+  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" http://proxy:8888/derivepubpath)
+#  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/derivepubpath)
   [ "${rc}" -ne "200" ] && return 100
 
   echo -e "\e[1;36mPycoin rocks!" > /dev/console
@@ -95,17 +96,18 @@ checkpycoin() {
 checkots() {
   echo -en "\r\n\e[1;36mTesting OTSclient... " > /dev/console
   local rc
-  local id="002"
-  local k
-  eval k='$ukey_'$id
+#  local id="002"
+#  local k
+#  eval k='$ukey_'$id
 
-  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
+#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
 
-  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-  local token="$h64.$p64.$s"
+#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
+#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+#  local token="$h64.$p64.$s"
 
-  rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ots_stamp)
+  rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' http://proxy:8888/ots_stamp)
+#  rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ots_stamp)
   echo "${rc}" | grep "Invalid hash 123 for sha256" > /dev/null
   [ "$?" -ne "0" ] && return 200
 
@@ -117,17 +119,18 @@ checkots() {
 checkbitcoinnode() {
   echo -en "\r\n\e[1;36mTesting Bitcoin... " > /dev/console
   local rc
-  local id="002"
-  local k
-  eval k='$ukey_'$id
+#  local id="002"
+#  local k
+#  eval k='$ukey_'$id
 
-  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
+#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
 
-  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-  local token="$h64.$p64.$s"
+#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
+#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+#  local token="$h64.$p64.$s"
 
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getbestblockhash)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbestblockhash)
+#  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getbestblockhash)
   [ "${rc}" -ne "200" ] && return 300
 
   echo -e "\e[1;36mBitcoin node rocks!" > /dev/console
@@ -138,17 +141,18 @@ checkbitcoinnode() {
 checklnnode() {
   echo -en "\r\n\e[1;36mTesting Lightning... " > /dev/console
   local rc
-  local id="002"
-  local k
-  eval k='$ukey_'$id
+#  local id="002"
+#  local k
+#  eval k='$ukey_'$id
 
-  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
+#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
 
-  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-  local token="$h64.$p64.$s"
+#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
+#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+#  local token="$h64.$p64.$s"
 
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ln_getinfo)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/ln_getinfo)
+#  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ln_getinfo)
   [ "${rc}" -ne "200" ] && return 400
 
   echo -e "\e[1;36mLN node rocks!" > /dev/console
@@ -159,9 +163,11 @@ checklnnode() {
 checkservice() {
   echo -e "\r\n\e[1;36mTesting if Cyphernode is up and running... \e[0;36mI will keep trying during up to 5 minutes to give time to Docker to deploy everything...\e[0;32m" > /dev/console
 
+  local interval=10
+  local totaltime=120
   local outcome
   local returncode=0
-  local endtime=$(($(date +%s) + 300))
+  local endtime=$(($(date +%s) + ${totaltime}))
   local result
 
   while :
@@ -180,9 +186,9 @@ checkservice() {
     # If '0% packet loss' everywhere or 5 minutes passed, we get out of this loop
     ([ "${outcome}" -eq "0" ] || [ $(date +%s) -gt ${endtime} ]) && break
 
-    echo -e "\e[1;31mCyphernode still not ready, will retry every 5 seconds for 5 minutes ($((${endtime} - $(date +%s))) seconds left)." > /dev/console
+    echo -e "\e[1;31mCyphernode still not ready, will retry every ${interval} seconds for $((${totaltime} / 60)) minutes ($((${endtime} - $(date +%s))) seconds left)." > /dev/console
 
-    sleep 5
+    sleep ${interval}
   done
 
   #  "containers": [
@@ -213,6 +219,8 @@ checkservice() {
 }
 
 timeout_feature() {
+  local interval=10
+  local totaltime=60
   local testwhat=${1}
   local returncode
   local endtime=$(($(date +%s) + 120))
@@ -225,9 +233,9 @@ timeout_feature() {
     # If no error or 2 minutes passed, we get out of this loop
     ([ "${returncode}" -eq "0" ] || [ $(date +%s) -gt ${endtime} ]) && break
 
-    echo -e "\e[1;31mMaybe it's too early, I'll retry every 5 seconds for 2 minutes ($((${endtime} - $(date +%s))) seconds left)." > /dev/console
+    echo -e "\e[1;31mMaybe it's too early, I'll retry every ${interval} seconds for $((${totaltime} / 60)) minutes ($((${endtime} - $(date +%s))) seconds left)." > /dev/console
 
-    sleep 5
+    sleep ${interval}
   done
 
   return ${returncode}
@@ -263,10 +271,16 @@ feature_status() {
 
 # Let's first see if everything is up.
 
-result=$(checkservice)
+brokenproxy="false"
+containers=$(checkservice)
 returncode=$?
 if [ "${returncode}" -ne "0" ]; then
-  echo -e "\e[1;31mCyphernode could not fully start properly within 5 minutes." > /dev/console
+  echo -e "\e[1;31mCyphernode could not fully start properly within delay." > /dev/console
+  status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"proxy\") | .active")
+  if [ "${status}" = "false" ]; then
+    echo -e "\e[1;31mThe Proxy, the main Cyphernode's component, is not responding.  We will only test the gatekeeper if its container is up, but you'll see errors for the other components.  Please check the logs." > /dev/console
+    brokenproxy="true"
+  fi
 else
   echo -e "\e[1;36mCyphernode seems to be correctly deployed.  Let's run more thourough tests..." > /dev/console
 fi
@@ -280,32 +294,57 @@ fi
 #    { "name": "lightning", "working":true }
 #  ]
 
-result="${result},\"features\":[{\"name\":\"gatekeeper\",\"working\":"
-timeout_feature checkgatekeeper
-returncode=$?
+result="${containers},\"features\":[{\"name\":\"gatekeeper\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"gatekeeper\") | .active")
+if [ "${status}" = "true" ]; then
+  timeout_feature checkgatekeeper
+  returncode=$?
+else
+  returncode=1
+fi
 result="${result}$(feature_status ${returncode} 'Gatekeeper error!')}"
 
 result="${result},{\"name\":\"pycoin\",\"working\":"
-timeout_feature checkpycoin
-returncode=$?
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"pycoin\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checkpycoin
+  returncode=$?
+else
+  returncode=1
+fi
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
 result="${result},{\"name\":\"otsclient\",\"working\":"
-timeout_feature checkots
-returncode=$?
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"otsclient\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checkots
+  returncode=$?
+else
+  returncode=1
+fi
 result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 <% } %>
 
 result="${result},{\"name\":\"bitcoin\",\"working\":"
-timeout_feature checkbitcoinnode
-returncode=$?
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checkbitcoinnode
+  returncode=$?
+else
+  returncode=1
+fi
 result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
 
 <% if (features.indexOf('lightning') != -1) { %>
 result="${result},{\"name\":\"lightning\",\"working\":"
-timeout_feature checklnnode
-returncode=$?
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"lightning\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checklnnode
+  returncode=$?
+else
+  returncode=1
+fi
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 <% } %>
 
