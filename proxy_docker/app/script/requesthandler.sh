@@ -18,7 +18,6 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
-. ./statuspage.sh
 
 main()
 {
