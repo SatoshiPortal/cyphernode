@@ -121,14 +121,14 @@ checklnnode() {
 }
 
 checkservice() {
-  echo -e "\r\n\e[1;36mTesting if Cyphernode is up and running... \e[0;36mI will keep trying during up to 5 minutes to give time to Docker to deploy everything...\e[0;32m" > /dev/console
-
   local interval=10
   local totaltime=120
   local outcome
   local returncode=0
   local endtime=$(($(date +%s) + ${totaltime}))
   local result
+
+  echo -e "\r\n\e[1;36mTesting if Cyphernode is up and running... \e[0;36mI will keep trying during up to $((${totaltime} / 60)) minutes to give time to Docker to deploy everything...\e[0;32m" > /dev/console
 
   while :
   do
@@ -183,7 +183,7 @@ timeout_feature() {
   local totaltime=60
   local testwhat=${1}
   local returncode
-  local endtime=$(($(date +%s) + 120))
+  local endtime=$(($(date +%s) + ${totaltime}))
 
   while :
   do
