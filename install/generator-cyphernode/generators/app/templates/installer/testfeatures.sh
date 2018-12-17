@@ -74,18 +74,8 @@ checkgatekeeper() {
 checkpycoin() {
   echo -en "\r\n\e[1;36mTesting Pycoin... " > /dev/console
   local rc
-#  local id="002"
-#  local k
-#  eval k='$ukey_'$id
-
-#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
-
-#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-#  local token="$h64.$p64.$s"
 
   rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" http://proxy:8888/derivepubpath)
-#  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/derivepubpath)
   [ "${rc}" -ne "200" ] && return 100
 
   echo -e "\e[1;36mPycoin rocks!" > /dev/console
@@ -96,18 +86,8 @@ checkpycoin() {
 checkots() {
   echo -en "\r\n\e[1;36mTesting OTSclient... " > /dev/console
   local rc
-#  local id="002"
-#  local k
-#  eval k='$ukey_'$id
-
-#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
-
-#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-#  local token="$h64.$p64.$s"
 
   rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' http://proxy:8888/ots_stamp)
-#  rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ots_stamp)
   echo "${rc}" | grep "Invalid hash 123 for sha256" > /dev/null
   [ "$?" -ne "0" ] && return 200
 
@@ -119,18 +99,8 @@ checkots() {
 checkbitcoinnode() {
   echo -en "\r\n\e[1;36mTesting Bitcoin... " > /dev/console
   local rc
-#  local id="002"
-#  local k
-#  eval k='$ukey_'$id
-
-#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
-
-#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-#  local token="$h64.$p64.$s"
 
   rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbestblockhash)
-#  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getbestblockhash)
   [ "${rc}" -ne "200" ] && return 300
 
   echo -e "\e[1;36mBitcoin node rocks!" > /dev/console
@@ -141,18 +111,8 @@ checkbitcoinnode() {
 checklnnode() {
   echo -en "\r\n\e[1;36mTesting Lightning... " > /dev/console
   local rc
-#  local id="002"
-#  local k
-#  eval k='$ukey_'$id
-
-#  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
-
-#  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-#  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-#  local token="$h64.$p64.$s"
 
   rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/ln_getinfo)
-#  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/ln_getinfo)
   [ "${rc}" -ne "200" ] && return 400
 
   echo -e "\e[1;36mLN node rocks!" > /dev/console
