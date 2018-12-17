@@ -21,7 +21,7 @@ RUN apk add --update --no-cache \
     su-exec
 
 COPY app/data/cyphernode.sql ${HOME}
-COPY app/data/sqlmigrate* ${HOME}
+COPY app/data/sqlmigrate* ${HOME}/
 COPY app/html/statuspage.sh ${HOME}
 COPY app/script/callbacks_job.sh ${HOME}
 COPY app/script/blockchainrpc.sh ${HOME}
