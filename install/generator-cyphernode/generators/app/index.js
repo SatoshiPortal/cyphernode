@@ -288,6 +288,12 @@ module.exports = class extends Generator {
         if( result.code === 0 ) {
           this.props.gatekeeper_sslkey = result.key.toString();
           this.props.gatekeeper_sslcert = result.cert.toString();
+
+          // Total array of cns, used to create Cyphernode's URLs
+          this.props.cns = []
+          result.cns.forEach(e => {
+            this.props.cns.push(e)
+          })
         } else {
           console.log(chalk.bold.red( 'error! Gatekeeper cert was not created' ));
         }

@@ -18,6 +18,6 @@ docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
 
-echo "Point your favorite browser to one of the following URLs to access Cyphernode's status page:"
-echo
-echo
+printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
+printf "\r\n"
+printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + '/status/\\r\\n') %><% }) %>\033[0m\r\n"
