@@ -4,18 +4,11 @@
 <head>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
   <script type="text/javascript">
-
-  trace=true;
-
-  function log() {
-    if (trace) {
-      console.log(arguments.callee.caller.name, arguments.callee.caller.arguments);
-    }
-  }
+  $(function() {
+    installation_status();
+  });
 
   function httpget(url) {
-    log();
-
     return fetch(url, { method: "GET" })
     .catch(err => {
       console.log('HTTP GET Error: ' + err.message + ' :: STACK : ' + err.stack);
@@ -36,7 +29,6 @@
   }
 
   function installation_status() {
-    log();
     httpget("installation.json")
     .then(result => {
       $("#result").text(result);
@@ -46,8 +38,21 @@
   </script>
 </head>
 <body>
-  <button onclick="installation_status();">Installation Status</button>
-  <p/>
-  <pre lang="xml" id="result" style="white-space: pre-wrap"></pre>
+  <div id="hello">
+    <h1>Hello World from Cyphernode!</h1>
+    <h2>If you are here, it means you successfully deployed Cyphernode.  Congratulations, fellow Cyphernode Operator!</h2>
+  </div>
+  <hr/>
+  <div id="files">
+    <h2>The following files have been encrypted with your configuration passphrase and your client keys passphrase, respectively:</h2>
+    <ul>
+      <li><a href="config.7z">Download your Cyphernode <b>configurations</b>, can be used for another Cyphernode deployment</a></li>
+      <li><a href="client.7z">Download Client <b>API ID's and keys</b>, needed in your client apps</a></li>
+    </ul>
+  </div>
+  <div id="Status">
+    <h2>This is the status of Cyphernode's installation and running components</h2>
+    <pre lang="xml" id="result" style="white-space: pre-wrap"></pre>
+  </div>
 </body>
 </html>

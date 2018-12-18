@@ -105,7 +105,8 @@ module.exports = class Cert {
 		return {
 			code: code,
 			key: key,
-			cert: cert
+			cert: cert,
+			cns: cns
 		}
 	}
 
