@@ -539,7 +539,7 @@ sanity_checks() {
     exit
   fi
 
-  if ! [ -x "$(command -v docker-compose)" ]; then
+  if [[ $DOCKER_MODE == 'compose' && ! -x "$(command -v docker-compose)" ]]; then
     echo "          [31mdocker-compose is not installed on your system. Please check https://docs.docker.com/compose/install/.[0m"
     exit
   fi
