@@ -56,7 +56,7 @@ module.exports = {
     {
       type: 'confirm',
       name: 'use_xpub',
-      default: utils._getDefault( 'want_xpub' )||false,
+      default: utils._getDefault( 'use_xpub' )||false,
       message: prefix()+'Use an xpub key to watch or generate adresses?'+utils._getHelp('use_xpub'),
     },
     {
