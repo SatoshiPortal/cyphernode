@@ -21,7 +21,7 @@ const templates = {
 };
 
 module.exports = {
-  name: function() { 
+  name: function() {
     return name;
   },
   prompts: function( utils ) {
@@ -42,7 +42,7 @@ module.exports = {
           name: 'LND',
           value: 'lnd'
         }
-        
+
       ]
     },
     */
@@ -61,7 +61,12 @@ module.exports = {
       name: 'lightning_nodename',
       default: utils._getDefault( 'lightning_nodename' ),
       filter: utils._trimFilter,
-      validate: utils._notEmptyValidator,
+      validate: (input)=>{
+        if( !input.trim() ) {
+          return true;
+        }
+        return utils._lightningNodeNameValidator(input);
+      },
       message: prefix()+'What name has your lightning node?'+utils._getHelp('lightning_nodename'),
     },
     {
@@ -70,7 +75,12 @@ module.exports = {
       name: 'lightning_nodecolor',
       default: utils._getDefault( 'lightning_nodecolor' ),
       filter: utils._trimFilter,
-      validate: utils._colorValidator,
+      validate: (input)=>{
+        if( !input.trim() ) {
+          return true;
+        }
+        return utils._colorValidator(input);
+      },
       message: prefix()+'What color has your lightning node?'+utils._getHelp('lightning_nodecolor'),
     }];
   },

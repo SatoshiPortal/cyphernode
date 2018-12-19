@@ -6,6 +6,7 @@ const fs = require('fs');
 const validator = require('validator');
 const path = require("path");
 const coinstring = require('coinstring');
+const name = require('./lib/name.js');
 const Archive = require('./lib/archive.js');
 const ApiKey = require('./lib/apikey.js');
 const Cert = require('./lib/cert.js');
@@ -16,8 +17,7 @@ const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
 const reset = '\u001B8\u001B[u';
 const clear = '\u001Bc';
 
-const configFileVersion='0.0.1';
-
+const configFileVersion='0.1.0';
 
 const defaultAPIProperties = `
 # Watcher can:
@@ -302,7 +302,6 @@ module.exports = class extends Generator {
       }
     }
 
-
     delete this.props.gatekeeper_recreatekeys;
 
   }
@@ -385,7 +384,7 @@ module.exports = class extends Generator {
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
       lightning_datapath: '',
-      lightning_nodename: '',
+      lightning_nodename: name.generate(),
       lightning_nodecolor: '',
       otsclient_datapath: '',
       installer_cleanup: false
@@ -438,6 +437,13 @@ module.exports = class extends Generator {
   _colorValidator(color) {
     if( !validator.isHexadecimal(color) ) {
       throw new Error('Not a hex color.');
+    }
+    return true;
+  }
+
+  _lightningNodeNameValidator(name) {
+    if( !name || name.length > 32 ) {
+      throw new Error('Please enter anything shorter than 32 characters');
     }
     return true;
   }
