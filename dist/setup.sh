@@ -523,11 +523,9 @@ check_directory_owner() {
     else
       # does parent exist and do we have rw on that?
       local parentDir=$(dirname $d)
-      echo $parentDir
       while [[ ! $parentDir == '/' && ! -e $parentDir ]]; do
         parentDir=$(dirname $parentDir)
       done
-      echo $parentDir
       if [[ ! -r $parentDir || ! -w $parentDir ]]; then
         status=1
       fi
