@@ -357,11 +357,11 @@ install_docker() {
 
   if [ -d $GATEKEEPER_DATAPATH ]; then
     if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
-      sudo_if_required mkdir $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
+      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
     fi
 
     if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
-      sudo_if_required mkdir $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
+      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
     fi
 
     copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
@@ -520,7 +520,17 @@ check_directory_owner() {
         status=1
         break;
       fi
-      # TODO: does parent exist and do we have rw on that?
+    else
+      # does parent exist and do we have rw on that?
+      local parentDir=$(dirname $d)
+      while [[ ! $parentDir == '/' && ! -e $parentDir ]]; do
+        if [[ ! -r $parentDir || ! -w $parentDir ]]; then
+          status=1
+          break;
+        fi
+        parentDir=$(dirname $parentDir)
+        echo $parentDir
+      done
     fi
   done
   echo $status
