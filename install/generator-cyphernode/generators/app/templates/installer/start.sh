@@ -15,6 +15,11 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 export ARCH=$(uname -m)
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
+if [[ ! -e <%= gatekeeper_datapath %>/installation.json ]]; then
+  # prevent mounting installation.json as a directory
+  touch <%= gatekeeper_datapath %>/installation.json
+fi
+
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
