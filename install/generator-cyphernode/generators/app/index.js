@@ -314,6 +314,20 @@ module.exports = class extends Generator {
       console.log(chalk.bold.red( 'error! Config archive was not written' ));
     }
 
+    const pathProps = [
+      'gatekeeper_datapath',
+      'proxy_datapath',
+      'bitcoin_datapath',
+      'lightning_datapath',
+      'otsclient_datapath'
+    ];
+
+    for( let pathProp of pathProps ) {
+      if( this.props[pathProp] === '_custom' ) {
+        this.props[pathProp] = this.props[pathProp+'_custom'] || '';
+      }
+    }
+
     for( let m of prompters ) {
       const name = m.name();
       for( let t of m.templates(this.props) ) {

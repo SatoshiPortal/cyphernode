@@ -15,10 +15,6 @@ const installerDocker = function(props) {
   return props.installer_mode === 'docker'
 };
 
-const installerLunanode = function(props) {
-  return props.installer_mode === 'lunanode'
-};
-
 module.exports = {
   name: function() {
     return name;
@@ -32,58 +28,177 @@ module.exports = {
       choices: [{
         name: "Docker",
         value: "docker"
-      }
-      /*,
-      {
-        name: "Lunanode (not implemented)",
-        value: "lunanode"
-      }*/
-      ]
+      }]
     },
     {
       when: installerDocker,
-      type: 'input',
+      type: 'list',
       name: 'gatekeeper_datapath',
       default: utils._getDefault( 'gatekeeper_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/gatekeeper (needs sudo)",
+          value: "/var/run/cyphernode/gatekeeper"
+        },
+        {
+          name: "~/.cyphernode/gatekeeper",
+          value: "~/.cyphernode/gatekeeper"
+        },
+        {
+          name: "~/gatekeeper",
+          value: "~/gatekeeper"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+        ],
+      message: prefix()+'Where do you want to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.gatekeeper_datapath === '_custom') },
+      type: 'input',
+      name: 'gatekeeper_datapath_custom',
+      default: utils._getDefault( 'gatekeeper_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
+      message: prefix()+'Custom path for gatekeeper data?'+utils._getHelp('gatekeeper_datapath_custom'),
     },
     {
       when: installerDocker,
-      type: 'input',
+      type: 'list',
       name: 'proxy_datapath',
       default: utils._getDefault( 'proxy_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/proxy (needs sudo)",
+          value: "/var/run/cyphernode/proxy"
+        },
+        {
+          name: "~/.cyphernode/proxy",
+          value: "~/.cyphernode/proxy"
+        },
+        {
+          name: "~/proxy",
+          value: "~/proxy"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your proxy data?'+utils._getHelp('proxy_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.proxy_datapath === '_custom') },
+      type: 'input',
+      name: 'proxy_datapath_custom',
+      default: utils._getDefault( 'proxy_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where to store your proxy db?'+utils._getHelp('proxy_datapath'),
+      message: prefix()+'Custom path for your proxy data?'+utils._getHelp('proxy_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
-      type: 'input',
+      type: 'list',
       name: 'bitcoin_datapath',
       default: utils._getDefault( 'bitcoin_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/bitcoin (needs sudo)",
+          value: "/var/run/cyphernode/bitcoin"
+        },
+        {
+          name: "~/.cyphernode/bitcoin",
+          value: "~/.cyphernode/bitcoin"
+        },
+        {
+          name: "~/bitcoin",
+          value: "~/bitcoin"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your bitcoin full node data?'+utils._getHelp('bitcoin_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' && props.bitcoin_datapath === '_custom' },
+      type: 'input',
+      name: 'bitcoin_datapath_custom',
+      default: utils._getDefault( 'bitcoin_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your blockchain data?'+utils._getHelp('bitcoin_datapath'),
+      message: prefix()+'Custom path for your bitcoin full node data?'+utils._getHelp('bitcoin_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
-      type: 'input',
+      type: 'list',
       name: 'lightning_datapath',
       default: utils._getDefault( 'lightning_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/lightning (needs sudo)",
+          value: "/var/run/cyphernode/lightning"
+        },
+        {
+          name: "~/.cyphernode/lightning",
+          value: "~/.cyphernode/lightning"
+        },
+        {
+          name: "~/lightning",
+          value: "~/lightning"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your lightning node data?'+utils._getHelp('lightning_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 && props.lightning_datapath === '_custom'},
+      type: 'input',
+      name: 'lightning_datapath_custom',
+      default: utils._getDefault( 'lightning_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your lightning node data?'+utils._getHelp('lightning_datapath'),
+      message: prefix()+'Custom path for your lightning node data?'+utils._getHelp('lightning_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
-      type: 'input',
+      type: 'list',
       name: 'otsclient_datapath',
       default: utils._getDefault( 'otsclient_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/otsclient (needs sudo)",
+          value: "/var/run/cyphernode/otsclient"
+        },
+        {
+          name: "~/.cyphernode/otsclient",
+          value: "~/.cyphernode/otsclient"
+        },
+        {
+          name: "~/otsclient",
+          value: "~/otsclient"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your lightning node data?'+utils._getHelp('otsclient_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 && props.otsclient_datapath === '_custom' },
+      type: 'input',
+      name: 'otsclient_datapath_custom',
+      default: utils._getDefault( 'otsclient_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your otsclient data?'+utils._getHelp('otsclient_datapath'),
+      message: prefix()+'Where is your otsclient data?'+utils._getHelp('otsclient_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
