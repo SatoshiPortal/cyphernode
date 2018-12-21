@@ -156,10 +156,6 @@ services:
     - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
     - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
     - "/var/run/docker.sock:/var/run/docker.sock"
-
-    # not ideal ... should be behind traefik or gatekeeper
-    ports:
-    - "3000:3000"
     networks:
     - cyphernodenet
     restart: always
