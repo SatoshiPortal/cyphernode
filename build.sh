@@ -48,19 +48,28 @@ build_docker_images() {
   fi
 
   trace "Creating cyphernodeconf image"
-  build_docker_image install/ cyphernode/cyphernodeconf:cyphernode-0.05
+  build_docker_image install/ cyphernode/cyphernodeconf:$CN_VERSION
 
   trace "Creating SatoshiPortal images"
-  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:cyphernode-0.05 $bitcoin_dockerfile
-  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:cyphernode-0.05 $clightning_dockerfile
+  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BC_VERSION $bitcoin_dockerfile
+  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$CL_VERSION $clightning_dockerfile
 
   trace "Creating cyphernode images"
-  build_docker_image api_auth_docker/ cyphernode/gatekeeper:cyphernode-0.05
-  build_docker_image proxy_docker/ cyphernode/proxy:cyphernode-0.05 $proxy_dockerfile
-  build_docker_image cron_docker/ cyphernode/proxycron:cyphernode-0.05
-  build_docker_image pycoin_docker/ cyphernode/pycoin:cyphernode-0.05
-  build_docker_image otsclient_docker/ cyphernode/otsclient:cyphernode-0.05
+  build_docker_image api_auth_docker/ cyphernode/gatekeeper:$CN_VERSION
+  build_docker_image proxy_docker/ cyphernode/proxy:$CN_VERSION $proxy_dockerfile
+  build_docker_image cron_docker/ cyphernode/proxycron:$CN_VERSION
+  build_docker_image pycoin_docker/ cyphernode/pycoin:$CN_VERSION
+  build_docker_image otsclient_docker/ cyphernode/otsclient:$CN_VERSION
 
 }
+
+# CYPHERNODE VERSION
+GATEKEEPER_VERSION="latest"
+PROXY_VERSION="latest"
+PROXYCRON_VERSION="latest"
+OTSCLIENT_VERSION="latest"
+PYCOIN_VERSION="latest"
+BITCOIN_VERSION="latest"
+LIGHTNING_VERSION="latest"
 
 build_docker_images

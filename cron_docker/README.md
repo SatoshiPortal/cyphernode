@@ -3,13 +3,13 @@
 ## Pull our Cyphernode image
 
 ```shell
-docker pull cyphernode/proxycron:cyphernode-0.05
+docker pull cyphernode/proxycron:latest
 ```
 
 ## Build yourself the image
 
 ```shell
-docker build -t cyphernode/proxycron:cyphernode-0.05 .
+docker build -t cyphernode/proxycron:latest .
 ```
 
 ## Run image
@@ -17,7 +17,7 @@ docker build -t cyphernode/proxycron:cyphernode-0.05 .
 If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
 
 ```shell
-docker run --rm -d --network cyphernodenet --env-file env.properties cyphernode/proxycron:cyphernode-0.05
+docker run --rm -d --network cyphernodenet --env-file env.properties cyphernode/proxycron:latest
 ```
 
 ## Configure your container by modifying `env.properties` file

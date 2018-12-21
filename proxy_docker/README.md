@@ -3,13 +3,13 @@
 ## Pull our Cyphernode image
 
 ```shell
-docker pull cyphernode/proxy:cyphernode-0.05
+docker pull cyphernode/proxy:latest
 ```
 
 ## Build yourself the image
 
 ```shell
-docker build -t cyphernode/proxy:cyphernode-0.05 .
+docker build -t cyphernode/proxy:latest .
 ```
 
 ## Run image
@@ -17,7 +17,7 @@ docker build -t cyphernode/proxy:cyphernode-0.05 .
 If you want to run this container independently from Cyphernode:
 
 ```shell
-docker run --rm -d -p 8888:8888 --network cyphernodenet --env-file env.properties cyphernode/proxy:cyphernode-0.05 `id -u cyphernode`:`id -g cyphernode` ./startproxy.sh
+docker run --rm -d -p 8888:8888 --network cyphernodenet --env-file env.properties cyphernode/proxy:latest `id -u cyphernode`:`id -g cyphernode` ./startproxy.sh
 ```
 
 ## Configure your container by modifying `env.properties` file

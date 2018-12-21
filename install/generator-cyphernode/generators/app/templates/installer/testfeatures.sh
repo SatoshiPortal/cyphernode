@@ -2,7 +2,7 @@
 
 apk add --update --no-cache openssl curl jq > /dev/null
 
-. keys.properties
+. /gatekeeper/keys.properties
 
 checkgatekeeper() {
   echo -e "\r\n\e[1;36mTesting Gatekeeper...\e[0;32m" > /dev/console
@@ -24,7 +24,7 @@ checkgatekeeper() {
   sleep 2
 
   echo "  Testing expired request... " > /dev/console
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getblockinfo)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/v0/getblockinfo)
   [ "${rc}" -ne "403" ] && return 10
 
   # Let's test authentication (signature)
@@ -34,7 +34,7 @@ checkgatekeeper() {
   token="$h64.$p64.a$s"
 
   echo "  Testing bad signature... " > /dev/console
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getblockinfo)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/v0/getblockinfo)
   [ "${rc}" -ne "403" ] && return 30
 
   # Let's test authorization (action access for groups)
@@ -42,7 +42,7 @@ checkgatekeeper() {
   token="$h64.$p64.$s"
 
   echo "  Testing watcher trying to do a spender action... " > /dev/console
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/getbalance)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/v0/getbalance)
   [ "${rc}" -ne "403" ] && return 40
 
   id="002"
@@ -52,7 +52,7 @@ checkgatekeeper() {
   token="$h64.$p64.$s"
 
   echo "  Testing spender trying to do an internal action call... " > /dev/console
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/conf)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/v0/conf)
   [ "${rc}" -ne "403" ] && return 50
 
 
@@ -63,7 +63,7 @@ checkgatekeeper() {
   token="$h64.$p64.$s"
 
   echo "  Testing admin trying to do an internal action call... " > /dev/console
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /cert.pem https://gatekeeper/conf)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/v0/conf)
   [ "${rc}" -ne "403" ] && return 60
 
   echo -e "\e[1;36mGatekeeper rocks!" > /dev/console
