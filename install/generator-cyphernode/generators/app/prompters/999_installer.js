@@ -189,7 +189,7 @@ module.exports = {
           value: "_custom"
         }
       ],
-      message: prefix()+'Where do you want to store your lightning node data?'+utils._getHelp('otsclient_datapath'),
+      message: prefix()+'Where do you want to store your OTS data?'+utils._getHelp('otsclient_datapath'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 && props.otsclient_datapath === '_custom' },
