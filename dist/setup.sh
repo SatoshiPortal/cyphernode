@@ -359,6 +359,8 @@ install_docker() {
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
+    # prevent mounting installation.json as a directory
+    sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
     next
   fi
 
