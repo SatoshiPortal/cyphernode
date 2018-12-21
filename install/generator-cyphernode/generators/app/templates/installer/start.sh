@@ -21,6 +21,13 @@ docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 <% } %>
 
+arch=$(uname -m)
+case "${arch}" in arm*)
+  printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 30 more seconds before performing our tests...\033[0m\r\n"
+  sleep 30
+;;
+esac
+
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
