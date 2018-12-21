@@ -11,7 +11,7 @@ if [[ $1 ]]; then
 
 fi
 
+spawn-fcgi -M 0660 -s /var/run/fcgiwrap.socket -u $user -g nginx -U $user -- `which fcgiwrap`
 chmod -R g+rw /var/run/fcgiwrap.socket /etc/nginx/conf.d/*
 chown -R :nginx /etc/nginx/conf.d/*
-spawn-fcgi -M 0660 -s /var/run/fcgiwrap.socket -u $user -g nginx -U $user -- `which fcgiwrap`
 nginx -g "daemon off;"
