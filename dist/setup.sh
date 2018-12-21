@@ -184,9 +184,16 @@ configure() {
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
+             -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
+             -e PROXY_VERSION=$PROXY_VERSION \
+             -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
+             -e OTSCLIENT_VERSION=$OTSCLIENT_VERSION \
+             -e PYCOIN_VERSION=$PYCOIN_VERSION \
+             -e BITCOIN_VERSION=$BITCOIN_VERSION \
+             -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              --log-driver=none$pw_env \
              --network none \
-             --rm$interactive cyphernode/cyphernodeconf:cyphernode-0.05 $user yo --no-insight cyphernode$gen_options $recreate
+             --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user yo --no-insight cyphernode$gen_options $recreate
   if [[ -f $current_path/exitStatus.sh ]]; then
     . $current_path/exitStatus.sh
     rm $current_path/exitStatus.sh
@@ -624,6 +631,16 @@ TRACING=1
 ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
+
+# CYPHERNODE VERSION "v0.1.0rc1"
+CONF_VERSION="v0.1"
+GATEKEEPER_VERSION="v0.1"
+PROXY_VERSION="v0.1"
+PROXYCRON_VERSION="v0.1"
+OTSCLIENT_VERSION="v0.1"
+PYCOIN_VERSION="v0.1"
+BITCOIN_VERSION="v0.17.0"
+LIGHTNING_VERSION="v0.6.2"
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT

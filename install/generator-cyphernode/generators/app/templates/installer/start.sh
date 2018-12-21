@@ -28,8 +28,6 @@ docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
--v $current_path/gatekeeper/keys.properties:/keys.properties \
--v $current_path/gatekeeper/cert.pem:/cert.pem \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
 

@@ -3,13 +3,13 @@
 ## Pull our Cyphernode image
 
 ```shell
-docker pull cyphernode/ots:cyphernode-0.05
+docker pull cyphernode/otsclient:latest
 ```
 
 ## Build yourself the image
 
 ```shell
-docker build -t cyphernode/ots:cyphernode-0.05 .
+docker build -t cyphernode/otsclient:latest .
 ```
 
 ## OTS files directory...
@@ -25,7 +25,7 @@ sudo find ~/otsfiles -type d -exec chmod 2775 {} \; ; sudo find ~/otsfiles -type
 If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
 
 ```shell
-docker run --rm -d -p 6666:6666 --network cyphernodenet --env-file env.properties cyphernode/ots:cyphernode-0.05 `id -u cyphernode`:`id -g cyphernode` ./startotsclient.sh
+docker run --rm -d -p 6666:6666 --network cyphernodenet --env-file env.properties cyphernode/otsclient:latest `id -u cyphernode`:`id -g cyphernode` ./startotsclient.sh
 ```
 
 ## Usefull examples
