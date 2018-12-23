@@ -30,8 +30,21 @@ esac
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
--v <%= gatekeeper_datapath %>:/gatekeeper \
+-v ~/.cyphernode/gatekeeper:/gatekeeper \
+-v $current_path/exitStatus.sh:/exitStatus.sh \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
+
+if [[ -f $current_path/exitStatus.sh ]]; then
+  . $current_path/exitStatus.sh
+  rm $current_path/exitStatus.sh
+fi
+
+if [[ ! $EXIT_STATUS == 0 ]]; then
+  exec ./stop.sh
+  exit 1
+fi
+
+
 
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
