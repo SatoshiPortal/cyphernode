@@ -1,4 +1,4 @@
-const MAXLENGTH = 32;
+const MAXLENGTH = 30;
 
 const ADJECTIVES = [
   /*a*/ ["Abiding",
@@ -2363,7 +2363,7 @@ module.exports.generate = function() {
       ' '+
       ANIMALS[index][Math.round(Math.random()*(ANIMALS[index].length-1))]+' 🚀'
     ).replace(/\s+/g, ' ');
-  } while( name.length > MAXLENGTH );
+  } while( name.length >= MAXLENGTH );
 
   return name
 }
