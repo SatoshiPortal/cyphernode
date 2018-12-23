@@ -60,6 +60,8 @@ RUN apk add --update --no-cache ca-certificates shadow bash iputils
 #    rm -rf /var/lib/apt/lists/*
 
 COPY conf ./conf
+COPY conf/provisioning ./conf/provisioning
+COPY conf/dashboards ./conf/dashboards
 
 RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
     groupadd -r -g $GF_GID grafana && \
@@ -67,10 +69,14 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
     mkdir -p "$GF_PATHS_PROVISIONING/datasources" \
              "$GF_PATHS_PROVISIONING/dashboards" \
              "$GF_PATHS_LOGS" \
+             "$GF_PATHS_HOME/dashboards" \
              "$GF_PATHS_PLUGINS" \
              "$GF_PATHS_DATA" && \
     cp "$GF_PATHS_HOME/conf/sample.ini" "$GF_PATHS_CONFIG" && \
     cp "$GF_PATHS_HOME/conf/ldap.toml" /etc/grafana/ldap.toml && \
+    cp -r "$GF_PATHS_HOME/conf/provisioning/datasources" "$GF_PATHS_PROVISIONING" && \
+    cp -r "$GF_PATHS_HOME/conf/provisioning/dashboards" "$GF_PATHS_PROVISIONING" && \
+    cp -r "$GF_PATHS_HOME/conf/dashboards/all.json" "$GF_PATHS_HOME/dashboards" && \
     chown -R grafana:grafana "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS" && \
     chmod 777 "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS"
 
