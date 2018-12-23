@@ -400,16 +400,16 @@ module.exports = class extends Generator {
       lightning_nodename: name.generate(),
       lightning_nodecolor: '',
       otsclient_datapath: '',
-      installer_cleanup: false
+      installer_cleanup: false,
+      default_username: process.env.DEFAULT_USER || '',
+      gatekeeper_version: process.env.GATEKEEPER_VERSION || 'latest',
+      proxy_version: process.env.PROXY_VERSION || 'latest',
+      proxycron_version: process.env.PROXYCRON_VERSION || 'latest',
+      pycoin_version: process.env.PYCOIN_VERSION || 'latest',
+      otsclient_version: process.env.OTSCLIENT_VERSION || 'latest',
+      bitcoin_version: process.env.BITCOIN_VERSION || 'latest',
+      lightning_version: process.env.LIGHTNING_VERSION || 'latest'
     }, this.props );
-    this.props.default_username = process.env.DEFAULT_USER || '';
-    this.props.gatekeeper_version = process.env.GATEKEEPER_VERSION || 'latest';
-    this.props.proxy_version = process.env.PROXY_VERSION || 'latest';
-    this.props.proxycron_version = process.env.PROXYCRON_VERSION || 'latest';
-    this.props.pycoin_version = process.env.PYCOIN_VERSION || 'latest';
-    this.props.otsclient_version = process.env.OTSCLIENT_VERSION || 'latest';
-    this.props.bitcoin_version = process.env.BITCOIN_VERSION || 'latest';
-    this.props.lightning_version = process.env.LIGHTNING_VERSION || 'latest';
   }
 
   _isChecked( name, value ) {
