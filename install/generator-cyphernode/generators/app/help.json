@@ -38,5 +38,6 @@
   "installer_mode": "Only one <font underline='true'>installation mode</font> is supported, right now: <font color='#0000ff'>local docker (self-hosted)</font>. Choose wisely ;-)",
   "installer_cleanup": "Do you want to <font underline='true'>remove</font> this configurator Docker image after installation? This would free about 150MB of disk space.",
   "docker_mode": "Cyphernode Docker services can be run using <font underline='true'>Docker Swarm</font> (https://docs.docker.com/engine/swarm/) or <font underline='true'>docker-compose</font> (https://docs.docker.com/compose/overview/). Both will work, some users prefer one to another depending on deployment types, scalability, current framework, etc.",
+  "grafana_datapath": "<font underline='true'>Path name</font> to where grafana's data files are stored. This directory will be mounted into the grafana docker container.",
   "__default__": ""
 }
