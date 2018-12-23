@@ -57,7 +57,7 @@ module.exports = {
       type: 'confirm',
       name: 'use_xpub',
       default: utils._getDefault( 'use_xpub' )||false,
-      message: prefix()+'Use an xpub key to watch or generate adresses?'+utils._getHelp('use_xpub'),
+      message: prefix()+'Use a default xpub key to watch or generate adresses?'+utils._getHelp('use_xpub'),
     },
     {
       when: function( props ) {
@@ -66,7 +66,7 @@ module.exports = {
       type: 'input',
       name: 'xpub',
       default: utils._getDefault( 'xpub' ),
-      message: prefix()+'What is your xpub key?'+utils._getHelp('xpub'),
+      message: prefix()+'What is your default xpub key?'+utils._getHelp('xpub'),
       filter: utils._trimFilter,
       validate: utils._xkeyValidator
     },
@@ -77,7 +77,7 @@ module.exports = {
       type: 'input',
       name: 'derivation_path',
       default: utils._getDefault( 'derivation_path' ),
-      message: prefix()+'What is your address derivation path?'+utils._getHelp('derivation_path'),
+      message: prefix()+'What is your default derivation path?'+utils._getHelp('derivation_path'),
       filter: utils._trimFilter,
       validate: utils._derivationPathValidator
     }];
