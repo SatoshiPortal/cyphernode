@@ -208,13 +208,6 @@ module.exports = {
       message: prefix()+'Expose bitcoin full node outside of the docker network?'+utils._getHelp('bitcoin_expose'),
     },
     {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1  },
-      type: 'confirm',
-      name: 'lightning_expose',
-      default: utils._getDefault( 'lightning_expose' ),
-      message: prefix()+'Expose lightning node outside of the docker network?'+utils._getHelp('lightning_expose'),
-    },
-    {
       when: installerDocker,
       type: 'list',
       name: 'docker_mode',

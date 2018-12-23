@@ -388,7 +388,6 @@ module.exports = class extends Generator {
       bitcoin_node_ip: '',
       bitcoin_mode: 'internal',
       bitcoin_expose: false,
-      lightning_expose: false,
       gatekeeper_apiproperties: defaultAPIProperties,
       gatekeeper_ipwhitelist: '',
       gatekeeper_keys: { configEntries: [], clientInformation: [] },

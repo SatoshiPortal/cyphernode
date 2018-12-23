@@ -99,10 +99,8 @@ services:
     command: $USER lightningd
     image: cyphernode/clightning:<%= lightning_version %>
 
-<% if( lightning_expose ) { %>
     ports:
       - "9735:9735"
-<% } %>
     volumes:
       - "<%= lightning_datapath%>:/.lightning"
       - "<%= lightning_datapath%>/bitcoin.conf:/.bitcoin/bitcoin.conf"
