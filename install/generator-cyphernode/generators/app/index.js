@@ -334,7 +334,8 @@ module.exports = class extends Generator {
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',
-      'otsclient_datapath'
+      'otsclient_datapath',
+      'grafana_datapath'
     ];
 
     for( let pathProp of pathProps ) {

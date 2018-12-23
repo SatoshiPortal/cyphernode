@@ -204,16 +204,41 @@ module.exports = {
       default: utils._getDefault( 'otsclient_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your otsclient data?'+utils._getHelp('otsclient_datapath_custom'),
+      message: prefix()+'Custom path for your otsclient data?'+utils._getHelp('otsclient_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('grafana') !== -1 },
-      type: 'input',
+      type: 'list',
       name: 'grafana_datapath',
       default: utils._getDefault( 'grafana_datapath' ),
+      choices: [
+        {
+          name: "/var/run/cyphernode/grafana (needs sudo)",
+          value: "/var/run/cyphernode/grafana"
+        },
+        {
+          name: "~/.cyphernode/grafana",
+          value: "~/.cyphernode/grafana"
+        },
+        {
+          name: "~/grafana",
+          value: "~/grafana"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your grafana data?'+utils._getHelp('grafana_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('grafana') !== -1 && props.grafana_datapath === '_custom' },
+      type: 'input',
+      name: 'grafana_datapath_custom',
+      default: utils._getDefault( 'grafana_datapath_custom' ),
       filter: utils._trimFilter,
       validate: utils._pathValidator,
-      message: prefix()+'Where is your grafana data?'+utils._getHelp('grafana_datapath'),
+      message: prefix()+'Custom path for your grafana data?'+utils._getHelp('grafana_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
