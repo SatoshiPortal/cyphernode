@@ -28,6 +28,8 @@ case "${arch}" in arm*)
 ;;
 esac
 
+echo "EXIT_STATUS=1" > $current_path/exitStatus.sh
+
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v ~/.cyphernode/gatekeeper:/gatekeeper \
