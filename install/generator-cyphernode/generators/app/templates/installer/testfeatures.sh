@@ -313,3 +313,5 @@ result="{${result}]}"
 echo "${result}" > /gatekeeper/installation.json
 
 echo -e "\r\n\e[1;32mTests finished.\e[0m" > /dev/console
+
+echo "EXIT_STATUS=${returncode}" > /exitStatus.sh
