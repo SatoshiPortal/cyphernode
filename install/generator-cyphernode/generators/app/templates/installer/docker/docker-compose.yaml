@@ -156,6 +156,12 @@ services:
     - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
     - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
     - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+    - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+    - "GF_AUTH_DISABLE_SIGNOUT_MENU=true"
+    - "GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/monitoring/"
+    - "GF_AUTH_PROXY_ENABLED=true"
+    - "GF_AUTH_BASIC_ENABLED=false"
     networks:
     - cyphernodenet
     restart: always
