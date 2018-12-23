@@ -503,14 +503,13 @@ module.exports = class extends Generator {
       return '';
     }
 
-    // TODO: remove default later:
     const helpText = this.help[topic] || this.help['__default__'];
 
     if( !helpText ||helpText === '' ) {
       return '';
     }
 
-    return "\n\n"+chalk.reset.cyan(wrap( html2ansi(helpText),82 ))+"\n\n";
+    return "\n\n"+wrap( html2ansi(helpText),82 )+"\n\n";
   }
 
 };
