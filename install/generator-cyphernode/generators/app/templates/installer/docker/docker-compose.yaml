@@ -145,7 +145,7 @@ services:
 
 <% if ( features.indexOf('grafana') !== -1 ) { %>
   grafana:
-    image: cyphernode/grafana:cyphernode-0.05
+    image: cyphernode/grafana:<%= grafana_version %>
     #    deploy:
     #      placement:
     #        constraints: [node.hostname==dev]

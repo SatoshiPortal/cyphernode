@@ -2,6 +2,17 @@
 
 TRACING=1
 
+# CYPHERNODE VERSION "v0.1.0rc1"
+CONF_VERSION="v0.1-rc1"
+GATEKEEPER_VERSION="v0.1-rc1"
+PROXY_VERSION="v0.1-rc1"
+PROXYCRON_VERSION="v0.1-rc1"
+OTSCLIENT_VERSION="v0.1-rc1"
+PYCOIN_VERSION="v0.1-rc1"
+BITCOIN_VERSION="v0.17.0"
+LIGHTNING_VERSION="v0.6.2"
+GRAFANA_VERSION="v0.1-rc1"
+
 trace()
 {
   if [ -n "${TRACING}" ]; then
@@ -38,6 +49,7 @@ build_docker_images() {
   local bitcoin_dockerfile=Dockerfile.amd64
   local clightning_dockerfile=Dockerfile.amd64
   local proxy_dockerfile=Dockerfile.amd64
+  local grafana_dockerfile=Dockerfile.amd64
 
   # compat mode for SatoshiPortal repo
   # TODO: add more mappings?
@@ -45,22 +57,23 @@ build_docker_images() {
     bitcoin_dockerfile="Dockerfile.arm32v6"
     clightning_dockerfile="Dockerfile.arm32v6"
     proxy_dockerfile="Dockerfile.arm32v6"
+    grafana_dockerfile="Dockerfile.arm32v6"
   fi
 
   trace "Creating cyphernodeconf image"
-  build_docker_image install/ cyphernode/cyphernodeconf:$CN_VERSION
+  build_docker_image install/ cyphernode/cyphernodeconf:$CONF_VERSION
 
   trace "Creating SatoshiPortal images"
-  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BC_VERSION $bitcoin_dockerfile
-  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$CL_VERSION $clightning_dockerfile
+  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BITCOIN_VERSION $bitcoin_dockerfile
+  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$LIGHTNING_VERSION $clightning_dockerfile
 
   trace "Creating cyphernode images"
-  build_docker_image api_auth_docker/ cyphernode/gatekeeper:$CN_VERSION
-  build_docker_image proxy_docker/ cyphernode/proxy:$CN_VERSION $proxy_dockerfile
-  build_docker_image cron_docker/ cyphernode/proxycron:$CN_VERSION
-  build_docker_image pycoin_docker/ cyphernode/pycoin:$CN_VERSION
-  build_docker_image otsclient_docker/ cyphernode/otsclient:$CN_VERSION
-  build_docker_image grafana_docker/ cyphernode/grafana:$CN_VERSION
+  build_docker_image api_auth_docker/ cyphernode/gatekeeper:$GATEKEEPER_VERSION
+  build_docker_image proxy_docker/ cyphernode/proxy:$PROXY_VERSION $proxy_dockerfile
+  build_docker_image cron_docker/ cyphernode/proxycron:$PROXYCRON_VERSION
+  build_docker_image pycoin_docker/ cyphernode/pycoin:$PYCOIN_VERSION
+  build_docker_image otsclient_docker/ cyphernode/otsclient:$OTSCLIENT_VERSION
+  build_docker_image grafana_docker/ cyphernode/grafana:$GRAFANA_VERSION $grafana_dockerfile
 
 }
 

@@ -212,6 +212,7 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e GRAFANA_VERSION=$GRAFANA_VERSION \
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user yo --no-insight cyphernode$gen_options $recreate
@@ -703,6 +704,8 @@ OTSCLIENT_VERSION="v0.1-rc.2"
 PYCOIN_VERSION="v0.1-rc.2"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
+GRAFANA_VERSION="v0.1-rc1"
+
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
