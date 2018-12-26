@@ -13,6 +13,7 @@ BITCOIN_VERSION="v0.17.1"
 LIGHTNING_VERSION="v0.7.0"
 GRAFANA_VERSION="v0.2.0-rc.1-local"
 
+
 trace()
 {
   if [ -n "${TRACING}" ]; then
@@ -67,13 +68,14 @@ build_docker_images() {
 #  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BITCOIN_VERSION $bitcoin_dockerfile
 #  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$LIGHTNING_VERSION $clightning_dockerfile
 
+
   trace "Creating cyphernode images"
   build_docker_image api_auth_docker/ cyphernode/gatekeeper:$GATEKEEPER_VERSION
   build_docker_image proxy_docker/ cyphernode/proxy:$PROXY_VERSION $proxy_dockerfile
   build_docker_image cron_docker/ cyphernode/proxycron:$PROXYCRON_VERSION
   build_docker_image pycoin_docker/ cyphernode/pycoin:$PYCOIN_VERSION
   build_docker_image otsclient_docker/ cyphernode/otsclient:$OTSCLIENT_VERSION
-  build_docker_image grafana_docker/ cyphernode/grafana:$GRAFANA_VERSION
+  build_docker_image grafana_docker/ cyphernode/grafana:$GRAFANA_VERSION $grafana_dockerfile
 }
 
 build_docker_images

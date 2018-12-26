@@ -470,7 +470,8 @@ module.exports = class extends Generator {
       otsclient_version: process.env.OTSCLIENT_VERSION || 'latest',
       bitcoin_version: process.env.BITCOIN_VERSION || 'latest',
       lightning_version: process.env.LIGHTNING_VERSION || 'latest',
-      sparkwallet_version: process.env.SPARKWALLET_VERSION || 'standalone'
+      sparkwallet_version: process.env.SPARKWALLET_VERSION || 'standalone',
+      grafana_version: process.env.GRAFANA_VERSION || 'latest'
     }, this.props );
   }
 
