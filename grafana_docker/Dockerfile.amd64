@@ -52,7 +52,7 @@ ENV PATH=/usr/share/grafana/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bi
 
 WORKDIR $GF_PATHS_HOME
 
-RUN apk add --update --no-cache ca-certificates shadow bash iputils
+RUN apk add --update --no-cache ca-certificates shadow bash iputils jq
 
 #RUN apt-get update && apt-get upgrade -y && \
 #    apt-get install -qq -y libfontconfig ca-certificates && \
@@ -76,7 +76,7 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
     cp "$GF_PATHS_HOME/conf/ldap.toml" /etc/grafana/ldap.toml && \
     cp -r "$GF_PATHS_HOME/conf/provisioning/datasources" "$GF_PATHS_PROVISIONING" && \
     cp -r "$GF_PATHS_HOME/conf/provisioning/dashboards" "$GF_PATHS_PROVISIONING" && \
-    cp -r "$GF_PATHS_HOME/conf/dashboards/all.json" "$GF_PATHS_HOME/dashboards" && \
+    cp -r "$GF_PATHS_HOME/conf/dashboards" "$GF_PATHS_HOME" && \
     chown -R grafana:grafana "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS" && \
     chmod 777 "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS"
 
@@ -142,6 +142,29 @@ COPY supervisord/supervisord.conf /etc/supervisord.conf
 # Configuration
 COPY telegraf/telegraf.conf /etc/telegraf/telegraf.conf
 COPY influxdb/influxdb.conf /etc/influxdb/influxdb.conf
+
+
+# Taking care of glibc shit (glibc not natively supported by Alpine but lightning-cli and bitcoin-cli use it)
+
+ENV GLIBC_VERSION 2.27-r0
+ENV GLIBC_SHA256 938bceae3b83c53e7fa9cc4135ce45e04aae99256c5e74cf186c794b97473bc7
+ENV GLIBCBIN_SHA256 3a87874e57b9d92e223f3e90356aaea994af67fb76b71bb72abfb809e948d0d6
+# Download and install glibc (https://github.com/jeanblanchard/docker-alpine-glibc/blob/master/Dockerfile)
+RUN wget -O /etc/apk/keys/sgerrand.rsa.pub https://github.com/sgerrand/alpine-pkg-glibc/releases/download/$GLIBC_VERSION/sgerrand.rsa.pub \
+ && wget -O glibc.apk "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk" \
+ && echo "$GLIBC_SHA256  glibc.apk" | sha256sum -c - \
+ && wget -O glibc-bin.apk "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk" \
+ && echo "$GLIBCBIN_SHA256  glibc-bin.apk" | sha256sum -c - \
+ && apk add --update --no-cache glibc-bin.apk glibc.apk \
+ && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib \
+ && echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf \
+ && rm -rf glibc.apk glibc-bin.apk
+
+# Copy some command line utils for lightning and bitcoin stats
+COPY --from=cyphernode/clightning:v0.6.2 /usr/bin/lightning-cli /usr/bin/
+COPY --from=cyphernode/bitcoin:v0.17.0 /usr/bin/bitcoin-cli /usr/bin/
+
+COPY collectors /collectors
 
 ENTRYPOINT ["supervisord", "--nodaemon", "--configuration", "/etc/supervisord.conf"]
 

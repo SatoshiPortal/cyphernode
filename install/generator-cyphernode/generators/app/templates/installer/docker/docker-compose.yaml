@@ -156,6 +156,12 @@ services:
     - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
     - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
     - "/var/run/docker.sock:/var/run/docker.sock"
+<% if( bitcoin_mode === 'internal' ) { %>
+    - "<%= bitcoin_datapath%>:/root/.bitcoin"
+<% } %>
+<% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
+    - "<%= lightning_datapath%>:/root/.lightning"
+<% } %>
     environment:
     - "GF_AUTH_DISABLE_LOGIN_FORM=true"
     - "GF_AUTH_DISABLE_SIGNOUT_MENU=true"
