@@ -32,16 +32,16 @@ echo "EXIT_STATUS=1" > $current_path/exitStatus.sh
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
--v ~/.cyphernode/gatekeeper:/gatekeeper \
+-v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path/exitStatus.sh:/exitStatus.sh \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
 
-if [[ -f $current_path/exitStatus.sh ]]; then
+if [ -f $current_path/exitStatus.sh ]; then
   . $current_path/exitStatus.sh
   rm $current_path/exitStatus.sh
 fi
 
-if [[ ! $EXIT_STATUS == 0 ]]; then
+if [ "$EXIT_STATUS" -ne "0" ]; then
   exec ./stop.sh
   exit 1
 fi
