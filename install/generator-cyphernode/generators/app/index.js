@@ -124,6 +124,7 @@ module.exports = class extends Generator {
   }
 
   async _initConfig() {
+    const versionOverride = process.env.VERSION_OVERRIDE==='true';
     if( fs.existsSync(this.destinationPath('config.7z')) ) {
       let r = {};
 
@@ -200,10 +201,24 @@ module.exports = class extends Generator {
 
     this.props.gatekeeper_statuspw = await new Cert().passwd(this.configurationPassword);
 
+    if( versionOverride ) {
+      delete this.props.gatekeeper_version;
+      delete this.props.proxy_version;
+      delete this.props.proxycron_version;
+      delete this.props.pycoin_version;
+      delete this.props.otsclient_version;
+      delete this.props.bitcoin_version;
+      delete this.props.lightning_version;
+      delete this.props.grafana_version;
+    }
+    
     this._assignConfigDefaults();
     for( let c of this.featureChoices ) {
       c.checked = this._isChecked( 'features', c.value );
     }
+
+
+
   }
 
   async prompting() {
