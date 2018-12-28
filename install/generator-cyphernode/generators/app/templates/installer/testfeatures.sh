@@ -234,6 +234,7 @@ feature_status() {
 brokenproxy="false"
 containers=$(checkservice)
 returncode=$?
+finalreturncode=${returncode}
 if [ "${returncode}" -ne "0" ]; then
   echo -e "\e[1;31mCyphernode could not fully start properly within delay." > /dev/console
   status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"proxy\") | .active")
@@ -262,6 +263,7 @@ if [ "${status}" = "true" ]; then
 else
   returncode=1
 fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Gatekeeper error!')}"
 
 result="${result},{\"name\":\"pycoin\",\"working\":"
@@ -272,6 +274,7 @@ if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
 else
   returncode=1
 fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
@@ -283,6 +286,7 @@ if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
 else
   returncode=1
 fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 <% } %>
 
@@ -294,6 +298,7 @@ if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
 else
   returncode=1
 fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
 
 <% if (features.indexOf('lightning') != -1) { %>
@@ -305,6 +310,7 @@ if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
 else
   returncode=1
 fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 <% } %>
 
@@ -314,4 +320,4 @@ echo "${result}" > /gatekeeper/installation.json
 
 echo -e "\r\n\e[1;32mTests finished.\e[0m" > /dev/console
 
-echo "EXIT_STATUS=${returncode}" > /exitStatus.sh
+echo "EXIT_STATUS=${finalreturncode}" > /exitStatus.sh

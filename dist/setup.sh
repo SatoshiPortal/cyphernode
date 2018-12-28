@@ -184,6 +184,7 @@ configure() {
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
+             -e VERSION_OVERRIDE=$VERSION_OVERRIDE \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
              -e PROXY_VERSION=$PROXY_VERSION \
              -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
@@ -637,7 +638,8 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "0.1.0-rc.1"
+# CYPHERNODE VERSION "v0.1.0-rc.1"
+VERSION_OVERRIDE="true"
 CONF_VERSION="v0.1-rc.1"
 GATEKEEPER_VERSION="v0.1-rc.1"
 PROXY_VERSION="v0.1-rc.1"

@@ -42,13 +42,11 @@ if [ -f $current_path/exitStatus.sh ]; then
 fi
 
 if [ "$EXIT_STATUS" -ne "0" ]; then
-  exec ./stop.sh
+  printf "\r\n\033[1;31mThere was an error during cyphernode installation.  Please see Docker's logs for more information.  Run ./stop.sh to stop cyphernode.\r\n\r\n\033[0m"
   exit 1
 fi
-
-
 
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + '/status/\\r\\n') %><% }) %>\033[0m\r\n"
-printf "\r\n\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n"
+printf "\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n\r\n\033[0m"
