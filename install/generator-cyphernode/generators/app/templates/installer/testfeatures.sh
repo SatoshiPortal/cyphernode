@@ -231,6 +231,8 @@ feature_status() {
 
 # Let's first see if everything is up.
 
+echo "EXIT_STATUS=1" > /dist/exitStatus.sh
+
 brokenproxy="false"
 containers=$(checkservice)
 returncode=$?
@@ -320,4 +322,4 @@ echo "${result}" > /gatekeeper/installation.json
 
 echo -e "\r\n\e[1;32mTests finished.\e[0m" > /dev/console
 
-echo "EXIT_STATUS=${finalreturncode}" > /exitStatus.sh
+echo "EXIT_STATUS=${finalreturncode}" > /dist/exitStatus.sh

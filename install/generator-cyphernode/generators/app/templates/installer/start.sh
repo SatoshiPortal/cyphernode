@@ -23,22 +23,20 @@ docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 
 arch=$(uname -m)
 case "${arch}" in arm*)
-  printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 30 more seconds before performing our tests...\033[0m\r\n"
-  sleep 30
+  printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
+  sleep 60
 ;;
 esac
-
-echo "EXIT_STATUS=1" > $current_path/exitStatus.sh
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
--v $current_path/exitStatus.sh:/exitStatus.sh \
+-v $current_path:/dist \
 --network cyphernodenet alpine:3.8 /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then
   . $current_path/exitStatus.sh
-  rm $current_path/exitStatus.sh
+  rm -f $current_path/exitStatus.sh
 fi
 
 if [ "$EXIT_STATUS" -ne "0" ]; then
