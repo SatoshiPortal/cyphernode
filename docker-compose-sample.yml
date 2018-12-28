@@ -1,0 +1,120 @@
+version: "3"
+
+services:
+
+  gatekeeper:
+    # HTTP authentication API gate
+    environment:
+      - "TRACING=1"
+    image: cyphernode/gatekeeper:latest
+    ports:
+      - "443:443"
+    volumes:
+      - "~/cn-files/cn-gatekeeper/certs:/etc/ssl/certs"
+      - "~/cn-files/cn-gatekeeper/private:/etc/ssl/private"
+      - "~/cn-files/cn-gatekeeper/keys.properties:/etc/nginx/conf.d/keys.properties"
+      - "~/cn-files/cn-gatekeeper/api.properties:/etc/nginx/conf.d/api.properties"
+    command: $USER
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
+
+  proxy:
+    command: $USER ./startproxy.sh
+    # Bitcoin Mini Proxy
+    environment:
+      - "TRACING=1"
+      - "WATCHER_BTC_NODE_RPC_URL=bitcoin:18332/wallet/watching01.dat"
+      - "WATCHER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
+      - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
+      - "SPENDER_BTC_NODE_RPC_URL=bitcoin:18332/wallet/spending01.dat"
+      - "SPENDER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
+      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
+      - "PROXY_LISTENING_PORT=8888"
+      - "DB_PATH=/proxy/db"
+      - "DB_FILE=/proxy/db/proxydb"
+      - "PYCOIN_CONTAINER=pycoin:7777"
+      - "WATCHER_BTC_NODE_PRUNED=false"
+      - "OTSCLIENT_CONTAINER=otsclient:6666"
+      - "OTS_FILES=/proxy/otsfiles"
+    image: cyphernode/proxy:latest
+
+    volumes:
+      - "~/cn-files/cn-proxydb:/proxy/db"
+      - "~/cn-files/cn-lndata:/.lightning"
+      - "~/cn-files/cn-otsfiles:/proxy/otsfiles"
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
+
+  proxycron:
+    environment:
+      - "PROXY_URL=proxy:8888/executecallbacks"
+    image: cyphernode/proxycron:latest
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
+
+  pycoin:
+    # Pycoin
+    command: $USER ./startpycoin.sh
+    image: cyphernode/pycoin:latest
+    environment:
+      - "TRACING=1"
+      - "PYCOIN_LISTENING_PORT=7777"
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
+
+  lightning:
+    command: $USER lightningd
+    image: cyphernode/clightning:v0.6.2
+    volumes:
+      - "~/cn-files/cn-lndata:/.lightning"
+      - "~/cn-files/cn-lndata/bitcoin.conf:/.bitcoin/bitcoin.conf"
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+    restart: always
+
+  otsclient:
+    environment:
+      - "TRACING=1"
+      - "OTSCLIENT_LISTENING_PORT=6666"
+    image: cyphernode/otsclient:latest
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    volumes:
+      - "~/cn-files/cn-otsfiles:/otsfiles"
+    command: $USER /script/startotsclient.sh
+    networks:
+      - cyphernodenet
+    restart: always
+
+  bitcoin:
+    command: $USER bitcoind
+    image: cyphernode/bitcoin:v0.17.0
+    volumes:
+      - "~/cn-files/cn-btcdata:/.bitcoin"
+    networks:
+      - cyphernodenet
+    restart: always
+
+networks:
+  cyphernodenet:
+    external: true

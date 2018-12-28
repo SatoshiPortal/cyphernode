@@ -30,48 +30,56 @@ CyphernodeClient.prototype._generateToken = function() {
   return token
 }
 
-CyphernodeClient.prototype._post = function(url, postdata, cb) {
+CyphernodeClient.prototype._post = function(url, postdata, cb, addedOptions) {
   let urlr = this.baseURL + url;
-
-  HTTP.post(urlr,
-    {
-      data: postdata,
-      npmRequestOptions: {
-        strictSSL: false,
-        agentOptions: {
-          rejectUnauthorized: false
-        }
-      },
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + this._generateToken()
+  let httpOptions = {
+    data: postdata,
+    npmRequestOptions: {
+      strictSSL: false,
+      agentOptions: {
+        rejectUnauthorized: false
       }
-    }, function (err, resp) {
+    },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + this._generateToken()
+    }
+  }
+  if (addedOptions) {
+    Object.assign(httpOptions.npmRequestOptions, addedOptions)
+  }
+
+  HTTP.post(urlr, httpOptions,
+    function (err, resp) {
 //      console.log(err)
 //      console.log(resp)
-      cb(err, resp.data)
+      cb(err, resp.data || resp.content)
     }
   )
 };
 
-CyphernodeClient.prototype._get = function(url, cb) {
+CyphernodeClient.prototype._get = function(url, cb, addedOptions) {
   let urlr = this.baseURL + url;
-
-  HTTP.get(urlr,
-    {
-      npmRequestOptions: {
-        strictSSL: false,
-        agentOptions: {
-          rejectUnauthorized: false
-        }
-      },
-      headers: {
-        'Authorization': 'Bearer ' + this._generateToken()
+  let httpOptions = {
+    npmRequestOptions: {
+      strictSSL: false,
+      agentOptions: {
+        rejectUnauthorized: false
       }
-    }, function (err, resp) {
+    },
+    headers: {
+      'Authorization': 'Bearer ' + this._generateToken()
+    }
+  }
+  if (addedOptions) {
+    Object.assign(httpOptions.npmRequestOptions, addedOptions)
+  }
+
+  HTTP.get(urlr, httpOptions,
+    function (err, resp) {
 //      console.log(err)
 //      console.log(resp)
-      cb(err, resp.data)
+      cb(err, resp.data || resp.content)
     }
   )
 };
@@ -111,4 +119,18 @@ CyphernodeClient.prototype.getBalance = function(cbreply) {
 CyphernodeClient.prototype.getNewAddress = function(cbreply) {
   // http://192.168.122.152:8080/getnewaddress
   this._get('/getnewaddress', cbreply);
+};
+
+CyphernodeClient.prototype.ots_stamp = function(hash, callbackUrl, cbreply) {
+  // POST https://cyphernode/ots_stamp
+  // BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}
+  let data = { hash: hash, callbackUrl: callbackUrl }
+  this._post('/ots_stamp', data, cbreply);
+};
+
+CyphernodeClient.prototype.ots_getfile = function(hash, cbreply) {
+  // http://192.168.122.152:8080/ots_getfile/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
+
+  // encoding: null is for HTTP get to not convert the binary data to the default encoding
+  this._get('/ots_getfile/' + hash, cbreply, { encoding: null });
 };
