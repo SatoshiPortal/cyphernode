@@ -37,7 +37,7 @@ module.exports = {
       default: utils._getDefault( 'gatekeeper_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/gatekeeper (needs sudo)",
+          name: "/var/run/cyphernode/gatekeeper (needs sudo and "+chalk.red('incompatible with OSX')+")",
           value: "/var/run/cyphernode/gatekeeper"
         },
         {
@@ -71,7 +71,7 @@ module.exports = {
       default: utils._getDefault( 'proxy_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/proxy (needs sudo)",
+          name: "/var/run/cyphernode/proxy (needs sudo and "+chalk.red('incompatible with OSX')+")",
           value: "/var/run/cyphernode/proxy"
         },
         {
@@ -105,7 +105,7 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/bitcoin (needs sudo)",
+          name: "/var/run/cyphernode/bitcoin (needs sudo and "+chalk.red('incompatible with OSX')+")",
           value: "/var/run/cyphernode/bitcoin"
         },
         {
@@ -139,7 +139,7 @@ module.exports = {
       default: utils._getDefault( 'lightning_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/lightning (needs sudo)",
+          name: "/var/run/cyphernode/lightning (needs sudo - "+chalk.red('incompatible with OSX')+")",
           value: "/var/run/cyphernode/lightning"
         },
         {
@@ -173,7 +173,7 @@ module.exports = {
       default: utils._getDefault( 'otsclient_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/otsclient (needs sudo)",
+          name: "/var/run/cyphernode/otsclient (needs sudo and "+chalk.red('incompatible with OSX')+")",
           value: "/var/run/cyphernode/otsclient"
         },
         {
