@@ -9,10 +9,10 @@ tests()
 	local response
 
 	# getbestblockhash
-	# (GET) http://cyphernode:8888/getbestblockhash
+	# (GET) http://proxy:8888/getbestblockhash
 
 	echo "Testing getbestblockhash..."
-	response=$(curl -s cyphernode:8888/getbestblockhash)
+	response=$(curl -s proxy:8888/getbestblockhash)
 	echo "response=${response}"
 	local blockhash=$(echo ${response} | jq ".result" | tr -d '\"')
 	echo "blockhash=${blockhash}"
@@ -22,10 +22,10 @@ tests()
 	echo "Tested getbestblockhash."
 
 	# getbestblockinfo
-	# curl (GET) http://cyphernode:8888/getbestblockinfo
+	# curl (GET) http://proxy:8888/getbestblockinfo
 
 	echo "Testing getbestblockinfo..."
-	response=$(curl -s cyphernode:8888/getbestblockinfo)
+	response=$(curl -s proxy:8888/getbestblockinfo)
 	echo "response=${response}"
 	local blockhash2=$(echo ${response} | jq ".result.hash" | tr -d '\"')
 	echo "blockhash2=${blockhash2}"
@@ -35,10 +35,10 @@ tests()
 	echo "Tested getbestblockinfo."
 
 	# getblockinfo
-	# (GET) http://cyphernode:8888/getblockinfo/000000006f82a384c208ecfa04d05beea02d420f3f398ddda5c7f900de5718ea
+	# (GET) http://proxy:8888/getblockinfo/000000006f82a384c208ecfa04d05beea02d420f3f398ddda5c7f900de5718ea
 
 	echo "Testing getblockinfo..."
-	response=$(curl -s cyphernode:8888/getblockinfo/${blockhash})
+	response=$(curl -s proxy:8888/getblockinfo/${blockhash})
 	echo "response=${response}"
 	blockhash2=$(echo ${response} | jq ".result.hash" | tr -d '\"')
 	echo "blockhash2=${blockhash2}"
@@ -48,10 +48,10 @@ tests()
 	echo "Tested getblockinfo."
 
 	# gettransaction
-	# (GET) http://cyphernode:8888/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
+	# (GET) http://proxy:8888/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
 
 	echo "Testing gettransaction..."
-	response=$(curl -s cyphernode:8888/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648)
+	response=$(curl -s proxy:8888/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648)
 	echo "response=${response}"
 	local txid=$(echo ${response} | jq ".result.txid" | tr -d '\"')
 	echo "txid=${txid}"
@@ -61,26 +61,26 @@ tests()
 	echo "Tested gettransaction."
 
 	# getnewaddress
-	# (GET) http://cyphernode:8888/getnewaddress
+	# (GET) http://proxy:8888/getnewaddress
 	# returns {"address":"2MuiUu8AyuByAGYRDAqqhdYxt8gXcsQ1Ymw"}
 
 	echo "Testing getnewaddress..."
-	response=$(curl -s cyphernode:8888/getnewaddress)
+	response=$(curl -s proxy:8888/getnewaddress)
 	echo "response=${response}"
 	address1=$(echo ${response} | jq ".address" | tr -d '\"')
 	echo "address1=${address1}"
 	if [ -z "${address1}" ]; then
 		exit 10
 	fi
-	address2=$(curl -s cyphernode:8888/getnewaddress | jq ".address" | tr -d '\"')
+	address2=$(curl -s proxy:8888/getnewaddress | jq ".address" | tr -d '\"')
 	echo "address2=${address2}"
 	echo "Tested getnewaddress."
 
 	# getbalance
-	# (GET) http://cyphernode:8888/getbalance
+	# (GET) http://proxy:8888/getbalance
 
 	echo "Testing getbalance..."
-	response=$(curl -s cyphernode:8888/getbalance)
+	response=$(curl -s proxy:8888/getbalance)
 	echo "response=${response}"
 	local balance=$(echo ${response} | jq ".balance")
 	echo "balance=${balance}"
@@ -90,7 +90,7 @@ tests()
 	echo "Tested getbalance."
 
 	# watch
-	# POST http://cyphernode:8888/watch
+	# POST http://proxy:8888/watch
 	# BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.122.233:1111/callback0conf","confirmedCallbackURL":"192.168.122.233:1111/callback1conf"}
 
 	echo "Testing watch..."
@@ -98,7 +98,7 @@ tests()
 	local url2="$(hostname):1111/callback1conf"
 	echo "url1=${url1}"
 	echo "url2=${url2}"
-	response=$(curl -s -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"unconfirmedCallbackURL\":\"${url1}\",\"confirmedCallbackURL\":\"${url2}\"}" cyphernode:8888/watch)
+	response=$(curl -s -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"unconfirmedCallbackURL\":\"${url1}\",\"confirmedCallbackURL\":\"${url2}\"}" proxy:8888/watch)
 	echo "response=${response}"
 
 	local id=$(echo "${response}" | jq ".id" | tr -d '\"')
@@ -135,15 +135,15 @@ tests()
 	fi
 
 	# Let's watch another address just to be able to test unwatch later and test if found in getactivewatches
-	response=$(curl -s -H "Content-Type: application/json" -d "{\"address\":\"${address2}\",\"unconfirmedCallbackURL\":\"${url1}2\",\"confirmedCallbackURL\":\"${url2}2\"}" cyphernode:8888/watch)
+	response=$(curl -s -H "Content-Type: application/json" -d "{\"address\":\"${address2}\",\"unconfirmedCallbackURL\":\"${url1}2\",\"confirmedCallbackURL\":\"${url2}2\"}" proxy:8888/watch)
 	echo "response=${response}"
 	echo "Tested watch."
 
 	# getactivewatches
-	# (GET) http://cyphernode:8888/getactivewatches
+	# (GET) http://proxy:8888/getactivewatches
 
 	echo "Testing getactivewatches..."
-	response=$(curl -s cyphernode:8888/getactivewatches)
+	response=$(curl -s proxy:8888/getactivewatches)
 	echo "response=${response}"
 	response=$(echo ${response} | jq ".watches[]")
 	echo "response=${response}"
@@ -160,10 +160,10 @@ tests()
 	echo "Tested getactivewatches."
 
 	# unwatch
-	# (GET) http://cyphernode:8888/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
+	# (GET) http://proxy:8888/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
 
 	echo "Testing unwatch..."
-	response=$(curl -s cyphernode:8888/unwatch/${address2})
+	response=$(curl -s proxy:8888/unwatch/${address2})
 	echo "response=${response}"
 	event=$(echo "${response}" | jq ".event" | tr -d '\"')
 	echo "event=${event}"
@@ -175,7 +175,7 @@ tests()
 	if [ "${address}" != "${address2}" ]; then
 		exit 110
 	fi
-	response=$(curl -s cyphernode:8888/getactivewatches)
+	response=$(curl -s proxy:8888/getactivewatches)
 	echo "response=${response}"
 	response=$(echo "${response}" | jq ".watches[]")
 	echo "response=${response}"
@@ -187,11 +187,11 @@ tests()
 	echo "Tested unwatch."
 
 	# deriveindex
-	# (GET) http://cyphernode:8888/deriveindex/25-30
+	# (GET) http://proxy:8888/deriveindex/25-30
 	# {"addresses":[{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
 
 	echo "Testing deriveindex..."
-	response=$(curl -v cyphernode:8888/deriveindex/25-30)
+	response=$(curl -v proxy:8888/deriveindex/25-30)
 	echo "response=${response}"
 	local nbaddr=$(echo "${response}" | jq ".addresses | length")
 	if [ "${nbaddr}" -ne "6" ]; then
@@ -204,12 +204,12 @@ tests()
 	echo "Tested deriveindex."
 
 	# derivepubpath
-	# (GET) http://cyphernode:8888/derivepubpath
+	# (GET) http://proxy:8888/derivepubpath
 	# BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
 	# {"addresses":[{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
 
 	echo "Testing derivepubpath..."
-	response=$(curl -v -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" cyphernode:8888/derivepubpath)
+	response=$(curl -v -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" proxy:8888/derivepubpath)
 	echo "response=${response}"
 	local nbaddr=$(echo "${response}" | jq ".addresses | length")
 	if [ "${nbaddr}" -ne "6" ]; then
@@ -222,27 +222,27 @@ tests()
 	echo "Tested derivepubpath."
 
 	# spend
-	# POST http://cyphernode:8888/spend
+	# POST http://proxy:8888/spend
 	# BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 
 	# By spending to a watched address, we will test the spending feature and trigger the confirmation to test
 	# confirmations of watched addresses... Cleva!!!
 
 	echo "Testing spend, conf and callbacks..."
-	response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" cyphernode:8888/spend)
+	response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" proxy:8888/spend)
 	echo "response=${response}"
 	wait_for_callbacks
 	echo "Tested spend, conf and callbacks."
 
 	# addtobatch
-	# POST http://cyphernode:8888/addtobatch
+	# POST http://proxy:8888/addtobatch
 	# BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 
 	# By spending to a watched address, we will test the spending feature and trigger the confirmation to test
 	# confirmations of watched addresses... Cleva!!!
 
 #	echo "Testing addtobatch..."
-#	response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" cyphernode:8888/spend)
+#	response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" proxy:8888/spend)
 #	echo "response=${response}"
 #	wait_for_callbacks
 #	echo "Tested addtobatch	."
@@ -251,7 +251,7 @@ tests()
 
 
 	# conf
-	# (GET) http://cyphernode:8888/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
+	# (GET) http://proxy:8888/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
 
 	# Let's trigger tx confirmation even if not confirmed.  Will be funny.  Should take care of
 	# multiple confirmations of the same state.
@@ -261,22 +261,22 @@ tests()
 	# executecallbacks
 	# (GET) http://cyphernode::8080/executecallbacks
 
-	#echo "GET /getbestblockinfo" | nc cyphernode:8888 - | sed -En "s/^(\{.*)/\1/p" | jq
+	#echo "GET /getbestblockinfo" | nc proxy:8888 - | sed -En "s/^(\{.*)/\1/p" | jq
 
 
 
 
 	# spend
-	# POST http://cyphernode:8888/spend
+	# POST http://proxy:8888/spend
 	# BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 
-	#curl -v -H "Content-Type: application/json" -d '{"address":"2MsWyaQ8APbnqasFpWopqUKqsdpiVY3EwLE","amount":0.0001}' cyphernode:8888/spend
+	#curl -v -H "Content-Type: application/json" -d '{"address":"2MsWyaQ8APbnqasFpWopqUKqsdpiVY3EwLE","amount":0.0001}' proxy:8888/spend
 
 	# ln_getinfo
-	# (GET) http://cyphernode:8888/ln_getinfo
+	# (GET) http://proxy:8888/ln_getinfo
 
 	echo "Testing ln_getinfo..."
-	response=$(curl -s cyphernode:8888/ln_getinfo)
+	response=$(curl -s proxy:8888/ln_getinfo)
 	echo "response=${response}"
 	local port=$(echo ${response} | jq ".binding[] | select(.type == \"ipv4\") | .port")
 	echo "port=${port}"
@@ -286,10 +286,10 @@ tests()
 	echo "Tested ln_getinfo."
 
 	# ln_newaddr
-	# (GET) http://cyphernode:8888/ln_newaddr
+	# (GET) http://proxy:8888/ln_newaddr
 
 	echo "Testing ln_newaddr..."
-	response=$(curl -s cyphernode:8888/ln_newaddr)
+	response=$(curl -s proxy:8888/ln_newaddr)
 	echo "response=${response}"
 	address=$(echo ${response} | jq ".address")
 	echo "address=${address}"
@@ -299,11 +299,11 @@ tests()
 	echo "Tested ln_newaddr."
 
 	# ln_create_invoice
-	# POST http://cyphernode:8888/ln_create_invoice
+	# POST http://proxy:8888/ln_create_invoice
 	# BODY {"msatoshi":"10000","label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":"10"}
 
 	#echo "Testing ln_create_invoice..."
-	#response=$(curl -v -H "Content-Type: application/json" -d "{\"msatoshi\":10000,\"label\":\"koNCcrSvhX3dmyFhW\",\"description\":\"Bylls order #10649\",\"expiry\":10}" cyphernode:8888/ln_create_invoice)
+	#response=$(curl -v -H "Content-Type: application/json" -d "{\"msatoshi\":10000,\"label\":\"koNCcrSvhX3dmyFhW\",\"description\":\"Bylls order #10649\",\"expiry\":10}" proxy:8888/ln_create_invoice)
 	#echo "response=${response}"
 
 	#echo "Tested ln_create_invoice."
