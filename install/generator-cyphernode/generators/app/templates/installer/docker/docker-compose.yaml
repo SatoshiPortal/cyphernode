@@ -150,15 +150,15 @@ services:
     #      placement:
     #        constraints: [node.hostname==dev]
     volumes:
+
     - "<%= grafana_datapath%>/grafana/grafana.ini:/etc/grafana/grafana.ini"
     - "<%= grafana_datapath%>/grafana/data:/var/lib/grafana"
+    - "<%= grafana_datapath%>/grafana/dashboards:/usr/share/grafana/dashboards"
     - "<%= grafana_datapath%>/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf"
     - "<%= grafana_datapath%>/influxdb/data:/var/lib/influxdb"
     - "<%= grafana_datapath%>/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf"
     - "/var/run/docker.sock:/var/run/docker.sock"
-<% if( bitcoin_mode === 'internal' ) { %>
-    - "<%= bitcoin_datapath%>:/root/.bitcoin"
-<% } %>
+    - "<%= grafana_datapath%>/grafana/bitcoin.conf:/root/.bitcoin/bitcoin.conf"
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
     - "<%= lightning_datapath%>:/root/.lightning"
 <% } %>

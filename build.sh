@@ -3,15 +3,15 @@
 TRACING=1
 
 # CYPHERNODE VERSION "v0.1.0rc1"
-CONF_VERSION="v0.1-rc1"
-GATEKEEPER_VERSION="v0.1-rc1"
-PROXY_VERSION="v0.1-rc1"
-PROXYCRON_VERSION="v0.1-rc1"
-OTSCLIENT_VERSION="v0.1-rc1"
-PYCOIN_VERSION="v0.1-rc1"
+CONF_VERSION="v0.1-rc.1"
+GATEKEEPER_VERSION="v0.1-rc.1"
+PROXY_VERSION="v0.1-rc.1"
+PROXYCRON_VERSION="v0.1-rc.1"
+OTSCLIENT_VERSION="v0.1-rc.1"
+PYCOIN_VERSION="v0.1-rc.1"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
-GRAFANA_VERSION="v0.1-rc1"
+GRAFANA_VERSION="v0.1-rc.1"
 
 trace()
 {
@@ -76,14 +76,5 @@ build_docker_images() {
   build_docker_image grafana_docker/ cyphernode/grafana:$GRAFANA_VERSION $grafana_dockerfile
 
 }
-
-# CYPHERNODE VERSION
-GATEKEEPER_VERSION="latest"
-PROXY_VERSION="latest"
-PROXYCRON_VERSION="latest"
-OTSCLIENT_VERSION="latest"
-PYCOIN_VERSION="latest"
-BITCOIN_VERSION="latest"
-LIGHTNING_VERSION="latest"
 
 build_docker_images

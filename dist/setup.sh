@@ -487,6 +487,7 @@ install_docker() {
       "$GRAFANA_DATAPATH"
       "$GRAFANA_DATAPATH/grafana"
       "$GRAFANA_DATAPATH/grafana/data"
+      "$GRAFANA_DATAPATH/grafana/dashboards"
       "$GRAFANA_DATAPATH/influxdb"
       "$GRAFANA_DATAPATH/influxdb/data"
       "$GRAFANA_DATAPATH/telegraf"
@@ -500,12 +501,17 @@ install_docker() {
       fi
     done
 
-
     copy_file installer/grafana/grafana.ini $GRAFANA_DATAPATH/grafana/grafana.ini 0 $SUDO_REQUIRED
+    copy_file installer/grafana/bitcoin.conf $GRAFANA_DATAPATH/grafana/bitcoin.conf 0 $SUDO_REQUIRED
     copy_file installer/grafana/influxdb.conf $GRAFANA_DATAPATH/influxdb/influxdb.conf 0 $SUDO_REQUIRED
     copy_file installer/grafana/telegraf.conf $GRAFANA_DATAPATH/telegraf/telegraf.conf 0 $SUDO_REQUIRED
 
+    copy_file installer/grafana/dashboards/general.json $GRAFANA_DATAPATH/grafana/dashboards/general.json 0 $SUDO_REQUIRED
+    copy_file installer/grafana/dashboards/bitcoin.json $GRAFANA_DATAPATH/grafana/dashboards/bitcoin.json 0 $SUDO_REQUIRED
 
+    if [[ $FEATURE_LIGHTNING == true ]]; then
+      copy_file installer/grafana/dashboards/lightning.json $GRAFANA_DATAPATH/grafana/dashboards/lightning.json 0 $SUDO_REQUIRED
+    fi
 
   fi
 
@@ -704,7 +710,7 @@ OTSCLIENT_VERSION="v0.1-rc.2"
 PYCOIN_VERSION="v0.1-rc.2"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
-GRAFANA_VERSION="v0.1-rc1"
+GRAFANA_VERSION="v0.1-rc.1"
 
 
 # trap ctrl-c and call ctrl_c()
