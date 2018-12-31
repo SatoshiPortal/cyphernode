@@ -1,8 +1,0 @@
-
-default:
-    - 'clean'
-    - 'assemble'
-    - 'replace'
-    - 'uncss'
-    - 'processhtml'
-    - 'premailer'

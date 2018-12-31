@@ -1,12 +1,20 @@
+FROM alpine:3.8 as source
+
+RUN apk add --update --no-cache git
+
+RUN git clone -v https://github.com/grafana/grafana.git /grafana
+WORKDIR /grafana
+RUN git checkout v5.4.2
+
 # Golang build container
-FROM golang:1.11-alpine3.8
+FROM golang:1.11-alpine3.8 as backend
 
 RUN apk add --update --no-cache build-base
 
 WORKDIR $GOPATH/src/github.com/grafana/grafana
 
-COPY Gopkg.toml Gopkg.lock ./
-COPY vendor vendor
+COPY --from=source /grafana/Gopkg.toml /grafana/Gopkg.lock ./
+COPY --from=source /grafana/vendor vendor
 
 ARG DEP_ENSURE=""
 RUN if [ ! -z "${DEP_ENSURE}" ]; then \
@@ -14,24 +22,24 @@ RUN if [ ! -z "${DEP_ENSURE}" ]; then \
       dep ensure --vendor-only; \
     fi
 
-COPY pkg pkg
-COPY build.go build.go
-COPY package.json package.json
+COPY --from=source /grafana/pkg pkg
+COPY --from=source /grafana/build.go build.go
+COPY --from=source /grafana/package.json package.json
 
 RUN go run build.go build
 
 # Node build container
-FROM node:8
+FROM node:8 as frontend
 
 WORKDIR /usr/src/app/
 
-COPY package.json yarn.lock ./
+COPY --from=source /grafana/package.json /grafana/yarn.lock ./
 RUN yarn install --pure-lockfile --no-progress
 
-COPY Gruntfile.js tsconfig.json tslint.json ./
-COPY public public
-COPY scripts scripts
-COPY emails emails
+COPY --from=source /grafana/Gruntfile.js /grafana/tsconfig.json /grafana/tslint.json ./
+COPY --from=source /grafana/public public
+COPY --from=source /grafana/scripts scripts
+COPY --from=source /grafana/emails emails
 
 ENV NODE_ENV production
 RUN ./node_modules/.bin/grunt build
@@ -78,18 +86,11 @@ RUN mkdir -p "$GF_PATHS_HOME/.aws" && \
     chown -R grafana:grafana "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS" && \
     chmod 777 "$GF_PATHS_DATA" "$GF_PATHS_HOME/.aws" "$GF_PATHS_LOGS" "$GF_PATHS_PLUGINS"
 
-COPY --from=0 /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-server /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-cli ./bin/
-COPY --from=1 /usr/src/app/public ./public
-COPY --from=1 /usr/src/app/tools ./tools
+COPY --from=backend /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-server /go/src/github.com/grafana/grafana/bin/linux-amd64/grafana-cli ./bin/
+COPY --from=frontend /usr/src/app/public ./public
+COPY --from=frontend /usr/src/app/tools ./tools
 
 EXPOSE 3000
-
-#COPY ./packaging/docker/run.sh /run.sh
-
-#USER grafana
-#ENTRYPOINT [ "/run.sh" ]
-#CMD ["ls", "/"]
-
 
 ENV TELEGRAF_VERSION 1.9.0
 ENV INFLUXDB_VERSION 1.7.1
@@ -161,4 +162,3 @@ COPY --from=cyphernode/bitcoin:v0.17.0 /usr/bin/bitcoin-cli /usr/bin/
 COPY collectors /collectors
 
 ENTRYPOINT ["supervisord", "--nodaemon", "--configuration", "/etc/supervisord.conf"]
-
