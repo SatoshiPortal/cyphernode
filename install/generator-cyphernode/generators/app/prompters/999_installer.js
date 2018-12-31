@@ -7,6 +7,9 @@ const grafana_templates = [
   path.join('grafana', 'grafana.ini' ),
   path.join('grafana', 'influxdb.conf' ),
   path.join('grafana', 'telegraf.conf' ),
+  path.join('grafana', 'bitcoin.conf' ),
+  path.join('grafana', 'dashboards', 'general.json' ),
+  path.join('grafana', 'dashboards', 'bitcoin.json' )
 ]
 
 const capitalise = function( txt ) {
@@ -344,6 +347,10 @@ module.exports = {
 
     if( installerDocker(props) && props.features.indexOf('grafana') !== -1 ) {
       templates = templates.concat(grafana_templates);
+    }
+
+    if( installerDocker(props) && props.features.indexOf('grafana') !== -1 && props.features.indexOf('lightning') !== -1 ) {
+      templates = templates.concat(path.join('grafana', 'dashboards', 'lightning.json' ));
     }
 
     return templates;
