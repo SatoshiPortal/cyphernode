@@ -69,7 +69,8 @@ services:
     restart: always
   proxycron:
     environment:
-      - "PROXY_URL=proxy:8888/executecallbacks"
+      - "TX_CONF_URL=proxy:8888/executecallbacks"
+      - "OTS_URL=proxy:8888/ots_backoffice"
     image: cyphernode/proxycron:<%= proxycron_version %>
 #    deploy:
 #      placement:
