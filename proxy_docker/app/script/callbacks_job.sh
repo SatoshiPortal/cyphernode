@@ -115,7 +115,9 @@ build_callback()
   data="${data}\"received\":\"$(date -Is -d @${ts_firstseen})\","
   data="${data}\"size\":${size},"
   data="${data}\"vsize\":${vsize},"
-  data="${data}\"fees\":${fee},"
+  if [ -n "${fee}" ]; then
+    data="${data}\"fees\":${fee},"
+  fi
   data="${data}\"is_replaceable\":${is_replaceable}"
   if [ -n "${blocktime}" ]; then
     data="${data},\"blockhash\":\"${blockhash}\","

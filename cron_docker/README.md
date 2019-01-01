@@ -23,6 +23,6 @@ docker run --rm -d --network cyphernodenet --env-file env.properties cyphernode/
 ## Configure your container by modifying `env.properties` file
 
 ```properties
-TX_CONF_URL=cyphernode:8888/executecallbacks
-OTS_URL=cyphernode:8888/ots_backoffice
+TX_CONF_URL=proxy:8888/executecallbacks
+OTS_URL=proxy:8888/ots_backoffice
 ```

@@ -221,7 +221,7 @@ serve_ots_getfile()
   local hash=${1}
   trace "[serve_ots_getfile] hash=${hash}"
 
-  binfile_response_to_client "/otsfiles/" "${hash}.ots"
+  binfile_response_to_client "otsfiles/" "${hash}.ots"
   returncode=$?
   trace_rc ${returncode}
 

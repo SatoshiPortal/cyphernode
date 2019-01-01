@@ -1,4 +1,5 @@
 # cyphernode
+
 Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties. 
 
 # What is cyphernode?
@@ -19,7 +20,7 @@ Hardware wallets (ColdCard, Trezor) will be utilized for key generation and sign
 
 It is currently in production by Bylls.com, Canada's first and largest Bitcoin payment processor, as well as Bitcoin Outlet, a fixed-rate Bitcoin exchange service alternative to Coinbase which allows Canadians to purchase bitcoins sent directly to their own Bitcoin wallet.
 
-The docker containers used in this project are hosted at www.bitcoindockers.com 
+The docker containers used in this project are hosted at www.bitcoindockers.com
 
 The project is in **heavy development** - we are currently looking for review, new features, user feedback and contributors to our roadmap.
 
