@@ -4,44 +4,40 @@ Modular Bitcoin full-node microservices API server architecture and utilities to
 
 # What is cyphernode?
 
-An open-source self-hosted API which allows you to spawn and call your encrypted overlay network of dockerized Bitcoin and crypto software projects (virtual machines).
+Cyphernode is a Free open-source alternative to hosted services and commercial Bitcoin APIs such as Blockchain.info, Bitpay, Coinbase, Blocypher, Bitgo, etc. You can use it to build Bitcoin services and applications using your own Bitcoin and Lightning Network full nodes. It is a substitute for the Bitcore and Insight software projects.
 
-You can use it to build Bitcoin services and applications using your own Bitcoin and Lightning Network full nodes.
+It implements a self-hosted API which allows you to spawn and call your encrypted overlay network of dockerized Bitcoin and crypto software projects (virtual machines). The Docker containers used in this project are hosted at www.bitcoindockers.com.
 
-It is an alternative to hosted services and commercial Bitcoin APIs such as Blockchain.info, Bitpay, Coinbase, Blocypher, Bitgo, etc.
-
-It is a substitute for the Bitcore and Insight software projects.
-
-If aims to offer all advanced features and utilities necessary to operate entreprise grade Bitcoin services.  We provide a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
-
-It is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases). For a full-node and all modules, prepare 350GB of space and 2GB of RAM.
-
-Hardware wallets (ColdCard, Trezor) will be utilized for key generation and signing (using PSBT BIP174), as well as for connecting to self-hosted web user interfaces.
+It aims to offer all advanced features and utilities necessary to operate entreprise-grade Bitcoin services.  It includes a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
 
 It is currently in production by Bylls.com, Canada's first and largest Bitcoin payment processor, as well as Bitcoin Outlet, a fixed-rate Bitcoin exchange service alternative to Coinbase which allows Canadians to purchase bitcoins sent directly to their own Bitcoin wallet.
 
-The docker containers used in this project are hosted at www.bitcoindockers.com
+The project is in **heavy development** - we are currently looking for reviews, new features, user feedback and contributors to our roadmap.
 
-The project is in **heavy development** - we are currently looking for review, new features, user feedback and contributors to our roadmap.
+# Low requirements, efficient use of resources
+
+Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases). 
+
+* For a full-node and all modules:
+  * 350 GB of storage, 2GB of RAM.
+* Hardware wallets (ColdCard, Trezor) for key generation and signing (using PSBT BIP174), as well as for connecting to self-hosted web user interfaces.
 
 # About this project
 
-- Created and maintained by www.satoshiportal.com
-- Dedicated full-time developer @kexkey
-- Project manager @FrancisPouliot
-- Disclaimer: as of release on Sept. 23 2018 the project is still it its early stages (Alpha) and many of the features have yet to be implemented. The core architecture and basic wallet operations and blockchain query functions are fully functional.
+* Created and maintained by www.satoshiportal.com
+* Dedicated full-time developer @kexkey
+* Project manager @FrancisPouliot
+* Disclaimer: as of release on Sept. 23 2018 the project is still it its early stages (Alpha) and many of the features have yet to be implemented. The core architecture and basic wallet operations and blockchain query functions are fully functional.
 
 # How to use cyphernode?
 
 The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
 
-## DOCS
+## Documentation
 
-Read the API docs here: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.md
-
-Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
-
-Step-by-step manual install: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
+* Read the API docs here: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.md
+* Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
+* Step-by-step manual install (deprecated): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
 
 ## When calling a cyphernode endpoint, you are either
 
