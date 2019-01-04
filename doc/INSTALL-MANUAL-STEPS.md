@@ -1,6 +1,6 @@
 # This README file can be used if you want to install manually.  This is the old documentation before there was the installer.
 
-# Here are the exact steps I did to install cyphernode on a debian server running on x86 arch, as user debian.
+# Here are the exact steps I did to install cyphernode on a Debian GNU/Linux server running on x86 arch, as user debian.
 
 ## Update server and install git
 
@@ -11,10 +11,10 @@ sudo apt-get update ; sudo apt-get upgrade ; sudo apt-get install git
 ## Docker installation: https://docs.docker.com/install/linux/docker-ce/debian/
 
 ```shell
-sudo apt-get install      apt-transport-https      ca-certificates      curl      gnupg2      software-properties-common
+sudo apt-get install apt-transport-https ca-certificates curl gnupg2 software-properties-common
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
 sudo apt-key fingerprint 0EBFCD88
-sudo add-apt-repository    "deb [arch=amd64] https://download.docker.com/linux/debian \
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian \
 $(lsb_release -cs) \
 stable"
 sudo apt-get update
