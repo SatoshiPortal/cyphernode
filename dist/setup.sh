@@ -551,18 +551,32 @@ check_bitcoind() {
   echo 0
 }
 
-sanity_checks() {
-
-  echo "    [32mcheck[0m requirements."
-
+check_docker() {
   if ! [ -x "$(command -v docker)" ]; then
     echo "          [31mdocker is not installed on your system. Please check https://www.docker.com/get-started.[0m"
     exit
   fi
+}
 
-  if [[ $DOCKER_MODE == 'compose' && ! -x "$(command -v docker-compose)" ]]; then
+check_docker_compose() {
+  if ! [ -x "$(command -v docker-compose)" ]; then
     echo "          [31mdocker-compose is not installed on your system. Please check https://docs.docker.com/compose/install/.[0m"
     exit
+  fi
+}
+
+sanity_checks_pre_config() {
+  echo "    [32mcheck[0m requirements for configuration step."
+  check_docker
+}
+
+sanity_checks_pre_install() {
+
+  echo "    [32mcheck[0m requirements for installation step."
+
+  check_docker
+  if [[ $DOCKER_MODE == 'compose' ]]; then
+    check_docker_compose
   fi
 
   local OS=$(uname -s)
@@ -696,6 +710,7 @@ if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
 fi
 
 if [[ $CONFIGURE == 1 ]]; then
+  sanity_checks_pre_config
   configure $RECREATE
 fi
 
@@ -710,7 +725,7 @@ if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cypherno
 fi
 
 if [[ $INSTALL == 1 ]]; then
-  sanity_checks
+  sanity_checks_pre_install
   create_user
   install
   modify_owner
