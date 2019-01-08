@@ -16,6 +16,7 @@ do_callbacks()
 
   local returncode
   local address
+  local url
   local IFS=$'\n'
   for row in ${callbacks}
   do
@@ -42,6 +43,27 @@ do_callbacks()
       trace_rc $?
     fi
   done
+
+  callbacks=$(sql 'SELECT id, callback_url FROM ln_invoice WHERE NOT calledback AND callback_failed')
+  trace "[do_callbacks] ln_callbacks=${callbacks}"
+
+  for row in ${callbacks}
+  do
+    url=$(echo "${row}" | cut -d '|' -f2)
+    trace "[do_callbacks LN] url=${url}"
+    
+    trace "[do_callbacks LN] curl -H \"X-Forwarded-Proto: https\" ${url}"
+    curl -H "X-Forwarded-Proto: https" ${url}
+    returncode=$?
+    if [ "${returncode}" -eq 0 ]; then
+      id=$(echo "${row}" | cut -d '|' -f1)
+      sql "UPDATE ln_invoice SET calledback=1,callback_failed=0 WHERE id=\"${id}\""
+      trace_rc $?
+    else
+      trace "[do_callbacks LN] callback failed: ${callback_url}"
+    fi
+  done
+
   ) 200>./.callbacks.lock
 }
 
