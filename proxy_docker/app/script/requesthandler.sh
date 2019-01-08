@@ -260,7 +260,7 @@ main()
           ;;
         ln_create_invoice)
           # POST http://192.168.111.152:8080/ln_create_invoice
-          # BODY {"msatoshi":"10000","label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":"900"}
+          # BODY {"msatoshi":"10000","label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":"900","callback_url":"http://192.168.122.159"}
 
           response=$(ln_create_invoice "${line}")
           response_to_client "${response}" ${?}
