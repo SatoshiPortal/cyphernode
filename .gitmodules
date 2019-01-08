@@ -1,0 +1,3 @@
+[submodule "install/SatoshiPortal/dockers"]
+	path = install/SatoshiPortal/dockers
+	url = https://github.com/SatoshiPortal/dockers.git

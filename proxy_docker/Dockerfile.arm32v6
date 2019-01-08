@@ -1,0 +1,35 @@
+FROM alpine:3.8
+
+# Taking care of glibc shit (glibc not natively supported by Alpine but lightning-cli uses it)
+
+ENV GLIBC_VERSION 2.27-r0
+# Download and install glibc (https://github.com/jeanblanchard/docker-alpine-glibc/blob/master/Dockerfile)
+RUN apk add --update --no-cache wget \
+ && wget -O glibc.apk "https://github.com/yangxuan8282/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk" \
+ && wget -O glibc-bin.apk "https://github.com/yangxuan8282/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk" \
+ && apk add --allow-untrusted --update --no-cache glibc-bin.apk glibc.apk \
+ && /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib \
+ && echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf \
+ && rm -rf glibc.apk glibc-bin.apk
+
+ENV HOME /proxy
+
+RUN apk add --update --no-cache \
+    sqlite \
+    jq \
+    curl \
+    su-exec
+
+WORKDIR ${HOME}
+
+COPY app/data/* ./
+COPY app/script/* ./
+COPY --from=cyphernode/clightning:v0.6.2 /usr/bin/lightning-cli ./
+
+RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh \
+ && chmod o+w . \
+ && mkdir db
+
+VOLUME ["${HOME}/db", "/.lightning"]
+
+ENTRYPOINT ["su-exec"]

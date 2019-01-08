@@ -28,7 +28,7 @@ verify_sign()
   trace "[verify_sign] payload64=${payload64}"
   trace "[verify_sign] signature=${signature}"
 
-  local payload=$(echo ${payload64} | base64 -d)
+  local payload=$(echo -n ${payload64} | base64 -d)
   local exp=$(echo ${payload} | jq ".exp")
   local current=$(date +"%s")
 
@@ -39,14 +39,14 @@ verify_sign()
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
     local id=$(echo ${payload} | jq ".id" | tr -d '"')
-  trace "[verify_sign] id=${id}"
+    trace "[verify_sign] id=${id}"
 
-  # Check for code injection
-  # id will usually be an int, but can be alphanum... nothing else
-  case $id in (*[![:alnum:]]*|"")
-  trace "[verify_sign] Potential code injection, exiting"
-  return 1
-  esac
+    # Check for code injection
+    # id will usually be an int, but can be alphanum... nothing else
+    case $id in (*[![:alnum:]]*|"")
+      trace "[verify_sign] Potential code injection, exiting"
+      return 1
+    esac
 
     # It is so much faster to include the keys here instead of grep'ing the file for key.
     . ./keys.properties
@@ -87,16 +87,16 @@ verify_group()
   trace "[verify_group] Verifying group..."
 
   local id=${1}
-  # REQUEST_URI should look like this: /watch/2blablabla
-  local action=$(echo "${REQUEST_URI:1}" | cut -d '/' -f1)
+  # REQUEST_URI should look like this: /v0/watch/2blablabla
+  local action=$(echo "${REQUEST_URI#\/}" | cut -d '/' -f2)
   trace "[verify_group] action=${action}"
 
   # Check for code injection
   # action can be alphanum... and _ and - but nothing else
 	local actiontoinspect=$(echo "$action" | tr -d '_-')
   case $actiontoinspect in (*[![:alnum:]]*|"")
-  trace "[verify_group] Potential code injection, exiting"
-  return 1
+    trace "[verify_group] Potential code injection, exiting"
+    return 1
   esac
 
   # It is so much faster to include the keys here instead of grep'ing the file for key.
@@ -121,15 +121,17 @@ verify_group()
 
 
 # $HTTP_AUTHORIZATION = Bearer <token>
+# Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjAwMyIsImV4cCI6MTU0MjE0OTMyNH0=.b811067cf79c7009a0a38f110a6e3bf82cc4310aa6afae75b9d915b9febf13f7
 # If this is not found in header, we leave
 trace "[auth.sh] HTTP_AUTHORIZATION=${HTTP_AUTHORIZATION}"
-if [ "${HTTP_AUTHORIZATION:0:6}" = "Bearer" ]; then
-  token="${HTTP_AUTHORIZATION:6}"
+# /bin/sh on debian points to dash, which does not support substring in the form ${var:offset:length}
+if [ "-${HTTP_AUTHORIZATION%% *}" = "-Bearer" ]; then
+  token="${HTTP_AUTHORIZATION#Bearer }"
 
   if [ -n "$token" ]; then
-  trace "[auth.sh] Valid format for authorization header"
-  verify_sign "${token}"
-  [ "$?" -eq "0" ] && return
+    trace "[auth.sh] Valid format for authorization header"
+    verify_sign "${token}"
+    [ "$?" -eq "0" ] && return
   fi
 fi
 

@@ -1,10 +1,26 @@
-# Build image
+# Pycoin container in Cyphernode
+
+## Pull our Cyphernode image
 
 ```shell
-docker build -t pycoinimg .
+docker pull cyphernode/pycoin:latest
 ```
 
-# Usefull examples
+## Build yourself the image
+
+```shell
+docker build -t cyphernode/pycoin:latest .
+```
+
+## Run image
+
+If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
+
+```shell
+docker run --rm -d -p 7777:7777 --network cyphernodenet --env-file env.properties cyphernode/pycoin:latest `id -u cyphernode`:`id -g cyphernode` ./startpycoin.sh
+```
+
+## Usefull examples
 
 See https://github.com/shivaenigma/pycoin
 

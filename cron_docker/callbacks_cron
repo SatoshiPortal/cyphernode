@@ -1,3 +1,4 @@
 #!/bin/sh
 
-curl ${PROXY_URL}
+curl ${TX_CONF_URL}
+curl ${OTS_URL}
