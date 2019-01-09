@@ -59,6 +59,38 @@ ln_getinfo()
   return ${returncode}
 }
 
+ln_getinvoice() {
+  trace "Entering ln_getinvoice()..."
+
+  local label=${1}
+  local result
+
+  result=$(./lightning-cli listinvoices ${label})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_getinvoice] result=${result}"
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
+ln_decodebolt11() {
+  trace "Entering ln_decodebolt11()..."
+
+  local bolt11=${1}
+  local result
+
+  result=$(./lightning-cli decodepay ${bolt11})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_decodebolt11] result=${result}"
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
 ln_pay() {
   trace "Entering ln_pay()..."
 
@@ -103,7 +135,6 @@ ln_newaddr()
 
   local result
 
-  call_lightningd newaddr
   result=$(./lightning-cli newaddr)
   returncode=$?
   trace_rc ${returncode}
@@ -114,4 +145,4 @@ ln_newaddr()
   return ${returncode}
 }
 
-case "${0}" in *call_lightningd.sh) call_lightningd $@;; esac
+case "${0}" in *call_lightningd.sh) ./lightning-cli $@;; esac

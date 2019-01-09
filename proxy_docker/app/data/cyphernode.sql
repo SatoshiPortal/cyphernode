@@ -91,6 +91,7 @@ INSERT INTO cyphernode_props (property, value) VALUES ("pay_index", "0");
 
 CREATE TABLE ln_invoice (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT UNIQUE,
   bolt11 TEXT UNIQUE,
   status TEXT,
   callback_url TEXT,

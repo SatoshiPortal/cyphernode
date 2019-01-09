@@ -281,6 +281,22 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_getinvoice)
+          # GET http://192.168.111.152:8080/ln_getinvoice/label
+          # GET http://192.168.111.152:8080/ln_getinvoice/koNCcrSvhX3dmyFhW
+
+          response=$(ln_getinvoice $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_decodebolt11)
+          # GET http://192.168.111.152:8080/ln_decodebolt11/bolt11
+          # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
+
+          response=$(ln_decodebolt11 $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}
