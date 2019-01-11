@@ -44,27 +44,84 @@ do_callbacks()
     fi
   done
 
-  callbacks=$(sql 'SELECT id, callback_url FROM ln_invoice WHERE NOT calledback AND callback_failed')
-  trace "[do_callbacks] ln_callbacks=${callbacks}"
+  callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
+  trace "[do_callbacks LN] ln_callbacks=${callbacks}"
 
   for row in ${callbacks}
   do
-    url=$(echo "${row}" | cut -d '|' -f2)
-    trace "[do_callbacks LN] url=${url}"
-    
-    trace "[do_callbacks LN] curl -H \"X-Forwarded-Proto: https\" ${url}"
-    curl -H "X-Forwarded-Proto: https" ${url}
-    returncode=$?
-    if [ "${returncode}" -eq 0 ]; then
-      id=$(echo "${row}" | cut -d '|' -f1)
-      sql "UPDATE ln_invoice SET calledback=1,callback_failed=0 WHERE id=\"${id}\""
-      trace_rc $?
-    else
-      trace "[do_callbacks LN] callback failed: ${callback_url}"
-    fi
+    ln_manage_callback ${row}
+    trace_rc $?
   done
 
   ) 200>./.callbacks.lock
+}
+
+ln_manage_callback() {
+  trace "Entering ln_manage_callback()..."
+
+  local row=$@
+  trace "[ln_manage_callback] row=${row}"
+
+  local id=$(echo "${row}" | cut -d '|' -f1)
+  trace "[ln_manage_callback] id=${id}"
+  local label=$(echo "${row}" | cut -d '|' -f2)
+  trace "[ln_manage_callback] label=${label}"
+  local bolt11=$(echo "${row}" | cut -d '|' -f3)
+  trace "[ln_manage_callback] bolt11=${bolt11}"
+  local callback_url=$(echo "${row}" | cut -d '|' -f4)
+  trace "[ln_manage_callback] callback_url=${callback_url}"
+  local payment_hash=$(echo "${row}" | cut -d '|' -f5)
+  trace "[ln_manage_callback] payment_hash=${payment_hash}"
+  local msatoshi=$(echo "${row}" | cut -d '|' -f6)
+  trace "[ln_manage_callback] msatoshi=${msatoshi}"
+  local status=$(echo "${row}" | cut -d '|' -f7)
+  trace "[ln_manage_callback] status=${status}"
+  local pay_index=$(echo "${row}" | cut -d '|' -f8)
+  trace "[ln_manage_callback] pay_index=${pay_index}"
+  local msatoshi_received=$(echo "${row}" | cut -d '|' -f9)
+  trace "[ln_manage_callback] msatoshi_received=${msatoshi_received}"
+  local paid_at=$(echo "${row}" | cut -d '|' -f10)
+  trace "[ln_manage_callback] paid_at=${paid_at}"
+  local description=$(echo "${row}" | cut -d '|' -f11)
+  trace "[ln_manage_callback] description=${description}"
+  local expires_at=$(echo "${row}" | cut -d '|' -f12)
+  trace "[ln_manage_callback] expires_at=${expires_at}"
+  local returncode
+
+  if [ -z "${callback_url}" ]; then
+    # No callback url provided for that invoice
+    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
+    trace_rc $?
+    return
+  fi
+
+  data="{\"id\":\"${id}\","
+  data="${data}\"label\":\"${label}\","
+  data="${data}\"bolt11\":\"${bolt11}\","
+  data="${data}\"callback_url\":\"${callback_url}\","
+  data="${data}\"payment_hash\":\"${payment_hash}\","
+  data="${data}\"msatoshi\":${msatoshi},"
+  data="${data}\"status\":\"${status}\","
+  data="${data}\"pay_index\":${pay_index},"
+  data="${data}\"msatoshi_received\":${msatoshi_received},"
+  data="${data}\"paid_at\":${paid_at},"
+  data="${data}\"description\":\"${description}\","
+  data="${data}\"expires_at\":${expires_at}}"
+  trace "[ln_manage_callback] data=${data}"
+
+  curl_callback "${callback_url}" "${data}"
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -eq 0 ]; then
+    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
+    trace_rc $?
+  else
+    trace "[ln_manage_callback] callback failed: ${callback_url}"
+    sql "UPDATE ln_invoice SET callback_failed=1 WHERE id=\"${id}\""
+    trace_rc $?
+  fi
+
+  return ${returncode}
 }
 
 build_callback()
@@ -182,7 +239,7 @@ curl_callback()
   local url=${1}
   local data=${2}
 
-  trace "[curl_callback] curl -H \"Content-Type: application/json\" -d \"${data}\" ${url}"
+  trace "[curl_callback] curl -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
   curl -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url}
   local returncode=$?
   trace_rc ${returncode}
