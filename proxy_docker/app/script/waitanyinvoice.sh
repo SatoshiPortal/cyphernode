@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sql.sh
+. ./callbacks_job.sh
 
 ln_waitanyinvoice() {
   trace "Entering ln_waitanyinvoice()..."
@@ -36,45 +37,18 @@ ln_waitanyinvoice() {
 
   bolt11=$(echo ${result} | jq ".bolt11" | tr -d '"')
   pay_index=$(echo ${result} | jq ".pay_index" | tr -d '"')
+  msatoshi_received=$(echo ${result} | jq ".msatoshi_received" | tr -d '"')
+  status=$(echo ${result} | jq ".status" | tr -d '"')
+  paid_at=$(echo ${result} | jq ".paid_at" | tr -d '"')
 
-  row=$(sql "SELECT id, callback_url FROM ln_invoice WHERE NOT calledback AND bolt11=\"${bolt11}\"")
+  sql "UPDATE ln_invoice SET status=\"${status}\", pay_index=${pay_index}, msatoshi_received=${msatoshi_received}, paid_at=${paid_at} WHERE bolt11=\"${bolt11}\""
+  row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND bolt11=\"${bolt11}\"")
 
-  id=$(echo ${row} | cut -d '|' -f1)
-  callback_url=$(echo ${row} | cut -d '|' -f2)
-  if [ -z "${callback_url}" ]; then
-    # No callback url provided for that invoice
-    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
-    trace_rc $?
-    return
-  fi
-
-  ln_payment_callback ${callback_url}
-  returncode=$?
-  trace_rc ${returncode}
-  if [ "${returncode}" -eq 0 ]; then
-    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
-    trace_rc $?
-  else
-    trace "[ln_waitanyinvoice] callback failed: ${callback_url}"
-    sql "UPDATE ln_invoice SET callback_failed=1 WHERE id=\"${id}\""
-    trace_rc $?
+  if [ -n "${row}" ]; then
+    ln_manage_callback ${row}
   fi
 
   sql "UPDATE cyphernode_props SET value="${pay_index}" WHERE property=\"pay_index\""
-
-}
-
-ln_payment_callback() {
-  trace "Entering ln_payment_callback()..."
-
-  local url=${1}
-
-  trace "[ln_payment_callback] curl ${url}"
-  curl -H "X-Forwarded-Proto: https" ${url}
-  local returncode=$?
-  trace_rc ${returncode}
-
-  return ${returncode}
 }
 
 while :
@@ -82,5 +56,5 @@ do
   pay_index=$(sql "SELECT value FROM cyphernode_props WHERE property='pay_index'")
   trace "[waitanyinvoice] pay_index=${pay_index}"
   ln_waitanyinvoice ${pay_index}
-  sleep 1
+  sleep 5
 done
