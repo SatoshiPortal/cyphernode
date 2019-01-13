@@ -7,6 +7,8 @@ ln_create_invoice()
   trace "Entering ln_create_invoice()..."
 
   local result
+  local data
+  local id
 
   local request=${1}
   local msatoshi=$(echo "${request}" | jq ".msatoshi" | tr -d '"')
@@ -42,8 +44,21 @@ ln_create_invoice()
 
   sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
   trace_rc $?
+  id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
+  trace_rc $?
 
-  echo "${result}"
+  data="{\"id\":\"${id}\","
+  data="${data}\"label\":\"${label}\","
+  data="${data}\"bolt11\":\"${bolt11}\","
+  data="${data}\"callback_url\":\"${callback_url}\","
+  data="${data}\"payment_hash\":\"${payment_hash}\","
+  data="${data}\"msatoshi\":${msatoshi},"
+  data="${data}\"status\":\"unpaid\","
+  data="${data}\"description\":\"${description}\","
+  data="${data}\"expires_at\":${expires_at}}"
+  trace "[ln_create_invoice] data=${data}"
+
+  echo "${data}"
 
   return ${returncode}
 }
@@ -85,11 +100,26 @@ ln_delinvoice() {
 
   local label=${1}
   local result
+  local returncode
+  local rc
 
   result=$(./lightning-cli delinvoice ${label} "unpaid")
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_delinvoice] result=${result}"
+  
+  if [ "${returncode}" -ne "0" ]; then
+    # Special case of error: if status is expired, we're ok
+    echo "${result}" | grep "not unpaid" > /dev/null
+    rc=$?
+    trace_rc ${rc}
+
+    if [ "${rc}" -eq "0" ]; then
+      trace "Invoice is paid or expired, it's ok"
+      # String found
+      returncode=0
+    fi
+  fi
 
   echo "${result}"
 
