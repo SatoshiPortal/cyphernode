@@ -165,6 +165,7 @@ ln_pay() {
   trace "Entering ln_pay()..."
 
   local result
+  local returncode
 
   local request=${1}
   local bolt11=$(echo "${request}" | jq ".bolt11" | tr -d '"')
@@ -174,25 +175,32 @@ ln_pay() {
   local expected_description=$(echo "${request}" | jq ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
 
+  trace "[ln_pay] ./lightning-cli decodepay ${bolt11}"
   result=$(./lightning-cli decodepay ${bolt11})
-
-  local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
-  trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
-  local invoice_description=$(echo "${result}" | jq ".description")
-  trace "[ln_pay] invoice_description=${invoice_description}"
-
-  if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ]; then
-    result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
-    returncode=1
-  elif [ "${expected_description}" != "${invoice_description}" ]; then
-    result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
-    returncode=1
-  else
-    result=$(./lightning-cli pay ${bolt11})
-    returncode=$?
-    trace_rc ${returncode}
-  fi
+  returncode=$?
+  trace_rc ${returncode}
   trace "[ln_pay] result=${result}"
+  
+  if [ "${returncode}" -eq "0" ]; then
+    local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
+    trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
+    local invoice_description=$(echo "${result}" | jq ".description")
+    trace "[ln_pay] invoice_description=${invoice_description}"
+
+    if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ]; then
+      result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
+      returncode=1
+    elif [ "${expected_description}" != "${invoice_description}" ]; then
+      result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
+      returncode=1
+    else
+      trace "[ln_pay] ./lightning-cli pay ${bolt11}"
+      result=$(./lightning-cli pay ${bolt11})
+      returncode=$?
+      trace_rc ${returncode}
+    fi
+    trace "[ln_pay] result=${result}"
+  fi
 
   echo "${result}"
 
