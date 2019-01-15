@@ -21,7 +21,7 @@ spend() {
 	trace "[spend] response=${response}"
 
 	if [ "${returncode}" -eq 0 ]; then
-		local txid=$(echo ${response} | jq ".result" | tr -d '"')
+		local txid=$(echo "${response}" | jq ".result" | tr -d '"')
 		trace "[spend] txid=${txid}"
 
 		# Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
@@ -208,7 +208,7 @@ batchspend() {
 	trace "[batchspend] response=${response}"
 
 	if [ "${returncode}" -eq 0 ]; then
-		local txid=$(echo ${response} | jq ".result" | tr -d '"')
+		local txid=$(echo "${response}" | jq ".result" | tr -d '"')
 		trace "[batchspend] txid=${txid}"
 
 		# Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address

@@ -35,20 +35,22 @@ ln_waitanyinvoice() {
   trace_rc ${returncode}
   trace "[ln_waitanyinvoice] result=${result}"
 
-  bolt11=$(echo ${result} | jq ".bolt11" | tr -d '"')
-  pay_index=$(echo ${result} | jq ".pay_index" | tr -d '"')
-  msatoshi_received=$(echo ${result} | jq ".msatoshi_received" | tr -d '"')
-  status=$(echo ${result} | jq ".status" | tr -d '"')
-  paid_at=$(echo ${result} | jq ".paid_at" | tr -d '"')
+  if [ "${returncode}" -eq "0" ]; then
+    bolt11=$(echo "${result}" | jq ".bolt11" | tr -d '"')
+    pay_index=$(echo "${result}" | jq ".pay_index" | tr -d '"')
+    msatoshi_received=$(echo "${result}" | jq ".msatoshi_received" | tr -d '"')
+    status=$(echo "${result}" | jq ".status" | tr -d '"')
+    paid_at=$(echo "${result}" | jq ".paid_at" | tr -d '"')
 
-  sql "UPDATE ln_invoice SET status=\"${status}\", pay_index=${pay_index}, msatoshi_received=${msatoshi_received}, paid_at=${paid_at} WHERE bolt11=\"${bolt11}\""
-  row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND bolt11=\"${bolt11}\"")
+    sql "UPDATE ln_invoice SET status=\"${status}\", pay_index=${pay_index}, msatoshi_received=${msatoshi_received}, paid_at=${paid_at} WHERE bolt11=\"${bolt11}\""
+    row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND bolt11=\"${bolt11}\"")
 
-  if [ -n "${row}" ]; then
-    ln_manage_callback ${row}
+    if [ -n "${row}" ]; then
+      ln_manage_callback ${row}
+    fi
+
+    sql "UPDATE cyphernode_props SET value="${pay_index}" WHERE property=\"pay_index\""
   fi
-
-  sql "UPDATE cyphernode_props SET value="${pay_index}" WHERE property=\"pay_index\""
 }
 
 while :

@@ -28,6 +28,7 @@
   "bitcoin_datapath_custom": " ",
   "bitcoin_expose": "By default, Bitcoin node ports (RPC and protocol) won't be <font underline='true'>published</font> outside of Docker. Do you want to expose them so that your node can be accessed from outside of the Docker network?",
   "lightning_implementation": "Multiple <font underline='true'>LN implementations</font> exist. Please choose the one you want to use with Cyphernode.",
+  "lightning_external_ip": "If you want you LN node to be accessible from the Internet, provide the <font underline='true'>IP address</font> that other LN nodes will use to connect to it. This is usually your router's public IP. <font color='#00ff00'>NOTE</font>: In case you are running Cyphernode at home. This option won't make your router forward needed LN ports; you still need to configure and manage that part yourself in your router configuration.",
   "lightning_nodename": "LN nodes have names. Choose the <font underline='true'>name you want</font> for yours.",
   "lightning_nodecolor": "LN nodes have colors. Choose the <font underline='true'>color you want</font> for yours in RGB format (RRGGBB). For example, pure red would be <font color='#ff0000'>ff0000</font>.",
   "lightning_datapath": "<font underline='true'>Path name</font> to where LN's data files are stored. This directory will be mounted into the LN node's container. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",

@@ -10,7 +10,7 @@ deriveindex()
 	trace "[deriveindex] index=${index}"
 
 	local pub32=$DERIVATION_PUB32
-	local path=$(echo -e $DERIVATION_PATH | sed -En "s/n/${index}/p")
+	local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
 	#	pub32=$(grep "derivation.pub32" config.properties | cut -d'=' -f2)
 	#	path=$(grep "derivation.path" config.properties | cut -d'=' -f2 | sed -En "s/n/${index}/p")
 

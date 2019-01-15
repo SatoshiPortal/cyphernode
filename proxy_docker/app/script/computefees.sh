@@ -35,7 +35,7 @@ compute_fees()
 	local fees=$(awk "BEGIN { printf(\"%.8f\", ${vin_total_amount}-${vout_total_amount}); exit }")
 	trace "[compute_fees] fees=${fees}"
 
-	echo ${fees}
+	echo "${fees}"
 }
 
 compute_vin_total_amount()
@@ -43,8 +43,7 @@ compute_vin_total_amount()
 	trace "Entering compute_vin_total_amount()..."
 
 	local main_tx=${1}
-#	local vin_txids=$(echo ${main_tx} | jq '.result.vin[].txid')
-	local vin_txids_vout=$(echo ${main_tx} | jq '.result.vin[] | ((.txid + "-") + (.vout | tostring))')
+	local vin_txids_vout=$(echo "${main_tx}" | jq '.result.vin[] | ((.txid + "-") + (.vout | tostring))')
 	trace "[compute_vin_total_amount] vin_txids_vout=${vin_txids_vout}"
 	local returncode
 	local vin_txid_vout
@@ -64,8 +63,7 @@ compute_vin_total_amount()
 
 	for vin_txid_vout in ${vin_txids_vout}
 	do
-#		vin_txid=$(echo ${vin_txid} | tr -d '"')
-		vin_txid=$(echo ${vin_txid_vout} | tr -d '"' | cut -d '-' -f1)
+		vin_txid=$(echo "${vin_txid_vout}" | tr -d '"' | cut -d '-' -f1)
 		# Check if we already have the tx in our DB
 		vin_raw_tx=$(sql "SELECT raw_tx FROM tx WHERE txid=\"${vin_txid}\"")
 		if [ -z "${vin_raw_tx}" ]; then
@@ -76,21 +74,20 @@ compute_vin_total_amount()
 				return ${returncode}
 			fi
 		fi
-#		vout=$(echo ${main_tx} | jq ".result.vin[] | select(.txid == \"${vin_txid}\") | .vout")
-		vout=$(echo ${vin_txid_vout} | tr -d '"' | cut -d '-' -f2)
+		vout=$(echo "${vin_txid_vout}" | tr -d '"' | cut -d '-' -f2)
 		trace "[compute_vin_total_amount] vout=${vout}"
-		vin_vout_amount=$(echo ${vin_raw_tx} | jq ".result.vout[] | select(.n == ${vout}) | .value" | awk '{ printf "%.8f", $0 }')
+		vin_vout_amount=$(echo "${vin_raw_tx}" | jq ".result.vout[] | select(.n == ${vout}) | .value" | awk '{ printf "%.8f", $0 }')
 		trace "[compute_vin_total_amount] vin_vout_amount=${vin_vout_amount}"
 		vin_total_amount=$(awk "BEGIN { printf(\"%.8f\", ${vin_total_amount}+${vin_vout_amount}); exit}")
 		trace "[compute_vin_total_amount] vin_total_amount=${vin_total_amount}"
-		vin_hash=$(echo ${vin_raw_tx} | jq ".result.hash")
-		vin_confirmations=$(echo ${vin_raw_tx} | jq ".result.confirmations")
-		vin_timereceived=$(echo ${vin_raw_tx} | jq ".result.time")
-		vin_size=$(echo ${vin_raw_tx} | jq ".result.size")
-		vin_vsize=$(echo ${vin_raw_tx} | jq ".result.vsize")
-		vin_blockhash=$(echo ${vin_raw_tx} | jq ".result.blockhash")
-		vin_blockheight=$(echo ${vin_raw_tx} | jq ".result.blockheight")
-		vin_blocktime=$(echo ${vin_raw_tx} | jq ".result.blocktime")
+		vin_hash=$(echo "${vin_raw_tx}" | jq ".result.hash")
+		vin_confirmations=$(echo "${vin_raw_tx}" | jq ".result.confirmations")
+		vin_timereceived=$(echo "${vin_raw_tx}" | jq ".result.time")
+		vin_size=$(echo "${vin_raw_tx}" | jq ".result.size")
+		vin_vsize=$(echo "${vin_raw_tx}" | jq ".result.vsize")
+		vin_blockhash=$(echo "${vin_raw_tx}" | jq ".result.blockhash")
+		vin_blockheight=$(echo "${vin_raw_tx}" | jq ".result.blockheight")
+		vin_blocktime=$(echo "${vin_raw_tx}" | jq ".result.blocktime")
 
 		# Let's insert the vin tx in the DB just in case it would be useful
 		if ! ${txid_already_inserted}; then
@@ -104,7 +101,7 @@ compute_vin_total_amount()
 		fi
 	done
 
-	echo ${vin_total_amount}
+	echo "${vin_total_amount}"
 
 	return 0
 }
