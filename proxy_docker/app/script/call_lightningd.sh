@@ -29,34 +29,52 @@ ln_create_invoice()
   #  "bolt11": "lnbc100n1pwzllqgpp55a8xen9sdcntehwr93pkwnuu8nmtqx9yew0flalcxhx9nvy34crqdq9wsckgxqzpucqp2rzjqt04ll5ft3mcuy8hws4xcku2pnhma9r9mavtjtadawyrw5kgzp7g7zr745qq3mcqqyqqqqlgqqqqqzsqpcr85k33shzaxscpj29fadmjmfej6y2p380x9w4kxydqpxq87l6lshy69fry9q2yrtu037nt44x77uhzkdyn8043n5yj8tqgluvmcl69cquaxr68"
   #}
 
-  trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \${description}\" ${expiry}"
+  trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \"${description}\" ${expiry}"
   result=$(./lightning-cli invoice ${msatoshi} "${label}" "${description}" ${expiry})
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_create_invoice] result=${result}"
 
-  local bolt11=$(echo ${result} | jq ".bolt11" | tr -d '"')
-  trace "[ln_create_invoice] bolt11=${bolt11}"
-  local payment_hash=$(echo ${result} | jq ".payment_hash" | tr -d '"')
-  trace "[ln_create_invoice] payment_hash=${payment_hash}"
-  local expires_at=$(echo ${result} | jq ".expires_at" | tr -d '"')
-  trace "[ln_create_invoice] expires_at=${expires_at}"
+  if [ "${returncode}" -ne "0" ]; then
+    data=${result}
+  else
+    local bolt11=$(echo "${result}" | jq ".bolt11" | tr -d '"')
+    trace "[ln_create_invoice] bolt11=${bolt11}"
+    local payment_hash=$(echo "${result}" | jq ".payment_hash" | tr -d '"')
+    trace "[ln_create_invoice] payment_hash=${payment_hash}"
+    local expires_at=$(echo "${result}" | jq ".expires_at" | tr -d '"')
+    trace "[ln_create_invoice] expires_at=${expires_at}"
 
-  sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
-  trace_rc $?
-  id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
-  trace_rc $?
+    # Let's get the connect string if provided in configuration
+    local connectstring
+    local getinfo=$(ln_getinfo)
+    trace "[ln_create_invoice] getinfo=${getinfo}"
+    echo ${getinfo} | jq -e '.address[0]' > /dev/null
+    if [ "$?" -eq 0 ]; then
+      # If there's an address
+      connectstring="$(echo ${getinfo} | jq '((.id + "@") + (.address[0] | ((.address + ":") + (.port | tostring))))' | tr -d '"')"
+      trace "[ln_create_invoice] connectstring=${connectstring}"
+    fi
 
-  data="{\"id\":\"${id}\","
-  data="${data}\"label\":\"${label}\","
-  data="${data}\"bolt11\":\"${bolt11}\","
-  data="${data}\"callback_url\":\"${callback_url}\","
-  data="${data}\"payment_hash\":\"${payment_hash}\","
-  data="${data}\"msatoshi\":${msatoshi},"
-  data="${data}\"status\":\"unpaid\","
-  data="${data}\"description\":\"${description}\","
-  data="${data}\"expires_at\":${expires_at}}"
-  trace "[ln_create_invoice] data=${data}"
+    sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
+    trace_rc $?
+    id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
+    trace_rc $?
+
+    data="{\"id\":\"${id}\","
+    data="${data}\"label\":\"${label}\","
+    data="${data}\"bolt11\":\"${bolt11}\","
+    if [ -n "${connectstring}" ]; then
+      data="${data}\"connectstring\":\"${connectstring}\","
+    fi
+    data="${data}\"callback_url\":\"${callback_url}\","
+    data="${data}\"payment_hash\":\"${payment_hash}\","
+    data="${data}\"msatoshi\":${msatoshi},"
+    data="${data}\"status\":\"unpaid\","
+    data="${data}\"description\":\"${description}\","
+    data="${data}\"expires_at\":${expires_at}}"
+    trace "[ln_create_invoice] data=${data}"
+  fi
 
   echo "${data}"
 
@@ -103,6 +121,7 @@ ln_delinvoice() {
   local returncode
   local rc
 
+  trace "[ln_delinvoice] ./lightning-cli delinvoice ${label} \"unpaid\""
   result=$(./lightning-cli delinvoice ${label} "unpaid")
   returncode=$?
   trace_rc ${returncode}

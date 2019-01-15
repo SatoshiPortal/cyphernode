@@ -10,7 +10,7 @@ export DB_PATH
 export DB_FILE
 
 trim() {
-	echo -e $1 | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
+	echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
 
 createCurlConfig() {

@@ -49,6 +49,15 @@ module.exports = {
     {
       when: featureCondition,
       type: 'input',
+      name: 'lightning_external_ip',
+      default: utils._getDefault( 'lightning_external_ip' ),
+      filter: utils._trimFilter,
+      validate: utils._ipOrFQDNValidator,
+      message: prefix()+'What external ip does your lightning node have?'+utils._getHelp('lightning_external_ip'),
+    },
+    {
+      when: featureCondition,
+      type: 'input',
       name: 'lightning_nodename',
       default: utils._getDefault( 'lightning_nodename' ),
       filter: utils._trimFilter,
