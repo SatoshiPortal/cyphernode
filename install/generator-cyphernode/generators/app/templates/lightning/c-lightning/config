@@ -14,4 +14,5 @@ bitcoin-rpcconnect=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %
 bitcoin-rpcuser=<%= bitcoin_rpcuser %>
 bitcoin-rpcpassword=<%= bitcoin_rpcpassword %>
 
-announce-addr=<%= lightning_external_ip %>
+addr=0.0.0.0:9735
+announce-addr=<%= lightning_external_ip %>:9735
