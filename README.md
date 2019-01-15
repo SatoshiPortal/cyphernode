@@ -10,7 +10,7 @@ You can use it to build Bitcoin services and applications using your own Bitcoin
 
 It is an alternative to hosted services and commercial Bitcoin APIs such as Blockchain.info, Bitpay, Coinbase, Blocypher, Bitgo, etc.
 
-It is a substitute for the Bitcore and Insight software projects.
+It is a substitute for the [Bitcore](https://bitcore.io/) and Insight software projects.
 
 If aims to offer all advanced features and utilities necessary to operate entreprise grade Bitcoin services.  We provide a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
 
