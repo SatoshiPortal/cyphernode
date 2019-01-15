@@ -44,7 +44,7 @@ build_docker_image() {
 
 build_docker_images() {
   trace "Updating SatoshiPortal repos"
-  git submodule update --recursive --remote
+#  git submodule update --recursive --remote
 
   local bitcoin_dockerfile=Dockerfile.amd64
   local clightning_dockerfile=Dockerfile.amd64
