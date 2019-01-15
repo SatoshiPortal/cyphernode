@@ -60,7 +60,7 @@ main()
     fi
     # line=content-length: 406
     case "${line}" in *[cC][oO][nN][tT][eE][nN][tT]-[lL][eE][nN][gG][tT][hH]*)
-      content_length=$(echo ${line} | cut -d ':' -f2)
+      content_length=$(echo "${line}" | cut -d ':' -f2)
       trace "[main] content_length=${content_length}";
       ;;
     esac

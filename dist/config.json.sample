@@ -14,6 +14,7 @@
   "bitcoin_prune": false,
   "bitcoin_uacomment": "",
   "lightning_implementation": "c-lightning",
+  "lightning_external_ip": "clightning.nodes.com",
   "lightning_nodename": "SatoshiPortal",
   "lightning_nodecolor": "ff00ff",
   "electrum_implementation": "eps",

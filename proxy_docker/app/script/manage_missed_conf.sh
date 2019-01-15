@@ -73,7 +73,7 @@ manage_missed_conf()
 	fi
 
 #  | tr -d '"'
-	local txids=$(echo ${unspents} | jq ".result[].txid" | tr -d '"')
+	local txids=$(echo "${unspents}" | jq ".result[].txid" | tr -d '"')
 	for txid in ${txids}
 	do
 		confirmation "${txid}"

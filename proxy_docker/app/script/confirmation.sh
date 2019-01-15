@@ -43,7 +43,7 @@ confirmation() {
   # First of all, let's make sure we're working on watched addresses...
   local address
   local addresseswhere
-  local addresses=$(echo ${tx_details} | jq ".result.details[].address")
+  local addresses=$(echo "${tx_details}" | jq ".result.details[].address")
 
   local notfirst=false
   local IFS=$'\n'
@@ -68,7 +68,7 @@ confirmation() {
   local tx=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid})
-  local tx_nb_conf=$(echo ${tx_details} | jq '.result.confirmations')
+  local tx_nb_conf=$(echo "${tx_details}" | jq '.result.confirmations')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -81,13 +81,13 @@ confirmation() {
 
     # Let's first insert the tx in our DB
 
-    local tx_hash=$(echo ${tx_raw_details} | jq '.result.hash')
-    local tx_ts_firstseen=$(echo ${tx_details} | jq '.result.timereceived')
-    local tx_amount=$(echo ${tx_details} | jq '.result.amount')
+    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount')
 
-    local tx_size=$(echo ${tx_raw_details} | jq '.result.size')
-    local tx_vsize=$(echo ${tx_raw_details} | jq '.result.vsize')
-    local tx_replaceable=$(echo ${tx_details} | jq '.result."bip125-replaceable"')
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
 
     local fees=$(compute_fees "${txid}")
@@ -99,9 +99,9 @@ confirmation() {
     local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
-      tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
+      tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
       tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
-      tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
+      tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}.blob'))"
@@ -114,13 +114,13 @@ confirmation() {
     # TX found in our DB.
     # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf)
 
-    local tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
+    local tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
     trace "[confirmation] tx_blockhash=${tx_blockhash}"
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
-      local tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
+      local tx_blockheight=$(get_block_info $(echo "${tx_blockhash}" | tr -d '"') | jq '.result.height')
+      local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
 
       sql "UPDATE tx SET
         confirmations=${tx_nb_conf},
@@ -151,8 +151,8 @@ confirmation() {
     do
       watching_id=$(echo "${row}" | cut -d '|' -f1)
       address=$(echo "${row}" | cut -d '|' -f2)
-      tx_vout_n=$(echo ${tx_details} | jq ".result.details[] | select(.address==\"${address}\") | .vout")
-      tx_vout_amount=$(echo ${tx_details} | jq ".result.details[] | select(.address==\"${address}\") | .amount")
+      tx_vout_n=$(echo "${tx_details}" | jq ".result.details[] | select(.address==\"${address}\") | .vout")
+      tx_vout_amount=$(echo "${tx_details}" | jq ".result.details[] | select(.address==\"${address}\") | .amount")
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
       trace_rc $?
     done

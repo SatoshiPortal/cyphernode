@@ -20,16 +20,16 @@ verify_sign()
 {
   local returncode
 
-  local header64=$(echo ${1} | cut -sd '.' -f1)
-  local payload64=$(echo ${1} | cut -sd '.' -f2)
-  local signature=$(echo ${1} | cut -sd '.' -f3)
+  local header64=$(echo "${1}" | cut -sd '.' -f1)
+  local payload64=$(echo "${1}" | cut -sd '.' -f2)
+  local signature=$(echo "${1}" | cut -sd '.' -f3)
 
   trace "[verify_sign] header64=${header64}"
   trace "[verify_sign] payload64=${payload64}"
   trace "[verify_sign] signature=${signature}"
 
-  local payload=$(echo -n ${payload64} | base64 -d)
-  local exp=$(echo ${payload} | jq ".exp")
+  local payload=$(echo -n "${payload64}" | base64 -d)
+  local exp=$(echo "${payload}" | jq ".exp")
   local current=$(date +"%s")
 
   trace "[verify_sign] payload=${payload}"
@@ -38,7 +38,7 @@ verify_sign()
 
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
-    local id=$(echo ${payload} | jq ".id" | tr -d '"')
+    local id=$(echo "${payload}" | jq ".id" | tr -d '"')
     trace "[verify_sign] id=${id}"
 
     # Check for code injection
