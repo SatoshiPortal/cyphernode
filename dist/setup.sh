@@ -183,6 +183,8 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
+             -e DEFAULT_DATADIR_BASE=$HOME \
+             -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              -e VERSION_OVERRIDE=$VERSION_OVERRIDE \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
@@ -551,6 +553,11 @@ check_bitcoind() {
   echo 0
 }
 
+realpath() {
+  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+
 sanity_checks() {
 
   echo "    [32mcheck[0m requirements."
@@ -648,6 +655,8 @@ OTSCLIENT_VERSION="v0.1"
 PYCOIN_VERSION="v0.1"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
+
+SETUP_DIR=$(dirname $(realpath $0))
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
