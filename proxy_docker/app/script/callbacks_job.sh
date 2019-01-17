@@ -3,8 +3,7 @@
 . ./trace.sh
 . ./sql.sh
 
-do_callbacks()
-{
+do_callbacks() {
   (
   flock -x 200 || return 0
 
@@ -124,8 +123,7 @@ ln_manage_callback() {
   return ${returncode}
 }
 
-build_callback()
-{
+build_callback() {
   trace "Entering build_callback()..."
 
   local row=$@
@@ -232,19 +230,28 @@ build_callback()
   return $?
 }
 
-curl_callback()
-{
+curl_callback() {
   trace "Entering curl_callback()..."
 
   local url=${1}
   local data=${2}
+  local returncode
 
-  trace "[curl_callback] curl -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
-  curl -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url}
-  local returncode=$?
+  trace "[curl_callback] curl -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
+  rc=$(curl -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
+  returncode=$?
+  trace "[curl_callback] HTTP return code=${rc}"
   trace_rc ${returncode}
 
-  return ${returncode}
+  if [ "${returncode}" -eq "0" ]; then
+    if [ "${rc}" -lt "400" ]; then
+      return 0
+    else
+      return ${rc}
+    fi
+  else
+    return ${returncode}
+  fi
 }
 
 case "${0}" in *callbacks_job.sh) do_callbacks $@;; esac
