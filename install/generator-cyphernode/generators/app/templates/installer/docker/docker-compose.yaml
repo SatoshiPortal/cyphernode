@@ -109,8 +109,8 @@ services:
       - "9735:9735"
     <% } %>
     volumes:
-      - "<%= lightning_datapath%>:/.lightning"
-      - "<%= lightning_datapath%>/bitcoin.conf:/.bitcoin/bitcoin.conf"
+      - "<%= lightning_datapath %>:/.lightning"
+      - "<%= lightning_datapath %>/bitcoin.conf:/.bitcoin/bitcoin.conf"
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -128,7 +128,7 @@ services:
 #      placement:
 #        constraints: [node.hostname==dev]
     volumes:
-      - "<%= otsclient_datapath%>:/otsfiles"
+      - "<%= otsclient_datapath %>:/otsfiles"
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
@@ -144,11 +144,24 @@ services:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
 <% } %>
     volumes:
-      - "<%= bitcoin_datapath%>:/.bitcoin"
+      - "<%= bitcoin_datapath %>:/.bitcoin"
     networks:
       - cyphernodenet
     restart: always
 <% } %>
+
+<% if ( features.indexOf('sparkwallet') !== -1 ) { %>
+  sparkwallet:
+    command: --login "cyphernode:sparkwallet" --no-tls
+    image: shesek/spark-wallet:standalone
+    volumes:
+      - "<%= lightning_datapath %>:/etc/lightning"
+      - "<%= sparkwallet_datapath %>:/data"
+    networks:
+      - cyphernodenet
+    restart: always
+<% } %>
+
 networks:
   cyphernodenet:
     external: true
