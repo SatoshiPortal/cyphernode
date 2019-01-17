@@ -120,6 +120,18 @@ checklnnode() {
   return 0
 }
 
+checksparkwallet() {
+  echo -en "\r\n\e[1;36mTesting Spark Wallet... " > /dev/console
+  local rc
+
+  rc=$(curl -s -o /dev/null -w "%{http_code}" https://gatekeeper/sparkwallet)
+  [ "${rc}" -ne "200" ] && return 400
+
+  echo -e "\e[1;36mSpark Wallet rocks!" > /dev/console
+
+  return 0
+}
+
 checkservice() {
   local interval=10
   local totaltime=120
@@ -133,12 +145,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %> <%= (features.indexOf('sparkwallet') != -1)?'sparkwallet ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %> <%= (features.indexOf('sparkwallet') != -1)?'sparkwallet ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -158,9 +170,10 @@ checkservice() {
   #    { "name": "pycoin", "active":true },
   #    { "name": "otsclient", "active":true },
   #    { "name": "bitcoin", "active":true },
-  #    { "name": "lightning", "active":true }
+  #    { "name": "lightning", "active":true },
+  #    { "name": "sparkwallet", "active":true }
   #  ]
-  for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %> <%= (features.indexOf('sparkwallet') != -1)?'sparkwallet ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -218,14 +231,16 @@ feature_status() {
 #    { "name": "pycoin", "active":true },
 #    { "name": "otsclient", "active":true },
 #    { "name": "bitcoin", "active":true },
-#    { "name": "lightning", "active":true }
+#    { "name": "lightning", "active":true },
+#    { "name": "sparkwallet", "active":true }
 #  ],
 #  "features": [
 #    { "name": "gatekeeper", "working":true },
 #    { "name": "pycoin", "working":true },
 #    { "name": "otsclient", "working":true },
 #    { "name": "bitcoin", "working":true },
-#    { "name": "lightning", "working":true }
+#    { "name": "lightning", "working":true },
+#    { "name": "sparkwallet", "working":true }
 #  ]
 #}
 
@@ -254,7 +269,8 @@ fi
 #    { "name": "pycoin", "working":true },
 #    { "name": "otsclient", "working":true },
 #    { "name": "bitcoin", "working":true },
-#    { "name": "lightning", "working":true }
+#    { "name": "lightning", "working":true },
+#    { "name": "sparkwallet", "working":true }
 #  ]
 
 result="${containers},\"features\":[{\"name\":\"gatekeeper\",\"working\":"
@@ -314,6 +330,19 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
+<% } %>
+
+<% if (features.indexOf('sparkwallet') != -1) { %>
+result="${result},{\"name\":\"sparkwallet\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"sparkwallet\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checklnnode
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Spark Wallet error!')}"
 <% } %>
 
 result="{${result}]}"

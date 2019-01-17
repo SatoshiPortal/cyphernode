@@ -34,6 +34,8 @@
   "lightning_datapath": "<font underline='true'>Path name</font> to where LN's data files are stored. This directory will be mounted into the LN node's container. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
   "lightning_datapath_custom": " ",
   "lightning_expose": "By default, LN node port will be <font underline='true'>published</font> outside of Docker.  Do you want to hide it so that your node can't be accessed from outside of the Docker network?",
+  "sparkwallet_datapath": "<font underline='true'>Path name</font> to where sparkwallet data files are stored. This directory will be mounted into the sparkwallet container. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
+  "sparkwallet_datapath_custom": " ",
   "otsclient_datapath": "<font underline='true'>Full path</font> where the OTS files will be stored. This path will be mounted into the otsclient container which will create the OTS files when <font color='#00ff00'>stamping</font> and update them when <font color='#00ff00'>upgrading</font> stamps. It will also be mounted to the proxy container so that it can serve the <font color='#00ff00'>ots_getfile</font> and send the OTS files to clients. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
   "otsclient_datapath_custom": " ",
   "installer_mode": "Only one <font underline='true'>installation mode</font> is supported, right now: <font color='#0000ff'>local docker (self-hosted)</font>. Choose wisely ;-)",

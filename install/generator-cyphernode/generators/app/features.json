@@ -4,6 +4,10 @@
     "value": "lightning"
   },
   {
+    "name": "Spark Wallet (LN)",
+    "value": "sparkwallet"
+  },
+  {
     "name": "Opentimestamps client",
     "value": "otsclient"
   }
