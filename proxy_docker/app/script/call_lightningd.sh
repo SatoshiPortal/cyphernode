@@ -46,15 +46,7 @@ ln_create_invoice()
     trace "[ln_create_invoice] expires_at=${expires_at}"
 
     # Let's get the connect string if provided in configuration
-    local connectstring
-    local getinfo=$(ln_getinfo)
-    trace "[ln_create_invoice] getinfo=${getinfo}"
-    echo ${getinfo} | jq -e '.address[0]' > /dev/null
-    if [ "$?" -eq 0 ]; then
-      # If there's an address
-      connectstring="$(echo ${getinfo} | jq '((.id + "@") + (.address[0] | ((.address + ":") + (.port | tostring))))' | tr -d '"')"
-      trace "[ln_create_invoice] connectstring=${connectstring}"
-    fi
+    local connectstring=$(ln_get_connection_string)
 
     sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
     trace_rc $?
@@ -79,6 +71,22 @@ ln_create_invoice()
   echo "${data}"
 
   return ${returncode}
+}
+
+ln_get_connection_string() {
+  trace "Entering ln_get_connection_string()..."
+  
+  # Let's get the connect string if provided in configuration
+  local connectstring
+  local getinfo=$(ln_getinfo)
+  echo ${getinfo} | jq -e '.address[0]' > /dev/null
+  if [ "$?" -eq 0 ]; then
+    # If there's an address
+    connectstring="$(echo ${getinfo} | jq '((.id + "@") + (.address[0] | ((.address + ":") + (.port | tostring))))' | tr -d '"')"
+    trace "[ln_get_connection_string] connectstring=${connectstring}"
+  fi
+
+  echo "${connectstring}"
 }
 
 ln_getinfo()
