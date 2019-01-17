@@ -39,6 +39,8 @@ action_getblockinfo=watcher
 action_gettransaction=watcher
 action_ln_getinfo=watcher
 action_ln_create_invoice=watcher
+action_ln_getconnectionstring=watcher
+action_ln_decodebolt11=watcher
 
 # Spender can do what the watcher can do, plus:
 action_getbalance=spender
