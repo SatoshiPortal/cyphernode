@@ -531,6 +531,7 @@ check_directory_owner() {
     if [[ ''$d == '' ]]; then
       continue
     fi
+    d=$(realpath $d)
     if [[ -e $d ]]; then
       # is it mine and does it have rw ?
       # don't care about group rights
