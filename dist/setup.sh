@@ -528,6 +528,10 @@ check_directory_owner() {
   local status=0
   for d in "${directories[@]}"
   do
+    if [[ ''$d == '' ]]; then
+      continue
+    fi
+    d=$(realpath $d)
     if [[ -e $d ]]; then
       # is it mine and does it have rw ?
       # don't care about group rights
