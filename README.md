@@ -24,6 +24,38 @@ The docker containers used in this project are hosted at www.bitcoindockers.com
 
 The project is in **heavy development** - we are currently looking for review, new features, user feedback and contributors to our roadmap.
 
+# Cyphernode Architecture
+Cyphernode is an assembly of Docker containers being called by a request dispatcher.
+
+The request dispatcher (requesthandler.sh) is the HTTP entry point.
+The request dispatcher is stateful: it keeps some data to be more effective on next calls.
+The request dispatcher is where Cyphernode scales with new features: add your switch, dispatch requests to your stuff.
+We are trying to construct each container so that it can be used separately, as a standalone reusable component.
+
+Important to us:
+
+Be as optimized as possible, using Alpine when possible and having the smallest Docker image size possible
+Reuse existing software: built-in shell commands, well-established pieces of software, etc.
+Use open-source software
+Don't reinvent the wheel
+Expose the less possible surface
+Center element: proxy_docker
+The proxy_docker is the container receiving and dispatching calls from clients. When adding a feature to Cyphernode, it is the first part to be modified to integrate the new feature.
+
+proxy_docker/app/script/requesthandler.sh
+You will find in there the switch statement used to dispatch the requests. Just add a case block with your command, using other cases as examples for POST or GET requests.
+
+proxy_docker/app/config
+You will find there config files. config.properties should be used to centralize configs. spender and watcher properties are used to obfuscate credentials on curl calls.
+
+proxy_docker/app/data
+watching.sql contains the data model. Called "watching" because in the beginning of the project, it was only used for watching addresses. Now could be used to index the blockchain (build an explorer) and add more features.
+
+cron_docker
+If you have jobs to be scheduled, use this container. Just add an executable and add it to the crontab.
+
+Currently used to make sure callbacks have been called for missed transactions.
+
 # About this project
 
 - Created and maintained by www.satoshiportal.com

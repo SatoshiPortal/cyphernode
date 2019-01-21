@@ -124,6 +124,8 @@ module.exports = class extends Generator {
   }
 
   async _initConfig() {
+    this.defaultDataDirBase = process.env.DEFAULT_DATADIR_BASE;
+    this.setupDir = process.env.SETUP_DIR;
     const versionOverride = process.env.VERSION_OVERRIDE==='true';
     if( fs.existsSync(this.destinationPath('config.7z')) ) {
       let r = {};

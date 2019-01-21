@@ -183,6 +183,8 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
+             -e DEFAULT_DATADIR_BASE=$HOME \
+             -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              -e VERSION_OVERRIDE=$VERSION_OVERRIDE \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
@@ -526,6 +528,10 @@ check_directory_owner() {
   local status=0
   for d in "${directories[@]}"
   do
+    if [[ ''$d == '' ]]; then
+      continue
+    fi
+    d=$(realpath $d)
     if [[ -e $d ]]; then
       # is it mine and does it have rw ?
       # don't care about group rights
@@ -550,6 +556,11 @@ check_directory_owner() {
 check_bitcoind() {
   echo 0
 }
+
+realpath() {
+  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
 
 sanity_checks() {
 
@@ -648,6 +659,8 @@ OTSCLIENT_VERSION="v0.1"
 PYCOIN_VERSION="v0.1"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
+
+SETUP_DIR=$(dirname $(realpath $0))
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT

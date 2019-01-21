@@ -37,16 +37,20 @@ module.exports = {
       default: utils._getDefault( 'gatekeeper_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/gatekeeper (needs sudo and "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/gatekeeper"
+          name: utils.setupDir+"/cyphernode/gatekeeper",
+          value: utils.setupDir+"/cyphernode/gatekeeper"
         },
         {
-          name: "~/.cyphernode/gatekeeper",
-          value: "~/.cyphernode/gatekeeper"
+          name: utils.defaultDataDirBase+"/cyphernode/gatekeeper",
+          value: utils.defaultDataDirBase+"/cyphernode/gatekeeper"
         },
         {
-          name: "~/gatekeeper",
-          value: "~/gatekeeper"
+          name: utils.defaultDataDirBase+"/.cyphernode/gatekeeper",
+          value: utils.defaultDataDirBase+"/.cyphernode/gatekeeper"
+        },
+        {
+          name: utils.defaultDataDirBase+"/gatekeeper",
+          value: utils.defaultDataDirBase+"/gatekeeper"
         },
         {
           name: "Custom path",
@@ -71,16 +75,20 @@ module.exports = {
       default: utils._getDefault( 'proxy_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/proxy (needs sudo and "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/proxy"
+          name: utils.setupDir+"/cyphernode/proxy",
+          value: utils.setupDir+"/cyphernode/proxy"
         },
         {
-          name: "~/.cyphernode/proxy",
-          value: "~/.cyphernode/proxy"
+          name: utils.defaultDataDirBase+"/cyphernode/proxy",
+          value: utils.defaultDataDirBase+"/cyphernode/proxy"
         },
         {
-          name: "~/proxy",
-          value: "~/proxy"
+          name: utils.defaultDataDirBase+"/.cyphernode/proxy",
+          value: utils.defaultDataDirBase+"/.cyphernode/proxy"
+        },
+        {
+          name: utils.defaultDataDirBase+"/proxy",
+          value: utils.defaultDataDirBase+"/proxy"
         },
         {
           name: "Custom path",
@@ -105,16 +113,20 @@ module.exports = {
       default: utils._getDefault( 'bitcoin_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/bitcoin (needs sudo and "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/bitcoin"
+          name: utils.setupDir+"/cyphernode/bitcoin",
+          value: utils.setupDir+"/cyphernode/bitcoin"
         },
         {
-          name: "~/.cyphernode/bitcoin",
-          value: "~/.cyphernode/bitcoin"
+          name: utils.defaultDataDirBase+"/cyphernode/bitcoin",
+          value: utils.defaultDataDirBase+"/cyphernode/bitcoin"
         },
         {
-          name: "~/bitcoin",
-          value: "~/bitcoin"
+          name: utils.defaultDataDirBase+"/.cyphernode/bitcoin",
+          value: utils.defaultDataDirBase+"/.cyphernode/bitcoin"
+        },
+        {
+          name: utils.defaultDataDirBase+"/bitcoin",
+          value: utils.defaultDataDirBase+"/bitcoin"
         },
         {
           name: "Custom path",
@@ -139,16 +151,20 @@ module.exports = {
       default: utils._getDefault( 'lightning_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/lightning (needs sudo - "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/lightning"
+          name: utils.setupDir+"/cyphernode/lightning",
+          value: utils.setupDir+"/cyphernode/lightning"
         },
         {
-          name: "~/.cyphernode/lightning",
-          value: "~/.cyphernode/lightning"
+          name: utils.defaultDataDirBase+"/cyphernode/lightning",
+          value: utils.defaultDataDirBase+"/cyphernode/lightning"
         },
         {
-          name: "~/lightning",
-          value: "~/lightning"
+          name: utils.defaultDataDirBase+"/.cyphernode/lightning",
+          value: utils.defaultDataDirBase+"/.cyphernode/lightning"
+        },
+        {
+          name: utils.defaultDataDirBase+"/lightning",
+          value: utils.defaultDataDirBase+"/lightning"
         },
         {
           name: "Custom path",
@@ -173,16 +189,20 @@ module.exports = {
       default: utils._getDefault( 'otsclient_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/otsclient (needs sudo and "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/otsclient"
+          name: utils.setupDir+"/cyphernode/otsclient",
+          value: utils.setupDir+"/cyphernode/otsclient"
         },
         {
-          name: "~/.cyphernode/otsclient",
-          value: "~/.cyphernode/otsclient"
+          name: utils.defaultDataDirBase+"/cyphernode/otsclient",
+          value: utils.defaultDataDirBase+"/cyphernode/otsclient"
         },
         {
-          name: "~/otsclient",
-          value: "~/otsclient"
+          name: utils.defaultDataDirBase+"/.cyphernode/otsclient",
+          value: utils.defaultDataDirBase+"/.cyphernode/otsclient"
+        },
+        {
+          name: utils.defaultDataDirBase+"/otsclient",
+          value: utils.defaultDataDirBase+"/otsclient"
         },
         {
           name: "Custom path",
