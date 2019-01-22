@@ -649,14 +649,14 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.1.0"
+# CYPHERNODE VERSION "v0.1.1"
 VERSION_OVERRIDE="true"
-CONF_VERSION="v0.1"
-GATEKEEPER_VERSION="v0.1"
-PROXY_VERSION="v0.1"
-PROXYCRON_VERSION="v0.1"
-OTSCLIENT_VERSION="v0.1"
-PYCOIN_VERSION="v0.1"
+CONF_VERSION="v0.1.1"
+GATEKEEPER_VERSION="v0.1.1"
+PROXY_VERSION="v0.1.1"
+PROXYCRON_VERSION="v0.1.1"
+OTSCLIENT_VERSION="v0.1.1"
+PYCOIN_VERSION="v0.1.1"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
 
@@ -702,6 +702,20 @@ while getopts ":cirhys" opt; do
       ;;
   esac
 done
+
+nbbuiltimgs=$(docker images --filter=reference='cyphernode/*:*-local' | wc -l)
+if [[ $nbbuiltimgs -gt 1 ]]; then
+  read -p "Locally built Cyphernode images found!  Do you want to use them?" -n 1 -r
+
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    CONF_VERSION="$CONF_VERSION-local"
+    GATEKEEPER_VERSION="$GATEKEEPER_VERSION-local"
+    PROXY_VERSION="$PROXY_VERSION-local"
+    PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
+    OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
+    PYCOIN_VERSION="$PYCOIN_VERSION-local"
+  fi
+fi
 
 if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
   CONFIGURE=1

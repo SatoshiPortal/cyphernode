@@ -2,16 +2,16 @@
 
 TRACING=1
 
-# CYPHERNODE VERSION "v0.1"
-CONF_VERSION="v0.1"
-GATEKEEPER_VERSION="v0.1"
-PROXY_VERSION="v0.1"
-PROXYCRON_VERSION="v0.1"
-OTSCLIENT_VERSION="v0.1"
-PYCOIN_VERSION="v0.1"
+# CYPHERNODE VERSION "v0.1.1"
+CONF_VERSION="v0.1.1-local"
+GATEKEEPER_VERSION="v0.1.1-local"
+PROXY_VERSION="v0.1.1-local"
+PROXYCRON_VERSION="v0.1.1-local"
+OTSCLIENT_VERSION="v0.1.1-local"
+PYCOIN_VERSION="v0.1.1-local"
 BITCOIN_VERSION="v0.17.0"
 LIGHTNING_VERSION="v0.6.2"
-GRAFANA_VERSION="v0.1"
+GRAFANA_VERSION="v0.1.1-local"
 
 trace()
 {
@@ -64,8 +64,8 @@ build_docker_images() {
   build_docker_image install/ cyphernode/cyphernodeconf:$CONF_VERSION
 
   trace "Creating SatoshiPortal images"
-  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BITCOIN_VERSION $bitcoin_dockerfile
-  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$LIGHTNING_VERSION $clightning_dockerfile
+#  build_docker_image install/SatoshiPortal/dockers/bitcoin-core cyphernode/bitcoin:$BITCOIN_VERSION $bitcoin_dockerfile
+#  build_docker_image install/SatoshiPortal/dockers/c-lightning cyphernode/clightning:$LIGHTNING_VERSION $clightning_dockerfile
 
   trace "Creating cyphernode images"
   build_docker_image api_auth_docker/ cyphernode/gatekeeper:$GATEKEEPER_VERSION
