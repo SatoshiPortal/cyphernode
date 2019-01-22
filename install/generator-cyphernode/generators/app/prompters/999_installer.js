@@ -189,16 +189,20 @@ module.exports = {
       default: utils._getDefault( 'sparkwallet_datapath' ),
       choices: [
         {
-          name: "/var/run/cyphernode/sparkwallet (needs sudo - "+chalk.red('incompatible with OSX')+")",
-          value: "/var/run/cyphernode/sparkwallet"
+          name: utils.setupDir+"/cyphernode/sparkwallet",
+          value: utils.setupDir+"/cyphernode/sparkwallet"
         },
         {
-          name: "~/.cyphernode/sparkwallet",
-          value: "~/.cyphernode/sparkwallet"
+          name: utils.defaultDataDirBase+"/cyphernode/sparkwallet",
+          value: utils.defaultDataDirBase+"/cyphernode/sparkwallet"
         },
         {
-          name: "~/sparkwallet",
-          value: "~/sparkwallet"
+          name: utils.defaultDataDirBase+"/.cyphernode/sparkwallet",
+          value: utils.defaultDataDirBase+"/.cyphernode/sparkwallet"
+        },
+        {
+          name: utils.defaultDataDirBase+"/sparkwallet",
+          value: utils.defaultDataDirBase+"/sparkwallet"
         },
         {
           name: "Custom path",
