@@ -189,6 +189,7 @@ ln_pay() {
   local expected_description=$(echo "${request}" | jq ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
 
+  # Let's first decode the bolt11 string to make sure we are paying the good invoice
   trace "[ln_pay] ./lightning-cli decodepay ${bolt11}"
   result=$(./lightning-cli decodepay ${bolt11})
   returncode=$?
@@ -201,13 +202,18 @@ ln_pay() {
     local invoice_description=$(echo "${result}" | jq ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
+    # The amount must match
     if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ]; then
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
       returncode=1
-    elif [ "${expected_description}" != "${invoice_description}" ]; then
+    elif [ "${expected_description}" != '""' ] && [ "${expected_description}" != "${invoice_description}" ]; then
+      # If expected description is empty, we accept any description on the invoice.  Amount is the important thing.
+
       result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
       returncode=1
     else
+      # Amount and description is as expected, let's pay!
+
       trace "[ln_pay] ./lightning-cli pay ${bolt11}"
       result=$(./lightning-cli pay ${bolt11})
       returncode=$?
