@@ -32,15 +32,11 @@ module.exports = {
       type: 'list',
       name: 'bitcoin_mode',
       default: utils._getDefault( 'bitcoin_mode' ),
-      message: prefix()+'Where is your bitcoin full node running?'+utils._getHelp('bitcoin_mode'),
+      message: prefix()+'Cyphernode will manage your bitcoin full node.'+utils._getHelp('bitcoin_mode'),
       choices: [
         {
-          name: 'Nowhere! I want cyphernode to run one.',
+          name: 'Ok. That is awesome',
           value: 'internal'
-        },
-        {
-          name: 'I have a full node running.',
-          value: 'external'
         }
       ]
     },
