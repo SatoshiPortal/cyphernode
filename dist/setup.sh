@@ -729,7 +729,7 @@ done
 
 nbbuiltimgs=$(docker images --filter=reference='cyphernode/*:*-local' | wc -l)
 if [[ $nbbuiltimgs -gt 1 ]]; then
-  read -p "Locally built Cyphernode images found!  Do you want to use them?" -n 1 -r
+  read -p "Locally built Cyphernode images found!  Do you want to use them?  [yn] " -n 1 -r
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     CONF_VERSION="$CONF_VERSION-local"

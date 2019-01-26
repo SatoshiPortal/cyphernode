@@ -178,8 +178,15 @@ ln_decodebolt11() {
 ln_pay() {
   trace "Entering ln_pay()..."
 
+  # We'll use pay that will manage the routing and waitsendpay to make sure a payment succeeded or failed.
+  # 1. pay
+  # 2. waitsendpay IF pay returned a status of "pending" (code 200)
+
   local result
   local returncode
+  local code
+  local status
+  local payment_hash
 
   local request=${1}
   local bolt11=$(echo "${request}" | jq ".bolt11" | tr -d '"')
@@ -213,13 +220,63 @@ ln_pay() {
       returncode=1
     else
       # Amount and description is as expected, let's pay!
+      trace "[ln_pay] Amount and description are as expected, let's try to pay!"
 
       trace "[ln_pay] ./lightning-cli pay ${bolt11}"
       result=$(./lightning-cli pay ${bolt11})
       returncode=$?
       trace_rc ${returncode}
+      trace "[ln_pay] result=${result}"
+
+      # The result should contain a status field with value pending, complete or failed.
+      # If complete, we can return with success.
+      # If failed, we can return with failed.
+      # If pending, we should keep trying until complete or failed status, before responding to client.
+      # We'll use waitsendpay for that.
+
+      if [ "${returncode}" -ne "0" ]; then
+        trace "[ln_pay] payment not complete, let's see what's going on."
+        
+        code=$(echo "${result}" | jq -e ".code")
+        # jq -e will have a return code of 1 if the supplied tag is null.
+        if [ "$?" -eq "0" ]; then
+          # code tag not null, so there's an error
+          trace "[ln_pay] Error code found, code=${code}"
+          
+          if [ "${code}" -eq "200" ]; then
+            trace "[ln_pay] Code 200, let's fetch status in data, should be pending..."
+            status=$(echo "${result}" | jq ".data.status" | tr -d '"')
+            trace "[ln_pay] status=${status}"
+          else
+            trace "[ln_pay] Failure code, response will be the cli result."
+          fi
+        else
+          # code tag not found
+          trace "[ln_pay] No error code, getting the status..."
+          status=$(echo "${result}" | jq ".status" | tr -d '"')
+          trace "[ln_pay] status=${status}"
+        fi
+
+        if [ "${status}" = "pending" ]; then
+          trace "[ln_pay] Ok let's deal with pending status with waitsendpay."
+
+          payment_hash=$(echo "${result}" | jq ".data.payment_hash" | tr -d '"')
+          trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash}"
+          result=$(./lightning-cli waitsendpay ${payment_hash})
+          returncode=$?
+          trace_rc ${returncode}
+          trace "[ln_pay] result=${result}"
+
+          if [ "${returncode}" -ne "0" ]; then
+            trace "[ln_pay] Failed!"
+          else
+            trace "[ln_pay] Successfully paid!"
+          fi
+        fi
+      else
+        trace "[ln_pay] Successfully paid!"
+      fi
     fi
-    trace "[ln_pay] result=${result}"
   fi
 
   echo "${result}"
