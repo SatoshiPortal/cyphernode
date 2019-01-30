@@ -18,6 +18,7 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
+. ./newblock.sh
 
 main()
 {
@@ -128,6 +129,11 @@ main()
           # GET http://192.168.111.152:8080/getactivexpubwatches
 
           response=$(getactivexpubwatches)
+        watchtxid)
+          # POST http://192.168.111.152:8080/watchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
+
+          response=$(watchtxidrequest "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -142,6 +148,13 @@ main()
           # curl (GET) 192.168.111.152:8080/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
 
           response=$(confirmation_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        newblock)
+          # curl (GET) 192.168.111.152:8080/newblock/000000000000005c987120f3b6f995c95749977ef1a109c89aa74ce4bba97c1f
+
+          response=$(newblock "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -285,6 +298,14 @@ main()
           # GET http://192.168.111.152:8080/ln_newaddr
 
           response=$(ln_newaddr)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_connectfund)
+          # POST http://192.168.111.152:8080/ln_connectfund
+          # BODY {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+
+          response=$(ln_connectfund "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

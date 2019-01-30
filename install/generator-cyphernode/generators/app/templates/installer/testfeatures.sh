@@ -336,7 +336,7 @@ result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 result="${result},{\"name\":\"sparkwallet\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"sparkwallet\") | .active")
 if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
-  timeout_feature checklnnode
+  timeout_feature checksparkwallet
   returncode=$?
 else
   returncode=1

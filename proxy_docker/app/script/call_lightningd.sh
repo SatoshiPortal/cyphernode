@@ -75,13 +75,13 @@ ln_create_invoice()
 
 ln_get_connection_string() {
   trace "Entering ln_get_connection_string()..."
-  
+
   echo "{\"connectstring\":\"$(get_connection_string)\"}"
 }
 
 get_connection_string() {
   trace "Entering get_connection_string()..."
-  
+
   # Let's get the connect string if provided in configuration
   local connectstring
   local getinfo=$(ln_getinfo)
@@ -140,7 +140,7 @@ ln_delinvoice() {
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_delinvoice] result=${result}"
-  
+
   if [ "${returncode}" -ne "0" ]; then
     # Special case of error: if status is expired, we're ok
     echo "${result}" | grep "not unpaid" > /dev/null
@@ -175,6 +175,80 @@ ln_decodebolt11() {
   return ${returncode}
 }
 
+ln_connectfund() {
+  trace "Entering ln_connectfund()..."
+
+  local result
+  local returncode
+  local tx
+  local txid
+  local nodeId
+
+  local request=${1}
+  local peer=$(echo "${request}" | jq ".peer" | tr -d '"')
+  trace "[ln_connectfund] peer=${peer}"
+  local msatoshi=$(echo "${request}" | jq ".msatoshi")
+  trace "[ln_connectfund] msatoshi=${msatoshi}"
+  local callback_url=$(echo "${request}" | jq ".callbackUrl" | tr -d '"')
+  trace "[ln_connectfund] callback_url=${callback_url}"
+
+  # Let's first try to connect to peer
+  trace "[ln_connectfund] ./lightning-cli connect ${peer}"
+  result=$(./lightning-cli connect ${peer})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_connectfund] result=${result}"
+
+  if [ "${returncode}" -eq "0" ]; then
+    # Connected
+
+# ./lightning-cli connect 038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9@180.181.208.42:9735
+# {
+#  "id": "038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9"
+# }
+
+# ./lightning-cli connect 021a1b197aa79242532b23cb9a8d9cb78631f95f811457675fa1b362fe6d1c24b8@172.81.180.244:9735
+# { "code" : -1, "message" : "172.1.180.244:9735: Connection establishment: Operation timed out. " }
+
+    nodeId=$(echo "${result}" | jq ".id" | tr -d '"')
+    trace "[ln_connectfund] nodeId=${nodeId}"
+
+    # Now let's fund a channel with peer
+    trace "[ln_connectfund] ./lightning-cli fundchannel ${nodeId} ${msatoshi}"
+    result=$(./lightning-cli fundchannel ${nodeId} ${msatoshi})
+    returncode=$?
+    trace_rc ${returncode}
+    trace "[ln_connectfund] result=${result}"
+
+    if [ "${returncode}" -eq "0" ]; then
+      # funding succeeded
+
+# ./lightning-cli fundchannel 038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9 1000000
+# {
+#  "tx": "020000000001011594f707cf2ec076278072bc64f893bbd70188db42ea49e9ba531ee3c7bc8ed00100000000ffffffff0240420f00000000002200206149ff97921356191dc1f2e9ab997c459a71e8050d272721abf4b4d8a92d2419a6538900000000001600142cab0184d0f8098f75ebe05172b5864395e033f402483045022100b25cd5a9d49b5cc946f72a58ccc0afe652d99c25fba98d68be035a286f55849802203de5b504c44f775a0101b6025f116b73bf571e776e4efcac0475721bfde4d08a0121038360308a394158b0799196c5179a6480a75db73207fb93d4a673d934c9f786f400000000", 
+#  "txid": "747bf7d1c40bebed578b3f02a3d8da9a56885851a3c4bdb6e1b8de19223559a4", 
+#  "channel_id": "a459352219deb8e1b6bdc4a3515888569adad8a3023f8b57edeb0bc4d1f77b74"
+# }
+
+# ./lightning-cli fundchannel 038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9 100000
+# { "code" : 301, "message" : "Cannot afford transaction" }
+
+      # Let's find what to watch
+      txid=$(echo "${result}" | jq ".txid" | tr -d '"')
+      tx=$(echo "${result}" | jq ".tx" | tr -d '"')
+
+      
+    else
+      # Error funding
+      trace "[ln_connectfund] Error funding, result=${result}"
+    fi
+  else
+    # Error connecting
+    trace "[ln_connectfund] Error connecting, result=${result}"
+  fi
+
+}
+
 ln_pay() {
   trace "Entering ln_pay()..."
 
@@ -202,7 +276,7 @@ ln_pay() {
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_pay] result=${result}"
-  
+
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
     trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
@@ -236,13 +310,13 @@ ln_pay() {
 
       if [ "${returncode}" -ne "0" ]; then
         trace "[ln_pay] payment not complete, let's see what's going on."
-        
+
         code=$(echo "${result}" | jq -e ".code")
         # jq -e will have a return code of 1 if the supplied tag is null.
         if [ "$?" -eq "0" ]; then
           # code tag not null, so there's an error
           trace "[ln_pay] Error code found, code=${code}"
-          
+
           if [ "${code}" -eq "200" ]; then
             trace "[ln_pay] Code 200, let's fetch status in data, should be pending..."
             status=$(echo "${result}" | jq ".data.status" | tr -d '"')
@@ -278,6 +352,43 @@ ln_pay() {
       fi
     fi
   fi
+
+# Example of error result:
+#
+# { "code" : 204, "message" : "failed: WIRE_TEMPORARY_CHANNEL_FAILURE (Outgoing subdaemon died)", "data" :
+# {
+#   "erring_index": 0,
+#   "failcode": 4103,
+#   "erring_node": "031b867d9d6631a1352cc0f37bcea94bd5587a8d4f40416c4ce1a12511b1e68f56",
+#   "erring_channel": "1452982:62:0"
+# } }
+#
+#
+# Example of successful result:
+#
+# {
+#   "id": 44,
+#   "payment_hash": "de648062da7117903291dab2075881e49ddd78efbf82438e4a2f486a7ebe0f3a",
+#   "destination": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
+#   "msatoshi": 207000,
+#   "msatoshi_sent": 207747,
+#   "created_at": 1548380406,
+#   "status": "complete",
+#   "payment_preimage": "a7ef27e9a94d63e4028f35ca4213fd9008227ad86815cd40d3413287d819b145",
+#   "description": "Order 43012 - Satoshi Larrivee",
+#   "getroute_tries": 1,
+#   "sendpay_tries": 1,
+#   "route": [
+#     {
+#       "id": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
+#       "channel": "1452749:174:0",
+#       "msatoshi": 207747,
+#       "delay": 10
+#     }
+#   ],
+#   "failures": [
+#   ]
+# }
 
   echo "${result}"
 

@@ -67,6 +67,19 @@ CREATE TABLE recipient (
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
 
+CREATE TABLE watching_by_txid (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  txid TEXT UNIQUE,
+  watching INTEGER DEFAULT FALSE,
+  callback1conf TEXT,
+  calledback1conf INTEGER DEFAULT FALSE,
+  callbackxconf TEXT,
+  calledbackxconf INTEGER DEFAULT FALSE,
+  nbxconf INTEGER,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
+
 CREATE TABLE stamp (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   hash TEXT UNIQUE,

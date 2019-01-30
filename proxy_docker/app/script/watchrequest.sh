@@ -290,3 +290,47 @@ extend_watchers() {
 
   return ${returncode}
 }
+
+watchtxidrequest() {
+  trace "Entering watchtxidrequest()..."
+
+  local returncode
+  local request=${1}
+  trace "[watchtxidrequest] request=${request}"
+  local txid=$(echo "${request}" | jq ".txid" | tr -d '"')
+  trace "[watchtxidrequest] txid=${txid}"
+  local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL" | tr -d '"')
+  trace "[watchtxidrequest] cb1conf_url=${cb1conf_url}"
+  local cbxconf_url=$(echo "${request}" | jq ".xconfCallbackURL" | tr -d '"')
+  trace "[watchtxidrequest] cbxconf_url=${cbxconf_url}"
+  local nbxconf=$(echo "${request}" | jq ".nbxconf")
+  trace "[watchtxidrequest] nbxconf=${nbxconf}"
+  local inserted
+  local id_inserted
+  local result
+  trace "[watchtxidrequest] Watch request on txid (${txid}), cb 1-conf (${cb1conf_url}) and cb x-conf (${cbxconf_url}) on ${nbxconf} confirmations."
+
+  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (\"${txid}\", 1, \"${cb1conf_url}\", \"${cbxconf_url}\", ${nbxconf})"
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -eq 0 ]; then
+    inserted=1
+    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid='${txid}'")
+    trace "[watchtxidrequest] id_inserted: ${id_inserted}"
+  else
+    inserted=0
+  fi
+
+  local data="{\"id\":\"${id_inserted}\",
+  \"event\":\"watchtxid\",
+  \"inserted\":\"${inserted}\",
+  \"txid\":\"${txid}\",
+  \"confirmedCallbackURL\":\"${cb1conf_url}\",
+  \"xconfCallbackURL\":\"${cbxconf_url}\",
+  \"nbxconf\":${nbxconf}}"
+  trace "[watchtxidrequest] responding=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}
