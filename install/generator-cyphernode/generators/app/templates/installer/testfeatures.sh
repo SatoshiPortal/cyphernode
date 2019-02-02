@@ -124,7 +124,7 @@ checksparkwallet() {
   echo -en "\r\n\e[1;36mTesting Spark Wallet... " > /dev/console
   local rc
 
-  rc=$(curl -s -o /dev/null -k -w "%{http_code}" https://gatekeeper/sparkwallet/)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" --cacert /gatekeeper/certs/cert.pem https://gatekeeper/sparkwallet/)
   [ "${rc}" -ne "401" ] && return 400
 
   echo -e "\e[1;36mSpark Wallet rocks!" > /dev/console
