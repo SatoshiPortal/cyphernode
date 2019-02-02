@@ -296,8 +296,8 @@ ln_pay() {
       # Amount and description is as expected, let's pay!
       trace "[ln_pay] Amount and description are as expected, let's try to pay!"
 
-      trace "[ln_pay] ./lightning-cli pay ${bolt11}"
-      result=$(./lightning-cli pay ${bolt11})
+      trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=15"
+      result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=15)
       returncode=$?
       trace_rc ${returncode}
       trace "[ln_pay] result=${result}"
@@ -335,8 +335,8 @@ ln_pay() {
           trace "[ln_pay] Ok let's deal with pending status with waitsendpay."
 
           payment_hash=$(echo "${result}" | jq ".data.payment_hash" | tr -d '"')
-          trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash}"
-          result=$(./lightning-cli waitsendpay ${payment_hash})
+          trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash} 15"
+          result=$(./lightning-cli waitsendpay ${payment_hash} 15)
           returncode=$?
           trace_rc ${returncode}
           trace "[ln_pay] result=${result}"
