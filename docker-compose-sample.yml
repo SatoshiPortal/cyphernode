@@ -40,6 +40,7 @@ services:
       - "WATCHER_BTC_NODE_PRUNED=false"
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
+      - "XPUB_DERIVATION_GAP=100"
     image: cyphernode/proxy:latest
 
     volumes:

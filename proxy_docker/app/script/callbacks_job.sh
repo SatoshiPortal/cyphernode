@@ -11,7 +11,7 @@ do_callbacks()
   trace "Entering do_callbacks()..."
 
   # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql 'SELECT DISTINCT callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id WHERE NOT calledback0conf and watching_id NOT NULL and callback0conf NOT NULL and watching')
+  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
   trace "[do_callbacks] callbacks0conf=${callbacks}"
 
   local returncode
@@ -29,7 +29,7 @@ do_callbacks()
     fi
   done
 
-  callbacks=$(sql 'SELECT DISTINCT callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable FROM watching w, watching_tx wt, tx t WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf and confirmations>0 and callback1conf NOT NULL and watching')
+  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
   trace "[do_callbacks] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}
@@ -66,6 +66,11 @@ build_callback()
   local blocktime
   local blockheight
 
+  local pub32_index
+  local pub32
+  local label
+  local derivation_path
+
   # callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id
 
   trace "[build_callback] row=${row}"
@@ -79,7 +84,7 @@ build_callback()
   trace "[build_callback] txid=${txid}"
   vout_n=$(echo "${row}" | cut -d '|' -f4)
   trace "[build_callback] vout_n=${vout_n}"
-  sent_amount=$(echo "${row}" | cut -d '|' -f5)
+  sent_amount=$(echo "${row}" | cut -d '|' -f5 | awk '{ printf "%.8f", $0 }')
   trace "[build_callback] sent_amount=${sent_amount}"
   confirmations=$(echo "${row}" | cut -d '|' -f6)
   trace "[build_callback] confirmations=${confirmations}"
@@ -106,6 +111,17 @@ build_callback()
   blocktime=$(echo "${row}" | cut -d '|' -f13)
   trace "[build_callback] blocktime=${blocktime}"
 
+  pub32_index=$(echo "${row}" | cut -d '|' -f16)
+  trace "[build_callback] pub32_index=${pub32_index}"
+  if [ -n "${pub32_index}" ]; then
+    pub32=$(echo "${row}" | cut -d '|' -f17)
+    trace "[build_callback] pub32=${pub32}"
+    label=$(echo "${row}" | cut -d '|' -f18)
+    trace "[build_callback] label=${label}"
+    derivation_path=$(echo "${row}" | cut -d '|' -f19)
+    trace "[build_callback] derivation_path=${derivation_path}"
+  fi
+
   data="{\"id\":\"${id}\","
   data="${data}\"address\":\"${address}\","
   data="${data}\"hash\":\"${txid}\","
@@ -123,6 +139,12 @@ build_callback()
     data="${data},\"blockhash\":\"${blockhash}\","
     data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
     data="${data}\"blockheight\":${blockheight}"
+  fi
+  if [ -n "${pub32_index}" ]; then
+    data="${data}\"pub32\":\"${pub32}\","
+    data="${data}\"pub32_label\":\"${label}\","
+    derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
+    data="${data}\"pub32_derivation_path\":\"${derivation_path}\""
   fi
   data="${data}}"
   trace "[build_callback] data=${data}"
