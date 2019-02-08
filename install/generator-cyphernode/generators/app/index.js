@@ -406,6 +406,7 @@ module.exports = class extends Generator {
       bitcoin_mode: 'internal',
       bitcoin_expose: false,
       lightning_expose: true,
+      gatekeeper_port: 443,
       gatekeeper_apiproperties: defaultAPIProperties,
       gatekeeper_ipwhitelist: '',
       gatekeeper_keys: { configEntries: [], clientInformation: [] },
