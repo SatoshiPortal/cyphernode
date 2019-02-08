@@ -157,5 +157,5 @@ id="003";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(ech
 echo "GET /getbestblockinfo" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
 echo "GET /getbalance" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
 echo "GET /ln_getinfo" | docker run --rm -i --network=cyphernodenet alpine nc proxy:8888 -
-docker exec -it `docker ps -q -f name=cyphernodestack_cyphernode` curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" proxy:8888/derivepubpath
+docker exec -it `docker ps -q -f name=cyphernode_proxy` curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" proxy:8888/derivepubpath
 ```

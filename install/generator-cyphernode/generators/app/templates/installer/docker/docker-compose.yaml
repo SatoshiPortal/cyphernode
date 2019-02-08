@@ -30,10 +30,12 @@ services:
     # Bitcoin Mini Proxy
     environment:
       - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/watching01.dat"
+      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet"
+      - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
       - "WATCHER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet/spending01.dat"
+      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal')?'bitcoin':bitcoin_node_ip %>:<%= (net === 'mainnet')?'8332':'18332' %>/wallet"
+      - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
       - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
       - "PROXY_LISTENING_PORT=8888"
@@ -47,6 +49,7 @@ services:
       - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune?'true':'false' %>"
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
+      - "XPUB_DERIVATION_GAP=100"
     image: cyphernode/proxy:<%= proxy_version %>
 <% if ( devmode ) { %>
     ports:

@@ -21,8 +21,10 @@ confirmation_request()
   return $?
 }
 
-confirmation()
-{
+confirmation() {
+  (
+  flock -x 201
+
   trace "Entering confirmation()..."
 
   local returncode
@@ -56,7 +58,7 @@ confirmation()
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address FROM watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index FROM watching WHERE address IN (${addresseswhere}) AND watching")
   if [ ${#rows} -eq 0 ]; then
     trace "[confirmation] No watched address in this tx!"
     return 0
@@ -140,7 +142,7 @@ confirmation()
   tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
 
   if [ -z "${tx}" ]; then
-    trace "[confirmation] For this tx, there's no watching_tx row, let's create"
+    trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
     local watching_id
 
     # If the tx is batched and pays multiple watched addresses, we have to insert
@@ -159,11 +161,27 @@ confirmation()
   fi
   ########################################################################################################
 
+  ########################################################################################################
+  # Let's now grow the watch window in the case of a xpub watcher...
+
+  for row in ${rows}
+  do
+    watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
+    pub32_index=$(echo "${row}" | cut -d '|' -f4)
+    if [ -n "${watching_by_pub32_id}" ]; then
+      extend_watchers ${watching_by_pub32_id} ${pub32_index}
+    fi
+  done
+
+  ########################################################################################################
+
   do_callbacks
 
   echo '{"result":"confirmed"}'
 
   return 0
+
+  ) 201>./.confirmation.lock
 }
 
 case "${0}" in *confirmation.sh) confirmation $@;; esac
