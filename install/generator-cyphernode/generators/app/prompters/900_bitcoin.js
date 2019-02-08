@@ -23,7 +23,7 @@ const bitcoinInternalAndPrune = function(props) {
 };
 
 module.exports = {
-  name: function() { 
+  name: function() {
     return name;
   },
   prompts: function( utils ) {
@@ -68,14 +68,18 @@ module.exports = {
       filter: utils._trimFilter,
     },
     {
-      when: bitcoinInternal,
+      when: function(props) {
+        return bitcoinInternal( props ) && props.features.indexOf('lightning') === -1;
+      },
       type: 'confirm',
       name: 'bitcoin_prune',
       default: utils._getDefault( 'bitcoin_prune' ),
       message: prefix()+'Run bitcoin node in prune mode?'+utils._getHelp('bitcoin_prune'),
     },
     {
-      when: bitcoinInternalAndPrune,
+      when: function(props) {
+        return bitcoinInternalAndPrune( props ) && props.features.indexOf('lightning') === -1;
+      },
       type: 'input',
       name: 'bitcoin_prune_size',
       default: utils._getDefault( 'bitcoin_prune_size' ),

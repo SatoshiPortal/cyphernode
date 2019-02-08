@@ -213,8 +213,10 @@ module.exports = class extends Generator {
       delete this.props.lightning_version;
       delete this.props.grafana_version;
     }
-    
+
     this._assignConfigDefaults();
+    this._resolveConfigConflicts();
+
     for( let c of this.featureChoices ) {
       c.checked = this._isChecked( 'features', c.value );
     }
@@ -324,6 +326,8 @@ module.exports = class extends Generator {
   }
 
   async writing() {
+    this._resolveConfigConflicts()
+
     const configJsonString = JSON.stringify(this.props, null, 4);
     const archive = new Archive( this.destinationPath('config.7z'), this.configurationPassword );
 
@@ -382,6 +386,13 @@ module.exports = class extends Generator {
   }
 
   /* some utils */
+
+  _resolveConfigConflicts() {
+    if( this.props.features.indexOf('lightning') !== -1 ) {
+      this.props.bitcoin_prune = false;
+      delete this.props.bitcoin_prune_size;
+    }
+  }
 
   _assignConfigDefaults() {
     this.props = Object.assign( {
