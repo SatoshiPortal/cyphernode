@@ -1,5 +1,19 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE watching_by_pub32 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pub32 TEXT UNIQUE,
+  label TEXT UNIQUE,
+  derivation_path TEXT,
+  callback0conf TEXT,
+  callback1conf TEXT,
+  last_imported_n INTEGER,
+  watching INTEGER DEFAULT FALSE,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_watching_by_pub32_pub32 ON watching_by_pub32 (pub32);
+CREATE INDEX idx_watching_by_pub32_label ON watching_by_pub32 (label);
+
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   address TEXT,
@@ -9,6 +23,8 @@ CREATE TABLE watching (
   callback1conf TEXT,
   calledback1conf INTEGER DEFAULT FALSE,
   imported INTEGER DEFAULT FALSE,
+  watching_by_pub32_id INTEGER REFERENCES watching_by_pub32,
+  pub32_index INTEGER,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_watching_address ON watching (address);

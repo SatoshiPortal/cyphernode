@@ -86,6 +86,16 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        watchxpub)
+          # POST http://192.168.111.152:8080/watchxpub
+          # BODY {"label":"4421","pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/n","nstart":0,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+
+          # curl -H "Content-Type: application/json" -d "{\"label\":\"2219\",\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/1/n\",\"nstart\":55,\"unconfirmedCallbackURL\":\"192.168.111.233:1111/callback0conf\",\"confirmedCallbackURL\":\"192.168.111.233:1111/callback1conf\"}" proxy:8888/watchxpub
+
+          response=$(watchpub32request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getactivewatches)
           # curl (GET) 192.168.111.152:8080/getactivewatches
 
@@ -188,7 +198,8 @@ main()
           # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
           # BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
 
-          response=$(send_to_pycoin "${line}")
+#          response=$(send_to_pycoin "${line}")
+          response=$(derivepubpath "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

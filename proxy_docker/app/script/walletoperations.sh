@@ -3,8 +3,7 @@
 . ./trace.sh
 . ./sendtobitcoinnode.sh
 
-spend()
-{
+spend() {
 	trace "Entering spend()..."
 
 	local data
@@ -26,7 +25,6 @@ spend()
 		trace "[spend] txid=${txid}"
 
 		# Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-#		sql "INSERT OR IGNORE INTO watching (watching, txid) VALUES (0, ${txid})"
 		sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
 		trace_rc $?
 		id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
@@ -47,8 +45,7 @@ spend()
 	return ${returncode}
 }
 
-getbalance()
-{
+getbalance() {
 	trace "Entering getbalance()..."
 
 	local response
@@ -74,8 +71,7 @@ getbalance()
 	return ${returncode}
 }
 
-getnewaddress()
-{
+getnewaddress() {
 	trace "Entering getnewaddress()..."
 
 	local response
@@ -101,8 +97,7 @@ getnewaddress()
 	return ${returncode}
 }
 
-addtobatching()
-{
+addtobatching() {
 	trace "Entering addtobatching()..."
 
 	local address=${1}
@@ -117,8 +112,7 @@ addtobatching()
 	return ${returncode}
 }
 
-batchspend()
-{
+batchspend() {
 	trace "Entering batchspend()..."
 
 	local data
@@ -165,8 +159,6 @@ batchspend()
 		trace "[batchspend] txid=${txid}"
 
 		# Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-#		sql "INSERT OR IGNORE INTO watching (watching, txid) VALUES (0, ${txid})"
-#		trace_rc $?
 		sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
 		returncode=$?
 		trace_rc ${returncode}
@@ -190,4 +182,20 @@ batchspend()
 	return ${returncode}
 }
 
-#case "${0}" in *walletoperations.sh) getbalance $@;; esac
+create_wallet() {
+  trace "[Entering create_wallet()]"
+
+  local walletname=${1}
+
+  local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",true]}"
+  trace "[create_wallet] rpcstring=${rpcstring}"
+
+  local result
+  result=$(send_to_watcher_node ${rpcstring})
+  local returncode=$?
+
+  echo "${result}"
+
+  return ${returncode}
+}
+

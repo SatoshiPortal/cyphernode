@@ -21,6 +21,15 @@ deriveindex()
 	return $?
 }
 
+derivepubpath() {
+	trace "Entering derivepubpath()..."
+
+	# {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+
+	send_to_pycoin $1
+	return $?
+}
+
 send_to_pycoin()
 {
 	trace "Entering send_to_pycoin()..."
