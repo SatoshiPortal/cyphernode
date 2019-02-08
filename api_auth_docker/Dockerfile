@@ -11,7 +11,7 @@ RUN apk add --update --no-cache \
     su-exec
 
 COPY auth.sh /etc/nginx/conf.d/
-COPY default-ssl.conf /etc/nginx/conf.d/default.conf
+COPY default.conf /etc/nginx/conf.d/default.conf
 COPY statuspage.html /etc/nginx/conf.d/status/
 COPY entrypoint.sh entrypoint.sh
 COPY trace.sh /etc/nginx/conf.d/
