@@ -214,8 +214,8 @@ module.exports = class extends Generator {
       delete this.props.grafana_version;
     }
 
-    this._assignConfigDefaults();
     this._resolveConfigConflicts();
+    this._assignConfigDefaults();
 
     for( let c of this.featureChoices ) {
       c.checked = this._isChecked( 'features', c.value );
