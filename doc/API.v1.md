@@ -16,7 +16,7 @@
 ##### POST /v1/watchedAddresses
 
 **Request body**
-```json
+```
 {
   "address": <string: address>,
   "callback": <string: url>
@@ -24,7 +24,7 @@
 ```
 
 **Response body - 200 - OK**
-```json
+```
 {
   "id": <int>,
   "address": <string: address>,
@@ -37,14 +37,14 @@
 ```
 
 **Response body - 503 - Resource temporarily unavailable**
-```json
+```
 {
   "reason": <string: reason>
 }
 ```
 
 **Response body - 403 - Forbidden**
-```json
+```
 {
 }
 ```
@@ -52,7 +52,7 @@
 ##### GET /v1/watchedAddresses
 
 **Response body - 200 - OK**
-```json
+```
 [
   {
     "id": <int>,
@@ -66,14 +66,14 @@
 ```
 
 **Response body - 503 - Resource temporarily unavailable**
-```json
+```
 {
   "reason": <string: reason>
 }
 ```
 
 **Response body - 403 - Forbidden**
-```json
+```
 {
 }
 ```
@@ -81,7 +81,7 @@
 ##### GET /v1/watchedAddresses/<address>
 
 **Response body - 200 - OK**
-```json
+```
 {
   "id": <int>,
   "address": <string: address>,
@@ -92,20 +92,20 @@
 ```
 
 **Response body - 503 - Resource temporarily unavailable**
-```json
+```
 {
   "reason": <string: reason>
 }
 ```
 
 **Response body - 403 - Forbidden**
-```json
+```
 {
 }
 ```
 
 **Response body - 404 - Not found**
-```json
+```
 {
 }
 ```
@@ -114,7 +114,7 @@
 ##### DELETE /v1/watchedAddresses/<address>
 
 **Response body - 200 - OK**
-```json
+```
 {
   "address": "<address>",
   "imported": <bool>,
@@ -124,20 +124,20 @@
 ```
 
 **Response body - 503 - Resource temporarily unavailable**
-```json
+```
 {
   "reason": <string: reason>
 }
 ```
 
 **Response body - 403 - Forbidden**
-```json
+```
 {
 }
 ```
 
 **Response body - 404 - Not found**
-```json
+```
 {
 }
 ```
@@ -145,7 +145,7 @@
 ##### Asynchronous callbacks
 
 **Request body**
-```json
+```
 {
   "id": <int> ,
   "address": <string: address>,
@@ -165,13 +165,13 @@
 ```
 
 **Response body - 200 - OK**
-```json
+```
 {
 }
 ```
 
 **Response body - 503 - Resource temporarily unavailable**
-```json
+```
 {
   "reason": <string: reason>
 }
