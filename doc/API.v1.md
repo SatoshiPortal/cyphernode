@@ -78,7 +78,7 @@ Response body - 403 - Forbidden
 }
 ```
 
-##### GET /v1/watchedAddresses/<address>
+##### GET /v1/watchedAddresses/\<address\>
 
 Response body - 200 - OK
 ```
@@ -111,7 +111,7 @@ Response body - 404 - Not found
 ```
 
 
-##### DELETE /v1/watchedAddresses/<address>
+##### DELETE /v1/watchedAddresses/\<address\>
 
 Response body - 200 - OK
 ```
