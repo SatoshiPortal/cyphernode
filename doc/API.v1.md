@@ -15,7 +15,7 @@
 
 ##### POST /v1/watchedAddresses
 
-**Request body**
+Request body
 ```
 {
   "address": <string: address>,
@@ -23,7 +23,7 @@
 }
 ```
 
-**Response body - 200 - OK**
+Response body - 200 - OK
 ```
 {
   "id": <int>,
@@ -36,14 +36,14 @@
 }
 ```
 
-**Response body - 503 - Resource temporarily unavailable**
+Response body - 503 - Resource temporarily unavailable
 ```
 {
   "reason": <string: reason>
 }
 ```
 
-**Response body - 403 - Forbidden**
+Response body - 403 - Forbidden
 ```
 {
 }
@@ -51,7 +51,7 @@
 
 ##### GET /v1/watchedAddresses
 
-**Response body - 200 - OK**
+Response body - 200 - OK
 ```
 [
   {
@@ -65,14 +65,14 @@
 ]
 ```
 
-**Response body - 503 - Resource temporarily unavailable**
+Response body - 503 - Resource temporarily unavailable
 ```
 {
   "reason": <string: reason>
 }
 ```
 
-**Response body - 403 - Forbidden**
+Response body - 403 - Forbidden
 ```
 {
 }
@@ -80,7 +80,7 @@
 
 ##### GET /v1/watchedAddresses/<address>
 
-**Response body - 200 - OK**
+Response body - 200 - OK
 ```
 {
   "id": <int>,
@@ -91,20 +91,20 @@
 }
 ```
 
-**Response body - 503 - Resource temporarily unavailable**
+Response body - 503 - Resource temporarily unavailable
 ```
 {
   "reason": <string: reason>
 }
 ```
 
-**Response body - 403 - Forbidden**
+Response body - 403 - Forbidden
 ```
 {
 }
 ```
 
-**Response body - 404 - Not found**
+Response body - 404 - Not found
 ```
 {
 }
@@ -113,7 +113,7 @@
 
 ##### DELETE /v1/watchedAddresses/<address>
 
-**Response body - 200 - OK**
+Response body - 200 - OK
 ```
 {
   "address": "<address>",
@@ -123,20 +123,20 @@
 }
 ```
 
-**Response body - 503 - Resource temporarily unavailable**
+Response body - 503 - Resource temporarily unavailable
 ```
 {
   "reason": <string: reason>
 }
 ```
 
-**Response body - 403 - Forbidden**
+Response body - 403 - Forbidden
 ```
 {
 }
 ```
 
-**Response body - 404 - Not found**
+Response body - 404 - Not found
 ```
 {
 }
@@ -144,7 +144,7 @@
 
 ##### Asynchronous callbacks
 
-**Request body**
+Request body
 ```
 {
   "id": <int> ,
@@ -164,13 +164,13 @@
 }
 ```
 
-**Response body - 200 - OK**
+Response body - 200 - OK
 ```
 {
 }
 ```
 
-**Response body - 503 - Resource temporarily unavailable**
+Response body - 503 - Resource temporarily unavailable
 ```
 {
   "reason": <string: reason>
