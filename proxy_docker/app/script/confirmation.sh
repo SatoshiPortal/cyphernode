@@ -163,6 +163,7 @@ confirmation() {
 
   ########################################################################################################
   # Let's now grow the watch window in the case of a xpub watcher...
+  trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
   for row in ${rows}
   do
