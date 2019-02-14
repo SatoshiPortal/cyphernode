@@ -144,7 +144,7 @@ watchpub32() {
 
     if [ "${returncode}" -eq 0 ]; then
       # Importmulti in Bitcoin Core...
-      result=$(importmulti_rpc "${pub32}" "${addresses}")
+      result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" "${pub32}" "${addresses}")
       returncode=$?
       trace_rc ${returncode}
       trace "[watchpub32] result=${result}"
@@ -276,10 +276,13 @@ extend_watchers() {
     # We want to keep our gap between last tx and last n watched...
     # For example, if the last imported n is 155 and we just got a tx with pub32 index of 66,
     # we want to extend the watched addresses to 166 if our gap is 100 (default).
+    trace "[extend_watchers] We have addresses to add to watchers!"
 
     watchpub32 ${label} ${pub32} ${derivation_path} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} ${upgrade_to_n} > /dev/null
     returncode=$?
     trace_rc ${returncode}
+  else
+    trace "[extend_watchers] Nothing to add!"
   fi
 
   return ${returncode}
