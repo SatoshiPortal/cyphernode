@@ -38,11 +38,11 @@ paths:
       tags:
         - "watching addresses"
         - "core features"
-      summary: "Add a new address to ne watched"
-      description: "Inserts the address and callbacks in the DB and imports the address to the Watching wallet."
+      summary: "Add a new Bitcoin address to be watched"
+      description: "Inserts the Bitcoin address and callbacks in the DB and imports the address to the Watching wallet."
       operationId: "addWatchedAddress"
       requestBody:
-        description: "Address that needs to be watched"
+        description: "Bitcoin address that needs to be watched"
         required: true
         content:
           application/json:
@@ -68,10 +68,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchedAddress'
+        400:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
         401:
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        405:
-          $ref: '#/components/schemas/ApiResponseInvalidInput'
         503:
           description: "Resource temporarily unavailable"
           content:
@@ -83,8 +83,8 @@ paths:
       tags:
         - "watching addresses"
         - "core features"
-      summary: "Get list of watched addresses"
-      description: "Returns the list of currently watched addresses and callback information."
+      summary: "Get list of watched Bitcoin addresses"
+      description: "Returns the list of currently watched Bitcoin addresses and callback information."
       operationId: "listWatchedAddress"
       responses:
         200:
@@ -120,8 +120,8 @@ paths:
       tags:
         - "watching addresses"
         - "core features"
-      summary: "Delete watched address"
-      description: "Updates the watched address row in DB so that callbacks won't be called on tx confirmations for that address."
+      summary: "Stop watching a Bitcoin address"
+      description: "Updates the watched Bitcoin address row in DB so that callbacks won't be called on tx confirmations for that address."
       operationId: "deleteWatchedAddress"
       responses:
         200:
@@ -190,7 +190,7 @@ paths:
         - "block"
         - "core features"
       summary: "Show block info"
-      description: ""
+      description: "Returns detailed block information."
       operationId: "getBlockInfo"
       responses:
         200:
@@ -222,7 +222,7 @@ paths:
         - "block"
         - "core features"
       summary: "Get the best block info"
-      description: ""
+      description: "Returns detailed block information for current best block."
       operationId: "getBestBlockInfo"
       responses:
         200:
@@ -258,8 +258,8 @@ paths:
       tags:
         - "transaction"
         - "core features"
-      summary: "Show block info"
-      description: ""
+      summary: "Get transaction info"
+      description: "Returns detailed transaction information."
       operationId: "getTransactionInfo"
       responses:
         200:
@@ -291,7 +291,7 @@ paths:
         - "spending wallet"
         - "core features"
       summary: "Get the spending wallet balance"
-      description: ""
+      description: "Returns the spending wallet balance, in BTC."
       operationId: "getSpendingWalletBalance"
       responses:
         200:
@@ -316,8 +316,8 @@ paths:
       tags:
         - "spending wallet"
         - "core features"
-      summary: "Generates new address on the spending wallet"
-      description: "Generates new address on the spending wallet. Used to refill the spending wallet from cold wallet (ie Trezor)."
+      summary: "Generates a new address on the spending wallet"
+      description: "Generates a new address on the spending wallet. Useful to refill the spending wallet from cold wallet (ie Trezor)."
       operationId: "getSpendingWalletNewAddress"
       responses:
         200:
@@ -426,8 +426,8 @@ paths:
       tags:
         - "spending wallet"
         - "core features"
-      summary: "Spend some amount to some address"
-      description: "Calls sendtoaddress RPC on the spending wallet with supplied info."
+      summary: "Spend previously amounts/addresses added with addtobatch"
+      description: "Creates a batched transaction whose outputs are the previously unspent addtobatch calls."
       operationId: "batchSpend"
       responses:
         200:
@@ -444,10 +444,10 @@ paths:
                     type: "string"
                   hash:
                     $ref: '#/components/schemas/TypeHashString'
+        400:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
         401:
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        405:
-          $ref: '#/components/schemas/ApiResponseInvalidInput'
         503:
           description: "Resource temporarily unavailable"
           content:
@@ -466,8 +466,8 @@ paths:
       tags:
         - "addresses"
         - "core features"
-      summary: "Derive address from configured xpub key and derivation path"
-      description: "Derives addresses for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
+      summary: "Derive address(es) using configured xpub key and derivation path"
+      description: "Derives address(es) for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
       operationId: "deriveIndex"
       responses:
         200:
@@ -499,8 +499,8 @@ paths:
       tags:
         - "addresses"
         - "core features"
-      summary: "Derive and address from a xpub key and a derivation path"
-      description: "Derives addresses for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used."
+      summary: "Derive address(es) using supplied xpub key and derivation path"
+      description: "Derives address(es) for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used."
       operationId: "derivePubPath"
       requestBody:
         required: true
@@ -513,8 +513,10 @@ paths:
                 - "path"
               properties:
                 pub32:
+                  description: "xpub/ypub/zpub/tpub/upub/vpub used to derive address(es)"
                   type: "string"
                 path:
+                  description: "Derivation path including the index, in the form n or n-m (ex.: 0/44'/86 or 0/44'/62-77)"
                   type: "string"
       responses:
         200:
@@ -533,10 +535,10 @@ paths:
                       properties:
                         address:
                           $ref: '#/components/schemas/TypeAddressString'
+        400:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
         401:
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        405:
-          $ref: '#/components/schemas/ApiResponseInvalidInput'
         503:
           description: "Resource temporarily unavailable"
           content:
@@ -549,7 +551,7 @@ paths:
         - "lightning"
         - "optional features"
       summary: "Get lightning node info"
-      description: "Calls getinfo from lightningd.Useful to let your users know where to connect to."
+      description: "Calls getinfo from lightningd. Useful to let your users know where to connect to."
       operationId: "lightningGetNodeInfo"
       responses:
         200:
@@ -585,7 +587,7 @@ paths:
         - "lightning"
         - "optional features"
       summary: "Create lightning invoice"
-      description: "Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment. Expiry is in seconds."
+      description: "Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds."
       operationId: "lightningCreateInvoice"
       requestBody:
         description: "Information to create invoice"
@@ -598,6 +600,7 @@ paths:
                 - "msatoshi"
                 - "label"
                 - "description"
+                - "expiry"
               properties:
                 msatoshi:
                   type: "integer"
@@ -605,6 +608,8 @@ paths:
                   type: "string"
                 description:
                   type: "string"
+                expiry:
+                  type: "integer"
       responses:
         200:
           description: "successful operation"
