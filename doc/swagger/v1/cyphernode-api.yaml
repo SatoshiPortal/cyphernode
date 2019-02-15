@@ -250,6 +250,9 @@ components:
           type: "number"
         estimatesmartfee144blocks:
           type: "number"
+        watching_since:
+          type: "string"
+          format: "date-time"
     Block:
       type: "object"
       required:
