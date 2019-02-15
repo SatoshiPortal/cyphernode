@@ -1,0 +1,120 @@
+openapi: 3.0.0
+info:
+  description: "Cyphernode application callbacks v0"
+  version: "0.1.0"
+  title: "Cyphernode application callbacks"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
+servers:
+  - url: /
+    description: authoring
+  - url: http://localhost:8888/
+    description: local cyphernode
+security:
+  - BearerAuth: []
+tags:
+  - name: "cyphernode callbacks"
+    description: "Everything bitcoin"
+    externalDocs:
+      description: "Find out more"
+      url: "http://cyphernode.io"
+  - name: "openapi generator"
+    externalDocs:
+      description: "Find out more"
+      url: "https://github.com/OpenAPITools/openapi-generator"
+paths:
+  /0conf:
+    post:
+      summary: ""
+      description: ""
+      operationId: "notifyUnconfirmed"
+      requestBody:
+        description: ""
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfRequest'
+      responses:
+        201:
+          description: "successfully created"
+        405:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /xconf:
+    post:
+      summary: ""
+      description: ""
+      operationId: "notifyConfirmed"
+      requestBody:
+        description: ""
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfRequest'
+      responses:
+        201:
+          description: "successfully created"
+        405:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+components:
+  schemas:
+    ConfRequest:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        address:
+          $ref: '#/components/schemas/TypeAddressString'
+        hash:
+          $ref: '#/components/schemas/TypeHashString'
+        vout_n:
+          type: "integer"
+        sent_amount:
+          type: "number"
+        confirmations:
+          type: "integer"
+        received:
+          type: "string"
+        size:
+          type: "integer"
+        vsize:
+          type: "integer"
+        fees:
+          type: "number"
+        is_replaceable:
+          type: "integer"
+        blockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        blocktime:
+          type: "integer"
+        blockheight:
+          type: "integer"
+    TypeAddressString:
+      description: "base58 check encoded address"
+      type: "string"
+      pattern: "^[a-km-zA-HJ-NP-Z1-9]{26,35}$"
+    TypeHashString:
+      description: "64 character hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]{64}$"
+    ApiResponseTemporarilyUnavailable:
+      type: "object"
+      properties:
+        reason:
+          type: "string"
+    ApiResponseInvalidInput:
+      description: Invalid Input
