@@ -1,0 +1,84 @@
+openapi: 3.0.0
+info:
+  description: "Cyphernode internal API v0"
+  version: "0.1.0"
+  title: "Cyphernode internal API"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
+servers:
+  - url: /
+    description: authoring
+  - url: http://localhost:8888/
+    description: local cyphernode
+security:
+  - BearerAuth: []
+tags:
+  - name: "cyphernode"
+    description: "Everything bitcoin"
+    externalDocs:
+      description: "Find out more"
+      url: "http://cyphernode.io"
+  - name: "openapi generator"
+    externalDocs:
+      description: "Find out more"
+      url: "https://github.com/OpenAPITools/openapi-generator"
+paths:
+  /executecallbacks:
+    get:
+      summary: "Try missed callbacks"
+      description: "Looks in DB for watched addresses, ask the watching Bitcoin node if those addresses got payments, if so it executes the callbacks that would be usually executed when 'conf' is called by the node.  This is useful if the watching node went down or there was a network glitch when a transaction on a watched address got confirmed."
+      operationId: "executeMissedCallbacks"
+      responses:
+        200:
+          description: "successful operation"
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /conf/{blockHash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "blockHash"
+          description: "Blockhash"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      summary: "Notify confirm"
+      description: "Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called."
+      operationId: "notifyConf"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "string"
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+components:
+  schemas:
+    TypeHashString:
+      description: "64 character hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]{64}$"
+    ApiResponseTemporarilyUnavailable:
+      type: "object"
+      properties:
+        reason:
+          type: "string"
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
