@@ -26,6 +26,7 @@ tags:
   - name: "watching addresses"
   - name: "block"
   - name: "transaction"
+  - name: "spending wallet"
   - name: "core features"
   - name: "lightning"
   - name: "open timestamps client"
@@ -276,6 +277,106 @@ paths:
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         404:
           $ref: '#/components/schemas/ApiResponseNotFound'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbalance:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Get the spending wallet balance"
+      description: ""
+      operationId: "getSpendingWalletBalance"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  balance:
+                    type: "number"
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getnewaddress:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Generates new address on the spending wallet"
+      description: "Generates new address on the spending wallet. Used to refill the spending wallet from cold wallet (ie Trezor)."
+      operationId: "getSpendingWalletNewAddress"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /spend:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Spend some amount to some address"
+      description: "Calls sendtoaddress RPC on the spending wallet with supplied info."
+      operationId: "spend"
+      requestBody:
+        description: "Address and amount"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "address"
+                - "amount"
+              properties:
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                amount:
+                  type: "number"
+      responses:
+        200:
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "status"
+                  - "hash"
+                properties:
+                  status:
+                    type: "string"
+                  hash:
+                    $ref: '#/components/schemas/TypeHashString'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        405:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
         503:
           description: "Resource temporarily unavailable"
           content:
