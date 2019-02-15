@@ -23,6 +23,7 @@ tags:
       url: "https://github.com/OpenAPITools/openapi-generator"
   - name: "watching addresses"
   - name: "block"
+  - name: "transaction"
   - name: "core features"
   - name: "lightning"
   - name: "open timestamps client"
@@ -252,7 +253,47 @@ paths:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
       security:
         - BearerAuth: []
-
+  /gettransaction/{transactionHash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "transactionHash"
+          description: "Transaction id"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      tags:
+        - "transaction"
+        - "core features"
+      summary: "Show block info"
+      description: ""
+      operationId: "getTransactionInfo"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Transaction'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        404:
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
 components:
   schemas:
     WatchedAddress:
@@ -340,6 +381,79 @@ components:
           $ref: '#/components/schemas/TypeHashString'
         nextblockhash:
           $ref: '#/components/schemas/TypeHashString'
+    Transaction:
+      type: "object"
+      properties:
+        txid:
+          $ref: '#/components/schemas/TypeHashString'
+        hash:
+          $ref: '#/components/schemas/TypeHashString'
+        version:
+          type: "integer"
+        size:
+          type: "integer"
+        vsize:
+          type: "integer"
+        locktime:
+          type: "integer"
+        vin:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/Input'
+        vout:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/Output'
+        hex:
+          $ref: '#/components/schemas/TypeHexString'
+        blockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        confirmations:
+          type: "integer"
+        time:
+          type: "integer"
+        blocktime:
+          type: "integer"
+    Input:
+      type: "object"
+      properties:
+        txid:
+          $ref: '#/components/schemas/TypeHashString'
+        vout:
+          type: "integer"
+        scriptSig:
+          type: "object"
+          properties:
+            asm:
+              type: "string"
+            hex:
+              $ref: '#/components/schemas/TypeHexString'
+    Output:
+      type: "object"
+      properties:
+        value:
+          type: "number"
+        n:
+          type: "integer"
+        scriptPubKey:
+          type: "object"
+          properties:
+            asm:
+              type: "string"
+            hex:
+              $ref: '#/components/schemas/TypeHexString'
+            reqSigs:
+              type: "integer"
+            type:
+              type: "string"
+            addresses:
+              type: "array"
+              items:
+                $ref: '#/components/schemas/TypeAddressString'
+    TypeHexString:
+      description: "variable length hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]+$"
     TypeAddressString:
       description: "base58 check encoded address"
       type: "string"
