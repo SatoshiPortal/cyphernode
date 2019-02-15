@@ -11,6 +11,8 @@ servers:
     description: authoring
   - url: http://localhost:8888/
     description: local cyphernode
+security:
+  - BearerAuth: []
 tags:
   - name: "cyphernode"
     description: "Everything bitcoin"
@@ -73,8 +75,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /getactivewatches:
     get:
       tags:
@@ -105,8 +105,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /unwatch/{address}:
     get:
       parameters:
@@ -144,8 +142,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /getbestblockhash:
     get:
       tags:
@@ -178,8 +174,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /getblockinfo/{blockHash}:
     get:
       parameters:
@@ -219,8 +213,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /getbestblockinfo:
     get:
       tags:
@@ -251,8 +243,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
   /gettransaction/{transactionHash}:
     get:
       parameters:
@@ -292,8 +282,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-      security:
-        - BearerAuth: []
 components:
   schemas:
     WatchedAddress:
