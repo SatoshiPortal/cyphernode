@@ -1,0 +1,329 @@
+openapi: 3.0.0
+info:
+  description: "Cyphernode API v1"
+  version: "1.0.0"
+  title: "Cyphernode API"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
+servers:
+  - url: /v1
+    description: authoring
+  - url: http://localhost:8888/v1
+    description: local cyphernode
+tags:
+  - name: "cyphernode"
+    description: "Everything bitcoin"
+    externalDocs:
+      description: "Find out more"
+      url: "http://cyphernode.io"
+  - name: "openapi generator"
+    externalDocs:
+      description: "Find out more"
+      url: "https://github.com/OpenAPITools/openapi-generator"
+  - name: "watchedAddress"
+    description: "Watch addresses"
+  - name: "block"
+    description: "Block information"
+paths:
+  /watchedAddress:
+    post:
+      tags:
+        - "watchedAddress"
+      summary: "Add a new address to ne watched"
+      description: "Inserts the address and callbacks in the DB and imports the address to the Watching wallet."
+      operationId: "addWatchedAddress"
+      requestBody:
+        description: "Address that needs to be watched"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WatchedAddress'
+      responses:
+        201:
+          description: "successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedAddress'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        405:
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+    get:
+      tags:
+        - "watchedAddress"
+      summary: "Get list of watched addresses"
+      description: "Returns the list of currently watched addresses and callback information."
+      operationId: "listWatchedAddress"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/WatchedAddress'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+  /watchedAddress/{address}:
+    get:
+      parameters:
+        - in: "path"
+          name: "address"
+          description: "Address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeAddressString'
+      tags:
+        - "watchedAddress"
+      summary: "Show watched address"
+      description: ""
+      operationId: "getWatchedAddress"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedAddress'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        404:
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+    delete:
+      parameters:
+        - in: "path"
+          name: "address"
+          description: "Address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeAddressString'
+      tags:
+        - "watchedAddress"
+      summary: "Delete watched address"
+      description: "Updates the watched address row in DB so that callbacks won't be called on tx confirmations for that address."
+      operationId: "deleteWatchedAddress"
+      responses:
+        200:
+          description: "successful operation"
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        404:
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+  /block/{blockHash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "blockHash"
+          description: "Blockhash"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      tags:
+        - "block"
+      summary: "Show block info"
+      description: ""
+      operationId: "getBlockInfo"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        404:
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+  /block/best:
+    get:
+      tags:
+        - "block"
+      summary: "Get the best block info"
+      description: ""
+      operationId: "getBestBlockInfo"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+  /block/bestHash:
+    get:
+      tags:
+        - "block"
+      summary: "Get the best block hash."
+      description: "Returns the best block hash of the watching Bitcoin node."
+      operationId: "getBestBlockHash"
+      responses:
+        200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeHashString'
+        401:
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        503:
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+      security:
+        - BearerAuth: []
+components:
+  schemas:
+    WatchedAddress:
+      type: "object"
+      required:
+        - "address"
+        - "callback"
+      properties:
+        id:
+          type: "integer"
+        address:
+          $ref: '#/components/schemas/TypeAddressString'
+        callback:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        estimatesmartfee2blocks:
+          type: "number"
+        estimatesmartfee6blocks:
+          type: "number"
+        estimatesmartfee36blocks:
+          type: "number"
+        estimatesmartfee144blocks:
+          type: "number"
+    Block:
+      type: "object"
+      required:
+        - "address"
+        - "callback"
+      properties:
+        id:
+          type: "integer"
+        hash:
+          $ref: '#/components/schemas/TypeHashString'
+        confirmations:
+          type: "integer"
+        strippedsize:
+          type: "integer"
+        size:
+          type: "integer"
+        weight:
+          type: "integer"
+        height:
+          type: "integer"
+        version:
+          type: "integer"
+        versionHex:
+          $ref: '#/components/schemas/TypeInt32HexString'
+        merkleroot:
+          $ref: '#/components/schemas/TypeHashString'
+        transactions:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/TypeHashString'
+        time:
+          type: "integer"
+        mediantime:
+          type: "integer"
+        nonce:
+          type: "integer"
+        bits:
+          $ref: '#/components/schemas/TypeInt32HexString'
+        difficulty:
+          type: 'integer'
+        chainwork:
+          $ref: '#/components/schemas/TypeHashString'
+
+        transactionCount:
+          type: 'integer'
+        previousblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        nextblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+    TypeAddressString:
+      description: "base58 check encoded address"
+      type: "string"
+      pattern: "^[a-km-zA-HJ-NP-Z1-9]{26,35}$"
+    TypeHashString:
+      description: "64 character hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]{64}$"
+    TypeInt32HexString:
+      description: "8 character hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]{8}$"
+    ApiResponseTemporarilyUnavailable:
+      type: "object"
+      properties:
+        reason:
+          type: "string"
+    ApiResponseNotAllowed:
+      description: Access token is missing or invalid
+    ApiResponseNotFound:
+      description: Not found
+    ApiResponseInvalidInput:
+      description: Invalid Input
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
