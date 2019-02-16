@@ -30,9 +30,9 @@ paths:
       description: "Looks in DB for watched addresses, ask the watching Bitcoin node if those addresses got payments, if so it executes the callbacks that would be usually executed when 'conf' is called by the node.  This is useful if the watching node went down or there was a network glitch when a transaction on a watched address got confirmed."
       operationId: "executeMissedCallbacks"
       responses:
-        200:
+        '200':
           description: "successful operation"
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -51,7 +51,7 @@ paths:
       description: "Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called."
       operationId: "notifyConf"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -60,7 +60,7 @@ paths:
                 properties:
                   result:
                     type: "string"
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
