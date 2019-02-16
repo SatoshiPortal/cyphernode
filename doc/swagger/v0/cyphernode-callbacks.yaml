@@ -11,8 +11,6 @@ servers:
     description: authoring
   - url: http://localhost:8888/
     description: local cyphernode
-security:
-  - BearerAuth: []
 tags:
   - name: "cyphernode callbacks"
     description: "Everything bitcoin"
@@ -37,11 +35,11 @@ paths:
             schema:
               $ref: '#/components/schemas/ConfRequest'
       responses:
-        201:
+        '201':
           description: "successfully created"
-        405:
+        '405':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -60,11 +58,11 @@ paths:
             schema:
               $ref: '#/components/schemas/ConfRequest'
       responses:
-        201:
+        '201':
           description: "successfully created"
-        405:
+        '405':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
