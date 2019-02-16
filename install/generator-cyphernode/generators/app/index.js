@@ -452,6 +452,7 @@ module.exports = class extends Generator {
       gatekeeper_cns: process.env['DEFAULT_CERT_HOSTNAME'] || '',
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
+      lightning_external_ip: '',
       lightning_datapath: '',
       lightning_nodename: name.generate(),
       lightning_nodecolor: '',
