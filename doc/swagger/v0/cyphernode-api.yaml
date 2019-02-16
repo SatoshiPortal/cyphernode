@@ -62,17 +62,17 @@ paths:
                   type: "string"
                   format: "url"
       responses:
-        200:
+        '200':
           description: "successfully created"
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WatchedAddress'
-        400:
+        '400':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -87,7 +87,7 @@ paths:
       description: "Returns the list of currently watched Bitcoin addresses and callback information."
       operationId: "listWatchedAddress"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -100,9 +100,9 @@ paths:
                     type: "array"
                     items:
                       $ref: '#/components/schemas/WatchedAddress'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -124,10 +124,10 @@ paths:
       description: "Updates the watched Bitcoin address row in DB so that callbacks won't be called on tx confirmations for that address."
       operationId: "deleteWatchedAddress"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
-            application:json:
+            application/json:
               schema:
                 type: "object"
                 properties:
@@ -135,11 +135,11 @@ paths:
                     type: "string"
                   address:
                     $ref: '#/components/schemas/TypeAddressString'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        404:
+        '404':
           $ref: '#/components/schemas/ApiResponseNotFound'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -154,7 +154,7 @@ paths:
       description: "Returns the best block hash of the watching Bitcoin node."
       operationId: "getBestBlockHash"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -169,9 +169,9 @@ paths:
                     type: "string"
                   id:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -193,7 +193,7 @@ paths:
       description: "Returns detailed block information."
       operationId: "getBlockInfo"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -206,11 +206,11 @@ paths:
                     type: "string"
                   id:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        404:
+        '404':
           $ref: '#/components/schemas/ApiResponseNotFound'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -225,7 +225,7 @@ paths:
       description: "Returns detailed block information for current best block."
       operationId: "getBestBlockInfo"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -238,9 +238,9 @@ paths:
                     type: "string"
                   id:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -262,7 +262,7 @@ paths:
       description: "Returns detailed transaction information."
       operationId: "getTransactionInfo"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -275,11 +275,11 @@ paths:
                     type: "string"
                   id:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        404:
+        '404':
           $ref: '#/components/schemas/ApiResponseNotFound'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -294,7 +294,7 @@ paths:
       description: "Returns the spending wallet balance, in BTC."
       operationId: "getSpendingWalletBalance"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -303,9 +303,9 @@ paths:
                 properties:
                   balance:
                     type: "number"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -320,7 +320,7 @@ paths:
       description: "Generates a new address on the spending wallet. Useful to refill the spending wallet from cold wallet (ie Trezor)."
       operationId: "getSpendingWalletNewAddress"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -329,9 +329,9 @@ paths:
                 properties:
                   address:
                     $ref: '#/components/schemas/TypeAddressString'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -361,7 +361,7 @@ paths:
                 amount:
                   type: "number"
       responses:
-        200:
+        '200':
           description: "operation successful"
           content:
             application/json:
@@ -375,11 +375,11 @@ paths:
                     type: "string"
                   hash:
                     $ref: '#/components/schemas/TypeHashString'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        405:
+        '405':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -409,13 +409,13 @@ paths:
                 amount:
                   type: "number"
       responses:
-        200:
+        '200':
           description: "operation successful"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        405:
+        '405':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -430,7 +430,7 @@ paths:
       description: "Creates a batched transaction whose outputs are the previously unspent addtobatch calls."
       operationId: "batchSpend"
       responses:
-        200:
+        '200':
           description: "operation successful"
           content:
             application/json:
@@ -444,11 +444,11 @@ paths:
                     type: "string"
                   hash:
                     $ref: '#/components/schemas/TypeHashString'
-        400:
+        '400':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -470,10 +470,10 @@ paths:
       description: "Derives address(es) for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
       operationId: "deriveIndex"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
-            application:json:
+            application/json:
               schema:
                 type: "object"
                 properties:
@@ -486,9 +486,9 @@ paths:
                       properties:
                         address:
                           $ref: '#/components/schemas/TypeAddressString'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -519,10 +519,10 @@ paths:
                   description: "Derivation path including the index, in the form n or n-m (ex.: 0/44'/86 or 0/44'/62-77)"
                   type: "string"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
-            application:json:
+            application/json:
               schema:
                 type: "object"
                 properties:
@@ -535,11 +535,11 @@ paths:
                       properties:
                         address:
                           $ref: '#/components/schemas/TypeAddressString'
-        400:
+        '400':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -554,7 +554,7 @@ paths:
       description: "Calls getinfo from lightningd. Useful to let your users know where to connect to."
       operationId: "lightningGetNodeInfo"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -573,9 +573,9 @@ paths:
                     type: "integer"
                   network:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -611,7 +611,7 @@ paths:
                 expiry:
                   type: "integer"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -624,9 +624,9 @@ paths:
                     type: "integer"
                   bolt11:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -659,7 +659,7 @@ paths:
                 expected_description:
                   type: "string"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -704,9 +704,9 @@ paths:
                     items:
                       type: "object"
 
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
@@ -721,7 +721,7 @@ paths:
       description: "Returns a Bitcoin bech32 address to fund your LN wallet."
       operationId: "lightningGetNewAddress"
       responses:
-        200:
+        '200':
           description: "successful operation"
           content:
             application/json:
@@ -730,9 +730,9 @@ paths:
                 properties:
                   address:
                     type: "string"
-        401:
+        '401':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
-        503:
+        '503':
           description: "Resource temporarily unavailable"
           content:
             application/json:
