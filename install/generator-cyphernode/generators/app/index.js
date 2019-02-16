@@ -388,7 +388,7 @@ module.exports = class extends Generator {
   /* some utils */
 
   _resolveConfigConflicts() {
-    if( this.props.features.indexOf('lightning') !== -1 ) {
+    if( this.props.features && this.props.features.length && this.props.features.indexOf('lightning') !== -1 ) {
       this.props.bitcoin_prune = false;
       delete this.props.bitcoin_prune_size;
     }
