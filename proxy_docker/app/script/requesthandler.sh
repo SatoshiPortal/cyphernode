@@ -96,6 +96,20 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        getactivewatchesbyxpub)
+          # GET http://192.168.111.152:8080/getactivewatchesbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+
+          response=$(getactivewatchesbyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getactivewatchesbylabel)
+          # GET http://192.168.111.152:8080/getactivewatchesbylabel/4421
+
+          response=$(getactivewatchesbylabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getactivewatches)
           # curl (GET) 192.168.111.152:8080/getactivewatches
 
