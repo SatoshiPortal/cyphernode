@@ -133,7 +133,7 @@ watchpub32() {
   addresses=$(derivepubpath "{\"pub32\":\"${pub32}\",\"path\":\"${subspath}\"}")
   returncode=$?
   trace_rc ${returncode}
-  trace "[watchpub32] addresses=${addresses}"
+#  trace "[watchpub32] addresses=${addresses}"
 
   if [ "${returncode}" -eq 0 ]; then
 #    result=$(create_wallet "${pub32}")
@@ -233,7 +233,7 @@ insert_watches() {
     fi
     inserted_values="${inserted_values})"
   done
-  trace "[insert_watches] inserted_values=${inserted_values}"
+#  trace "[insert_watches] inserted_values=${inserted_values}"
 
   sql "INSERT OR IGNORE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
   returncode=$?
