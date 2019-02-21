@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "sparkwallet" "bitcoin" "docker-compose.yaml" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -445,7 +445,7 @@ install_docker() {
         if [[ $archpath == "rpi" ]]; then
           dockerfile="Dockerfile-alpine"
         fi
-        if [ ! -d $LIGHTNING_DATAPATH ]; then
+        if [ ! -d $LIGHTNING_DATAPATH/sparkwallet ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
           sudo_if_required mkdir -p $LIGHTNING_DATAPATH/sparkwallet
           next
