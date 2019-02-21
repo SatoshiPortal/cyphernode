@@ -17,6 +17,7 @@ services:
       - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/status/installation.json"
       - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/status/client.7z"
       - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/status/config.7z"
+      - "<%= gatekeeper_datapath %>/nginx-spark-conf:/etc/nginx/conf.d/nginx-spark-conf"
     command: $USER
 
 #    deploy:
@@ -117,6 +118,16 @@ services:
     networks:
       - cyphernodenet
     restart: always
+
+  sparkwallet:
+    command: --login "cyphernode:sparkwallet" --no-tls
+    image: shesek/spark-wallet:standalone
+    volumes:
+      - "<%= lightning_datapath %>:/etc/lightning"
+      - "<%= lightning_datapath %>/sparkwallet:/data"
+    networks:
+      - cyphernodenet
+    restart: always
 <% } %>
 <% if ( features.indexOf('otsclient') !== -1 ) { %>
   otsclient:
@@ -145,18 +156,6 @@ services:
 <% } %>
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
-    networks:
-      - cyphernodenet
-    restart: always
-<% } %>
-
-<% if ( features.indexOf('sparkwallet') !== -1 ) { %>
-  sparkwallet:
-    command: --login "cyphernode:sparkwallet" --no-tls
-    image: shesek/spark-wallet:standalone
-    volumes:
-      - "<%= lightning_datapath %>:/etc/lightning"
-      - "<%= sparkwallet_datapath %>:/data"
     networks:
       - cyphernodenet
     restart: always
