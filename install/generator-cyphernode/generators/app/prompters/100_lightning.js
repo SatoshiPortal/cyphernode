@@ -17,7 +17,7 @@ const featureCondition = function(props) {
 
 const templates = {
   'lnd': [ path.join('lnd','lnd.conf') ],
-  'c-lightning': [ path.join('c-lightning','config'), path.join('c-lightning','bitcoin.conf') ]
+  'c-lightning': [ path.join('c-lightning','config'), path.join('c-lightning','bitcoin.conf'), path.join('c-lightning','nginx-spark-conf') ]
 };
 
 module.exports = {

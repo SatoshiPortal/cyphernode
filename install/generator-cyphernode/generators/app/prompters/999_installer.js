@@ -183,44 +183,6 @@ module.exports = {
       message: prefix()+'Custom path for your lightning node data?'+utils._getHelp('lightning_datapath_custom'),
     },
     {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('sparkwallet') !== -1 },
-      type: 'list',
-      name: 'sparkwallet_datapath',
-      default: utils._getDefault( 'sparkwallet_datapath' ),
-      choices: [
-        {
-          name: utils.setupDir+"/cyphernode/sparkwallet",
-          value: utils.setupDir+"/cyphernode/sparkwallet"
-        },
-        {
-          name: utils.defaultDataDirBase+"/cyphernode/sparkwallet",
-          value: utils.defaultDataDirBase+"/cyphernode/sparkwallet"
-        },
-        {
-          name: utils.defaultDataDirBase+"/.cyphernode/sparkwallet",
-          value: utils.defaultDataDirBase+"/.cyphernode/sparkwallet"
-        },
-        {
-          name: utils.defaultDataDirBase+"/sparkwallet",
-          value: utils.defaultDataDirBase+"/sparkwallet"
-        },
-        {
-          name: "Custom path",
-          value: "_custom"
-        }
-      ],
-      message: prefix()+'Where do you want to store your sparkwallet data?'+utils._getHelp('sparkwallet_datapath'),
-    },
-    {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('sparkwallet') !== -1 && props.sparkwallet_datapath === '_custom'},
-      type: 'input',
-      name: 'sparkwallet_datapath_custom',
-      default: utils._getDefault( 'sparkwallet_datapath_custom' ),
-      filter: utils._trimFilter,
-      validate: utils._pathValidator,
-      message: prefix()+'Custom path for your sparkwallet data?'+utils._getHelp('sparkwallet_datapath_custom'),
-    },
-    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
       type: 'list',
       name: 'otsclient_datapath',

@@ -1,0 +1,18 @@
+<% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
+location /sparkwallet/ {
+  auth_basic "sparkwallet";
+  auth_basic_user_file conf.d/status/htpasswd;
+
+  proxy_set_header  Host $host;
+  proxy_set_header  Referer $http_referer;
+  proxy_set_header  X-Real-IP $remote_addr;
+  proxy_set_header  X-Forwarded-Proto $scheme;
+  proxy_set_header  X-Forwarded-For $remote_addr;
+  proxy_set_header  X-Forwarded-Host $host;
+
+  # Hardcoding sparkwallet password, it's only accessible from here anyway using htpasswd above
+  proxy_set_header Authorization "Basic Y3lwaGVybm9kZTpzcGFya3dhbGxldA==";
+
+  proxy_pass http://sparkwallet:9737/;
+}
+<% } %>
