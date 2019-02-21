@@ -10,7 +10,6 @@ RUN_AS_USER=<%= run_as_different_user?username:'' %>
 CLEANUP=<%= installer_cleanup?'true':'false' %>
 <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
 LIGHTNING_DATAPATH=<%= lightning_datapath %>
-SPARKWALLET_DATAPATH=<%= lightning_datapath %>/sparkwallet
 <% } %>
 <% if ( features.indexOf('otsclient') !== -1 ) { %>
 OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
