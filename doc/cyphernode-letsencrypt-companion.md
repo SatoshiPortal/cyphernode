@@ -23,7 +23,7 @@ vi install/generator-cyphernode/generators/app/templates/installer/docker/docker
       - "VIRTUAL_PORT=443"
       - "LETSENCRYPT_HOST=cyphernode.yourdomain.com"
       - "LETSENCRYPT_EMAIL=you@yourdomain.com"
-      ```
+```
 
 ```
 ./build.sh
