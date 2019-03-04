@@ -11,12 +11,10 @@ CREATE TABLE watching_by_pub32 (
   watching INTEGER DEFAULT FALSE,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_watching_by_pub32_pub32 ON watching_by_pub32 (pub32);
-CREATE INDEX idx_watching_by_pub32_label ON watching_by_pub32 (label);
 
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  address TEXT,
+  address TEXT UNIQUE,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,
@@ -27,7 +25,6 @@ CREATE TABLE watching (
   pub32_index INTEGER,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_watching_address ON watching (address);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
@@ -79,7 +76,6 @@ CREATE TABLE stamp (
   calledback INTEGER DEFAULT FALSE,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_stamp_hash ON stamp (hash);
 CREATE INDEX idx_stamp_calledback ON stamp (calledback);
 
 CREATE TABLE cyphernode_props (
