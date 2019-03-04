@@ -32,7 +32,7 @@ unwatchpub32request() {
 	local returncode
 	trace "[unwatchpub32request] Unwatch pub32 ${pub32}"
 
-  id=$(sql "SELECT id FROM watching WHERE pub32='${pub32}'")
+  id=$(sql "SELECT id FROM watching_by_pub32 WHERE pub32='${pub32}'")
   trace "[unwatchpub32request] id: ${id}"
 
 	sql "UPDATE watching_by_pub32 SET watching=0 WHERE id=${id}"
