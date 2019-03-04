@@ -254,7 +254,7 @@ extend_watchers() {
 
   local last_imported_n
   local row
-  row=$(sql "SELECT pub32, label, derivation_path, callback0conf, callback1conf, last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id}")
+  row=$(sql "SELECT pub32, label, derivation_path, callback0conf, callback1conf, last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
   returncode=$?
   trace_rc ${returncode}
 

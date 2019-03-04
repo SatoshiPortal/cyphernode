@@ -96,6 +96,20 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        unwatchxpubbyxpub)
+          # GET http://192.168.111.152:8080/unwatchxpubbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+
+          response=$(unwatchpub32request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unwatchxpubbylabel)
+          # GET http://192.168.111.152:8080/unwatchxpubbylabel/4421
+
+          response=$(unwatchpub32labelrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getactivewatchesbyxpub)
           # GET http://192.168.111.152:8080/getactivewatchesbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
 
