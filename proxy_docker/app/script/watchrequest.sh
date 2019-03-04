@@ -29,7 +29,7 @@ watchrequest() {
     imported=0
   fi
 
-  sql "INSERT OR IGNORE INTO watching (address, watching, callback0conf, callback1conf, imported) VALUES (\"${address}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${imported})"
+  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported) VALUES (\"${address}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${imported})"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
@@ -114,8 +114,11 @@ watchpub32() {
   trace "[watchpub32] cb0conf_url=${cb0conf_url}"
   local cb1conf_url=${6}
   trace "[watchpub32] cb1conf_url=${cb1conf_url}"
+
+  # upto_n is used when extending the watching window
   local upto_n=${7}
   trace "[watchpub32] upto_n=${upto_n}"
+
   local id_inserted
   local result
   local error_msg
@@ -151,11 +154,11 @@ watchpub32() {
 
       if [ "${returncode}" -eq 0 ]; then
         if [ -n "${upto_n}" ]; then
-          # Update existing row
+          # Update existing row, we are extending the watching window
           sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=\"${pub32}\""
         else
           # Insert in our DB...
-          sql "INSERT OR IGNORE INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${last_n})"
+          sql "INSERT OR REPLACE INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${last_n})"
         fi
         returncode=$?
         trace_rc ${returncode}
@@ -235,7 +238,7 @@ insert_watches() {
   done
 #  trace "[insert_watches] inserted_values=${inserted_values}"
 
-  sql "INSERT OR IGNORE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
+  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
   returncode=$?
   trace_rc ${returncode}
 
