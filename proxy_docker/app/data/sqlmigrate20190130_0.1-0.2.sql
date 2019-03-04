@@ -11,8 +11,11 @@ CREATE TABLE watching_by_pub32 (
   watching INTEGER DEFAULT FALSE,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_watching_by_pub32_pub32 ON watching_by_pub32 (pub32);
-CREATE INDEX idx_watching_by_pub32_label ON watching_by_pub32 (label);
+
+-- for all duplicate addresses, we only keep the last one inserted
+DELETE FROM watching WHERE id NOT IN (SELECT MAX(id) FROM watching GROUP BY address);
+DROP INDEX idx_watching_address;
+CREATE UNIQUE INDEX idx_watching_address ON watching(address);
 
 ALTER TABLE watching ADD COLUMN watching_by_pub32_id INTEGER REFERENCES watching_by_pub32;
 ALTER TABLE watching ADD COLUMN pub32_index INTEGER;
