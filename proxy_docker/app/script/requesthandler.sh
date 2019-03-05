@@ -124,6 +124,13 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        getactivexpubwatches)
+          # GET http://192.168.111.152:8080/getactivexpubwatches
+
+          response=$(getactivexpubwatches)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getactivewatches)
           # curl (GET) 192.168.111.152:8080/getactivewatches
 

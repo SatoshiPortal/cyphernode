@@ -71,6 +71,145 @@ Proxy response:
 }
 ```
 
+### Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by application)
+
+Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
+
+```http
+POST http://cyphernode:8888/watchxpub
+with body...
+{"label":"4421","pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq","path":"0/1/n","nstart":109,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+```
+
+Proxy response:
+
+```json
+{
+  "id":"5",
+    "event":"watchxpub",
+    "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq",
+    "label":"2219",
+    "path":"0/1/n",
+    "nstart":"109",
+    "unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf",
+    "confirmedCallbackURL":"192.168.111.233:1111/callback1conf"
+}
+```
+
+### Un-watch a previously watched Bitcoin xpub by providing the xpub (called by application)
+
+Updates the watched address rows in DB so that callbacks won't be called on tx confirmations for the provided xpub and related addresses.
+
+```http
+GET http://cyphernode:8888/unwatchxpubbyxpub/upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq
+```
+
+Proxy response:
+
+```json
+{
+  "event":"unwatchxpubbyxpub",
+  "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq"
+}
+```
+
+### Un-watch a previously watched Bitcoin xpub by providing the label (called by application)
+
+Updates the watched address rows in DB so that callbacks won't be called on tx confirmations for the provided xpub and related addresses.
+
+```http
+GET http://cyphernode:8888/unwatchxpubbylabel/4421
+```
+
+Proxy response:
+
+```json
+{
+  "event":"unwatchxpubbylabel",
+  "label":"4421"
+}
+```
+
+### Get a list of Bitcoin xpub being watched (called by application)
+
+Returns the list of currently watched xpub and callback information.
+
+```http
+GET http://cyphernode:8888/getactivexpubwatches
+```
+
+Proxy response:
+
+```json
+{
+  "watches": [
+  {
+  "id":"291",
+  "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq",
+  "label":"2217",
+  "derivation_path":"1/3/n",
+  "last_imported_n":"121",
+  "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
+  "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
+  "watching_since":"2018-09-06 21:14:03"}
+  ]
+}
+```
+
+### Get a list of Bitcoin addresses being watched by provided xpub (called by application)
+
+Returns the list of currently watched addresses related to the provided xpub and callback information.
+
+```http
+GET http://cyphernode:8888/getactivewatchesbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+```
+
+Proxy response:
+
+```json
+
+{
+  "watches": [
+  {
+    "id":"291",
+    "address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+    "imported":"1",
+    "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
+    "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
+    "watching_since":"2018-09-06 21:14:03",
+    "derivation_path":"1/0/n",
+    "pub32_index":"44"}
+  ]
+}
+```
+
+### Get a list of Bitcoin addresses being watched by provided xpub label (called by application)
+
+Returns the list of currently watched addresses related to the provided xpub label and callback information.
+
+```http
+GET http://cyphernode:8888/getactivewatchesbylabel/2219
+```
+
+Proxy response:
+
+```json
+
+{
+  "watches": [
+  {
+    "id":"291",
+    "address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+    "imported":"1",
+    "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
+    "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
+    "watching_since":"2018-09-06 21:14:03",
+    "derivation_path":"1/0/n",
+    "pub32_index":"44"}
+  ]
+}
+```
+
 ### Confirm a Transaction on Watched Address (called by Bitcoin node on transaction confirmations)
 
 Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called.

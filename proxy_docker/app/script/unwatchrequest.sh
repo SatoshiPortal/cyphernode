@@ -60,7 +60,7 @@ unwatchpub32labelrequest() {
 	local returncode
 	trace "[unwatchpub32labelrequest] Unwatch xpub label ${label}"
 
-  id=$(sql "SELECT id FROM watching WHERE label='${label}'")
+  id=$(sql "SELECT id FROM watching_by_pub32 WHERE label='${label}'")
   returncode=$?
 	trace_rc ${returncode}
   trace "[unwatchpub32labelrequest] id: ${id}"
@@ -73,7 +73,7 @@ unwatchpub32labelrequest() {
 	returncode=$?
 	trace_rc ${returncode}
 
-	data="{\"event\":\"unwatchxpubbylabel\",\"pub32\":\"${pub32}\"}"
+	data="{\"event\":\"unwatchxpubbylabel\",\"label\":\"${label}\"}"
 	trace "[unwatchpub32labelrequest] responding=${data}"
 
 	echo "${data}"
