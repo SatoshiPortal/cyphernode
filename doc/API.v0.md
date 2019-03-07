@@ -694,3 +694,76 @@ Proxy response:
   "address": "tb1q9n8jfwe9qvlgczfxa5n4pe7haarqflzerqfhk9"
 }
 ```
+
+### Get your Lightning Network Node connection string, for others to connect to you
+
+Returns a string containing your LN node connection information.
+
+```http
+GET http://cyphernode:8888/ln_getconnectionstring
+```
+
+Proxy response:
+
+```json
+{
+  "connectstring": "02ffb6242a744143d427cf0962fce182d426609b80034a297ea5879c8c64d326ab@24.25.26.27:9735"
+}
+```
+
+ln_connectfund)
+  # POST http://192.168.111.152:8080/ln_connectfund
+  # BODY {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+
+### Connect to a LN node and fund a channel with it
+
+First, it will connect your LN node to the supplied LN node.  Then, it will fund a channel of the provided amount between you two.  Cyphernode will call the supplied callback URL when the channel is ready to be used.
+
+```http
+POST http://cyphernode:8888/ln_connectfund
+with body...
+{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3","expected_msatoshi":10000,"expected_description":"Bitcoin Outlet order #7082"}
+```
+
+Proxy response:
+
+```json
+{
+  "id": 9,
+  "payment_hash": "85b8e69733202e126620e7745be9e23a6b544b758145d86848f3e513e6e1ca42",
+  "destination": "03whatever",
+  "msatoshi": 50000000,
+  "msatoshi_sent": 10000,
+  "created_at": 1537025047,
+  "status": "complete",
+  "payment_preimage": "fececdc787a007a721a1945b70cb022149cc2ee4268964c99ba37a877bded664",
+  "description": "Bitcoin Outlet order #7082",
+  "getroute_tries": 1,
+  "sendpay_tries": 1,
+  "route": [
+    {
+      "id": "03whatever",
+      "channel": "1413467:78:0",
+      "msatoshi": 10000,
+      "delay": 10
+    }
+  ],
+  "failures": [
+  ]
+}
+
+```
+
+
+ln_getinvoice)
+  # GET http://192.168.111.152:8080/ln_getinvoice/label
+  # GET http://192.168.111.152:8080/ln_getinvoice/koNCcrSvhX3dmyFhW
+
+ln_delinvoice)
+  # GET http://192.168.111.152:8080/ln_delinvoice/label
+  # GET http://192.168.111.152:8080/ln_delinvoice/koNCcrSvhX3dmyFhW
+
+ln_decodebolt11)
+  # GET http://192.168.111.152:8080/ln_decodebolt11/bolt11
+  # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
+
