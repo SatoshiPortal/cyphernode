@@ -24,7 +24,7 @@ WORKDIR ${HOME}
 
 COPY app/data/* ./
 COPY app/script/* ./
-COPY --from=cyphernode/clightning:v0.6.2 /usr/bin/lightning-cli ./
+COPY --from=cyphernode/clightning:v0.7.0 /usr/bin/lightning-cli ./
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh \
  && chmod o+w . \
