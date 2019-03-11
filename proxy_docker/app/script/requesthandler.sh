@@ -189,6 +189,20 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        getbalancebyxpub)
+          # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
+
+          response=$(getbalancebyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbalancebyxpublabel)
+          # curl (GET) http://192.168.111.152:8080/getbalancebyxpublabel/2219
+
+          response=$(getbalancebyxpublabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
 

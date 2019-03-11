@@ -71,6 +71,59 @@ getbalance() {
 	return ${returncode}
 }
 
+getbalancebyxpublabel() {
+  trace "Entering getbalancebyxpublabel()..."
+
+  local label=${1}
+  trace "[getbalancebyxpublabel] label=${label}"
+  local xpub
+
+  xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label=\"${label}\"")
+  trace "[getbalancebyxpublabel] xpub=${xpub}"
+
+  getbalancebyxpub ${xpub} "getbalancebyxpublabel"
+  returncode=$?
+
+  return ${returncode}
+}
+
+getbalancebyxpub() {
+  trace "Entering getbalancebyxpub()..."
+
+  # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')" | jq "[.[].amount] | add"
+
+  local xpub=${1}
+  trace "[getbalancebyxpub] xpub=${xpub}"
+
+  # If called from getbalancebyxpublabel, set the correct event for response
+  local event=${2:-"getbalancebyxpub"}
+  trace "[getbalancebyxpub] event=${event}"
+  local addresses
+  local balance
+	local data
+	local returncode
+
+  # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
+  data="{\"method\":\"getaddressesbylabel\",\"params\":[${xpub}]}"
+  trace "[getbalancebyxpub] data=${data}"
+  addresses=$(send_to_xpub_watcher_wallet ${data} | jq "keys" | tr -d '\n ')
+
+  # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
+
+  data="{\"method\":\"listunspent\",\"params\":[0, 9999999, \"${addresses}\"]}"
+  trace "[getbalancebyxpub] data=${data}"
+	balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.[].amount] | add | . * 100000000 | trunc | . / 100000000")
+	returncode=$?
+  trace_rc ${returncode}
+  trace "[getbalancebyxpub] balance=${balance}"
+
+  data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance}}"
+
+	echo "${data}"
+
+  return ${returncode}
+}
+
 getnewaddress() {
 	trace "Entering getnewaddress()..."
 

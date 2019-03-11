@@ -19,6 +19,15 @@ send_to_watcher_node() {
   return ${returncode}
 }
 
+send_to_xpub_watcher_wallet() {
+  trace "Entering send_to_xpub_watcher_wallet()..."
+
+  send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_XPUB_WALLET} ${WATCHER_NODE_RPC_CFG} $@
+  local returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_to_watcher_node_wallet() {
   trace "Entering send_to_watcher_node_wallet()..."
   local walletname=$1
