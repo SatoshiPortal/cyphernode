@@ -104,7 +104,7 @@ getactivexpubwatches() {
   local watches
   # Let's build the string directly with sqlite instead of manipulating multiple strings afterwards, it's faster.
   # {"id":"${id}","pub32":"${pub32}","label":"${label}","derivation_path":"${derivation_path}","last_imported_n":${last_imported_n},"unconfirmedCallbackURL":"${cb0conf_url}","confirmedCallbackURL":"${cb1conf_url}","watching_since":"${timestamp}"}
-  watches=$(sql "SELECT '{\"id\":\"' || id || '\",\"pub32\":\"' || pub32 || '\",\"label\":\"' || label || '\",\"derivation_path\":\"' || derivation_path || '\",\"last_imported_n\":' || last_imported_n || ',\"unconfirmedCallbackURL\":\"' || callback0conf || '\",\"confirmedCallbackURL\":\"' || callback1conf || '\",\"watching_since\":\"' || inserted_ts || '\"}' FROM watching_by_pub32 WHERE watching AND NOT calledback1conf")
+  watches=$(sql "SELECT '{\"id\":\"' || id || '\",\"pub32\":\"' || pub32 || '\",\"label\":\"' || label || '\",\"derivation_path\":\"' || derivation_path || '\",\"last_imported_n\":' || last_imported_n || ',\"unconfirmedCallbackURL\":\"' || callback0conf || '\",\"confirmedCallbackURL\":\"' || callback1conf || '\",\"watching_since\":\"' || inserted_ts || '\"}' FROM watching_by_pub32 WHERE watching")
   returncode=$?
   trace_rc ${returncode}
 
