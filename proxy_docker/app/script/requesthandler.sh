@@ -129,6 +129,9 @@ main()
           # GET http://192.168.111.152:8080/getactivexpubwatches
 
           response=$(getactivexpubwatches)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         watchtxid)
           # POST http://192.168.111.152:8080/watchtxid
           # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
