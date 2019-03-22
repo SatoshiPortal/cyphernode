@@ -2,8 +2,7 @@
 
 . ./trace.sh
 
-serve_ots_stamp()
-{
+serve_ots_stamp() {
 
   trace "Entering serve_ots_stamp()..."
 
@@ -39,7 +38,7 @@ serve_ots_stamp()
       errorstring="Duplicate stamping request, hash already exists in DB and been OTS requested"
       returncode=1
     else
-      errorstring=$(request_ots_stamp "${hash}")
+      errorstring=$(request_ots_stamp "${hash}" ${id_inserted})
       returncode=$?
     fi
   else
@@ -49,7 +48,7 @@ serve_ots_stamp()
     if [ "${returncode}" -eq "0" ]; then
       id_inserted=$(sql "SELECT id FROM stamp WHERE hash='${hash}'")
       trace_rc $?
-      errorstring=$(request_ots_stamp "${hash}")
+      errorstring=$(request_ots_stamp "${hash}" ${id_inserted})
       returncode=$?
       trace_rc ${returncode}
     else
@@ -75,11 +74,11 @@ serve_ots_stamp()
   return ${returncode}
 }
 
-request_ots_stamp()
-{
+request_ots_stamp() {
   # Request the OTS server to stamp
 
   local hash=${1}
+  local id=${2}
   local returncode
   local result
   local errorstring
@@ -107,18 +106,18 @@ request_ots_stamp()
       if [ "${returncode}" -eq "0" ]; then
         # "already exists" found, let's try updating DB again
         trace "[request_ots_stamp] was already requested to the OTS server... let's update the DB, looks like it didn't work on first try"
-        sql "UPDATE stamp SET requested=1 WHERE hash='${hash}'"
+        sql "UPDATE stamp SET requested=1 WHERE id=${id}"
         errorstring="Duplicate stamping request, hash already exists in DB and been OTS requested"
         returncode=1
       else
         # If OTS CLIENT responded with an error, it is not down, it just can't stamp it.  ABORT.
         trace "[request_ots_stamp] Stamping error: ${errorstring}"
-        sql "DELETE FROM stamp WHERE hash='${hash}'"
+        sql "DELETE FROM stamp WHERE id=${id}"
         returncode=1
       fi
     else
       trace "[request_ots_stamp] Stamping request sent successfully!"
-      sql "UPDATE stamp SET requested=1 WHERE hash='${hash}'"
+      sql "UPDATE stamp SET requested=1 WHERE id=${id}"
       errorstring=""
       returncode=0
     fi
@@ -132,8 +131,7 @@ request_ots_stamp()
   return ${returncode}
 }
 
-serve_ots_backoffice()
-{
+serve_ots_backoffice() {
   # What we want to do here:
   # ========================
   # Re-request the unrequested calls to ots_stamp
@@ -146,13 +144,14 @@ serve_ots_backoffice()
   local returncode
 
   # Let's fetch all the incomplete stamping request
-  local callbacks=$(sql 'SELECT hash, callbackUrl, requested, upgraded FROM stamp WHERE NOT calledback')
+  local callbacks=$(sql 'SELECT hash, callbackUrl, requested, upgraded, id FROM stamp WHERE NOT calledback')
   trace "[serve_ots_backoffice] callbacks=${callbacks}"
 
   local url
   local hash
   local requested
   local upgraded
+  local id
   local IFS=$'\n'
   for row in ${callbacks}
   do
@@ -163,10 +162,12 @@ serve_ots_backoffice()
     trace "[serve_ots_backoffice] requested=${requested}"
     upgraded=$(echo "${row}" | cut -d '|' -f4)
     trace "[serve_ots_backoffice] upgraded=${upgraded}"
+    id=$(echo "${row}" | cut -d '|' -f5)
+    trace "[serve_ots_backoffice] id=${id}"
 
     if [ "${requested}" -ne "1" ]; then
       # Re-request the unrequested calls to ots_stamp
-      request_ots_stamp "${hash}"
+      request_ots_stamp "${hash}" ${id}
       returncode=$?
     else
       if [ "${upgraded}" -ne "1" ]; then
@@ -188,7 +189,7 @@ serve_ots_backoffice()
           else
             # No failure, upgraded
             trace "[serve_ots_backoffice] just upgraded!"
-            sql "UPDATE stamp SET upgraded=1 WHERE hash=\"${hash}\""
+            sql "UPDATE stamp SET upgraded=1 WHERE id=${id}"
             trace_rc $?
 
             upgraded=1
@@ -209,7 +210,7 @@ serve_ots_backoffice()
         # Even if curl executed ok, we need to make sure the http return code is also ok
 
         if [ "${returncode}" -eq "0" ] && [ "${rc}" -lt "400" ]; then
-          sql "UPDATE stamp SET calledback=1 WHERE hash=\"${hash}\""
+          sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
           trace_rc $?
         fi
       fi
@@ -217,8 +218,7 @@ serve_ots_backoffice()
   done
 }
 
-serve_ots_getfile()
-{
+serve_ots_getfile() {
   trace "Entering serve_ots_getfile()..."
 
   local hash=${1}
