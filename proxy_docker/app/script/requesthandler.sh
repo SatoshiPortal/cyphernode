@@ -302,6 +302,11 @@ main()
           serve_ots_getfile $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           break
           ;;
+        getblockchaininfo)
+          # http://192.168.111.152:8080/getblockchaininfo
+
+          response=$(get_blockchain_info)
+          response_to_client "${response}" ${?}
       esac
       break
     fi
