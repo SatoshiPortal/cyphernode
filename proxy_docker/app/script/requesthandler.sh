@@ -90,8 +90,7 @@ main()
         watchxpub)
           # POST http://192.168.111.152:8080/watchxpub
           # BODY {"label":"4421","pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/n","nstart":0,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
-
-          # curl -H "Content-Type: application/json" -d "{\"label\":\"2219\",\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/1/n\",\"nstart\":55,\"unconfirmedCallbackURL\":\"192.168.111.233:1111/callback0conf\",\"confirmedCallbackURL\":\"192.168.111.233:1111/callback1conf\"}" proxy:8888/watchxpub
+          # curl -H "Content-Type: application/json" -d '{"label":"2219","pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/1/n","nstart":55,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}' proxy:8888/watchxpub
 
           response=$(watchpub32request "${line}")
           response_to_client "${response}" ${?}
@@ -135,6 +134,7 @@ main()
         watchtxid)
           # POST http://192.168.111.152:8080/watchtxid
           # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
+          # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/watchtxid
 
           response=$(watchtxidrequest "${line}")
           response_to_client "${response}" ${?}

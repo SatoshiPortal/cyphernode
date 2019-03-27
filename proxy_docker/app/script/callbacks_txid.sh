@@ -16,6 +16,7 @@ do_callbacks_txid() {
   local returncode
   local address
   local url
+  local id
   local IFS=$'\n'
   for row in ${callbacks}
   do
@@ -23,9 +24,11 @@ do_callbacks_txid() {
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
-      txid=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching_by_txid SET calledback1conf=1 WHERE txid=\"${txid}\""
+      id=$(echo "${row}" | cut -d '|' -f1)
+      sql "UPDATE watching_by_txid SET calledback1conf=1 WHERE id=\"${id}\""
       trace_rc $?
+    else
+      trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
     fi
   done
 
@@ -37,9 +40,11 @@ do_callbacks_txid() {
     build_callback_txid ${row}
     returncode=$?
     if [ "${returncode}" -eq 0 ]; then
-      txid=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching_by_txid SET calledbackxconf=1, watching=0 WHERE txid=\"${txid}\""
+      id=$(echo "${row}" | cut -d '|' -f1)
+      sql "UPDATE watching_by_txid SET calledbackxconf=1, watching=0 WHERE id=\"${id}\""
       trace_rc $?
+    else
+      trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
     fi
   done
 
@@ -100,6 +105,7 @@ build_callback_txid() {
       return $?
     else
       trace "[build_callback_txid] Number of confirmations for tx is not enough to call back."
+      return 1
     fi
   fi
 }
