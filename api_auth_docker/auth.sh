@@ -88,8 +88,9 @@ verify_group()
 
   local id=${1}
   # REQUEST_URI should look like this: /v0/watch/2blablabla
+  local context=$(echo "${REQUEST_URI#\/}" | cut -d '/' -f1)
   local action=$(echo "${REQUEST_URI#\/}" | cut -d '/' -f2)
-  trace "[verify_group] action=${action}"
+  trace "[verify_group] context=${context} action=${action}"
 
   # Check for code injection
   # action can be alphanum... and _ and - but nothing else
@@ -99,17 +100,24 @@ verify_group()
     return 1
   esac
 
-  # It is so much faster to include the keys here instead of grep'ing the file for key.
-  . ./api.properties
-
   local needed_group
   local ugroups
 
-  eval needed_group='$action_'${action}
-  trace "[verify_group] needed_group=${needed_group}"
-
   eval ugroups='$ugroups_'$id
   trace "[verify_group] user groups=${ugroups}"
+
+  if [ $context = "s" ]; then
+    # static files only accessible by a certain group
+    needed_group=${action}
+  elif [ $context = "v0" ]; then
+    # actual api calls
+    # It is so much faster to include the keys here instead of grep'ing the file for key.
+    . ./api.properties
+    eval needed_group='$action_'${action}
+  fi
+
+  trace "[verify_group] needed_group=${needed_group}"
+
 
   case "${ugroups}" in
     *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
