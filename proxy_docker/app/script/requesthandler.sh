@@ -307,6 +307,7 @@ main()
         ln_connectfund)
           # POST http://192.168.111.152:8080/ln_connectfund
           # BODY {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+          # curl -H "Content-Type: application/json" -d '{"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}' proxy:8888/ln_connectfund
 
           response=$(ln_connectfund "${line}")
           response_to_client "${response}" ${?}

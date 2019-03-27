@@ -178,11 +178,16 @@ ln_decodebolt11() {
 ln_connectfund() {
   trace "Entering ln_connectfund()..."
 
+  # {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+
   local result
   local returncode
   local tx
   local txid
   local nodeId
+  local data
+  local channel_id
+  local msg
 
   local request=${1}
   local peer=$(echo "${request}" | jq ".peer" | tr -d '"')
@@ -225,8 +230,8 @@ ln_connectfund() {
 
 # ./lightning-cli fundchannel 038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9 1000000
 # {
-#  "tx": "020000000001011594f707cf2ec076278072bc64f893bbd70188db42ea49e9ba531ee3c7bc8ed00100000000ffffffff0240420f00000000002200206149ff97921356191dc1f2e9ab997c459a71e8050d272721abf4b4d8a92d2419a6538900000000001600142cab0184d0f8098f75ebe05172b5864395e033f402483045022100b25cd5a9d49b5cc946f72a58ccc0afe652d99c25fba98d68be035a286f55849802203de5b504c44f775a0101b6025f116b73bf571e776e4efcac0475721bfde4d08a0121038360308a394158b0799196c5179a6480a75db73207fb93d4a673d934c9f786f400000000", 
-#  "txid": "747bf7d1c40bebed578b3f02a3d8da9a56885851a3c4bdb6e1b8de19223559a4", 
+#  "tx": "020000000001011594f707cf2ec076278072bc64f893bbd70188db42ea49e9ba531ee3c7bc8ed00100000000ffffffff0240420f00000000002200206149ff97921356191dc1f2e9ab997c459a71e8050d272721abf4b4d8a92d2419a6538900000000001600142cab0184d0f8098f75ebe05172b5864395e033f402483045022100b25cd5a9d49b5cc946f72a58ccc0afe652d99c25fba98d68be035a286f55849802203de5b504c44f775a0101b6025f116b73bf571e776e4efcac0475721bfde4d08a0121038360308a394158b0799196c5179a6480a75db73207fb93d4a673d934c9f786f400000000",
+#  "txid": "747bf7d1c40bebed578b3f02a3d8da9a56885851a3c4bdb6e1b8de19223559a4",
 #  "channel_id": "a459352219deb8e1b6bdc4a3515888569adad8a3023f8b57edeb0bc4d1f77b74"
 # }
 
@@ -234,19 +239,39 @@ ln_connectfund() {
 # { "code" : 301, "message" : "Cannot afford transaction" }
 
       # Let's find what to watch
-      txid=$(echo "${result}" | jq ".txid" | tr -d '"')
-      tx=$(echo "${result}" | jq ".tx" | tr -d '"')
+      txid=$(echo "${result}" | jq ".txid")
+      tx=$(echo "${result}" | jq ".tx")
+      channel_id=$(echo "${result}" | jq ".channel_id")
 
-      
+      data="{\"txid\":${txid},\"xconfCallbackURL\":\"${callback_url}\",\"nbxconf\":6}"
+
+      result=$(watchtxidrequest "${data}")
+      returncode=$?
+      trace_rc ${returncode}
+      trace "[ln_connectfund] result=${result}"
+
+      if [ "${returncode}" -eq "0" ]; then
+        result="{\"result\":\"success\",\"txid\":${txid},\"channel_id\":${channel_id}}"
+      else
+        trace "[ln_connectfund] Error watching txid, result=${result}"
+        result="{\"result\":\"failed\",\"message\":\"Failed at watching txid\"}"
+      fi
     else
       # Error funding
       trace "[ln_connectfund] Error funding, result=${result}"
+      msg=$(echo "${result}" | jq ".message")
+      result="{\"result\":\"failed\",\"message\":${msg}}"
     fi
   else
     # Error connecting
     trace "[ln_connectfund] Error connecting, result=${result}"
+    msg=$(echo "${result}" | jq ".message")
+    result="{\"result\":\"failed\",\"message\":${msg}}"
   fi
 
+  echo "${result}"
+
+  return ${returncode}
 }
 
 ln_pay() {
