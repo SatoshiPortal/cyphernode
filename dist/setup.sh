@@ -500,6 +500,32 @@ install_docker() {
     fi
   fi
 
+  local appsnet_entry=$(docker network ls | grep cyphernodeappsnet);
+
+  if [[ appsnet_entry =~ 'cyphernodeappsnet' ]]; then
+    if [[ appsnet_entry =~ 'local' && $DOCKER_MODE == 'swarm' ]]; then
+      step " [32mrecreate[0m cyphernode network"
+      try docker network rm cyphernodenet > /dev/null 2>&1
+      try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
+      next
+    elif [[ appsnet_entry =~ 'swarm' && $DOCKER_MODE == 'compose' ]]; then
+      step " [32mrecreate[0m cyphernode network"
+      try docker network rm cyphernodeappsnet > /dev/null 2>&1
+      try docker network create cyphernodeappsnet > /dev/null 2>&1
+      next
+    fi
+  else
+    if [[ $DOCKER_MODE == 'swarm' ]]; then
+      step "   [32mcreate[0m cyphernode network"
+      try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
+      next
+    elif [[ $DOCKER_MODE == 'compose' ]]; then
+      step "   [32mcreate[0m cyphernode network"
+      try docker network create cyphernodeappsnet > /dev/null 2>&1
+      next
+    fi
+  fi
+
   copy_file $current_path/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
   copy_file $current_path/installer/testfeatures.sh $current_path/testfeatures.sh 0
   copy_file $current_path/installer/start.sh $current_path/start.sh 0
