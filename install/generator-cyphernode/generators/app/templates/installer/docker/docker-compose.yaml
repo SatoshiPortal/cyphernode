@@ -14,9 +14,9 @@ services:
       - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
       - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
       - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd"
-      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/status/installation.json"
-      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/status/client.7z"
-      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/status/config.7z"
+      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
+      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
+      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
       - "<%= gatekeeper_datapath %>/nginx-spark-conf:/etc/nginx/conf.d/nginx-spark-conf"
     command: $USER
 
