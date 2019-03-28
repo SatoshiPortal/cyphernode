@@ -25,6 +25,7 @@ services:
 #        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
+      - cyphernodeappsnet
     restart: always
   proxy:
     command: $USER ./startproxy.sh
@@ -163,4 +164,6 @@ services:
 
 networks:
   cyphernodenet:
+    external: true
+  cyphernodeappsnet:
     external: true
