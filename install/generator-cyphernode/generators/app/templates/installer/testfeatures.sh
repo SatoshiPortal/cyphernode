@@ -273,7 +273,7 @@ fi
 #    { "name": "sparkwallet", "working":true }
 #  ]
 
-result="${containers},\"features\":[{\"name\":\"gatekeeper\",\"working\":"
+result="${containers},\"features\":[{\"coreFeature\":true, \"name\":\"cyphernode proxy\",\"working\":true}, {\"coreFeature\":true, \"name\":\"gatekeeper\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"gatekeeper\") | .active")
 if [ "${status}" = "true" ]; then
   timeout_feature checkgatekeeper
@@ -284,7 +284,18 @@ fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Gatekeeper error!')}"
 
-result="${result},{\"name\":\"pycoin\",\"working\":"
+result="${result},{\"coreFeature\":true, \"name\":\"bitcoin\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checkbitcoinnode
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
+
+result="${result},{\"coreFeature\":true, \"name\":\"pycoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"pycoin\") | .active")
 if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
   timeout_feature checkpycoin
@@ -296,7 +307,7 @@ finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
-result="${result},{\"name\":\"otsclient\",\"working\":"
+result="${result},{\"coreFeature\":false, \"name\":\"otsclient\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"otsclient\") | .active")
 if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
   timeout_feature checkots
@@ -308,19 +319,8 @@ finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 <% } %>
 
-result="${result},{\"name\":\"bitcoin\",\"working\":"
-status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
-if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
-  timeout_feature checkbitcoinnode
-  returncode=$?
-else
-  returncode=1
-fi
-finalreturncode=$((${returncode} | ${finalreturncode}))
-result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
-
 <% if (features.indexOf('lightning') != -1) { %>
-result="${result},{\"name\":\"lightning\",\"working\":"
+result="${result},{\"coreFeature\":false, \"name\":\"lightning\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"lightning\") | .active")
 if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
   timeout_feature checklnnode
