@@ -86,13 +86,13 @@ Proxy response:
 ```json
 {
   "id":"5",
-    "event":"watchxpub",
-    "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq",
-    "label":"2219",
-    "path":"0/1/n",
-    "nstart":"109",
-    "unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf",
-    "confirmedCallbackURL":"192.168.111.233:1111/callback1conf"
+  "event":"watchxpub",
+  "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq",
+  "label":"2219",
+  "path":"0/1/n",
+  "nstart":"109",
+  "unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf",
+  "confirmedCallbackURL":"192.168.111.233:1111/callback1conf"
 }
 ```
 
@@ -127,6 +127,30 @@ Proxy response:
 {
   "event":"unwatchxpubbylabel",
   "label":"4421"
+}
+```
+
+### Watch a TXID (called by application)
+
+Used to watch a transaction.  Will call the 1-conf callback url after the transaction has been mined.  Will call the x-conf callback url after the transaction has x confirmations.
+
+```http
+POST http://cyphernode:8888/watchtxid
+with body...
+{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
+```
+
+Proxy response:
+
+```json
+{
+  "id":"5",
+  "event":"watchtxid",
+  "inserted":"1",
+  "txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387",
+  "confirmedCallbackURL":"192.168.111.233:1111/callback1conf",
+  "xconfCallbackURL":"192.168.111.233:1111/callbackXconf",
+  "nbxconf":6
 }
 ```
 
@@ -711,10 +735,6 @@ Proxy response:
 }
 ```
 
-ln_connectfund)
-  # POST http://192.168.111.152:8080/ln_connectfund
-  # BODY {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
-
 ### Connect to a LN node and fund a channel with it
 
 First, it will connect your LN node to the supplied LN node.  Then, it will fund a channel of the provided amount between you two.  Cyphernode will call the supplied callback URL when the channel is ready to be used.
@@ -722,48 +742,100 @@ First, it will connect your LN node to the supplied LN node.  Then, it will fund
 ```http
 POST http://cyphernode:8888/ln_connectfund
 with body...
-{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3","expected_msatoshi":10000,"expected_description":"Bitcoin Outlet order #7082"}
+{"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
 ```
 
 Proxy response:
 
 ```json
 {
-  "id": 9,
-  "payment_hash": "85b8e69733202e126620e7745be9e23a6b544b758145d86848f3e513e6e1ca42",
-  "destination": "03whatever",
-  "msatoshi": 50000000,
-  "msatoshi_sent": 10000,
-  "created_at": 1537025047,
-  "status": "complete",
-  "payment_preimage": "fececdc787a007a721a1945b70cb022149cc2ee4268964c99ba37a877bded664",
-  "description": "Bitcoin Outlet order #7082",
-  "getroute_tries": 1,
-  "sendpay_tries": 1,
-  "route": [
-    {
-      "id": "03whatever",
-      "channel": "1413467:78:0",
-      "msatoshi": 10000,
-      "delay": 10
-    }
-  ],
-  "failures": [
-  ]
+  "result": "success",
+  "txid": "85b8e69733202e126620e7745be9e23a6b544b758145d86848f3e513e6e1ca42",
+  "channel_id": "a459352219deb8e1b6bdc4a3515888569adad8a3023f8b57edeb0bc4d1f77b74"
 }
-
 ```
 
+```json
+{
+  "result": "failed",
+  "message": "Failed at watching txid"
+}
+```
 
-ln_getinvoice)
-  # GET http://192.168.111.152:8080/ln_getinvoice/label
-  # GET http://192.168.111.152:8080/ln_getinvoice/koNCcrSvhX3dmyFhW
+### Get a previously created Lightning Network invoice by its label
 
-ln_delinvoice)
-  # GET http://192.168.111.152:8080/ln_delinvoice/label
-  # GET http://192.168.111.152:8080/ln_delinvoice/koNCcrSvhX3dmyFhW
+Returns the invoice corresponding to the supplied label.
 
-ln_decodebolt11)
-  # GET http://192.168.111.152:8080/ln_decodebolt11/bolt11
-  # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
+```http
+GET http://cyphernode:8888/ln_getinvoice/label
+GET http://cyphernode:8888/ln_getinvoice/koNCcrSvhX3dmyFhW
+```
+
+Proxy response:
+
+```json
+{
+  "invoices": [
+    {
+      "label": "koNCcrSvhX3dmyFhW",
+      "bolt11": "lntb10n1pw92fk9pp56p6g7nnuhcj63j6wpyquy67wc7xfanhc20d49ta2dzrge2mj3s5qdq9vscnzcqp2rzjqvdcvlvavcc6zdfvcrehhn4ff024s75dfaqyzmzvuxsj2yd3u684v93ylqqqq0sqqqqqqqqpqqqqqzsqqcu6jamf7du64nxtj99x5t6hvy4hlfv8fc8m5j39g8kyzpk5r89s28f93x5jsfnzl8mhtkhqvx2qxehns4ltw7w5h8h7ppdcw8t0uz0wcptztsqg",
+      "payment_hash": "d0748f4e7cbe25a8cb4e0901c26bcec78c9ecef853db52afaa68868cab728c28",
+      "msatoshi": 1000,
+      "status": "paid",
+      "pay_index": 10,
+      "msatoshi_received": 1002,
+      "paid_at": 1549084373,
+      "description": "d11",
+      "expires_at": 1549087957
+    }
+  ]
+}
+```
+
+### Delete a previously created Lightning Network invoice by its label
+
+Deletes the invoice corresponding to the supplied label if status is unpaid, so that no payment comes in.  Returns the invoice corresponding to the supplied label.
+
+```http
+GET http://cyphernode:8888/ln_delinvoice/label
+GET http://cyphernode:8888/ln_delinvoice/koNCcrSvhX3dmyFhW
+```
+
+Proxy response:
+
+```json
+{
+  "label": "koNCcrSvhX3dmyFhW",
+  "bolt11": "lntb10n1pw92fk9pp56p6g7nnuhcj63j6wpyquy67wc7xfanhc20d49ta2dzrge2mj3s5qdq9vscnzcqp2rzjqvdcvlvavcc6zdfvcrehhn4ff024s75dfaqyzmzvuxsj2yd3u684v93ylqqqq0sqqqqqqqqpqqqqqzsqqcu6jamf7du64nxtj99x5t6hvy4hlfv8fc8m5j39g8kyzpk5r89s28f93x5jsfnzl8mhtkhqvx2qxehns4ltw7w5h8h7ppdcw8t0uz0wcptztsqg",
+  "payment_hash": "d0748f4e7cbe25a8cb4e0901c26bcec78c9ecef853db52afaa68868cab728c28",
+  "msatoshi": 1000,
+  "status": "unpaid",
+  "description": "d11",
+  "expires_at": 1549087957
+}
+```
+
+### Decodes the BOLT11 string of a Lightning Network invoice
+
+Returns the detailed information of a BOLT11 string of a Lightning Network invoice.
+
+```http
+GET http://cyphernode:8888/ln_decodebolt11/bolt11
+GET http://cyphernode:8888/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
+```
+
+Proxy response:
+
+```json
+{
+  "currency": "tb",
+  "created_at": 1536073035,
+  "expiry": 3600,
+  "payee": "03bb990f43e6a6eccb223288d32fcb91209b12370c0a8bf5cdf4ad7bc11e33f253",
+  "description": "Bitcoin Outlet order #7082",
+  "min_final_cltv_expiry": 10,
+  "payment_hash": "430fb9d240fcb4612c335d475f285820dc9891588e19baf048520189c8af49e2",
+  "signature": "30440220445a7d39cd4b086c0bd6c67cd8cd5a6a86e8b9345883b56e89fa851decfb876202206b1e6c5122a46c5fbba4ccb4a77ef1bb20078f0aeea4059d5ca3f773db85c920"
+}
+```
 
