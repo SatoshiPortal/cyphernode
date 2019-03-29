@@ -60,6 +60,35 @@ module.exports = {
       message: prefix()+'Where do you want to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
     },
     {
+      when: installerDocker,
+      type: 'list',
+      name: 'traefik_datapath',
+      default: utils._getDefault( 'traefik_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir+"/cyphernode/traefik",
+          value: utils.setupDir+"/cyphernode/traefik"
+        },
+        {
+          name: utils.defaultDataDirBase+"/cyphernode/traefik",
+          value: utils.defaultDataDirBase+"/cyphernode/traefik"
+        },
+        {
+          name: utils.defaultDataDirBase+"/.cyphernode/traefik",
+          value: utils.defaultDataDirBase+"/.cyphernode/traefik"
+        },
+        {
+          name: utils.defaultDataDirBase+"/traefik",
+          value: utils.defaultDataDirBase+"/traefik"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your traefik data?'+utils._getHelp('traefik_datapath'),
+    },
+    {
       when: (props)=>{ return installerDocker(props) && (props.gatekeeper_datapath === '_custom') },
       type: 'input',
       name: 'gatekeeper_datapath_custom',
