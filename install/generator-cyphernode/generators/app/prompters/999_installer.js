@@ -33,35 +33,6 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
-      name: 'gatekeeper_datapath',
-      default: utils._getDefault( 'gatekeeper_datapath' ),
-      choices: [
-        {
-          name: utils.setupDir+"/cyphernode/gatekeeper",
-          value: utils.setupDir+"/cyphernode/gatekeeper"
-        },
-        {
-          name: utils.defaultDataDirBase+"/cyphernode/gatekeeper",
-          value: utils.defaultDataDirBase+"/cyphernode/gatekeeper"
-        },
-        {
-          name: utils.defaultDataDirBase+"/.cyphernode/gatekeeper",
-          value: utils.defaultDataDirBase+"/.cyphernode/gatekeeper"
-        },
-        {
-          name: utils.defaultDataDirBase+"/gatekeeper",
-          value: utils.defaultDataDirBase+"/gatekeeper"
-        },
-        {
-          name: "Custom path",
-          value: "_custom"
-        }
-        ],
-      message: prefix()+'Where do you want to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
-    },
-    {
-      when: installerDocker,
-      type: 'list',
       name: 'traefik_datapath',
       default: utils._getDefault( 'traefik_datapath' ),
       choices: [
@@ -87,6 +58,44 @@ module.exports = {
         }
       ],
       message: prefix()+'Where do you want to store your traefik data?'+utils._getHelp('traefik_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.traefik_datapath === '_custom') },
+      type: 'input',
+      name: 'traefik_datapath_custom',
+      default: utils._getDefault( 'traefik_datapath_custom' ),
+      filter: utils._trimFilter,
+      validate: utils._pathValidator,
+      message: prefix()+'Custom path for traefik data?'+utils._getHelp('traefik_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
+      name: 'gatekeeper_datapath',
+      default: utils._getDefault( 'gatekeeper_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir+"/cyphernode/gatekeeper",
+          value: utils.setupDir+"/cyphernode/gatekeeper"
+        },
+        {
+          name: utils.defaultDataDirBase+"/cyphernode/gatekeeper",
+          value: utils.defaultDataDirBase+"/cyphernode/gatekeeper"
+        },
+        {
+          name: utils.defaultDataDirBase+"/.cyphernode/gatekeeper",
+          value: utils.defaultDataDirBase+"/.cyphernode/gatekeeper"
+        },
+        {
+          name: utils.defaultDataDirBase+"/gatekeeper",
+          value: utils.defaultDataDirBase+"/gatekeeper"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+        ],
+      message: prefix()+'Where do you want to store your gatekeeper data?'+utils._getHelp('gatekeeper_datapath'),
     },
     {
       when: (props)=>{ return installerDocker(props) && (props.gatekeeper_datapath === '_custom') },
