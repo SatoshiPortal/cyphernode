@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -390,6 +390,18 @@ install_docker() {
     copy_file $current_path/lightning/c-lightning/nginx-spark-conf $GATEKEEPER_DATAPATH/nginx-spark-conf 1 $SUDO_REQUIRED
   fi
 
+  if [[ $FEATURE_TRAEFIK == true ]]; then
+    if [ ! -d $TRAEFIK_DATAPATH ]; then
+      step "   [32mcreate[0m $TRAEFIK_DATAPATH"
+      sudo_if_required mkdir -p $TRAEFIK_DATAPATH
+      next
+    fi
+
+    copy_file $current_path/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
+    copy_file $current_path/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
+
+  fi
+
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
     sudo_if_required mkdir -p $PROXY_DATAPATH
@@ -502,25 +514,25 @@ install_docker() {
 
   local appsnet_entry=$(docker network ls | grep cyphernodeappsnet);
 
-  if [[ appsnet_entry =~ 'cyphernodeappsnet' ]]; then
-    if [[ appsnet_entry =~ 'local' && $DOCKER_MODE == 'swarm' ]]; then
-      step " [32mrecreate[0m cyphernode network"
-      try docker network rm cyphernodenet > /dev/null 2>&1
+  if [[ $appsnet_entry =~ 'cyphernodeappsnet' ]]; then
+    if [[ $appsnet_entry =~ 'local' && $DOCKER_MODE == 'swarm' ]]; then
+      step " [32mrecreate[0m cyphernode apps network"
+      try docker network rm cyphernodeappsnet > /dev/null 2>&1
       try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
       next
-    elif [[ appsnet_entry =~ 'swarm' && $DOCKER_MODE == 'compose' ]]; then
-      step " [32mrecreate[0m cyphernode network"
+    elif [[ $appsnet_entry =~ 'swarm' && $DOCKER_MODE == 'compose' ]]; then
+      step " [32mrecreate[0m cyphernode apps network"
       try docker network rm cyphernodeappsnet > /dev/null 2>&1
       try docker network create cyphernodeappsnet > /dev/null 2>&1
       next
     fi
   else
     if [[ $DOCKER_MODE == 'swarm' ]]; then
-      step "   [32mcreate[0m cyphernode network"
+      step "   [32mcreate[0m cyphernode apps network"
       try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
       next
     elif [[ $DOCKER_MODE == 'compose' ]]; then
-      step "   [32mcreate[0m cyphernode network"
+      step "   [32mcreate[0m cyphernode apps network"
       try docker network create cyphernodeappsnet > /dev/null 2>&1
       next
     fi
@@ -552,7 +564,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -656,7 +668,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do

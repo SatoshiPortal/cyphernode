@@ -362,6 +362,7 @@ module.exports = class extends Generator {
 
     const pathProps = [
       'gatekeeper_datapath',
+      'traefik_datapath',
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',
@@ -449,6 +450,7 @@ module.exports = class extends Generator {
       gatekeeper_sslcert: '',
       gatekeeper_sslkey: '',
       gatekeeper_cns: process.env['DEFAULT_CERT_HOSTNAME'] || '',
+      gatekeeper_datapath: '',
       proxy_datapath: '',
       lightning_implementation: 'c-lightning',
       lightning_external_ip: '',
@@ -456,6 +458,7 @@ module.exports = class extends Generator {
       lightning_nodename: name.generate(),
       lightning_nodecolor: '',
       otsclient_datapath: '',
+      traefik_datapath: '',
       installer_cleanup: false,
       default_username: process.env.DEFAULT_USER || '',
       gatekeeper_version: process.env.GATEKEEPER_VERSION || 'latest',
