@@ -20,9 +20,6 @@ const clear = '\u001Bc';
 const configFileVersion='0.1.0';
 
 const defaultAPIProperties = `
-# Stats can:
-action_getblockchaininfo=stats
-
 # Watcher can:
 action_watch=watcher
 action_unwatch=watcher
@@ -290,26 +287,20 @@ module.exports = class extends Generator {
       let configEntries = [];
       let clientInformation = [];
 
-      apikey.setId('000');
-      apikey.setGroups(['stats']);
-      await apikey.randomiseKey();
-      configEntries.push(apikey.getConfigEntry());
-      clientInformation.push(apikey.getClientInformation());
-
       apikey.setId('001');
-      apikey.setGroups(['stats','watcher']);
+      apikey.setGroups(['watcher']);
       await apikey.randomiseKey();
       configEntries.push(apikey.getConfigEntry());
       clientInformation.push(apikey.getClientInformation());
 
       apikey.setId('002');
-      apikey.setGroups(['stats','watcher','spender']);
+      apikey.setGroups(['watcher','spender']);
       await apikey.randomiseKey();
       configEntries.push(apikey.getConfigEntry());
       clientInformation.push(apikey.getClientInformation());
 
       apikey.setId('003');
-      apikey.setGroups(['stats','watcher','spender','admin']);
+      apikey.setGroups(['watcher','spender','admin']);
       await apikey.randomiseKey();
       configEntries.push(apikey.getConfigEntry());
       clientInformation.push(apikey.getClientInformation());
