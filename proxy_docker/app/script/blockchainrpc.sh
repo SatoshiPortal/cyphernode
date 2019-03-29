@@ -67,12 +67,3 @@ get_transaction()
   send_to_watcher_node "${data}"
   return $?
 }
-
-get_blockchain_info()
-{
-  trace "Entering get_blockchain_info()..."
-
-  local data='{"method":"getblockchaininfo"}'
-  send_to_watcher_node "${data}" | jq ".result"
-  return $?
-}
