@@ -147,6 +147,21 @@ services:
     restart: always
 <% } %>
 
+<% if ( features.indexOf('traefik') !== -1 ) { %>
+  traefik:
+    image: traefik:v1.7.9-alpine
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml"
+      - "<%= traefik_datapath%>/acme.json:/acme.json"
+    networks:
+      - cyphernodeappsnet
+<% } %>
+
 <% if( bitcoin_mode === 'internal' ) { %>
   bitcoin:
     command: $USER bitcoind
