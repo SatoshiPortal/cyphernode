@@ -45,6 +45,9 @@ chmod 0600 $DB_FILE
 createCurlConfig ${WATCHER_BTC_NODE_RPC_CFG} ${WATCHER_BTC_NODE_RPC_USER}
 createCurlConfig ${SPENDER_BTC_NODE_RPC_CFG} ${SPENDER_BTC_NODE_RPC_USER}
 
-./waitanyinvoice.sh &
+. ${DB_PATH}/config.sh
+if [ "${FEATURE_LIGHTNING}" = "true" ]; then
+  ./waitanyinvoice.sh &
+fi
 
 nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh
