@@ -1,9 +1,5 @@
 [
   {
-    "name": "Traefik proxy for cyphernode apps",
-    "value": "traefik"
-  },
-  {
     "name": "Lightning node",
     "value": "lightning"
   },
