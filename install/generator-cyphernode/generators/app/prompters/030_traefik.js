@@ -10,6 +10,6 @@ module.exports = {
     return [];
   },
   templates: function( props ) {
-    return [ 'acme.json', 'traefik.toml' ];
+    return [ 'acme.json', 'traefik.toml', 'htpasswd' ];
   }
 };

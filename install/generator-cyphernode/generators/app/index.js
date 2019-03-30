@@ -10,6 +10,7 @@ const name = require('./lib/name.js');
 const Archive = require('./lib/archive.js');
 const ApiKey = require('./lib/apikey.js');
 const Cert = require('./lib/cert.js');
+const htpasswd = require( './lib/htpasswd.js')
 
 const featureChoices = require('./features.json');
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
@@ -219,7 +220,7 @@ module.exports = class extends Generator {
       // migrate here
     }
 
-    this.props.gatekeeper_statuspw = await new Cert().passwd(this.configurationPassword);
+    this.props.initial_admin_password = await htpasswd(this.configurationPassword);
 
     if( versionOverride ) {
       delete this.props.gatekeeper_version;

@@ -113,21 +113,5 @@ module.exports = class Cert {
 	getFullPath() {
 		return path.join( this.folder, this.filename );
 	}
-
-	async passwd( pw ) {
-		const openssl = spawn('openssl', [ "passwd", pw ], {stdio: ['ignore', 'pipe', 'ignore' ]});
-
-    const result = await new Promise( function(resolve, reject ) {
-      let result = '';
-      openssl.stdout.on('data', (data) => {
-        result += data.toString();
-      });
-
-			openssl.on('exit', (code) => {
-				resolve(result);
-			});
-    });
-
-		return result;
-	}
+	
 }
