@@ -107,6 +107,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [ 'keys.properties', 'api.properties', 'cert.pem', 'key.pem', 'htpasswd' ];
+    return [ 'keys.properties', 'api.properties', 'cert.pem', 'key.pem' ];
   }
 };
