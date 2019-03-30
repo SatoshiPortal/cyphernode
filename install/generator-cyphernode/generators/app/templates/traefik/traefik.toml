@@ -22,7 +22,7 @@ exposedByDefault = false
 
 [acme]
 email = "noreply@cnc.skp.rocks"
-storage = "acme.json"
+storage = "/acme.json"
 entryPoint = "https"
 onHostRule = true
 [acme.httpChallenge]
