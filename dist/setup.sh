@@ -366,41 +366,39 @@ install_docker() {
     next
   fi
 
-  if [ -d $GATEKEEPER_DATAPATH ]; then
-    if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
-      # prevent mounting installation.json as a directory
-      sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
-    fi
-
-    if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
-      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
-    fi
-
-    if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
-      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
-    fi
-
-    copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-    copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-    copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
-    copy_file $current_path/lightning/c-lightning/nginx-spark-conf $GATEKEEPER_DATAPATH/nginx-spark-conf 1 $SUDO_REQUIRED
+  if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
+    # prevent mounting installation.json as a directory
+    sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
   fi
 
-  if [[ $FEATURE_TRAEFIK == true ]]; then
-    if [ ! -d $TRAEFIK_DATAPATH ]; then
-      step "   [32mcreate[0m $TRAEFIK_DATAPATH"
-      sudo_if_required mkdir -p $TRAEFIK_DATAPATH
-      next
-    fi
-
-    copy_file $current_path/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
-    copy_file $current_path/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
-
+  if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
+    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
   fi
+
+  if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
+    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
+  fi
+
+  copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+  copy_file $current_path/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+  copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+  copy_file $current_path/lightning/c-lightning/nginx-spark-conf $GATEKEEPER_DATAPATH/nginx-spark-conf 1 $SUDO_REQUIRED
+  copy_file $current_path/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+
+
+  if [ ! -d $TRAEFIK_DATAPATH ]; then
+    step "   [32mcreate[0m $TRAEFIK_DATAPATH"
+    sudo_if_required mkdir -p $TRAEFIK_DATAPATH
+    next
+  fi
+
+  copy_file $current_path/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
+  copy_file $current_path/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
+  copy_file $current_path/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+
 
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
