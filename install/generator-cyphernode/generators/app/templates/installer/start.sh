@@ -48,3 +48,33 @@ printf "\r\n\033[0;92mDepending on your current location and DNS settings, point
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + ':'+ gatekeeper_port + '/status/\\r\\n') %><% }) %>\033[0m\r\n"
 printf "\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n\r\n\033[0m"
+
+
+# be aware that randomly downloaded cyphernode apps will have access to
+# your configuration and filesystem.
+# !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
+# TODO: Test if we can mitigate this security issue by
+# running app dockers inside a docker container
+
+start_apps() {
+  local SCRIPT_NAME="start.sh"
+  local APP_SCRIPT_PATH
+  local APP_START_SCRIPT_PATH
+  local APP_ID
+
+  for i in "$current_path/apps/*"
+  do
+    APP_SCRIPT_PATH=$(echo $i)
+    if [ -d $APP_SCRIPT_PATH ]; then
+      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+
+      if [ -f $APP_START_SCRIPT_PATH ]; then
+        APP_ID=$(basename $APP_SCRIPT_PATH)
+        source $APP_START_SCRIPT_PATH
+      fi
+    fi
+  done
+}
+
+. ./installer/config.sh
+start_apps
