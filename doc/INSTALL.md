@@ -20,6 +20,18 @@ Or you can simply run this magic command to start setup and installation:
 curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/master/dist/setup.sh -o setup_cyphernode.sh && chmod +x setup_cyphernode.sh && ./setup_cyphernode.sh
 ```
 
+### Build cyphernode yourself
+
+You can build cyphernode images yourself.  The images will have the same name than the ones in the docker hub, with the suffix -local.
+
+```shell
+git clone https://github.com/SatoshiPortal/cyphernode.git
+cd cyphernode
+./build.sh
+cd dist
+./setup.sh
+```
+
 ## Upgrading
 
 Your proxy's database won't be lost.  Migration scripts are taking care of automatically migrating the database when starting the proxy.
