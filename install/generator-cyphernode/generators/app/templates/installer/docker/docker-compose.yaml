@@ -136,7 +136,7 @@ services:
 
   sparkwallet:
     command: --login "cyphernode:sparkwallet" --no-tls
-    image: shesek/spark-wallet:standalone
+    image: cyphernode/sparkwallet:<%= sparkwallet_version %>
     volumes:
       - "<%= lightning_datapath %>:/etc/lightning"
       - "<%= lightning_datapath %>/sparkwallet:/data"
