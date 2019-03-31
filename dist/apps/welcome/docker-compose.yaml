@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  cyphernode_welcome:
+    environment:
+      - "TRACING=1"
+    image: cyphernode_welcome
+    volumes:
+      - "/Users/jash/go/src/cyphernode_welcome/data_docker:/data"
+    networks:
+      - cyphernodeappsnet
+    restart: always
+    labels:
+      - "traefik.docker.network=cyphernodeappsnet"
+      - "traefik.frontend.rule=PathPrefix:/welcome; PathPrefixStrip:/welcome"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.enable=true"
+      - "traefik.port=8080"
+#      - "traefik.frontend.auth.basic.usersFile=${SHARED_HTPASSWD_PATH}"
+networks:
+  cyphernodeappsnet:
+    external: true
