@@ -292,6 +292,70 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
 }
 ```
 
+### Get the blockchain information (called by application)
+
+Returns the blockchain information of the Bitcoin node.  Used for example by the welcome app to get syncing progression.
+
+```http
+GET http://cyphernode:8888/getblockchaininfo
+```
+
+Proxy response:
+
+```json
+{
+  "chain": "test",
+  "blocks": 1486864,
+  "headers": 1486864,
+  "bestblockhash": "000000000000002fb99d683e64bbfc2b7ad16f9a425cf7be77b481fb1afa363b",
+  "difficulty": 13971064.71015782,
+  "mediantime": 1554149114,
+  "verificationprogress": 0.9999994536561675,
+  "initialblockdownload": false,
+  "chainwork": "000000000000000000000000000000000000000000000103ceb57a5896f347ce",
+  "size_on_disk": 23647567017,
+  "pruned": false,
+  "softforks": [
+    {
+      "id": "bip34",
+      "version": 2,
+      "reject": {
+        "status": true
+      }
+    },
+    {
+      "id": "bip66",
+      "version": 3,
+      "reject": {
+        "status": true
+      }
+    },
+    {
+      "id": "bip65",
+      "version": 4,
+      "reject": {
+        "status": true
+      }
+    }
+  ],
+  "bip9_softforks": {
+    "csv": {
+      "status": "active",
+      "startTime": 1456790400,
+      "timeout": 1493596800,
+      "since": 770112
+    },
+    "segwit": {
+      "status": "active",
+      "startTime": 1462060800,
+      "timeout": 1493596800,
+      "since": 834624
+    }
+  },
+  "warnings": "Warning: unknown new rules activated (versionbit 28)"
+}
+```
+
 ### Get the Best Block Hash (called by application)
 
 Returns the best block hash of the watching Bitcoin node.
