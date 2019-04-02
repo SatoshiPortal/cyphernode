@@ -32,7 +32,7 @@ stop_apps() {
 
       if [ -f $APP_START_SCRIPT_PATH ]; then
         APP_ID=$(basename $APP_SCRIPT_PATH)
-        source $APP_START_SCRIPT_PATH
+        . $APP_START_SCRIPT_PATH
       fi
     fi
   done
