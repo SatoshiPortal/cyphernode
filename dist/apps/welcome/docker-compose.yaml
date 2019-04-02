@@ -6,7 +6,7 @@ services:
       - "TRACING=1"
     image: cyphernode_welcome
     volumes:
-      - "/Users/jash/go/src/cyphernode_welcome/data_docker:/data"
+      - "~/cyphernode_welcome/data:/data"
     networks:
       - cyphernodeappsnet
     restart: always
