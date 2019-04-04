@@ -17,7 +17,6 @@ services:
       - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
       - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
       - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
-      - "<%= gatekeeper_datapath %>/nginx-spark-conf:/etc/nginx/conf.d/nginx-spark-conf"
     command: $USER
 
 #    deploy:

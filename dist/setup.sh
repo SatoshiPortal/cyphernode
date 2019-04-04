@@ -385,7 +385,6 @@ install_docker() {
   copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
   copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
   copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-  copy_file $current_path/lightning/c-lightning/nginx-spark-conf $GATEKEEPER_DATAPATH/nginx-spark-conf 1 $SUDO_REQUIRED
   copy_file $current_path/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
