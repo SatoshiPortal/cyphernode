@@ -9,6 +9,7 @@ services:
       - "$GATEKEEPER_DATAPATH/certs/cert.pem:/data/cert.pem"
       - "$GATEKEEPER_DATAPATH/keys.properties:/data/keys.properties"
       - "$APP_SCRIPT_PATH/config.toml:/data/config.toml"
+      - "$GATEKEEPER_DATAPATH/htpasswd:/htpasswd/htpasswd"
     networks:
       - cyphernodeappsnet
     restart: always
@@ -18,7 +19,7 @@ services:
       - "traefik.frontend.passHostHeader=true"
       - "traefik.enable=true"
       - "traefik.port=8080"
-#      - "traefik.frontend.auth.basic.usersFile=${SHARED_HTPASSWD_PATH}"
+      - "traefik.frontend.auth.basic.usersFile=/htpasswd/htpasswd"
 networks:
   cyphernodeappsnet:
     external: true
