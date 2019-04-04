@@ -1,2 +1,1 @@
-# echo -n "access-key" | openssl dgst -hmac "cyphernode:sparkwallet" -sha256 -binary | base64 | sed 's/[\+\W]//g'
 cyphernode:sparkwallet:FoeDdQw5yl7pPfqdlGy3OEk/txGqyJjSbVtffhzs7kc=
