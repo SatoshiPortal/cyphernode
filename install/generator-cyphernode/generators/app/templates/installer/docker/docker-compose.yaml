@@ -38,6 +38,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "<%= traefik_datapath%>/traefik.toml:/traefik.toml"
       - "<%= traefik_datapath%>/acme.json:/acme.json"
+      - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd"
     networks:
       - cyphernodeappsnet
 
@@ -140,15 +141,18 @@ services:
     volumes:
       - "<%= lightning_datapath %>:/etc/lightning"
       - "<%= lightning_datapath %>/sparkwallet:/data"
+      - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd"
     labels:
       - "traefik.docker.network=cyphernodeappsnet"
       - "traefik.frontend.rule=ReplacePathRegex: ^/sparkwallet(.*) $$1"
       - "traefik.frontend.passHostHeader=true"
-      - "traefik.frontend.auth.basic.usersFile=$SHARED_HTPASSWD_PATH"
+      - "traefik.frontend.auth.basic.usersFile=/htpasswd/htpasswd"
+      - "traefik.frontend.headers.customRequestHeaders=Authorization:Basic Y3lwaGVybm9kZTpzcGFya3dhbGxldA=="
       - "traefik.enable=true"
       - "traefik.port=9737"
     networks:
       - cyphernodenet
+      - cyphernodeappsnet
     restart: always
 <% } %>
 <% if ( features.indexOf('otsclient') !== -1 ) { %>
