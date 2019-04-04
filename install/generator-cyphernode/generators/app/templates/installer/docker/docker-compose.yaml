@@ -140,6 +140,13 @@ services:
     volumes:
       - "<%= lightning_datapath %>:/etc/lightning"
       - "<%= lightning_datapath %>/sparkwallet:/data"
+    labels:
+      - "traefik.docker.network=cyphernodeappsnet"
+      - "traefik.frontend.rule=ReplacePathRegex: ^/sparkwallet(.*) $$1"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.frontend.auth.basic.usersFile=$SHARED_HTPASSWD_PATH"
+      - "traefik.enable=true"
+      - "traefik.port=9737"
     networks:
       - cyphernodenet
     restart: always
