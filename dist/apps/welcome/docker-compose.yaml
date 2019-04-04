@@ -6,7 +6,9 @@ services:
       - "TRACING=1"
     image: cyphernode_welcome
     volumes:
-      - "~/cyphernode_welcome/data:/data"
+      - "$GATEKEEPER_DATAPATH/certs/cert.pem:/data/cert.pem"
+      - "$GATEKEEPER_DATAPATH/keys.properties:/data/keys.properties"
+      - "$APP_SCRIPT_PATH/config.toml:/data/config.toml"
     networks:
       - cyphernodeappsnet
     restart: always
