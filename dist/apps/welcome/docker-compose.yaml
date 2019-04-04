@@ -4,7 +4,7 @@ services:
   cyphernode_welcome:
     environment:
       - "TRACING=1"
-    image: cyphernode_welcome
+    image: cyphernode/app_welcome:v0.2.0-rc.1
     volumes:
       - "$GATEKEEPER_DATAPATH/certs/cert.pem:/data/cert.pem"
       - "$GATEKEEPER_DATAPATH/keys.properties:/data/keys.properties"
