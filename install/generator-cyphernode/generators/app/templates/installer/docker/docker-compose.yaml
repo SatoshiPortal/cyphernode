@@ -136,7 +136,7 @@ services:
     restart: always
 
   sparkwallet:
-    command: --login "cyphernode:sparkwallet" --no-tls
+    command: --no-tls
     image: cyphernode/sparkwallet:<%= sparkwallet_version %>
     volumes:
       - "<%= lightning_datapath %>:/etc/lightning"
@@ -147,7 +147,7 @@ services:
       - "traefik.frontend.rule=ReplacePathRegex: ^/sparkwallet(.*) $$1"
       - "traefik.frontend.passHostHeader=true"
       - "traefik.frontend.auth.basic.usersFile=/htpasswd/htpasswd"
-      - "traefik.frontend.headers.customRequestHeaders=Authorization:Basic Y3lwaGVybm9kZTpzcGFya3dhbGxldA=="
+      - "traefik.frontend.headers.customRequestHeaders=X-Access:FoeDdQw5yl7pPfqdlGy3OEk/txGqyJjSbVtffhzs7kc="
       - "traefik.enable=true"
       - "traefik.port=9737"
     networks:

@@ -457,12 +457,13 @@ install_docker() {
         fi
         if [ ! -d $LIGHTNING_DATAPATH/sparkwallet ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/sparkwallet
+          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/sparkwallet/spark
           next
         fi
         if [ -d $LIGHTNING_DATAPATH ]; then
           copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
           copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $current_path/lightning/c-lightning/cookie $LIGHTNING_DATAPATH/sparkwallet/spark/cookie 1 $SUDO_REQUIRED
         fi
     fi
   fi
