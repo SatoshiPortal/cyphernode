@@ -5,8 +5,8 @@ echo "APP_SCRIPT_PATH: $APP_SCRIPT_PATH"
 echo "APP_START_SCRIPT_PATH: $APP_START_SCRIPT_PATH"
 echo "GATEKEEPER_DATAPATH: $GATEKEEPER_DATAPATH"
 
-if [ "$DOCKER_MODE" == "swarm" ]; then
+if [ "$DOCKER_MODE" = "swarm" ]; then
   docker stack rm cn_welcome
-elif [ "$DOCKER_MODE" == "compose" ]; then
+elif [ "$DOCKER_MODE" = "compose" ]; then
   docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml down
 fi
