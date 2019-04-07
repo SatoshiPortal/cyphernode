@@ -3,7 +3,7 @@ version: "3"
 services:
   cyphernode_sparkwallet:
     command: --no-tls
-    image: cyphernode/sparkwallet:v0.2.3-local
+    image: cyphernode/sparkwallet:v0.2.5
     volumes:
       - "$LIGHTNING_DATAPATH/:/etc/lightning"
       - "$APP_SCRIPT_PATH/cookie:/data/spark/cookie"
