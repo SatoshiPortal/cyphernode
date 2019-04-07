@@ -194,7 +194,6 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
-             -e SPARKWALLET_VERSION=$SPARKWALLET_VERSION \
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user yo --no-insight cyphernode$gen_options $recreate
@@ -454,15 +453,9 @@ install_docker() {
         if [[ $archpath == "rpi" ]]; then
           dockerfile="Dockerfile-alpine"
         fi
-        if [ ! -d $LIGHTNING_DATAPATH/sparkwallet ]; then
-          step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/sparkwallet/spark
-          next
-        fi
         if [ -d $LIGHTNING_DATAPATH ]; then
           copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
           copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
-          copy_file $current_path/lightning/c-lightning/cookie $LIGHTNING_DATAPATH/sparkwallet/spark/cookie 1 $SUDO_REQUIRED
         fi
     fi
   fi
@@ -711,7 +704,6 @@ OTSCLIENT_VERSION="v0.2.0-rc.1"
 PYCOIN_VERSION="v0.2.0-rc.1"
 BITCOIN_VERSION="v0.17.1"
 LIGHTNING_VERSION="v0.7.0"
-SPARKWALLET_VERSION="v0.2.5"
 
 SETUP_DIR=$(dirname $(realpath $0))
 
@@ -767,7 +759,6 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
     OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
     PYCOIN_VERSION="$PYCOIN_VERSION-local"
-    SPARKWALLET_VERSION="$SPARKWALLET_VERSION-local"
   fi
 fi
 
