@@ -120,18 +120,6 @@ checklnnode() {
   return 0
 }
 
-checksparkwallet() {
-  echo -en "\r\n\e[1;36mTesting Spark Wallet... " > /dev/console
-  local rc
-
-  rc=$(curl -s -o /dev/null -w "%{http_code}" http://sparkwallet:9737)
-  [ "${rc}" -ne "401" ] && return 400
-
-  echo -e "\e[1;36mSpark Wallet rocks!" > /dev/console
-
-  return 0
-}
-
 checkservice() {
   local interval=10
   local totaltime=120
@@ -145,12 +133,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning sparkwallet ':'' %>; do
+    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning sparkwallet ':'' %>; do
+    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -171,9 +159,8 @@ checkservice() {
   #    { "name": "otsclient", "active":true },
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
-  #    { "name": "sparkwallet", "active":true }
   #  ]
-  for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning sparkwallet ':'' %>; do
+  for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -232,7 +219,6 @@ feature_status() {
 #    { "name": "otsclient", "active":true },
 #    { "name": "bitcoin", "active":true },
 #    { "name": "lightning", "active":true },
-#    { "name": "sparkwallet", "active":true }
 #  ],
 #  "features": [
 #    { "name": "gatekeeper", "working":true },
@@ -240,7 +226,6 @@ feature_status() {
 #    { "name": "otsclient", "working":true },
 #    { "name": "bitcoin", "working":true },
 #    { "name": "lightning", "working":true },
-#    { "name": "sparkwallet", "working":true }
 #  ]
 #}
 
@@ -270,7 +255,6 @@ fi
 #    { "name": "otsclient", "working":true },
 #    { "name": "bitcoin", "working":true },
 #    { "name": "lightning", "working":true },
-#    { "name": "sparkwallet", "working":true }
 #  ]
 
 result="${containers},\"features\":[{\"coreFeature\":true, \"name\":\"cyphernode proxy\",\"working\":true}, {\"coreFeature\":true, \"name\":\"gatekeeper\",\"working\":"
@@ -331,22 +315,10 @@ fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 
-result="${result},{\"name\":\"sparkwallet\",\"working\":"
-status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"sparkwallet\") | .active")
-if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
-  timeout_feature checksparkwallet
-  returncode=$?
-else
-  returncode=1
-fi
-finalreturncode=$((${returncode} | ${finalreturncode}))
-result="${result}$(feature_status ${returncode} 'Spark Wallet error!')}"
 <% } %>
 
 result="{${result}]}"
 
 echo "${result}" > /gatekeeper/installation.json
-
-echo -e "\r\n\e[1;32mTests finished.\e[0m" > /dev/console
 
 echo "EXIT_STATUS=${finalreturncode}" > /dist/exitStatus.sh
