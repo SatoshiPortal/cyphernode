@@ -1,5 +1,63 @@
 #!/bin/sh
 
+. ./installer/config.sh
+
+# be aware that randomly downloaded cyphernode apps will have access to
+# your configuration and filesystem.
+# !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
+# TODO: Test if we can mitigate this security issue by
+# running app dockers inside a docker container
+
+start_apps() {
+  local SCRIPT_NAME="start.sh"
+  local APP_SCRIPT_PATH
+  local APP_START_SCRIPT_PATH
+  local APP_ID
+
+  for i in $current_path/apps/*
+  do
+    APP_SCRIPT_PATH=$(echo $i)
+    if [ -d $APP_SCRIPT_PATH ]; then
+      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+
+      if [ -f $APP_START_SCRIPT_PATH ]; then
+        APP_ID=$(basename $APP_SCRIPT_PATH)
+        . $APP_START_SCRIPT_PATH
+      fi
+    fi
+  done
+}
+
+test_apps() {
+  local SCRIPT_NAME="test.sh"
+  local APP_SCRIPT_PATH
+  local APP_START_SCRIPT_PATH
+  local APP_ID
+  local returncode=0
+
+  for i in $current_path/apps/*
+  do
+    APP_SCRIPT_PATH=$(echo $i)
+    if [ -d $APP_SCRIPT_PATH ]; then
+      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+
+      if [ -f $APP_START_SCRIPT_PATH ]; then
+        APP_ID=$(basename $APP_SCRIPT_PATH)
+        printf "\r\n\e[1;36mTesting $APP_ID... \e[1;0m"
+        . $APP_START_SCRIPT_PATH
+        local rc=$?
+
+        if [ ""$rc -eq "0" ]; then
+          printf "\e[1;36m$APP_ID rocks!\e[1;0m"
+        fi
+        returncode=$(($rc | ${returncode}))
+        echo ""
+      fi
+    fi
+  done
+  return $returncode
+}
+
 <% if (run_as_different_user) { %>
 OS=$(uname -s)
 if [ "$OS" = "Darwin" ]; then
@@ -21,6 +79,8 @@ docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 <% } %>
 
+start_apps
+
 arch=$(uname -m)
 case "${arch}" in arm*)
   printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
@@ -39,6 +99,12 @@ if [ -f $current_path/exitStatus.sh ]; then
   rm -f $current_path/exitStatus.sh
 fi
 
+test_apps
+
+EXIT_STATUS=$(($? | ${EXIT_STATUS}))
+
+printf "\r\n\e[1;32mTests finished.\e[0m\n"
+
 if [ "$EXIT_STATUS" -ne "0" ]; then
   printf "\r\n\033[1;31mThere was an error during cyphernode installation.  Please see Docker's logs for more information.  Run ./stop.sh to stop cyphernode.\r\n\r\n\033[0m"
   exit 1
@@ -48,33 +114,3 @@ printf "\r\n\033[0;92mDepending on your current location and DNS settings, point
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
 printf "\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n\r\n\033[0m"
-
-
-# be aware that randomly downloaded cyphernode apps will have access to
-# your configuration and filesystem.
-# !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
-# TODO: Test if we can mitigate this security issue by
-# running app dockers inside a docker container
-
-start_apps() {
-  local SCRIPT_NAME="start.sh"
-  local APP_SCRIPT_PATH
-  local APP_START_SCRIPT_PATH
-  local APP_ID
-
-  for i in "$current_path/apps/*"
-  do
-    APP_SCRIPT_PATH=$(echo $i)
-    if [ -d $APP_SCRIPT_PATH ]; then
-      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
-
-      if [ -f $APP_START_SCRIPT_PATH ]; then
-        APP_ID=$(basename $APP_SCRIPT_PATH)
-        . $APP_START_SCRIPT_PATH
-      fi
-    fi
-  done
-}
-
-. ./installer/config.sh
-start_apps
