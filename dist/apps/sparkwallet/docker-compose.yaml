@@ -6,7 +6,7 @@ services:
     image: cyphernode/sparkwallet:v0.2.3-local
     volumes:
       - "$LIGHTNING_DATAPATH/:/etc/lightning"
-      - "$LIGHTNING_DATAPATH/sparkwallet:/data"
+      - "$APP_SCRIPT_PATH/cookie:/data/spark/cookie"
       - "$GATEKEEPER_DATAPATH/htpasswd:/htpasswd/htpasswd"
     labels:
       - "traefik.docker.network=cyphernodeappsnet"
