@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  cyphernode_sparkwallet:
+    command: --no-tls
+    image: cyphernode/sparkwallet:v0.2.3-local
+    volumes:
+      - "$LIGHTNING_DATAPATH/:/etc/lightning"
+      - "$LIGHTNING_DATAPATH/sparkwallet:/data"
+      - "$GATEKEEPER_DATAPATH/htpasswd:/htpasswd/htpasswd"
+    labels:
+      - "traefik.docker.network=cyphernodeappsnet"
+      - "traefik.frontend.rule=ReplacePathRegex: ^/sparkwallet(.*) $$1"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.frontend.auth.basic.usersFile=/htpasswd/htpasswd"
+      - "traefik.frontend.headers.customRequestHeaders=X-Access:FoeDdQw5yl7pPfqdlGy3OEk/txGqyJjSbVtffhzs7kc="
+      - "traefik.enable=true"
+      - "traefik.port=9737"
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    restart: always
+networks:
+  cyphernodeappsnet:
+    external: true
+  cyphernodenet:
+    external: true
