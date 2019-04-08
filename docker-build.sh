@@ -119,14 +119,18 @@ manifest "gatekeeper" \
 
 image_dockers "clightning" "../dockers/c-lightning v0.7.0" ${arch} "Dockerfile.${arch}" \
 && image_dockers "bitcoin" "../dockers/bitcoin-core v0.17.1" ${arch} "Dockerfile.${arch}" \
-&& image_dockers "app_welcome" "../cyphernode_welcome ${v3}" ${arch} \
-&& image_dockers "sparkwallet" "../spark-wallet v0.2.5" ${arch} "Dockerfile-cyphernode"
+&& image_dockers "app_welcome" "../cyphernode_welcome" "${v3}" ${arch} \
+&& image_dockers "app_welcome" "../cyphernode_welcome" "${v2}" ${arch} \
+&& image_dockers "app_welcome" "../cyphernode_welcome" "${v1}" ${arch} \
+&& image_dockers "sparkwallet" "../spark-wallet" "v0.2.5" ${arch} "Dockerfile-cyphernode"
 
 [ $? -ne 0 ] && echo "Error" && return 1
 
 manifest_dockers "clightning" "v0.7.0" \
 && manifest_dockers "bitcoin" "v0.17.1" \
 && manifest_dockers "app_welcome" "${v3}" \
+&& manifest_dockers "app_welcome" "${v2}" \
+&& manifest_dockers "app_welcome" "${v1}" \
 && manifest_dockers "sparkwallet" "v0.2.5"
 
 [ $? -ne 0 ] && echo "Error" && return 1
