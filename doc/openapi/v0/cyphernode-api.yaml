@@ -177,6 +177,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getblockchaininfo:
+    get:
+      tags:
+        - "stats"
+        - "core features"
+      summary: "Show blockchain info"
+      description: "Returns detailed blockchain information."
+      operationId: "getBlockchainInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainInfo'
+        '401':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /getblockinfo/{blockHash}:
     get:
       parameters:
@@ -858,6 +883,42 @@ components:
           type: "integer"
         blocktime:
           type: "integer"
+    BlockchainInfo:
+      type: "object"
+      properties:
+        chain:
+          type: "string"
+          enum: ["test", "main"]
+        blocks:
+          type: "integer"
+        headers:
+          type: "integer"
+        bestblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        difficulty:
+          type: "number"
+        mediantime:
+          type: "integer"
+        verificationprogress:
+          type: "number"
+        initialblockdownload:
+          type: "boolean"
+        chainwork:
+          $ref: '#/components/schemas/TypeHashString'
+        size_on_disk:
+          type: "integer"
+        pruned:
+          type: "boolean"
+        warnings:
+          type: "string"
+        softforks:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/TypeSoftFork'
+        bip9_softforks:
+          type: "object"
+          additionalProperties:
+            $ref: '#/components/schemas/TypeBip9SoftFork'
     Input:
       type: "object"
       properties:
@@ -910,6 +971,29 @@ components:
       description: "8 character hex string"
       type: "string"
       pattern: "^([a-fA-F0-9][a-fA-F0-9]){1,4}$"
+    TypeSoftFork:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        version:
+          type: "integer"
+        reject:
+          type: "object"
+          properties:
+            status:
+              type: "boolean"
+    TypeBip9SoftFork:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        startTime:
+          type: "integer"
+        timeout:
+          type: "integer"
+        since:
+          type: "integer"
     ApiResponseTemporarilyUnavailable:
       type: "object"
       properties:
