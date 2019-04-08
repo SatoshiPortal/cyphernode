@@ -453,10 +453,16 @@ install_docker() {
         if [[ $archpath == "rpi" ]]; then
           dockerfile="Dockerfile-alpine"
         fi
-        if [ -d $LIGHTNING_DATAPATH ]; then
-          copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-          copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+
+        if [ ! -d $LIGHTNING_DATAPATH ]; then
+          step "   [32mcreate[0m $LIGHTNING_DATAPATH"
+          sudo_if_required mkdir -p $LIGHTNING_DATAPATH
+          next
         fi
+
+        copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+        copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+
     fi
   fi
 
