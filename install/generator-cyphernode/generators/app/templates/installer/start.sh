@@ -19,9 +19,9 @@ start_apps() {
     APP_SCRIPT_PATH=$(echo $i)
     if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
       APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+      APP_ID=$(basename $APP_SCRIPT_PATH)
 
       if [ -f "$APP_START_SCRIPT_PATH" ]; then
-        APP_ID=$(basename $APP_SCRIPT_PATH)
         . $APP_START_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
         export SHARED_HTPASSWD_PATH
