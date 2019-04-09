@@ -688,7 +688,7 @@ install_apps() {
   if [ ! -d "$current_path/apps" ]; then
     local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "   [32mclone[0m $apps_repo into apps"
-    docker run --rm -v "$current_path":/git alpine/git clone "$apps_repo" apps > /dev/null 2>&1
+    docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone "$apps_repo" /git/apps > /dev/null 2>&1
   fi
 }
 

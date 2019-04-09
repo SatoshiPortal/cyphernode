@@ -1,6 +1,6 @@
 FROM node:11.1-alpine
 
-RUN apk add --update bash su-exec p7zip openssl nano apache2-utils && rm -rf /var/cache/apk/*
+RUN apk add --update bash su-exec p7zip openssl nano apache2-utils git && rm -rf /var/cache/apk/*
 RUN mkdir -p /app
 RUN mkdir /.config
 RUN chmod a+rwx /.config
