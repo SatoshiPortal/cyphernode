@@ -18,12 +18,27 @@ stop_apps() {
   for i in $current_path/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
-    if [ -d $APP_SCRIPT_PATH ]; then
-      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+    if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
+      APP_STOP_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
 
-      if [ -f $APP_START_SCRIPT_PATH ]; then
+      if [ -f "$APP_STOP_SCRIPT_PATH" ]; then
         APP_ID=$(basename $APP_SCRIPT_PATH)
-        . $APP_START_SCRIPT_PATH
+        . $APP_STOP_SCRIPT_PATH
+      elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
+        export SHARED_HTPASSWD_PATH
+        export GATEKEEPER_DATAPATH
+        export LIGHTNING_DATAPATH
+        export BITCOIN_DATAPATH
+        export APP_SCRIPT_PATH
+        export APP_ID
+        export DOCKER_MODE
+
+        if [ "$DOCKER_MODE" = "swarm" ]; then
+          docker stack rm $APP_ID
+        elif [ "$DOCKER_MODE" = "compose" ]; then
+          docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml down
+        fi
+
       fi
     fi
   done
