@@ -17,12 +17,26 @@ start_apps() {
   for i in $current_path/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
-    if [ -d $APP_SCRIPT_PATH ]; then
+    if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
       APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
 
-      if [ -f $APP_START_SCRIPT_PATH ]; then
+      if [ -f "$APP_START_SCRIPT_PATH" ]; then
         APP_ID=$(basename $APP_SCRIPT_PATH)
         . $APP_START_SCRIPT_PATH
+      elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
+        export SHARED_HTPASSWD_PATH
+        export GATEKEEPER_DATAPATH
+        export LIGHTNING_DATAPATH
+        export BITCOIN_DATAPATH
+        export APP_SCRIPT_PATH
+        export APP_ID
+        export DOCKER_MODE
+
+        if [ "$DOCKER_MODE" = "swarm" ]; then
+          docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
+        elif [ "$DOCKER_MODE" = "compose" ]; then
+          docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml up -d --remove-orphans
+        fi
       fi
     fi
   done
@@ -38,13 +52,13 @@ test_apps() {
   for i in $current_path/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
-    if [ -d $APP_SCRIPT_PATH ]; then
-      APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
+    if [ -d "$APP_SCRIPT_PATH" ]; then
+      APP_TEST_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
 
-      if [ -f $APP_START_SCRIPT_PATH ]; then
-        APP_ID=$(basename $APP_SCRIPT_PATH)
+      if [ -f "$APP_TEST_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
+        APP_ID=$(basename "$APP_SCRIPT_PATH")
         printf "\r\n\e[1;36mTesting $APP_ID... \e[1;0m"
-        . $APP_START_SCRIPT_PATH
+        . $APP_TEST_SCRIPT_PATH
         local rc=$?
 
         if [ ""$rc -eq "0" ]; then
