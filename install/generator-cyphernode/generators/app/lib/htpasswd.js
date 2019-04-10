@@ -6,8 +6,10 @@ module.exports = async ( password ) => {
     return null;
   }
 
+  password = password.replace(/'/g, `'\\''`);
+
   return await new Promise( (resolve) => {
-    exec('htpasswd -bnB admin '+password+' | cut -sd \':\' -f2', (error, stdout, stderr) => {
+    exec('htpasswd -bnB admin \''+password+'\' | cut -sd \':\' -f2', (error, stdout, stderr) => {
       if (error) {
         return resolve(null);
       }
