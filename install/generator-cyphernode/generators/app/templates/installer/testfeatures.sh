@@ -121,8 +121,8 @@ checklnnode() {
 }
 
 checkservice() {
-  local interval=10
-  local totaltime=120
+  local interval=15
+  local totaltime=180
   local outcome
   local returncode=0
   local endtime=$(($(date +%s) + ${totaltime}))
@@ -179,8 +179,8 @@ checkservice() {
 }
 
 timeout_feature() {
-  local interval=10
-  local totaltime=60
+  local interval=15
+  local totaltime=120
   local testwhat=${1}
   local returncode
   local endtime=$(($(date +%s) + ${totaltime}))
