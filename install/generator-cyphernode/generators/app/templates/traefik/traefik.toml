@@ -21,7 +21,7 @@ watch = true
 exposedByDefault = false
 
 [acme]
-email = "noreply@cnc.skp.rocks"
+email = "letsencrypt@yourdomain.com"
 storage = "/acme.json"
 entryPoint = "https"
 onHostRule = true
