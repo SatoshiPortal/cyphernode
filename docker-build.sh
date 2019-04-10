@@ -91,9 +91,9 @@ arm="arm32v6"
 #arch=${arm}
 arch=${x86}
 
-v1="v0-rc.4"
-v2="v0.2-rc.4"
-v3="v0.2.0-rc.4"
+v1="v0-rc.5"
+v2="v0.2-rc.5"
+v3="v0.2.0-rc.5"
 
 echo "arch=$arch"
 
