@@ -27,3 +27,5 @@ entryPoint = "https"
 onHostRule = true
 [acme.httpChallenge]
 entryPoint = "http"
+[[acme.domains]]
+  main = "cyphernode.yourdomain.com"
