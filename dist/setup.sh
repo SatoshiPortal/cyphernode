@@ -700,6 +700,7 @@ install() {
   fi
 }
 
+
 CONFIGURE=0
 INSTALL=0
 RECREATE=0
@@ -730,6 +731,31 @@ function ctrl_c() {
 }
 
 export current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+
+#***************************************************************
+# Temporary code for upgrading from v0.1 to v0.2
+#***************************************************************
+
+grep "xpub" gatekeeper/api.properties > /dev/null
+returncode=$?
+if [[ $returncode -eq 1 ]]; then
+  # grep found the file but didn't find xpub in it
+
+  echo "Previous Cyphernode installation detected."
+  echo "Running migration scripts..."
+
+  echo "You will be asked to enter your admin passphrase twice while migrating.  It is the passphrase you used when installing previous verison of Cyphernode."
+
+  # We want to add the 000 KEY_ID (Stats) and update the api.properties file with new endpoints
+  docker run --rm -it -v "$SETUP_DIR:/conf" alpine:3.8 sh -c "apk add --no-cache --update curl ; curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/${GATEKEEPER_VERSION}/api_auth_docker/api-sample.properties -o /conf/api-sample.properties"
+  docker run --rm -it -v "$SETUP_DIR:/conf" alpine:3.8 sh -c 'apk add --no-cache --update jq p7zip;apk add --no-cache --update jq curl p7zip;cd conf;7z e config.7z;k=$(dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -pc 32) && l="kapi_id=\\\"000\\\";kapi_key=\\\"$k\\\";kapi_groups=\\\"stats\\\";eval ugroups_\${kapi_id}=\${kapi_groups};eval ukey_\${kapi_id}=\${kapi_key}" && cat config.json | sed 's/kapi_groups=\\"/kapi_groups=\\"stats,/g' | jq ".gatekeeper_keys.configEntries = [\"$l\"] + .gatekeeper_keys.configEntries" | jq ".gatekeeper_keys.clientInformation = [\"000=$k\"] + .gatekeeper_keys.clientInformation" | jq ".gatekeeper_apiproperties = \"$(cat api-sample.properties | paste -s -d '\\\\n')\"" > config.json;7z u config.7z config.json;'
+fi
+
+#***************************************************************
+# Temporary code for upgrading from v0.1 to v0.2
+#***************************************************************
+
 
 while getopts ":cirhys" opt; do
   case $opt in
