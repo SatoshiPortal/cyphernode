@@ -34,6 +34,8 @@ cd dist
 
 ## Upgrading
 
+To upgrade to the most recent version, just get and run the most recent version of the setup.sh file as described in the previous section.  Migration should be taken care by the script.
+
 Your proxy's database won't be lost.  Migration scripts are taking care of automatically migrating the database when starting the proxy.
 
 ```

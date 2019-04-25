@@ -3,15 +3,15 @@
 TRACING=1
 
 # CYPHERNODE VERSION "v0.1.1"
-CONF_VERSION="v0.2.0-rc.5-local"
-GATEKEEPER_VERSION="v0.2.0-rc.5-local"
-PROXY_VERSION="v0.2.0-rc.5-local"
-PROXYCRON_VERSION="v0.2.0-rc.5-local"
-OTSCLIENT_VERSION="v0.2.0-rc.5-local"
-PYCOIN_VERSION="v0.2.0-rc.5-local"
+CONF_VERSION="v0.2.0-rc.6-local"
+GATEKEEPER_VERSION="v0.2.0-rc.6-local"
+PROXY_VERSION="v0.2.0-rc.6-local"
+PROXYCRON_VERSION="v0.2.0-rc.6-local"
+OTSCLIENT_VERSION="v0.2.0-rc.6-local"
+PYCOIN_VERSION="v0.2.0-rc.6-local"
 BITCOIN_VERSION="v0.17.1"
 LIGHTNING_VERSION="v0.7.0"
-GRAFANA_VERSION="v0.2.0-rc.5-local"
+GRAFANA_VERSION="v0.2.0-rc.6-local"
 
 trace()
 {
