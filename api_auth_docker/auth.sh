@@ -106,10 +106,10 @@ verify_group()
   eval ugroups='$ugroups_'$id
   trace "[verify_group] user groups=${ugroups}"
 
-  if [ $context = "s" ]; then
+  if [ ${context} = "s" ]; then
     # static files only accessible by a certain group
     needed_group=${action}
-  elif [ $context = "v0" ]; then
+  elif [ ${context} = "v0" ]; then
     # actual api calls
     # It is so much faster to include the keys here instead of grep'ing the file for key.
     . ./api.properties
@@ -118,10 +118,12 @@ verify_group()
 
   trace "[verify_group] needed_group=${needed_group}"
 
-
-  case "${ugroups}" in
-    *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
-  esac
+  # If needed_group is empty, the action was not found in api.propeties.
+  if [ -n "${needed_group}" ]; then
+    case "${ugroups}" in
+      *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+    esac
+  fi
 
   trace "[verify_group] Access NOT granted"
   return 1
