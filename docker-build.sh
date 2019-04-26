@@ -117,8 +117,8 @@ manifest "gatekeeper" \
 
 [ $? -ne 0 ] && echo "Error" && return 1
 
-image_dockers "clightning" "../dockers/c-lightning v0.7.0" ${arch} "Dockerfile.${arch}" \
-&& image_dockers "bitcoin" "../dockers/bitcoin-core v0.17.1" ${arch} "Dockerfile.${arch}" \
+image_dockers "clightning" "../dockers/c-lightning" "v0.7.0" ${arch} "Dockerfile.${arch}" \
+&& image_dockers "bitcoin" "../dockers/bitcoin-core" "v0.17.1" ${arch} "Dockerfile.${arch}" \
 && image_dockers "app_welcome" "../cyphernode_welcome" "${v3}" ${arch} \
 && image_dockers "app_welcome" "../cyphernode_welcome" "${v2}" ${arch} \
 && image_dockers "app_welcome" "../cyphernode_welcome" "${v1}" ${arch} \
