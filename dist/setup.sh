@@ -711,12 +711,12 @@ AUTOSTART=0
 
 # CYPHERNODE VERSION "v0.1.1"
 VERSION_OVERRIDE="true"
-CONF_VERSION="v0.2.0-rc.6"
-GATEKEEPER_VERSION="v0.2.0-rc.6"
-PROXY_VERSION="v0.2.0-rc.6"
-PROXYCRON_VERSION="v0.2.0-rc.6"
-OTSCLIENT_VERSION="v0.2.0-rc.6"
-PYCOIN_VERSION="v0.2.0-rc.6"
+CONF_VERSION="v0.2.0"
+GATEKEEPER_VERSION="v0.2.0"
+PROXY_VERSION="v0.2.0"
+PROXYCRON_VERSION="v0.2.0"
+OTSCLIENT_VERSION="v0.2.0"
+PYCOIN_VERSION="v0.2.0"
 BITCOIN_VERSION="v0.17.1"
 LIGHTNING_VERSION="v0.7.0"
 
@@ -742,10 +742,10 @@ returncode=$?
 if [[ $returncode -eq 1 ]]; then
   # grep found the file but didn't find xpub in it
 
-  echo "Previous Cyphernode installation detected."
-  echo "Running migration scripts..."
+  echo "\nPrevious Cyphernode installation detected."
+  echo "Running migration scripts...\n"
 
-  echo "You will be asked to enter your admin passphrase twice while migrating.  It is the passphrase you used when installing previous verison of Cyphernode."
+  echo "You will be asked to enter your admin passphrase twice while migrating.  It is the passphrase you used when installing previous verison of Cyphernode.\n"
 
   # We want to add the 000 KEY_ID (Stats) and update the api.properties file with new endpoints
   docker run --rm -it -v "$SETUP_DIR:/conf" alpine:3.8 sh -c "apk add --no-cache --update curl ; curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/${GATEKEEPER_VERSION}/api_auth_docker/api-sample.properties -o /conf/api-sample.properties"
