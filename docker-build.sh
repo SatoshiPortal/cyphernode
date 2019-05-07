@@ -104,9 +104,9 @@ image "gatekeeper" "api_auth_docker/" ${arch} \
 && image "pycoin" "pycoin_docker/" ${arch} \
 && image "cyphernodeconf" "install/" ${arch}
 
-[ $? -ne 0 ] && echo "Error" && return 1
+[ $? -ne 0 ] && echo "Error" && exit 1
 
-[ "${arch}" = "${x86}" ] && echo "Built and pushed amd64 only" && return 0
+[ "${arch}" = "${x86}" ] && echo "Built and pushed amd64 only" && exit 0
 
 manifest "gatekeeper" \
 && manifest "proxycron" \
@@ -115,7 +115,7 @@ manifest "gatekeeper" \
 && manifest "pycoin" \
 && manifest "cyphernodeconf"
 
-[ $? -ne 0 ] && echo "Error" && return 1
+[ $? -ne 0 ] && echo "Error" && exit 1
 
 image_dockers "clightning" "../dockers/c-lightning" "v0.7.0" ${arch} "Dockerfile.${arch}" \
 && image_dockers "bitcoin" "../dockers/bitcoin-core" "v0.17.1" ${arch} "Dockerfile.${arch}" \
@@ -124,7 +124,7 @@ image_dockers "clightning" "../dockers/c-lightning" "v0.7.0" ${arch} "Dockerfile
 && image_dockers "app_welcome" "../cyphernode_welcome" "${v1}" ${arch} \
 && image_dockers "sparkwallet" "../spark-wallet" "v0.2.5" ${arch} "Dockerfile-cyphernode"
 
-[ $? -ne 0 ] && echo "Error" && return 1
+[ $? -ne 0 ] && echo "Error" && exit 1
 
 manifest_dockers "clightning" "v0.7.0" \
 && manifest_dockers "bitcoin" "v0.17.1" \
@@ -133,4 +133,4 @@ manifest_dockers "clightning" "v0.7.0" \
 && manifest_dockers "app_welcome" "${v1}" \
 && manifest_dockers "sparkwallet" "v0.2.5"
 
-[ $? -ne 0 ] && echo "Error" && return 1
+[ $? -ne 0 ] && echo "Error" && exit 1
