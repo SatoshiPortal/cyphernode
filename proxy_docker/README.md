@@ -48,22 +48,6 @@ OTS_FILES=/proxy/otsfiles
 XPUB_DERIVATION_GAP=100
 ```
 
-## Choose the right architecture
-
-...by modifying the following line in Dockerfile:
-
-```shell
-COPY app/bin/lightning-cli_x86 ${HOME}/lightning-cli
-```
-
-...to lightning-cli_arm if running on a RPi.
-
-## Building docker image
-
-```shell
-docker build -t btcproxyimg .
-```
-
 ## Create sqlite3 database path and give rights
 
 ```shell

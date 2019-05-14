@@ -5,7 +5,8 @@ RUN mkdir -p /app
 RUN mkdir /.config
 RUN chmod a+rwx /.config
 
-RUN npm install -g yo
+# Workaround for https://github.com/npm/uid-number/issues/3
+RUN NPM_CONFIG_UNSAFE_PERM=true npm install -g yo
 COPY generator-cyphernode /app
 WORKDIR /app/generator-cyphernode
 RUN npm link
