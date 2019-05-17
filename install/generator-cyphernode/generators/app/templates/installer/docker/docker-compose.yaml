@@ -167,6 +167,29 @@ services:
     restart: always
 <% } %>
 
+  broker:
+    image: eclipse-mosquitto:1.6
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+#    ports:
+#      - "1883:1883"
+#      - "9001:9001"
+    networks:
+      - cyphernodenet
+    restart: always
+
+  notifier:
+    image: cyphernode/notifier:<%= notifier_version %>
+    command: $USER ./startnotifier.sh
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    restart: always
+
 networks:
   cyphernodenet:
     external: true

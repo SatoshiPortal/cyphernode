@@ -225,6 +225,7 @@ module.exports = class extends Generator {
     if( versionOverride ) {
       delete this.props.gatekeeper_version;
       delete this.props.proxy_version;
+      delete this.props.notifier_version;
       delete this.props.proxycron_version;
       delete this.props.pycoin_version;
       delete this.props.otsclient_version;
@@ -464,6 +465,7 @@ module.exports = class extends Generator {
       default_username: process.env.DEFAULT_USER || '',
       gatekeeper_version: process.env.GATEKEEPER_VERSION || 'latest',
       proxy_version: process.env.PROXY_VERSION || 'latest',
+      notifier_version: process.env.NOTIFIER_VERSION || 'latest',
       proxycron_version: process.env.PROXYCRON_VERSION || 'latest',
       pycoin_version: process.env.PYCOIN_VERSION || 'latest',
       otsclient_version: process.env.OTSCLIENT_VERSION || 'latest',

@@ -237,9 +237,12 @@ curl_callback() {
   local data=${2}
   local returncode
 
-  trace "[curl_callback] curl -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
-  rc=$(curl -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
-  returncode=$?
+  #trace "[curl_callback] curl -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
+  #rc=$(curl -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
+  #returncode=$?
+  trace "[curl_callback] mosquitto_rr -h broker -t notifier -e jefsio -m \"{\"response-topic\":\"jefsio\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${data}\"}\""
+  rc=$(./mosquitto_rr -h broker -t notifier -e jefsio -m "{\"response-topic\":\"jefsio\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${data}\"}")
+  rc=$(echo "${rc}" | jq ".http_code")
   trace "[curl_callback] HTTP return code=${rc}"
   trace_rc ${returncode}
 
