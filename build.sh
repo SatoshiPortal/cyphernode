@@ -6,6 +6,7 @@ TRACING=1
 CONF_VERSION="v0.2.0-local"
 GATEKEEPER_VERSION="v0.2.0-local"
 PROXY_VERSION="v0.2.0-local"
+NOTIFIER_VERSION="v0.2.0-local"
 PROXYCRON_VERSION="v0.2.0-local"
 OTSCLIENT_VERSION="v0.2.0-local"
 PYCOIN_VERSION="v0.2.0-local"
@@ -34,11 +35,12 @@ build_docker_images() {
   docker build  install/ -t cyphernode/cyphernodeconf:$CONF_VERSION
 
   trace "Creating cyphernode images"
-  docker build  api_auth_docker/ -t cyphernode/gatekeeper:$GATEKEEPER_VERSION
-  docker build  proxy_docker/ -t cyphernode/proxy:$PROXY_VERSION
-  docker build  cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION
-  docker build  pycoin_docker/ -t cyphernode/pycoin:$PYCOIN_VERSION
-  docker build  otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION
+  docker build api_auth_docker/ -t cyphernode/gatekeeper:$GATEKEEPER_VERSION \
+  && docker build proxy_docker/ -t cyphernode/proxy:$PROXY_VERSION \
+  && docker build notifier_docker/ -t cyphernode/notifier:$NOTIFIER_VERSION \
+  && docker build cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION \
+  && docker build pycoin_docker/ -t cyphernode/pycoin:$PYCOIN_VERSION \
+  && docker build otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION
 }
 
 build_docker_images

@@ -13,6 +13,9 @@ WORKDIR ${HOME}
 COPY app/data/* ./
 COPY app/script/* ./
 COPY --from=cyphernode/clightning:v0.7.0-test /usr/local/bin/lightning-cli ./
+# COPY --from=eclipse-mosquitto:1.6 /usr/bin/mosquitto_sub ./
+# COPY --from=eclipse-mosquitto:1.6 /usr/bin/mosquitto_pub ./
+COPY --from=eclipse-mosquitto:1.6 /usr/bin/mosquitto_rr ./
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh \
  && chmod o+w . \
