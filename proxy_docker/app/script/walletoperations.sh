@@ -14,6 +14,8 @@ spend() {
   trace "[spend] amount=${amount}"
   local response
   local id_inserted
+  local tx_details
+  local tx_raw_details
 
   response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
   local returncode=$?
@@ -24,8 +26,23 @@ spend() {
     local txid=$(echo "${response}" | jq ".result" | tr -d '"')
     trace "[spend] txid=${txid}"
 
+    tx_details=$(get_transaction ${txid} "spender")
+    tx_raw_details=$(get_rawtransaction ${txid})
+
+    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
+
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
+    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
+    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+
     # Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-    sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    #sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
@@ -127,16 +144,8 @@ getbalancebyxpub() {
 getnewaddress() {
   trace "Entering getnewaddress()..."
 
-  local address_type=${1}
-  trace "[getnewaddress] address_type=${address_type}"
-
   local response
-  local data
-  if [ -z "${address_type}" ]; then
-    data='{"method":"getnewaddress"}'
-  else
-    data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${address_type}\"]}"
-  fi
+  local data='{"method":"getnewaddress"}'
   response=$(send_to_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
@@ -181,6 +190,8 @@ batchspend() {
   local recipientswhere
   local recipientsjson
   local id_inserted
+  local tx_details
+  local tx_raw_details
 
   # We will batch all the addresses in DB without a TXID
   local batching=$(sql 'SELECT address, amount FROM recipient WHERE tx_id IS NULL')
@@ -219,8 +230,23 @@ batchspend() {
     local txid=$(echo "${response}" | jq ".result" | tr -d '"')
     trace "[batchspend] txid=${txid}"
 
+    tx_details=$(get_transaction ${txid} "spender")
+    tx_raw_details=$(get_rawtransaction ${txid})
+
+    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
+
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
+    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
+    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+
     # Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-    sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    #sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then

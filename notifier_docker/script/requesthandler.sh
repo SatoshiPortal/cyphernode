@@ -13,6 +13,7 @@ main() {
   local response_topic
 
   while read msg; do
+    trace "[main] New msg just arrived!"
     trace "[main] msg=${msg}"
 
     cmd=$(echo ${msg} | jq ".cmd" | tr -d '"')
@@ -25,14 +26,14 @@ main() {
       web)
         response=$(web "${msg}")
         publish_response "${response}" "${response_topic}" ${?}
-        trace "[main] PR"
         ;;
     esac
-    trace "[main] case finished"
+    trace "[main] msg processed"
   done
 }
 
 export TRACING=1
 
 main
+trace "[requesthandler] exiting"
 exit $?

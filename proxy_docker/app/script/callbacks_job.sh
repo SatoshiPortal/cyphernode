@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sql.sh
+. ./notify.sh
 
 do_callbacks() {
   (
@@ -233,28 +234,13 @@ build_callback() {
 curl_callback() {
   trace "Entering curl_callback()..."
 
-  local url=${1}
-  local data=${2}
   local returncode
 
-  #trace "[curl_callback] curl -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
-  #rc=$(curl -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
-  #returncode=$?
-  trace "[curl_callback] mosquitto_rr -h broker -t notifier -e jefsio -m \"{\"response-topic\":\"jefsio\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${data}\"}\""
-  rc=$(./mosquitto_rr -h broker -t notifier -e jefsio -m "{\"response-topic\":\"jefsio\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${data}\"}")
-  rc=$(echo "${rc}" | jq ".http_code")
-  trace "[curl_callback] HTTP return code=${rc}"
+  notify_web "${1}" "${2}"
+  returncode=$?
   trace_rc ${returncode}
 
-  if [ "${returncode}" -eq "0" ]; then
-    if [ "${rc}" -lt "400" ]; then
-      return 0
-    else
-      return ${rc}
-    fi
-  else
-    return ${returncode}
-  fi
+  return ${returncode}
 }
 
 case "${0}" in *callbacks_job.sh) do_callbacks $@;; esac

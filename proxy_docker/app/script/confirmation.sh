@@ -112,7 +112,7 @@ confirmation() {
 
   else
     # TX found in our DB.
-    # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf)
+    # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf) or spending to a watched address (in this case, spend inserted the tx in the DB)
 
     local tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
     trace "[confirmation] tx_blockhash=${tx_blockhash}"
@@ -130,9 +130,8 @@ confirmation() {
         raw_tx=readfile('rawtx-${txid}.blob')
         WHERE txid=\"${txid}\""
       trace_rc $?
-
-      id_inserted=${tx}
     fi
+    id_inserted=${tx}
   fi
   # Delete the temp file containing the raw tx (see above)
   rm rawtx-${txid}.blob
@@ -151,8 +150,8 @@ confirmation() {
     do
       watching_id=$(echo "${row}" | cut -d '|' -f1)
       address=$(echo "${row}" | cut -d '|' -f2)
-      tx_vout_n=$(echo "${tx_details}" | jq ".result.details[] | select(.address==\"${address}\") | .vout")
-      tx_vout_amount=$(echo "${tx_details}" | jq ".result.details[] | select(.address==\"${address}\") | .amount")
+      tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+      tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
       trace_rc $?
     done
@@ -176,13 +175,12 @@ confirmation() {
 
   ########################################################################################################
 
-  do_callbacks
+  ) 201>./.confirmation.lock
 
+  do_callbacks
   echo '{"result":"confirmed"}'
 
   return 0
-
-  ) 201>./.confirmation.lock
 }
 
 case "${0}" in *confirmation.sh) confirmation $@;; esac

@@ -202,17 +202,13 @@ serve_ots_backoffice() {
         trace "[serve_ots_backoffice] url=${url}"
 
         # Call back newly upgraded stamps
-        #trace "[serve_ots_backoffice] curl -s -o /dev/null -w \"%{http_code}\" -H \"X-Forwarded-Proto: https\" ${url}"
-        #rc=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Forwarded-Proto: https" ${url})
-        #returncode=$?
-        trace "[serve_ots_backoffice] mosquitto_rr -h broker -t notifier -e dhtsggs -m \"{\"response-topic\":\"dhtsggs\",\"cmd\":\"web\",\"url\":\"${url}\"}\""
-        rc=$(./mosquitto_rr -h broker -t notifier -e dhtsggs -m "{\"response-topic\":\"dhtsggs\",\"cmd\":\"web\",\"url\":\"${url}\"}")
-        rc=$(echo "${rc}" | jq ".http_code")
+        notify_web "${url}"
+        returncode=$?
         trace_rc ${returncode}
 
         # Even if curl executed ok, we need to make sure the http return code is also ok
 
-        if [ "${returncode}" -eq "0" ] && [ "${rc}" -lt "400" ]; then
+        if [ "${returncode}" -eq "0" ]; then
           sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
           trace_rc $?
         fi
