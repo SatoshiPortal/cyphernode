@@ -56,15 +56,21 @@ get_rawtransaction()
   return $?
 }
 
-get_transaction()
-{
+get_transaction() {
   trace "Entering get_transaction()..."
 
   local txid=${1}
   trace "[get_transaction] txid=${txid}"
+  local to_spender_node=${2}
+  trace "[get_transaction] to_spender_node=${to_spender_node}"
+
   local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
   trace "[get_transaction] data=${data}"
-  send_to_watcher_node "${data}"
+  if [ -z "${to_spender_node}" ]; then
+    send_to_watcher_node "${data}"
+  else
+    send_to_spender_node "${data}"
+  fi
   return $?
 }
 

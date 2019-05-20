@@ -379,4 +379,5 @@ export DB_PATH
 export DB_FILE
 
 main
+trace "[requesthandler] exiting"
 exit $?

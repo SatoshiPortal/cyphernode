@@ -9,7 +9,7 @@ web() {
   local url
   local body
   local returncode
-  local http_code
+  local response
   local result
 
   trace "[web] msg=${msg}"
@@ -20,13 +20,14 @@ web() {
   # jq -e will have a return code of 1 if the supplied tag is null.
   if [ "$?" -eq "0" ]; then
     # body tag not null, so it's a POST
+    body=$(echo "${body}" | base64 -d)
     trace "[web] body=${body}"
   else
     body=
     trace "[web] no body, GET request"
   fi
 
-  http_code=$(curl_it "${url}" "${body}")
+  response=$(curl_it "${url}" "${body}")
   returncode=$?
   trace_rc ${returncode}
 
@@ -38,7 +39,8 @@ web() {
     result="error"
   fi
 
-  echo "{\"result\":\"${result}\",\"http_code\":\"${http_code}\"}"
+  echo "${response}"
+#  echo "{\"result\":\"${result}\",\"http_code\":\"${http_code}\"}"
 
   return ${returncode}
 }
@@ -49,20 +51,29 @@ curl_it() {
   local url=$(echo "${1}" | tr -d '"')
   local data=${2}
   local returncode
+  local response
+  local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl -o /dev/null -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d ${data} ${url}"
-    rc=$(curl -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d ${data} ${url})
+    trace "[curl_it] curl -o webresponse-${rnd} -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d ${data} ${url}"
+    rc=$(curl -o webresponse-${rnd} -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d ${data} ${url})
     returncode=$?
   else
-    trace "[curl_it] curl -o /dev/null -w \"%{http_code}\" ${url}"
-    rc=$(curl -o /dev/null -w "%{http_code}" ${url})
+    trace "[curl_it] curl -o webresponse-$$ -w \"%{http_code}\" ${url}"
+    rc=$(curl -o webresponse-${rnd} -w "%{http_code}" ${url})
     returncode=$?
   fi
   trace "[curl_it] HTTP return code=${rc}"
   trace_rc ${returncode}
 
-  echo "${rc}"
+  if [ "${returncode}" -eq "0" ]; then
+    response=$(cat webresponse-${rnd} | base64 | tr -d '"' ; rm webresponse-${rnd})
+  else
+    response=
+  fi
+  response="{\"curl_code\":${returncode},\"http_code\":${rc},\"body\":\"${response}\"}"
+
+  echo "${response}"
 
   if [ "${returncode}" -eq "0" ]; then
     if [ "${rc}" -lt "400" ]; then
