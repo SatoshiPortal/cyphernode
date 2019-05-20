@@ -20,6 +20,7 @@ web() {
   # jq -e will have a return code of 1 if the supplied tag is null.
   if [ "$?" -eq "0" ]; then
     # body tag not null, so it's a POST
+    # The body field has been based-64 to avoid dealing with escaping special chars
     body=$(echo "${body}" | base64 -d)
     trace "[web] body=${body}"
   else
@@ -31,16 +32,7 @@ web() {
   returncode=$?
   trace_rc ${returncode}
 
-  if [ "${returncode}" -eq "0" ]; then
-    # {"result":"success", "response":"<html></html>"}
-    result="success"
-  else
-    # {"result":"error", "response":"<html></html>"}
-    result="error"
-  fi
-
   echo "${response}"
-#  echo "{\"result\":\"${result}\",\"http_code\":\"${http_code}\"}"
 
   return ${returncode}
 }
@@ -55,8 +47,8 @@ curl_it() {
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl -o webresponse-${rnd} -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d ${data} ${url}"
-    rc=$(curl -o webresponse-${rnd} -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d ${data} ${url})
+    trace "[curl_it] curl -o webresponse-${rnd} -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
+    rc=$(curl -o webresponse-${rnd} -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
     returncode=$?
   else
     trace "[curl_it] curl -o webresponse-$$ -w \"%{http_code}\" ${url}"

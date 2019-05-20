@@ -12,6 +12,8 @@ main() {
   local response
   local response_topic
 
+  # Messages should have this form:
+  # {"response-topic":"response/5541","cmd":"web","url":"2557df870b9a:1111/callback1conf","body":"eyJpZCI6IjUxIiwiYWRkc...dCI6MTUxNzYwMH0K"}
   while read msg; do
     trace "[main] New msg just arrived!"
     trace "[main] msg=${msg}"

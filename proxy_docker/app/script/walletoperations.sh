@@ -26,13 +26,14 @@ spend() {
     local txid=$(echo "${response}" | jq ".result" | tr -d '"')
     trace "[spend] txid=${txid}"
 
+    # Let's get transaction details on the spending wallet so that we have fee information
     tx_details=$(get_transaction ${txid} "spender")
     tx_raw_details=$(get_rawtransaction ${txid})
 
+    # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
     local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
-
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
@@ -40,8 +41,7 @@ spend() {
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     local rawtx=$(echo "${tx_details}" | jq '.result.hex')
 
-    # Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-    #sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
@@ -230,13 +230,14 @@ batchspend() {
     local txid=$(echo "${response}" | jq ".result" | tr -d '"')
     trace "[batchspend] txid=${txid}"
 
+    # Let's get transaction details on the spending wallet so that we have fee information
     tx_details=$(get_transaction ${txid} "spender")
     tx_raw_details=$(get_rawtransaction ${txid})
 
+    # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
     local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
-
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
@@ -244,8 +245,7 @@ batchspend() {
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     local rawtx=$(echo "${tx_details}" | jq '.result.hex')
 
-    # Let's insert the txid in our little DB to manage the confirmation and tell it's not a watching address
-    #sql "INSERT OR IGNORE INTO tx (txid) VALUES (\"${txid}\")"
+    # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
     returncode=$?
     trace_rc ${returncode}

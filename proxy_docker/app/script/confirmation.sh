@@ -150,6 +150,8 @@ confirmation() {
     do
       watching_id=$(echo "${row}" | cut -d '|' -f1)
       address=$(echo "${row}" | cut -d '|' -f2)
+      # In the case of us spending to a watched address, the address appears twice in the details,
+      # once on the spend side (negative amount) and once on the receiving side (positive amount)
       tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
       tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
@@ -177,6 +179,7 @@ confirmation() {
 
   ) 201>./.confirmation.lock
 
+  # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
   do_callbacks
   echo '{"result":"confirmed"}'
 
