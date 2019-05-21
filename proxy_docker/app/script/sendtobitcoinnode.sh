@@ -58,8 +58,8 @@ send_to_bitcoin_node()
   local config=${2}
   local data=${3}
 
-  trace "[send_to_bitcoin_node] curl -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
-  result=$(curl -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
+  trace "[send_to_bitcoin_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
+  result=$(curl -m 20 -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
   returncode=$?
   trace_rc ${returncode}
   trace "[send_to_bitcoin_node] result=${result}"
