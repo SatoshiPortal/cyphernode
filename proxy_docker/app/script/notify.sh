@@ -15,8 +15,8 @@ notify_web() {
   local http_code
 
   # We use the pid as the response-topic, so there's no conflict in responses.
-  trace "[notify_web] mosquitto_rr -h broker -W 5 -t notifier -e \"response/$$\" -m \"{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}\""
-  response=$(mosquitto_rr -h broker -W 5 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}")
+  trace "[notify_web] mosquitto_rr -h broker -W 21 -t notifier -e \"response/$$\" -m \"{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}\""
+  response=$(mosquitto_rr -h broker -W 21 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}")
   returncode=$?
   trace_rc ${returncode}
 
