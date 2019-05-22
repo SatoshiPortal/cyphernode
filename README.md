@@ -1,6 +1,6 @@
 # cyphernode
 
-Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties. 
+Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
 
 # What is cyphernode?
 
@@ -14,9 +14,11 @@ It is currently in production by Bylls.com, Canada's first and largest Bitcoin p
 
 The project is in **heavy development** - we are currently looking for reviews, new features, user feedback and contributors to our roadmap.
 
+![image](doc/CN-Arch-0.2.1.jpg)
+
 # Low requirements, efficient use of resources
 
-Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases). 
+Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases).
 
 * For a full-node and all modules:
   * 350 GB of storage, 2GB of RAM.

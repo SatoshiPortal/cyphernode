@@ -33,6 +33,9 @@ services:
     ports:
       - 80:80
       - 443:443
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "<%= traefik_datapath%>/traefik.toml:/traefik.toml"
@@ -160,6 +163,9 @@ services:
     ports:
       - "<%= (net === 'mainnet')?'8332:8332':'18332:18332' %>"
 <% } %>
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
     networks:
@@ -172,9 +178,6 @@ services:
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
-#    ports:
-#      - "1883:1883"
-#      - "9001:9001"
     networks:
       - cyphernodenet
     restart: always
