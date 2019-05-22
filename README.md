@@ -14,7 +14,7 @@ It is currently in production by Bylls.com, Canada's first and largest Bitcoin p
 
 The project is in **heavy development** - we are currently looking for reviews, new features, user feedback and contributors to our roadmap.
 
-![image](doc/CN-Arch-0.2.1.jpg)
+![image](doc/CN-Arch.jpg)
 
 # Low requirements, efficient use of resources
 
