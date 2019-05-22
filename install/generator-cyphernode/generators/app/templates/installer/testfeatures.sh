@@ -83,6 +83,26 @@ checkpycoin() {
   return 0
 }
 
+checkbroker() {
+  echo -en "\r\n\e[1;36mTesting Broker... " > /dev/console
+  local rc
+
+
+  echo -e "\e[1;36mBroker rocks!" > /dev/console
+
+  return 0
+}
+
+checknotifier() {
+  echo -en "\r\n\e[1;36mTesting Notifier... " > /dev/console
+  local rc
+
+
+  echo -e "\e[1;36mNotifier rocks!" > /dev/console
+
+  return 0
+}
+
 checkots() {
   echo -en "\r\n\e[1;36mTesting OTSclient... " > /dev/console
   local rc
@@ -133,12 +153,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -160,7 +180,7 @@ checkservice() {
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
   #  ]
-  for container in gatekeeper proxy proxycron pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -278,6 +298,28 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
+
+result="${result},{\"coreFeature\":true, \"name\":\"broker\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"broker\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checkbroker
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Broker error!')}"
+
+result="${result},{\"coreFeature\":true, \"name\":\"notifier\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier\") | .active")
+if [[ "${brokenproxy}" != "true" && "${status}" = "true" ]]; then
+  timeout_feature checknotifier
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Notifier error!')}"
 
 result="${result},{\"coreFeature\":true, \"name\":\"pycoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"pycoin\") | .active")
