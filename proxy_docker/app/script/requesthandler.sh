@@ -227,8 +227,9 @@ main()
           ;;
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
+          # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
 
-          response=$(getnewaddress)
+          response=$(getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
           ;;

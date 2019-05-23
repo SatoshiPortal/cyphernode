@@ -554,10 +554,13 @@ Proxy response:
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 
-Calls getnewaddress RPC on the spending wallet.  Used to refill the spending wallet from cold wallet (ie Trezor).
+Calls getnewaddress RPC on the spending wallet.  Used to refill the spending wallet from cold wallet (ie Trezor).  Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
 
 ```http
 GET http://cyphernode:8888/getnewaddress
+GET http://cyphernode:8888/getnewaddress/bech32
+GET http://cyphernode:8888/getnewaddress/legacy
+GET http://cyphernode:8888/getnewaddress/p2sh-segwit
 ```
 
 Proxy response:
@@ -565,6 +568,12 @@ Proxy response:
 ```json
 {
   "address":"2NEC972DZpRM7SfuJUG9rYEix2P9A8qsNKF"
+}
+```
+
+```json
+{
+  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj"
 }
 ```
 
