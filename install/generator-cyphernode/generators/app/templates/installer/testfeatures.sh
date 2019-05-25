@@ -87,6 +87,8 @@ checkbroker() {
   echo -en "\r\n\e[1;36mTesting Broker... " > /dev/console
   local rc
 
+  rc=$(mosquitto_pub -h broker -t "testtopic" -m "testbroker")
+  [ "$?" -ne "0" ] && return 110
 
   echo -e "\e[1;36mBroker rocks!" > /dev/console
 
@@ -95,8 +97,14 @@ checkbroker() {
 
 checknotifier() {
   echo -en "\r\n\e[1;36mTesting Notifier... " > /dev/console
-  local rc
+  local response
+  local returncode
 
+  response=$(mosquitto_rr -h broker -W 5 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/getbestblockhash\"}")
+  returncode=$?
+  [ "${returncode}" -ne "0" ] && return 115
+  http_code=$(echo "${response}" | jq ".http_code" | tr -d '"')
+  [ "${http_code}" -ge "400" ] && return 118
 
   echo -e "\e[1;36mNotifier rocks!" > /dev/console
 

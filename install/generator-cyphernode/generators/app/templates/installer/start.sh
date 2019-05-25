@@ -106,7 +106,7 @@ esac
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
---network cyphernodenet alpine:3.8 /testfeatures.sh
+--network cyphernodenet eclipse-mosquitto:1.6.2 /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then
   . $current_path/exitStatus.sh

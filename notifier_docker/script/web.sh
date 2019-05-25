@@ -59,7 +59,7 @@ curl_it() {
   trace_rc ${returncode}
 
   if [ "${returncode}" -eq "0" ]; then
-    response=$(cat webresponse-${rnd} | base64 | tr -d '"' ; rm webresponse-${rnd})
+    response=$(cat webresponse-${rnd} | base64 | tr -d '\n' ; rm webresponse-${rnd})
   else
     response=
   fi
