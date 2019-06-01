@@ -32,7 +32,7 @@ build_docker_images() {
   trace "Updating SatoshiPortal repos"
 
   trace "Creating cyphernodeconf image"
-  docker build  install/ -t cyphernode/cyphernodeconf:$CONF_VERSION
+  docker build  cyphernodeconf_docker/ -t cyphernode/cyphernodeconf:$CONF_VERSION
 
   trace "Creating cyphernode images"
   docker build api_auth_docker/ -t cyphernode/gatekeeper:$GATEKEEPER_VERSION \

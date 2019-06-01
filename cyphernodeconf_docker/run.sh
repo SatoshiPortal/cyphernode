@@ -1,0 +1,3 @@
+#!/bin/sh
+
+SETUP_DIR=/Users/jash/src/cyphernode_satoshiportal/dist DEFAULT_CERT_HOSTNAME=disk0book.local PROXYCRON_VERSION=v0.2.0-rc.5 PYCOIN_VERSION=v0.2.0-rc.5 SETUP_VERSION=v0.2.0-rc.5 BITCOIN_VERSION=v0.17.1 LIGHTNING_VERSION=v0.7.0 DEFAULT_DATADIR_BASE=/Users/jash GATEKEEPER_VERSION=v0.2.0-rc.5 PROXY_VERSION=v0.2.0-rc.5 OTSCLIENT_VERSION=v0.2.0-rc.5 DEFAULT_USER=jash EDITOR=/usr/bin/nano node index.js $@
