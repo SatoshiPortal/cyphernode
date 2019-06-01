@@ -139,7 +139,7 @@ configure() {
   local recreate=""
 
   if [[ $1 == 1 ]]; then
-    recreate="recreate"
+    recreate=" recreate"
   fi
 
 
@@ -151,8 +151,6 @@ configure() {
 
   if [[ -t 1 ]]; then
     interactive=' -it'
-  else
-    gen_options=' --force 2'
   fi
 
   if [[ $CFG_PASSWORD ]]; then
@@ -186,7 +184,6 @@ configure() {
              -e DEFAULT_DATADIR_BASE=$HOME \
              -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
-             -e VERSION_OVERRIDE=$VERSION_OVERRIDE \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
              -e PROXY_VERSION=$PROXY_VERSION \
              -e NOTIFIER_VERSION=$NOTIFIER_VERSION \
@@ -195,9 +192,10 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
              --network none \
-             --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user yo --no-insight cyphernode$gen_options $recreate
+             --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user node index.js$recreate
   if [[ -f $current_path/exitStatus.sh ]]; then
     . $current_path/exitStatus.sh
     rm $current_path/exitStatus.sh
@@ -701,7 +699,6 @@ install() {
   fi
 }
 
-
 CONFIGURE=0
 INSTALL=0
 RECREATE=0
@@ -710,8 +707,8 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.1.1"
-VERSION_OVERRIDE="true"
+# CYPHERNODE VERSION "v0.2.0"
+SETUP_VERSION="v0.2.0"
 CONF_VERSION="v0.2.0"
 GATEKEEPER_VERSION="v0.2.0"
 PROXY_VERSION="v0.2.0"
@@ -733,31 +730,6 @@ function ctrl_c() {
 }
 
 export current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
-
-#***************************************************************
-# Temporary code for upgrading from v0.1 to v0.2
-#***************************************************************
-
-grep "xpub" gatekeeper/api.properties > /dev/null
-returncode=$?
-if [[ $returncode -eq 1 ]]; then
-  # grep found the file but didn't find xpub in it
-
-  echo "\nPrevious Cyphernode installation detected."
-  echo "Running migration scripts...\n"
-
-  echo "You will be asked to enter your admin passphrase twice while migrating.  It is the passphrase you used when installing previous verison of Cyphernode.\n"
-
-  # We want to add the 000 KEY_ID (Stats) and update the api.properties file with new endpoints
-  docker run --rm -it -v "$SETUP_DIR:/conf" alpine:3.8 sh -c "apk add --no-cache --update curl ; curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/${GATEKEEPER_VERSION}/api_auth_docker/api-sample.properties -o /conf/api-sample.properties"
-  docker run --rm -it -v "$SETUP_DIR:/conf" alpine:3.8 sh -c 'apk add --no-cache --update jq p7zip;apk add --no-cache --update jq curl p7zip;cd conf;7z e config.7z;k=$(dd if=/dev/urandom bs=32 count=1 2> /dev/null | xxd -pc 32) && l="kapi_id=\\\"000\\\";kapi_key=\\\"$k\\\";kapi_groups=\\\"stats\\\";eval ugroups_\${kapi_id}=\${kapi_groups};eval ukey_\${kapi_id}=\${kapi_key}" && cat config.json | sed 's/kapi_groups=\\"/kapi_groups=\\"stats,/g' | jq ".gatekeeper_keys.configEntries = [\"$l\"] + .gatekeeper_keys.configEntries" | jq ".gatekeeper_keys.clientInformation = [\"000=$k\"] + .gatekeeper_keys.clientInformation" | jq ".gatekeeper_apiproperties = \"$(cat api-sample.properties | paste -s -d '\\\\n')\"" > config.json;7z u config.7z config.json;'
-fi
-
-#***************************************************************
-# Temporary code for upgrading from v0.1 to v0.2
-#***************************************************************
-
 
 while getopts ":cirhys" opt; do
   case $opt in
@@ -832,10 +804,12 @@ if [[ $INSTALL == 1 ]]; then
   modify_owner
   modify_permissions
   install_apps
+  if [[ ! $AUTOSTART == 1 ]]; then
+    cowsay
+  fi
+
 fi
 
 if [[ $AUTOSTART == 1 ]]; then
   exec $current_path/start.sh
-else
-  cowsay
 fi
