@@ -6,7 +6,7 @@ COPY . /app
 WORKDIR /app
 
 RUN mkdir /data && \
-  apk add --update su-exec p7zip openssl nano apache2-utils && \
+  apk add --update su-exec p7zip openssl nano apache2-utils git && \
   rm -rf /var/cache/apk/* && \
   npm ci --production
 
