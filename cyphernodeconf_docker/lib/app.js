@@ -352,7 +352,7 @@ module.exports = class App {
         if( !fs.existsSync(targetDir) ) {
           fs.mkdirSync(targetDir, { recursive: true });
         }
-        const result = await ejsRenderFileAsync( this.templatePath(p), Object.assign({},this.config.data,this.sessionData), {} );
+        const result = await ejsRenderFileAsync( this.templatePath(p), Object.assign({}, this.sessionData, this.config.data), {} );
 
         console.log( chalk.green( '   create' )+' '+p );
         fs.writeFileSync( destFile, result );
