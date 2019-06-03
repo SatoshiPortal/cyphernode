@@ -285,7 +285,7 @@ fi
 #    { "name": "lightning", "working":true },
 #  ]
 
-result="${containers},\"features\":[{\"coreFeature\":true, \"name\":\"cyphernode proxy\",\"working\":true}, {\"coreFeature\":true, \"name\":\"gatekeeper\",\"working\":"
+result="${containers},\"features\":[{\"coreFeature\":true, \"name\":\"proxy\",\"working\":true}, {\"coreFeature\":true, \"name\":\"gatekeeper\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"gatekeeper\") | .active")
 if [ "${status}" = "true" ]; then
   timeout_feature checkgatekeeper
