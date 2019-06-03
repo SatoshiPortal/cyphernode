@@ -72,6 +72,16 @@ main()
         trace "[main] line=${line}"
       fi
       case "${cmd}" in
+        installation_info)
+          # GET http://192.168.111.152:8080/info
+          if [ -f "$DB_PATH/info.json" ]; then
+            response=$( cat "$DB_PATH/info.json" )
+          else
+            response='{ "error": "missing installation data" }'
+          fi
+          response_to_client "${response}" ${?}
+          break
+          ;;
         watch)
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
