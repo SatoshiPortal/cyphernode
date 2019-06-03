@@ -500,8 +500,6 @@ module.exports = class App {
 
     };
 
-    console.log( ii );
-
     return ii;
   }
 
