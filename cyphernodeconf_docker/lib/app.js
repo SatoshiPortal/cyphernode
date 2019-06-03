@@ -383,21 +383,33 @@ module.exports = class App {
   }
 
   installationInfo() {
+    const cert = new Cert();
+    const gatekeeper_cns = cert.cns( this.config.data.gatekeeper_cns );
 
-    const core_features = [
+    const features = [
       {
         name: 'Bitcoin core node',
         label: 'bitcoin',
         host: 'bitcoin',
         networks: ['cyphernodenet'],
-        docker: 'cyphernode/bitcoin:'+this.config.docker_versions['cyphernode/bitcoin']
+        docker: 'cyphernode/bitcoin:'+this.config.docker_versions['cyphernode/bitcoin'],
+        extra: {
+          prune: this.config.data.bitcoin_prune,
+          prune_size: this.config.data.bitcoin_prune_size,
+          expose: this.config.data.bitcoin_expose,
+          uacomment: this.config.data.bitcoin_uacomment
+        }
       },
       {
         name: 'Gatekeeper',
         label: 'gatekeeper',
         host: 'gatekeeper',
         networks: ['cyphernodenet'],
-        docker: 'cyphernode/gatekeeper:'+this.config.docker_versions['cyphernode/gatekeeper']
+        docker: 'cyphernode/gatekeeper:'+this.config.docker_versions['cyphernode/gatekeeper'],
+        extra: {
+          port: this.config.data.gatekeeper_port,
+          cns: gatekeeper_cns
+        }
       },
       {
         name: 'Proxy',
@@ -439,20 +451,37 @@ module.exports = class App {
 
     const optional_features = [];
 
-    const optional_features_docker = {
-      otsclient: "cyphernode/otsclient:"+this.config.docker_versions['cyphernode/otsclient'],
-      lightning: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning']
+    const optional_features_data = {
+      otsclient: {
+        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient']
+      },
+      lightning: {
+        docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
+        extra: {
+          nodename: this.config.data.lightning_nodename,
+          nodecolor: this.config.data.lightning_nodecolor,
+          expose: this.config.data.lightning_expose,
+          external_ip: this.config.data.lightning_external_ip,
+          implementation: this.config.data.lightning_implementation
+        }
+      }
     }
 
     for( let feature of this.features ) {
-      optional_features.push( {
+      const f = {
         active: feature.checked,
         name: feature.name,
         label: feature.value,
         host: feature.value,
         networks: ['cyphernodenet'],
-        docker: optional_features_docker[feature.value]
-      });
+        docker: optional_features_data[feature.value].docker
+      };
+
+      if( feature.checked ) {
+        f.extra = optional_features_data[feature.value].extra
+      }
+
+      optional_features.push( f );
     }
 
     let bitcoin_version = this.config.docker_versions['cyphernode/bitcoin'];
@@ -461,40 +490,15 @@ module.exports = class App {
       bitcoin_version = bitcoin_version.substr(1);
     }
 
-    const cert = new Cert();
-    const gatekeeper_cns = cert.cns( this.config.data.gatekeeper_cns );
-
     const ii = {
       api_versions: ['v0'],
       setup_version: this.config.setup_version,
       bitcoin_version: bitcoin_version,
-      core_features: core_features,
+      features: features,
       optional_features: optional_features,
       devmode: this.sessionData.devmode,
-      bitcoin_prune: this.config.data.bitcoin_prune,
-      bitcoin_prune_size: this.config.data.bitcoin_prune_size,
-      bitcoin_expose: this.config.data.bitcoin_expose,
-      bitcoin_uacomment: this.config.data.bitcoin_uacomment,
-      gatekeeper_port: this.config.data.gatekeeper_port,
-      gatekeeper_cns: gatekeeper_cns
+
     };
-
-    // add info about optional features
-    if( this.config.data.features.indexOf( 'lightning' ) != -1 ) {
-      ii.lightning_nodename = this.config.data.lightning_nodename;
-      ii.lightning_nodecolor = this.config.data.lightning_nodecolor;
-      ii.lightning_expose = this.config.data.lightning_expose;
-      ii.lightning_external_ip = this.config.data.lightning_external_ip;
-      ii.lightning_implementation = this.config.data.lightning_implementation;
-
-      let clightning_version = this.config.docker_versions['cyphernode/clightning'];
-
-      if( clightning_version[0] === 'v' ) {
-        clightning_version = clightning_version.substr(1);
-      }
-
-      ii.clightning_version = clightning_version;
-    }
 
     console.log( ii );
 
