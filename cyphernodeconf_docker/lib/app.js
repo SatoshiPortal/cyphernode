@@ -134,14 +134,16 @@ module.exports = class App {
     this.config = new Config( {
       setup_version: this.sessionData.setup_version,
       docker_versions: {
-        'gatekeeper': this.sessionData.gatekeeper_version,
-        'proxy': this.sessionData.proxy_version,
-        'proxycron': this.sessionData.proxycron_version,
-        'pycoin': this.sessionData.pycoin_version,
-        'otsclient': this.sessionData.otsclient_version,
-        'bitcoincore': this.sessionData.bitcoin_version,
-        'clightning': this.sessionData.lightning_version,
-        'notifier': this.sessionData.notifier_version
+        'cyphernode/bitcoin': this.sessionData.bitcoin_version,
+        'cyphernode/gatekeeper': this.sessionData.gatekeeper_version,
+        'cyphernode/proxy': this.sessionData.proxy_version,
+        'cyphernode/proxycron': this.sessionData.proxycron_version,
+        'cyphernode/pycoin': this.sessionData.pycoin_version,
+        'cyphernode/otsclient': this.sessionData.otsclient_version,
+        'cyphernode/clightning': this.sessionData.lightning_version,
+        'cyphernode/notifier': this.sessionData.notifier_version,
+        'traefik': 'v1.7.9-alpine',
+        'eclipse-mosquitto': '1.6'
       }
     } );
 
@@ -338,6 +340,8 @@ module.exports = class App {
       }
     }
 
+    this.sessionData.installationInfo = this.installationInfo();
+
     for( let m of prompters ) {
       const name = m.name();
       for( let t of m.templates(this.config.data) ) {
@@ -376,6 +380,125 @@ module.exports = class App {
 
     fs.writeFileSync(path.join('/data', 'exitStatus.sh'), 'EXIT_STATUS=0');
 
+  }
+
+  installationInfo() {
+
+    const core_features = [
+      {
+        name: 'Bitcoin core node',
+        label: 'bitcoin',
+        host: 'bitcoin',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/bitcoin:'+this.config.docker_versions['cyphernode/bitcoin']
+      },
+      {
+        name: 'Gatekeeper',
+        label: 'gatekeeper',
+        host: 'gatekeeper',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/gatekeeper:'+this.config.docker_versions['cyphernode/gatekeeper']
+      },
+      {
+        name: 'Proxy',
+        label: 'proxy',
+        host: 'proxy',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/proxy:'+this.config.docker_versions['cyphernode/proxy']
+      },
+      {
+        name: 'Proxy cron',
+        label: 'proxycron',
+        host: 'proxycron',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/proxycron:'+this.config.docker_versions['cyphernode/proxycron']
+      },
+      {
+        name: 'Pycoin',
+        label: 'pycoin',
+        host: 'pycoin',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/pycoin:'+this.config.docker_versions['cyphernode/pycoin']
+      },
+      {
+        name: 'Notifier',
+        label: 'notifier',
+        host: 'notifier',
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: 'cyphernode/notifier:'+this.config.docker_versions['cyphernode/notifier']
+      },
+      {
+        name: 'MQ broker',
+        label: 'broker',
+        host: 'broker',
+        networks: ['cyphernodenet'],
+        docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
+      }
+
+    ];
+
+    const optional_features = [];
+
+    const optional_features_docker = {
+      otsclient: "cyphernode/otsclient:"+this.config.docker_versions['cyphernode/otsclient'],
+      lightning: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning']
+    }
+
+    for( let feature of this.features ) {
+      optional_features.push( {
+        active: feature.checked,
+        name: feature.name,
+        label: feature.value,
+        host: feature.value,
+        networks: ['cyphernodenet'],
+        docker: optional_features_docker[feature.value]
+      });
+    }
+
+    let bitcoin_version = this.config.docker_versions['cyphernode/bitcoin'];
+
+    if( bitcoin_version[0] === 'v' ) {
+      bitcoin_version = bitcoin_version.substr(1);
+    }
+
+    const cert = new Cert();
+    const gatekeeper_cns = cert.cns( this.config.data.gatekeeper_cns );
+
+    const ii = {
+      api_versions: ['v0'],
+      setup_version: this.config.setup_version,
+      bitcoin_version: bitcoin_version,
+      core_features: core_features,
+      optional_features: optional_features,
+      devmode: this.sessionData.devmode,
+      bitcoin_prune: this.config.data.bitcoin_prune,
+      bitcoin_prune_size: this.config.data.bitcoin_prune_size,
+      bitcoin_expose: this.config.data.bitcoin_expose,
+      bitcoin_uacomment: this.config.data.bitcoin_uacomment,
+      gatekeeper_port: this.config.data.gatekeeper_port,
+      gatekeeper_cns: gatekeeper_cns
+    };
+
+    // add info about optional features
+    if( this.config.data.features.indexOf( 'lightning' ) != -1 ) {
+      ii.lightning_nodename = this.config.data.lightning_nodename;
+      ii.lightning_nodecolor = this.config.data.lightning_nodecolor;
+      ii.lightning_expose = this.config.data.lightning_expose;
+      ii.lightning_external_ip = this.config.data.lightning_external_ip;
+      ii.lightning_implementation = this.config.data.lightning_implementation;
+
+      let clightning_version = this.config.docker_versions['cyphernode/clightning'];
+
+      if( clightning_version[0] === 'v' ) {
+        clightning_version = clightning_version.substr(1);
+      }
+
+      ii.clightning_version = clightning_version;
+    }
+
+    console.log( ii );
+
+    return ii;
   }
 
   async prompt( questions ) {

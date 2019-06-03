@@ -404,6 +404,7 @@ install_docker() {
   fi
 
   copy_file $current_path/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
+  copy_file $current_path/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then

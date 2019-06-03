@@ -83,6 +83,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [];
+    return ['info.json'];
   }
 };
