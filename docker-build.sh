@@ -78,7 +78,7 @@ image "gatekeeper" "api_auth_docker/" ${arch_docker} \
 && image "proxy" "proxy_docker/" ${arch_docker} \
 && image "notifier" "notifier_docker/" ${arch_docker} \
 && image "pycoin" "pycoin_docker/" ${arch_docker} \
-&& image "cyphernodeconf" "install/" ${arch_docker}
+&& image "cyphernodeconf" "cyphernodeconf_docker/" ${arch_docker}
 
 [ $? -ne 0 ] && echo "Error" && exit 1
 
