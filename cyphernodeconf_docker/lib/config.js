@@ -178,9 +178,7 @@ module.exports = class Config {
     }
 
     // xpub && use_xpub
-    if( !this.data.xpub ) {
-      this.data.use_xpub = false;
-    }
+    this.data.use_xpub = !!this.data.xpub;
 
   }
 
