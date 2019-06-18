@@ -48,7 +48,7 @@ module.exports = class Config {
       return;
     }
     this.data = data;
-    this.data.schema_version = this.data.schema_version || this.data.__version || defaultSchemaVersion;
+    this.data.schema_version = this.data.schema_version || this.__version || defaultSchemaVersion;
     this.data.setup_version = this.data.setup_version || this.setup_version;
     this.data.docker_versions = this.data.docker_versions || this.docker_versions;
     this.validate();
@@ -83,11 +83,12 @@ module.exports = class Config {
     }
 
     //this.resolveConfigConflicts();
-    if( this.data.schema_version !== latestSchemaVersion ) {
+    const version = this.data.schema_version || this.data.__version || defaultSchemaVersion;
+    if( version !== latestSchemaVersion ) {
       // migrate here
       // create a copy of the old config
-      fs.copyFileSync( path, path+'-'+this.data.schema_version );
-      await this.migrate(this.data.schema_version, latestSchemaVersion );
+      fs.copyFileSync( path, path+'-'+version );
+      await this.migrate(version, latestSchemaVersion );
       // validate again to strip all illegal properties from config with latest version
       this.validate();
     }
@@ -102,16 +103,15 @@ module.exports = class Config {
   }
 
   validate() {
+    const version = this.data.schema_version || this.data.__version;
 
-    if( !this.data.schema_version ||
-        !this.validators[this.data.schema_version] ||
-        Object.keys( schemas ).indexOf( this.data.schema_version ) == -1 ) {
+    if( !version || !this.validators[version] || Object.keys( schemas ).indexOf( version ) == -1 ) {
       throw "Unknown version in data"
     }
 
     // this will assign default values from the schema
-    this.valid = this.validators[this.data.schema_version]( this.data );
-    this.validateErrors = this.validators[this.data.schema_version].errors;
+    this.valid = this.validators[version]( this.data );
+    this.validateErrors = this.validators[version].errors;
 
   }
 
@@ -128,7 +128,8 @@ module.exports = class Config {
   }
 
   async migrate_0_1_0_to_0_2_0() {
-    if( this.data.schema_version != '0.1.0' ) {
+    const currentVersion = this.data.schema_version || this.data.__version;
+    if( currentVersion != '0.1.0' ) {
       return;
     }
 
