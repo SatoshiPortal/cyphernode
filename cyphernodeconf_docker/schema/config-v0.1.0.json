@@ -32,6 +32,7 @@
     "gatekeeper_statuspw",
     "gatekeeper_datapath",
     "lightning_expose",
+    "lightning_external_ip",
     "lightning_implementation",
     "lightning_datapath",
     "lightning_nodename",
@@ -314,6 +315,15 @@
       "default": false,
       "examples": [
         false
+      ]
+    },
+    "lightning_external_ip": {
+      "$id": "#/properties/lightning_external_ip",
+      "type": "string",
+      "format": "ipv4",
+      "title": "Lightning node reachable ip",
+      "examples": [
+        "123.123.123.123"
       ]
     },
     "gatekeeper_datapath": {
