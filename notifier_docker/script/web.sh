@@ -47,12 +47,12 @@ curl_it() {
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" ${url})
+    trace "[curl_it] curl -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
-    trace "[curl_it] curl -o webresponse-$$ -m 20 -w \"%{http_code}\" ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" ${url})
+    trace "[curl_it] curl -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
+    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
     returncode=$?
   fi
   trace "[curl_it] HTTP return code=${rc}"
