@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ./installer/config.sh
+. ./.cyphernodeconf/installer/config.sh
 
 # be aware that randomly downloaded cyphernode apps will have access to
 # your configuration and filesystem.

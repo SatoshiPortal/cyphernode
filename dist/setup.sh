@@ -196,9 +196,9 @@ configure() {
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user node index.js$recreate
-  if [[ -f $current_path/exitStatus.sh ]]; then
-    . $current_path/exitStatus.sh
-    rm $current_path/exitStatus.sh
+  if [[ -f $cyphernodeconf_filepath/exitStatus.sh ]]; then
+    . $cyphernodeconf_filepath/exitStatus.sh
+    rm $cyphernodeconf_filepath/exitStatus.sh
   fi
 
   if [[ ! $EXIT_STATUS == 0 ]]; then
@@ -349,7 +349,6 @@ compare_bitcoinconf() {
 }
 
 install_docker() {
-
   local archpath=$(uname -m)
 
   # compat mode for SatoshiPortal repo
@@ -377,13 +376,13 @@ install_docker() {
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
 
-  copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
-  copy_file $current_path/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
-  copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
-  copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-  copy_file $current_path/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
   if [ ! -d $TRAEFIK_DATAPATH ]; then
@@ -392,9 +391,9 @@ install_docker() {
     next
   fi
 
-  copy_file $current_path/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
-  copy_file $current_path/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
-  copy_file $current_path/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
   if [ ! -d $PROXY_DATAPATH ]; then
@@ -403,8 +402,8 @@ install_docker() {
     next
   fi
 
-  copy_file $current_path/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
-  copy_file $current_path/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -414,18 +413,18 @@ install_docker() {
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
 
-      local cmpStatus=$(compare_bitcoinconf $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
+      local cmpStatus=$(compare_bitcoinconf $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
-              [Nn]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
+              [Nn]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -434,7 +433,7 @@ install_docker() {
           done
         fi
       elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
         echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
         echo "          [31mYour cyphernode installation is most likely broken.[0m"
         echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
@@ -442,7 +441,7 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
       fi
     fi
   fi
@@ -460,8 +459,8 @@ install_docker() {
           next
         fi
 
-        copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-        copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
 
     fi
   fi
@@ -535,10 +534,10 @@ install_docker() {
     fi
   fi
 
-  copy_file $current_path/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
-  copy_file $current_path/installer/testfeatures.sh $current_path/testfeatures.sh 0
-  copy_file $current_path/installer/start.sh $current_path/start.sh 0
-  copy_file $current_path/installer/stop.sh $current_path/stop.sh 0
+  copy_file $cyphernodeconf_filepath/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
+  copy_file $cyphernodeconf_filepath/installer/testfeatures.sh $current_path/testfeatures.sh 0
+  copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
+  copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
@@ -731,6 +730,7 @@ function ctrl_c() {
 }
 
 export current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export cyphernodeconf_filepath="$current_path/.cyphernodeconf"
 
 while getopts ":cirhys" opt; do
   case $opt in
@@ -788,8 +788,9 @@ if [[ $CONFIGURE == 1 ]]; then
   configure $RECREATE
 fi
 
-if [[ -f $current_path/installer/config.sh ]]; then
-  . $current_path/installer/config.sh
+
+if [[ -f "$cyphernodeconf_filepath/installer/config.sh" ]]; then
+  . "$cyphernodeconf_filepath/installer/config.sh"
 fi
 
 if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then

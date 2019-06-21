@@ -44,7 +44,7 @@ stop_apps() {
   done
 }
 
-. ./installer/config.sh
+. ./.cyphernodeconf/installer/config.sh
 stop_apps
 
 <% if (docker_mode == 'swarm') { %>

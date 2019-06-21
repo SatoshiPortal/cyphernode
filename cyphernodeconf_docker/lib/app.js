@@ -36,6 +36,7 @@ const keyIds = {
 
 const configArchiveFileName = 'config.7z';
 const keyArchiveFileName = 'client.7z';
+const destinationDirName = '.cyphernodeconf';
 
 const prefix = () => {
   return chalk.green('Cyphernode')+': ';
@@ -56,8 +57,8 @@ module.exports = class App {
   constructor() {
     this.features = features;
 
-    if( fs.existsSync(path.join('/data', 'exitStatus.sh')) ) {
-      fs.unlinkSync(path.join('/data', 'exitStatus.sh'));
+    if( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
+      fs.unlinkSync(path.join('/data', destinationDirName, 'exitStatus.sh'));
     }
 
     this.splash = new SplashScreen( {
@@ -346,7 +347,7 @@ module.exports = class App {
       const name = m.name();
       for( let t of m.templates(this.config.data) ) {
         const p = path.join(name,t);
-        const destFile = this.destinationPath(p);
+        const destFile = this.destinationPath( path.join( destinationDirName, p ) );
         const targetDir = path.dirname( destFile );
 
         if( !fs.existsSync(targetDir) ) {
@@ -378,7 +379,7 @@ module.exports = class App {
       }
     }
 
-    fs.writeFileSync(path.join('/data', 'exitStatus.sh'), 'EXIT_STATUS=0');
+    fs.writeFileSync(path.join('/data', destinationDirName, 'exitStatus.sh'), 'EXIT_STATUS=0');
 
   }
 
