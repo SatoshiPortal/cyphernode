@@ -100,7 +100,7 @@ checknotifier() {
   local response
   local returncode
 
-  response=$(mosquitto_rr -h broker -W 5 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/getbestblockhash\"}")
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/getbestblockhash\"}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq ".http_code" | tr -d '"')
