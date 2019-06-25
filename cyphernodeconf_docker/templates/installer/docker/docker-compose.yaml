@@ -7,12 +7,13 @@ services:
       - "TRACING=1"
     image: cyphernode/gatekeeper:<%= gatekeeper_version %>
     ports:
-      - "<%= gatekeeper_port %>:443"
+      - "<%= gatekeeper_port %>:<%= gatekeeper_port %>"
     volumes:
       - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs"
       - "<%= gatekeeper_datapath %>/private:/etc/ssl/private"
       - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
       - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
+      - "<%= gatekeeper_datapath %>/default.conf:/etc/nginx/conf.d/default.conf"
       - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd"
       - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
       - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"

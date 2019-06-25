@@ -90,6 +90,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return [ 'keys.properties', 'api.properties', 'cert.pem', 'key.pem' ];
+    return [ 'keys.properties', 'api.properties', 'cert.pem', 'key.pem', 'default.conf' ];
   }
 };
