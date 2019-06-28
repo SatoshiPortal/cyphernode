@@ -20,6 +20,8 @@ Or you can simply run this magic command to start setup and installation:
 curl -fsSL https://raw.githubusercontent.com/SatoshiPortal/cyphernode/master/dist/setup.sh -o setup_cyphernode.sh && chmod +x setup_cyphernode.sh && ./setup_cyphernode.sh
 ```
 
+Note that you can replace "master" in the URL by "dev" or any existing git branch/tag you actually want to install.
+
 ### Build cyphernode yourself
 
 You can build cyphernode images yourself.  The images will have the same name than the ones in the docker hub, with the suffix -local.
@@ -31,6 +33,10 @@ cd cyphernode
 cd dist
 ./setup.sh
 ```
+
+`setup.sh` will detect locally built images (with suffix `-local`) and ask you if you want to use them when installing cyphernode.
+
+For full paranoia mode, you can also build yourself all images used by cyphernode but in external repositories by using the `build.sh` script in each of the repo.  You can see a list of images cyphernode uses here: https://cloud.docker.com/u/cyphernode/repository/list
 
 ## Upgrading
 

@@ -25,14 +25,11 @@ We are providing an installer to help you setup Cyphernode.
 
 #### See [Instructions for installation](INSTALL.md) for automatic install instructions
 
-All the Docker images used by Cyphernode have been prebuilt for x86 and ARM (RPi) architectures and are hosted on the Docker hub public registry, Cyphernode repository (https://hub.docker.com/u/cyphernode/).
+All the Docker images used by Cyphernode have been prebuilt for x86, ARM (RPi) and aarch64 (pine64/NODL) architectures and are hosted on the Docker hub public registry, Cyphernode repository (https://hub.docker.com/u/cyphernode/).
 
 ### Build from sources
 
-However, it is possible for you to build from sources.  In that case, please refer to the files INSTALL-MANUALLY.md and INSTALL-MANUAL-STEPS.md.
-
-#### See [Instructions for manual installation](INSTALL-MANUALLY.md) for manual build and install instructions
-#### See [Step-by-step detailed instructions](INSTALL-MANUAL-STEPS.md) for real-world copy-paste standard install instructions
+However, it is possible for you to build from sources.  In that case, please refer to the `build.sh` scripts in each of the repositories used by cyphernode (https://cloud.docker.com/u/cyphernode/repository/list).  See [Instructions for installation](INSTALL.md).
 
 # For Your Information
 
@@ -42,6 +39,8 @@ Current components in Cyphernode:
 - Proxy: request handler.  Well dispatch authenticated and authorized requests to the right component.  Use a SQLite3 database for its tasks.
 - Proxy Cron: scheduler.  Can call the proxy on regular interval for asynchronous tasks like payment notifications on watches, callbacks when OTS files are ready, etc.
 - Pycoin: Bitcoin keys and addresses tool.  Used by Cyphernode to derive addresses from an xPub and a derivation path.
+- notifier: Handling callbacks used by watchers as well as OTS stamping.
+- broker: pub/sub mechanism is taken care by the broker to which all subscribers and publishers should register.
 - Bitcoin: Bitcoin Core node.  Cyphernode uses a watching wallet for watchers (no funds) and a spending wallet for spending.  Mandatory component, but optionally part of Cyphernode installation, as we can use an already running Bitcoin Core node.
 - Lightning: optional.  C-Lightning node.  The LN node will use the Bitcoin node for its tasks.
 - OTSclient: optional.  Used to stamp hashes on the Bitcoin blockchain.
@@ -61,18 +60,18 @@ If you decide to have a prune Bitcoin Core node, the fee calculation on incoming
 
 ## Lightning Network
 
-Currently, the LN functionalities of Cyphernode are very limited.  Maybe even hard to use.  You can:
+Currently, basic LN functionalities is offered by Cyphernode.  You can:
 
 - Get information on your LN node: ln_getinfo
 - Get a Bitcoin address where to send your funds to be used by your LN node: ln_newaddr
 - Create an invoice, so people can send you payment; the burden of creating a channel/route to you is on the payer: ln_create_invoice
 - Pay an invoice.  You have to have the invoice and your LN node must already be connected to the network: ln_pay
-
-Basic and crucial functionalities that's missing (you have to manually use lightning-cli on your LN node):
-
+- Decode a BOLT11 string.
+- Delete a created invoice to make sure cancelled payments are not accepted.
+- Get a previously created invoice.
+- Connect + fund: connects to a peer and fund a channel, all in one call.  A callback can be provided to let you know when the channel is ready to use.
+- Get connection string: to let your user know how to connect to your LN node.
 - Be notified when a LN payment is received
-- Connect your node to the LN network
-- Open/close channels
 
 ## Manually test your installation through the Gatekeeper
 
