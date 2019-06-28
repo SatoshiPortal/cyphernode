@@ -38,7 +38,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-  /conf/{blockHash}:
+  /conf/{txid}:
+    get:
+      parameters:
+        - in: "path"
+          name: "txid"
+          description: "Transaction ID"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      summary: "Notify confirm"
+      description: "Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called."
+      operationId: "notifyConf"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "string"
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_backoffice:
+    get:
+      summary: "Check for upgraded OTS stamping"
+      description: "Looks in the DB for non-upgraded OTS stamps, asks the OTS client to check if they are upgraded and executes the callbacks for the newly upgraded ones.  Updates DB accordingly."
+      operationId: "otsBackoffice"
+      responses:
+        '200':
+          description: "successful operation"
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /newblock/{blockHash}:
     get:
       parameters:
         - in: "path"
@@ -48,8 +90,8 @@ paths:
           schema:
             $ref: '#/components/schemas/TypeHashString'
       summary: "Notify confirm"
-      description: "Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called."
-      operationId: "notifyConf"
+      description: "Notifies cyphernode when a new block is added to the blockchain.  Cyphernode will look at the callbacks to be made after x number of confirmations and execute them."
+      operationId: "newblockConf"
       responses:
         '200':
           description: "successful operation"

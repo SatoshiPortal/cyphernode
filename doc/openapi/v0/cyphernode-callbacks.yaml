@@ -68,6 +68,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /otsconf:
+    post:
+      summary: ""
+      description: ""
+      operationId: "notifyOtsUpgrade"
+      requestBody:
+        description: ""
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfRequest'
+      responses:
+        '201':
+          description: "successfully created"
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
 components:
   schemas:
     ConfRequest:
