@@ -286,8 +286,8 @@ main()
           ;;
         getmempoolinfo)
           # curl GET http://192.168.111.152:8080/getmempoolinfo
-          trace "trace: $(get_mempool_info)"
-          response=$(get_mempool_info "${line}")
+          
+          response=$(get_mempool_info)
           response_to_client "${response}" ${?}
           break
           ;;
