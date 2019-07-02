@@ -82,3 +82,12 @@ get_blockchain_info()
   send_to_watcher_node "${data}" | jq ".result"
   return $?
 }
+
+get_mempool_info()
+{
+  trace "Entering get_mempool_info()..."
+
+  local data='{"method":"getmempoolinfo"}'
+  send_to_watcher_node "${data}" | jq ".result"
+  return $?
+}
