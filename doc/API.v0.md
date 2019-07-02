@@ -292,6 +292,26 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
 }
 ```
 
+### Get mempool information
+
+Returns the mempool information of the Bitcoin node. 
+```http
+GET http://cyphernode:8888/getmempoolinfo
+```
+
+Proxy response:
+
+```json
+{
+  "size": 25,
+  "bytes": 5462,
+  "usage": 34736,
+  "maxmempool": 64000000,
+  "mempoolminfee": 1e-05,
+  "minrelaytxfee": 1e-05
+}
+```
+
 ### Get the blockchain information (called by application)
 
 Returns the blockchain information of the Bitcoin node.  Used for example by the welcome app to get syncing progression.
@@ -551,6 +571,8 @@ Proxy response:
   "balance":1.51911837
 }
 ```
+
+
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 
