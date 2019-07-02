@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Must be logged to docker hub:
-# docker login -u cyphernode
+# echo ${DOCKER_PASSWORD} | docker login --username ${DOCKER_USERNAME} --password-stdin;
 
 # Must enable experimental cli features
 # "experimental": "enabled" in ~/.docker/config.json
