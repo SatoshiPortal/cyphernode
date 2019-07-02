@@ -5,13 +5,16 @@ const ApiKey = require('./apikey.js');
 const name = require('./name.js');
 const colorsys = require( 'colorsys');
 
-const latestSchemaVersion='0.2.0';
-const defaultSchemaVersion='0.1.0';
 
 const schemas = {
   '0.1.0': require('../schema/config-v0.1.0.json'),
   '0.2.0': require('../schema/config-v0.2.0.json'),
+  '0.2.2': require('../schema/config-v0.2.2.json')
 };
+
+const versionHistory = [ '0.1.0', '0.2.0', '0.2.2' ];
+const defaultSchemaVersion=versionHistory[0];
+const latestSchemaVersion=versionHistory[versionHistory.length-1];
 
 module.exports = class Config {
 
@@ -35,12 +38,32 @@ module.exports = class Config {
     }
 
 
-    this.migrationPaths = {
-      '0.1.0|0.2.0': [ this.migrate_0_1_0_to_0_2_0 ]
+    this.migrations = {
+      '0.1.0->0.2.0': this.migrate_0_1_0_to_0_2_0,
+      '0.2.0->0.2.2': this.migrate_0_2_0_to_0_2_2
     };
 
     this.setData( { schema_version: latestSchemaVersion } );
     this.isLoaded = false;
+  }
+
+  generateMigrationPathToLatest( currentVersion ) {
+    if( currentVersion === latestSchemaVersion ) {
+      return;
+    }
+    const index = versionHistory.indexOf( currentVersion );
+    if( index === -1 ) {
+      return;
+    }
+
+    let path = [];
+    for( let i=index; i<versionHistory.length-1; i++ ) {
+      const methodLabel = versionHistory[i]+'->'+versionHistory[i+1];
+      path.push( this.migrations[methodLabel] );
+    }
+
+    return path;
+
   }
 
   setData( data ) {
@@ -59,7 +82,7 @@ module.exports = class Config {
     this.validate();
     const configJsonString = JSON.stringify(this.data, null, 4);
     const archive = new Archive( path, password );
-    return await archive.writeEntry( 'config.json', configJsonString );
+    return archive.writeEntry( 'config.json', configJsonString );
   }
 
   async deserialize( path, password ) {
@@ -88,7 +111,7 @@ module.exports = class Config {
       // migrate here
       // create a copy of the old config
       fs.copyFileSync( path, path+'-'+version );
-      await this.migrate(version, latestSchemaVersion );
+      await this.migrateFrom(version);
       // validate again to strip all illegal properties from config with latest version
       this.validate();
     }
@@ -115,8 +138,8 @@ module.exports = class Config {
 
   }
 
-  async migrate(sourceVersion, targetVersion) {
-    const migrations = this.migrationPaths[sourceVersion+'|'+targetVersion];
+  async migrateFrom(sourceVersion) {
+    const migrations = this.generateMigrationPathToLatest(sourceVersion)
 
     if( !migrations ) {
       return;
@@ -127,6 +150,7 @@ module.exports = class Config {
     }
   }
 
+  // migration methods:
   async migrate_0_1_0_to_0_2_0() {
     const currentVersion = this.data.schema_version || this.data.__version;
     if( currentVersion != '0.1.0' ) {
@@ -180,6 +204,17 @@ module.exports = class Config {
     // xpub && use_xpub
     this.data.use_xpub = !!this.data.xpub;
 
+  }
+
+  async migrate_0_2_0_to_0_2_2() {
+    const currentVersion = this.data.schema_version;
+    if( currentVersion != '0.2.0' ) {
+      return;
+    }
+    this.data.schema_version = '0.2.2';
+    // create identical behaviour to 0.2.0 config version
+    this.data.lightning_announce = !!this.data.lightning_external_ip;
+    this.data.gatekeeper_expose = true;
   }
 
 };
