@@ -1,5 +1,7 @@
 {
-  "__version": "0.2.0",
+  "schema_version": "0.2.2",
+  "setup_version": "setup_version",
+  "docker_versions": {},
   "features": [
     "lightning",
     "otsclient"
@@ -13,12 +15,13 @@
   "bitcoin_rpcuser": "bitcoin",
   "bitcoin_rpcpassword": "test123",
   "bitcoin_uacomment": "",
-  "bitcoin_prune": true,
+  "bitcoin_prune": false,
   "bitcoin_prune_size": 550,
   "bitcoin_datapath": "/Users/jash/.cyphernode/bitcoin",
   "bitcoin_mode": "internal",
   "bitcoin_expose": false,
   "lightning_expose": true,
+  "gatekeeper_port": 2009,
   "gatekeeper_keys": {
     "configEntries": [
       "kapi_id=\"000\";kapi_key=\"a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a\";kapi_groups=\"watcher\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
@@ -48,5 +51,9 @@
   "derivation_path": "da",
   "gatekeeper_clientkeyspassword": "test123",
   "gatekeeper_datapath": "/Users/jash/.cyphernode/gatekeeper",
-  "traefik_datapath": "foo"
+  "traefik_datapath": "foo",
+  "lightning_announce": true,
+  "gatekeeper_expose": false,
+  "traefik_http_port": 80,
+  "traefik_https_port": 443
 }

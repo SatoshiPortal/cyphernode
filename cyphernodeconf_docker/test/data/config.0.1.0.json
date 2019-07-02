@@ -1,5 +1,4 @@
 {
-  "__version": "0.1.0",
   "features": [
     "lightning",
     "otsclient"
@@ -13,7 +12,7 @@
   "bitcoin_rpcuser": "bitcoin",
   "bitcoin_rpcpassword": "test123",
   "bitcoin_uacomment": "",
-  "bitcoin_prune": true,
+  "bitcoin_prune": false,
   "bitcoin_prune_size": 550,
   "bitcoin_node_ip": "123.123.123.123",
   "bitcoin_datapath": "/Users/jash/.cyphernode/bitcoin",
@@ -47,6 +46,10 @@
   "xpub": "abc",
   "derivation_path": "da",
   "gatekeeper_clientkeyspassword": "test123",
+  "gatekeeper_clientkeyspassword_c": "test123",
+  "gatekeeper_statuspw": "dasfdssad",
   "gatekeeper_datapath": "/Users/jash/.cyphernode/gatekeeper",
-  "traefik_datapath": "foo"
+  "traefik_datapath": "foo",
+  "lightning_external_ip": "123.123.123.123"
+
 }

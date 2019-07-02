@@ -1,9 +1,9 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://cyphernode.io/config-v0.2.0.json",
+  "$id": "http://cyphernode.io/config-v0.2.2.json",
   "type": "object",
-  "title": "Cyphernode config file structure v0.2.0",
+  "title": "Cyphernode config file structure v0.2.2",
   "additionalProperties": false,
   "required": [
     "schema_version",
@@ -97,11 +97,11 @@
     "schema_version": {
       "type": "string",
       "enum": [
-        "0.3.0"
+        "0.2.2"
       ],
       "default": "0.3.0",
       "examples": [
-        "0.3.0"
+        "0.2.2"
       ]
     },
     "setup_version": {
