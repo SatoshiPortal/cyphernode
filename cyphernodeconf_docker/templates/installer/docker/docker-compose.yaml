@@ -6,8 +6,10 @@ services:
     environment:
       - "TRACING=1"
     image: cyphernode/gatekeeper:<%= gatekeeper_version %>
+    <% if( gatekeeper_expose ) { %>
     ports:
       - "<%= gatekeeper_port %>:443"
+    <% } %>
     volumes:
       - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs"
       - "<%= gatekeeper_datapath %>/private:/etc/ssl/private"
