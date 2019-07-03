@@ -15,4 +15,7 @@ bitcoin-rpcuser=<%= bitcoin_rpcuser %>
 bitcoin-rpcpassword=<%= bitcoin_rpcpassword %>
 
 addr=0.0.0.0:9735
-announce-addr=<%= lightning_external_ip %>:9735
+
+<% if( locals.lightning_external_ip ) { %>
+announce-addr=<%= locals.lightning_external_ip %>:9735
+<% } %>
