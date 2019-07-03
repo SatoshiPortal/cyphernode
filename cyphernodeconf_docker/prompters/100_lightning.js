@@ -48,6 +48,13 @@ module.exports = {
     */
     {
       when: featureCondition,
+      type: 'confirm',
+      name: 'lightning_announce',
+      default: utils.getDefault( 'lightning_announce' ),
+      message: prefix()+'Do you want to announce your lightning node?'+utils.getHelp('lightning_announce'),
+    },
+    {
+      when: (props) => { return featureCondition(props) && props.lightning_announce },
       type: 'input',
       name: 'lightning_external_ip',
       default: utils.getDefault( 'lightning_external_ip' ),
