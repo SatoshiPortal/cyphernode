@@ -259,6 +259,12 @@ module.exports = {
       message: prefix()+'Where is your otsclient data?'+utils.getHelp('otsclient_datapath_custom'),
     },
     {
+      type: 'confirm',
+      name: 'gatekeeper_expose',
+      default: utils.getDefault( 'gatekeeper_expose' ),
+      message: prefix()+'Expose gatekeeper outside of the docker network?'+utils.getHelp('gatekeeper_expose'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.bitcoin_mode === 'internal' },
       type: 'confirm',
       name: 'bitcoin_expose',
