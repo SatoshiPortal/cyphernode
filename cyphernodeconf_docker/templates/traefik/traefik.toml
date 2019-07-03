@@ -5,11 +5,11 @@ defaultEntryPoints = ["https","http"]
 
 [entryPoints]
   [entryPoints.http]
-  address = ":80"
+  address = ":<%= traefik_http_port %>"
     [entryPoints.http.redirect]
     entryPoint = "https"
   [entryPoints.https]
-  address = ":443"
+  address = ":<%= traefik_https_port %>"
   [entryPoints.https.tls]
 
 [retry]
