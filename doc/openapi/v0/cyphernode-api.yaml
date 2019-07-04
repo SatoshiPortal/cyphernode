@@ -493,6 +493,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getinstallation_info:
+    get:
+      tags:
+        - "stats"
+      summary: "Show installation info"
+      description: "Returns detailed cyphernode installation information."
+      operationId: "getInstallationInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallationInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /getblockinfo/{blockHash}:
     get:
       parameters:
@@ -615,10 +639,7 @@ paths:
           content:
             application/json:
               schema:
-                type: "object"
-                properties:
-                  balance:
-                    type: "number"
+                $ref: '#/components/schemas/Balance'
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '503':
@@ -648,10 +669,7 @@ paths:
           content:
             application/json:
               schema:
-                type: "object"
-                properties:
-                  balance:
-                    type: "number"
+                $ref: '#/components/schemas/Balance'
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '503':
@@ -681,10 +699,7 @@ paths:
           content:
             application/json:
               schema:
-                type: "object"
-                properties:
-                  balance:
-                    type: "number"
+                $ref: '#/components/schemas/Balance'
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '503':
@@ -1166,6 +1181,7 @@ paths:
           content:
             application/json:
               schema:
+                # TODO: describe response
                 type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
@@ -1196,6 +1212,7 @@ paths:
           content:
             application/json:
               schema:
+                # TODO: describe response
                 type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
@@ -1284,6 +1301,7 @@ paths:
           content:
             application/json:
               schema:
+                # TODO: describe response
                 type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
@@ -1313,6 +1331,9 @@ paths:
           description: "successful operation"
           content:
             application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '503':
@@ -1425,6 +1446,13 @@ components:
           format: "url"
         watching_since:
           type: "string"
+    Balance:
+      type: "object"
+      required:
+        - "balance"
+      properties:
+        balance:
+          type: "number"
     Block:
       type: "object"
       required:
@@ -1542,6 +1570,38 @@ components:
           type: "object"
           additionalProperties:
             $ref: '#/components/schemas/TypeBip9SoftFork'
+    InstallationInfo:
+      type: "object"
+      properties:
+        api_versions:
+          type: "array"
+          items:
+            type: "string"
+        setup_version:
+          type: "string"
+        bitcoin_version:
+          type: "string"
+        features:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              label:
+                type: "string"
+              host:
+                type: "string"
+              docker:
+                type: "string"
+              networks:
+                type: "array"
+                items:
+                  type: "string"
+              extra:
+                type: "object"
+        devmode:
+          type: "boolean"
     Input:
       type: "object"
       properties:
