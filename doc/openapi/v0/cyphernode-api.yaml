@@ -1663,6 +1663,21 @@ components:
               type: "array"
               items:
                 $ref: '#/components/schemas/TypeAddressString'
+    MempoolInfo:
+      type: "object"
+      properties:
+        size:
+          type: "integer"
+        bytes:
+          type: "integer"
+        usage:
+          type: "integer"
+        maxmempool:
+          type: "integer"
+        mempoolminfee:
+          type: "number"
+        minrelaytxfee:
+          type: "integer"
     TypeHexString:
       description: "variable length hex string"
       type: "string"
