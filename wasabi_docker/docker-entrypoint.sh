@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 
 wallet_name=${WALLET_NAME:-wasabi}
-echo $wallet_name
 
 # check if we have a wallet file
 if [ ! -f "/root/.walletwasabi/client/Wallets/$wallet_name.json" ]; then
