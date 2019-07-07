@@ -297,6 +297,44 @@ module.exports = {
       message: prefix()+'Custom path for your lightning node data?'+utils.getHelp('lightning_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('wasabi') !== -1 },
+      type: 'list',
+      name: 'wasabi_datapath',
+      default: utils.getDefault( 'wasabi_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/wasabi",
+          value: utils.setupDir()+"/cyphernode/wasabi"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/wasabi",
+          value: utils.defaultDataDirBase()+"/cyphernode/wasabi"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/wasabi",
+          value: utils.defaultDataDirBase()+"/.cyphernode/wasabi"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/wasabi",
+          value: utils.defaultDataDirBase()+"/wasabi"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your wasabi data?'+utils.getHelp('wasabi_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('wasabi') !== -1 && props.wasabi_datapath === '_custom' },
+      type: 'input',
+      name: 'wasabi_datapath_custom',
+      default: utils.getDefault( 'wasabi_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Where is your wasabi data?'+utils.getHelp('wasabi_datapath_custom'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
       type: 'list',
       name: 'otsclient_datapath',

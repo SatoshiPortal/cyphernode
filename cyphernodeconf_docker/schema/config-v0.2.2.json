@@ -639,6 +639,22 @@
       "examples": [
         "CHANGEME"
       ]
+    },
+    "wasabi_datapath": {
+      "$id": "#/properties/wasabi_datapath",
+      "type": "string",
+      "title": "Wasabi datapath",
+      "examples": [
+        "/tmp/cyphernode/wasabi"
+      ]
+    },
+    "wasabi_datapath_custom": {
+      "$id": "#/properties/wasabi_datapath_custom",
+      "type": "string",
+      "title": "Wasabi custom datapath",
+      "examples": [
+        "/tmp/cyphernode/wasabi"
+      ]
     }
   }
 }

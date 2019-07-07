@@ -367,7 +367,8 @@ module.exports = class App {
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',
-      'otsclient_datapath'
+      'otsclient_datapath',
+      'wasabi_datapath'
     ];
 
     for( let pathProp of pathProps ) {

@@ -349,6 +349,25 @@ services:
     <% } %>
   <% } %>
 
+  <% if ( features.indexOf('wasabi') !== -1 ) { %>
+  ##########################
+  # WASABI                 #
+  ##########################
+
+  <%   for ( let index=0; index<wasabi_instance_count; index++ ) { %>
+  wasabi_<%= index %>:
+    image: cyphernode/wasabi:<%= wasabi_version %>
+    volumes:
+      - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
+    networks:
+      - cyphernodenet
+    restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+  <%   } %>
+  <% } %>
+
   ##########################
   # GATEKEEPER             #
   ##########################
