@@ -28,6 +28,12 @@ LIGHTNING_DATAPATH=<%= lightning_datapath %>
 <% if ( features.indexOf('otsclient') !== -1 ) { %>
 OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 <% } %>
+<% if ( features.indexOf('wasabi') !== -1 ) { %>
+WASABI_RPCUSER=<%= wasabi_rpcuser %>
+WASABI_RPCPASSWORD=<%= wasabi_rpcpassword %>
+WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>
+WASABI_DATAPATH=<%= wasabi_datapath %>
+<% } %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } %>
