@@ -1,0 +1,32 @@
+﻿{
+<% if (net === 'testnet') { %>
+  "Network": "TestNet",
+<% } else { %>
+  "Network": "Main",
+<% } %>
+  "MainNetBackendUriV3": "http://wasabiukrxmkdgve5kynjztuovbg43uxcbcxn6y2okcrsg7gb6jdmbad.onion/",
+  "TestNetBackendUriV3": "http://testwnp3fugjln6vh5vpj7mvq3lkqqwjj3c2aafyu7laxz42kgwh2rad.onion/",
+  "MainNetFallbackBackendUri": "https://wasabiwallet.io/",
+  "TestNetFallbackBackendUri": "https://wasabiwallet.co/",
+  "RegTestBackendUriV3": "http://localhost:37127/",
+  "UseTor": true,
+  "TorHost": "127.0.0.1",
+  "TorSocks5Port": 9050,
+  "MainNetBitcoinCoreHost": "bitcoin",
+  "TestNetBitcoinCoreHost": "bitcoin",
+  "RegTestBitcoinCoreHost": "bitcoin",
+  "MainNetBitcoinCorePort": 8333,
+  "TestNetBitcoinCorePort": 18333,
+  "RegTestBitcoinCorePort": 18444,
+  "MixUntilAnonymitySet": <%= wasabi_mixuntil %>,
+  "PrivacyLevelSome": 2,
+  "PrivacyLevelFine": 21,
+  "PrivacyLevelStrong": 50,
+  "DustThreshold": "0.0001",
+  "JsonRpcServerEnabled": true,
+  "JsonRpcUser": "<%= wasabi_rpcuser %>",
+  "JsonRpcPassword": "<%= wasabi_rpcpassword %>",
+  "JsonRpcServerPrefixes": [
+    "http://*:18099/"
+  ]
+}
