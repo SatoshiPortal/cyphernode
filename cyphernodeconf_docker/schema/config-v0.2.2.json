@@ -90,9 +90,8 @@
         "properties": {
           "features": {
             "contains": {
-              "enum": [
-                "lightning"
-              ]
+              "type": "string",
+              "enum": ["lightning"]
             }
           }
         }
@@ -113,9 +112,8 @@
         "properties": {
           "features": {
             "contains": {
-              "enum": [
-                "otsclient"
-              ]
+              "type": "string",
+              "enum": ["otsclient"]
             }
           }
         }
