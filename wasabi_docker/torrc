@@ -1,0 +1,2 @@
+SOCKSPort 127.0.0.1:9050
+Log "notice file /root/.walletwasabi/client/TorLogs.txt"
