@@ -4,6 +4,7 @@ FEATURE_LIGHTNING=<%= (features.indexOf('lightning') != -1)?'true':'false' %>
 FEATURE_BATCHER=<%= (features.indexOf('batcher') != -1)?'true':'false' %>
 FEATURE_SPECTER=<%= (features.indexOf('specter') != -1)?'true':'false' %>
 FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
+FEATURE_WASABI=<%= (features.indexOf('wasabi') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
