@@ -123,6 +123,26 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "type": "string",
+              "enum": ["wasabi"]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "wasabi_mixuntil",
+          "wasabi_rpcuser",
+          "wasabi_rpcpassword",
+          "wasabi_instance_count"
+        ]
+      }
     }
   ],
   "properties": {
@@ -582,6 +602,42 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "wasabi_mixuntil": {
+      "$id": "#/properties/wasabi_mixuntil",
+      "type": "integer",
+      "title": "Wasabi mix until anonymity set",
+      "default": 50,
+      "examples": [
+        50
+      ]
+    },
+    "wasabi_instance_count": {
+      "$id": "#/properties/wasabi_instance_count",
+      "type": "integer",
+      "title": "How many wasabi instances do you want to run",
+      "default": 1,
+      "examples": [
+        1
+      ]
+    },
+    "wasabi_rpcuser": {
+      "$id": "#/properties/wasabi_rpcuser",
+      "type": "string",
+      "title": "Wasabi rpc user",
+      "default": "wasabi",
+      "examples": [
+        "wasabi"
+      ]
+    },
+    "wasabi_rpcpassword": {
+      "$id": "#/properties/wasabi_rpcpassword",
+      "type": "string",
+      "title": "Wasabi rpc password",
+      "default": "CHANGEME",
+      "examples": [
+        "CHANGEME"
       ]
     }
   }

@@ -8,6 +8,10 @@
     "value": "lightning"
   },
   {
+    "name": "Wasabi CoinJoin",
+    "value": "wasabi"
+  },
+  {
     "name": "Opentimestamps client",
     "value": "otsclient"
   }
