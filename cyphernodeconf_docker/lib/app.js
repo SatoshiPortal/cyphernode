@@ -93,6 +93,7 @@ module.exports = class App {
       otsclient_version: process.env.OTSCLIENT_VERSION,
       bitcoin_version: process.env.BITCOIN_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
+      wasabi_version: process.env.WASABI_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
@@ -153,6 +154,7 @@ module.exports = class App {
         'cyphernode/otsclient': this.sessionData.otsclient_version,
         'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
+        'cyphernode/wasabi': this.sessionData.wasabi_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
         'eclipse-mosquitto': this.sessionData.mosquitto_version
       }
@@ -562,6 +564,13 @@ module.exports = class App {
           torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
+        }
+      },
+      wasabi: {
+        docker: "cyphernode/wasabi:"+this.config.docker_versions['cyphernode/wasabi'],
+        extra: {
+          mixuntil: this.config.data.wasabi_mixuntil,
+          instance_count: this.config.data.wasabi_instance_count
         }
       }
     }
