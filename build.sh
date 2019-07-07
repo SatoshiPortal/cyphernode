@@ -13,6 +13,7 @@ OTSCLIENT_VERSION="v0.4.0-local"
 PYCOIN_VERSION="v0.4.0-local"
 BITCOIN_VERSION="v0.19.1"
 LIGHTNING_VERSION="v0.8.2"
+WASABI_VERSION="v0.3.1-local"
 
 trace()
 {
@@ -41,7 +42,8 @@ build_docker_images() {
   && docker build notifier_docker/ -t cyphernode/notifier:$NOTIFIER_VERSION \
   && docker build cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION \
   && docker build pycoin_docker/ -t cyphernode/pycoin:$PYCOIN_VERSION \
-  && docker build otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION
+  && docker build otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION \
+  && docker build wasabi_docker/ -t cyphernode/wasabi:$WASABI_VERSION
 }
 
 build_docker_images
