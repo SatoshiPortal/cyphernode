@@ -27,6 +27,7 @@ stop_apps() {
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
         export SHARED_HTPASSWD_PATH
         export GATEKEEPER_DATAPATH
+        export GATEKEEPER_PORT
         export LIGHTNING_DATAPATH
         export BITCOIN_DATAPATH
         export APP_SCRIPT_PATH
