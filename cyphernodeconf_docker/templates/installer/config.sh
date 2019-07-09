@@ -5,6 +5,7 @@ FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
+GATEKEEPER_PORT=<%= gatekeeper_port %>
 TRAEFIK_DATAPATH=<%= traefik_datapath %>
 DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>
