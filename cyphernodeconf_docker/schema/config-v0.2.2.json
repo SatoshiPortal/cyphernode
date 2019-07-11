@@ -181,13 +181,15 @@
         "type": "string",
         "enum": [
           "lightning",
-          "otsclient"
+          "otsclient",
+          "wasabi"
         ],
         "title": "The feature",
         "default": "",
         "examples": [
           "lightning",
-          "otsclient"
+          "otsclient",
+          "wasabi"
         ]
       }
     },
