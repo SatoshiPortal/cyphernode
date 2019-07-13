@@ -491,6 +491,38 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        wasabi_newaddr)
+          # queries random instance for a new bech32 address
+          break
+          ;;
+        wasabi_get_balance)
+          # args:
+          # - id: integer, optional
+          # - private: boolean, optional, default=false
+          # returns the total balance of either
+          # - all wasabi instances
+          # - a single instance, when provide with an id
+          # takes a 'private' flag. if 'private' flag is set
+          # the balance will only return the unspent outputs
+          # which have an anon set of at least what is configured.
+          # if id is defined, it will return the balance of
+          # the wasabi instance with id <id>, else it will
+          # return the balance of all instances
+          break
+          ;;
+        wasabi_spend)
+          # args:
+          # - id: integer, required
+          # - private: boolean, optional, default=false
+          # - address: string, required
+          # - amount: number, required
+          break
+          ;;
+        wasabi_get_transactions)
+          # args:
+          # - id: integer, optional
+          # return all transactions of either one wasabi instance
+          # or all instances, depending on the id parameter
       esac
       break
     fi
