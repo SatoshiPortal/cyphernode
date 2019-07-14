@@ -144,8 +144,16 @@ getbalancebyxpub() {
 getnewaddress() {
   trace "Entering getnewaddress()..."
 
+  local address_type=${1}
+  trace "[getnewaddress] address_type=${address_type}"
+
   local response
-  local data='{"method":"getnewaddress"}'
+  local data
+  if [ -z "${address_type}" ]; then
+    data='{"method":"getnewaddress"}'
+  else
+    data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${address_type}\"]}"
+  fi
   response=$(send_to_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
