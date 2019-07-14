@@ -145,7 +145,7 @@ getnewaddress() {
   trace "Entering getnewaddress()..."
 
   local response
-  local data='{"method":"getnewaddress"}'
+  local data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${1}\"]}"
   response=$(send_to_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
