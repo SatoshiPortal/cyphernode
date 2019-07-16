@@ -1,3 +1,4 @@
 .idea
 dist
-~dist/setup.sh
+!dist/setup.sh
+!dist/sr.sh
