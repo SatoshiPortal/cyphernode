@@ -213,8 +213,8 @@ module.exports = class App {
 
     this.config.data.adminhash = await htpasswd(this.sessionData.configurationPassword);
 
-    for( let c of this.features ) {
-      c.checked = this.isChecked( 'features', c.value );
+    for( let feature of this.features ) {
+      feature.checked = this.isChecked( 'features', feature.value );
     }
 
   }
@@ -384,6 +384,11 @@ module.exports = class App {
   }
 
   installationInfo() {
+
+    for( let feature of this.features ) {
+      feature.checked = this.isChecked( 'features', feature.value );
+    }
+
     const cert = new Cert();
     const gatekeeper_cns = cert.cns( this.config.data.gatekeeper_cns );
 
