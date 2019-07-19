@@ -1,4 +1,7 @@
-<% if (net === 'testnet') { %>
+<% if (net === 'regtest') { %>
+# regtest
+network=regtest
+<% } else if (net === 'testnet') { %>
 # testnet
 network=testnet
 <% } else if (net === 'mainnet') { %>

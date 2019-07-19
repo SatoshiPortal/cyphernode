@@ -178,7 +178,8 @@
       "type": "string",
       "enum": [
         "testnet",
-        "mainnet"
+        "mainnet",
+        "regtest"
       ],
       "title": "The net cyphernode is running on",
       "default": "testnet",

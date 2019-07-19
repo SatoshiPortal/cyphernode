@@ -34,6 +34,9 @@ module.exports = {
       },{
         name: "Mainnet",
         value: "mainnet"
+      },{
+        name: "RegTest",
+        value: "regtest"
       }]
     },
     {
