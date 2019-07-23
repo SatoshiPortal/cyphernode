@@ -3,16 +3,16 @@
 export SETUP_DIR=$(pwd)/../dist
 export DEFAULT_USER=$USER
 export DEFAULT_CERT_HOSTNAME=disk0book.local
-export PROXYCRON_VERSION=v0.2.1-rc.1
-export PYCOIN_VERSION=v0.2.1-rc.1
-export SETUP_VERSION=v0.2.1-rc.1
-export BITCOIN_VERSION=v0.17.1
-export LIGHTNING_VERSION=v0.7.0
+export PROXYCRON_VERSION=v0.2.2
+export PYCOIN_VERSION=v0.2.2
+export SETUP_VERSION=v0.2.2
+export BITCOIN_VERSION=v0.18.0
+export LIGHTNING_VERSION=v0.7.1
 export DEFAULT_DATADIR_BASE=$HOME
-export GATEKEEPER_VERSION=v0.2.1-rc.1
-export PROXY_VERSION=v0.2.1-rc.1
-export OTSCLIENT_VERSION=v0.2.1-rc.1
-export NOTIFIER_VERSION=v0.2.1-rc.1
+export GATEKEEPER_VERSION=v0.2.2
+export PROXY_VERSION=v0.2.2
+export OTSCLIENT_VERSION=v0.2.2
+export NOTIFIER_VERSION=v0.2.2
 export EDITOR=/usr/bin/nano
 
 user=$(id -u):$(id -g)

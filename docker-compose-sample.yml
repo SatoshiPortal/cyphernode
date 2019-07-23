@@ -84,7 +84,7 @@ services:
 
   lightning:
     command: $USER lightningd
-    image: cyphernode/clightning:v0.6.2
+    image: cyphernode/clightning:latest
     volumes:
       - "~/cn-files/cn-lndata:/.lightning"
       - "~/cn-files/cn-lndata/bitcoin.conf:/.bitcoin/bitcoin.conf"
@@ -112,7 +112,7 @@ services:
 
   bitcoin:
     command: $USER bitcoind
-    image: cyphernode/bitcoin:v0.17.0
+    image: cyphernode/bitcoin:latest
     volumes:
       - "~/cn-files/cn-btcdata:/.bitcoin"
     networks:
