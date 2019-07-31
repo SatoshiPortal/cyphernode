@@ -162,6 +162,8 @@ services:
       - "OTSCLIENT_LISTENING_PORT=6666"
     volumes:
       - "<%= otsclient_datapath %>:/otsfiles"
+      - "<%= otsclient_datapath %>/bitcoin.conf:/.bitcoin/bitcoin.conf"
+    command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
     restart: always

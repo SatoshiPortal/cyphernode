@@ -84,6 +84,7 @@ request_ots_stamp() {
   local errorstring
 
   trace "[request_ots_stamp] Stamping..."
+  trace "[request_ots_stamp] curl -s ${OTSCLIENT_CONTAINER}/stamp/${hash}"
   result=$(curl -s ${OTSCLIENT_CONTAINER}/stamp/${hash})
   returncode=$?
   trace_rc ${returncode}
@@ -227,5 +228,62 @@ serve_ots_getfile() {
   returncode=$?
   trace_rc ${returncode}
 
+  return ${returncode}
+}
+
+serve_ots_verify() {
+
+  trace "Entering serve_ots_verify()..."
+
+  local request=${1}
+  local hash=$(echo "${request}" | jq ".hash" | tr -d '"')
+  trace "[serve_ots_verify] hash=${hash}"
+  local base64otsfile=$(echo "${request}" | jq ".base64otsfile" | tr -d '"')
+  trace "[serve_ots_verify] base64otsfile=${base64otsfile}"
+
+  local result
+  local returncode
+
+  result=$(request_ots_verify "${hash}" "${base64otsfile}")
+  returncode=$?
+  trace_rc ${returncode}
+
+  result="{\"method\":\"ots_verify\",\"hash\":\"${hash}\",\"result\":\"${result}\"}"
+
+  trace "[serve_ots_verify] result=${result}"
+
+  # Output response to stdout before exiting with return code
+  echo "${result}"
+
+  return ${returncode}
+}
+
+request_ots_verify() {
+  # Request the OTS server to verify
+
+  local hash=${1}
+  trace "[request_ots_verify] hash=${hash}"
+  local base64otsfile=${2}
+  trace "[request_ots_verify] base64otsfile=${base64otsfile}"
+  local returncode
+  local result
+  local data
+
+  # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+  data="{\"hash\":\"${hash}\",\"base64otsfile\":\"${base64otsfile}\"}"
+  trace "[request_ots_verify] data=${data}"
+
+  trace "[request_ots_verify] Verifying..."
+  trace "[request_ots_stamp] curl -s -d \"${data}\" ${OTSCLIENT_CONTAINER}/verify"
+  result=$(curl -s -d "${data}" ${OTSCLIENT_CONTAINER}/verify)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[request_ots_verify] Verifying result=${result}"
+
+  if [ "${returncode}" -ne 0 ]; then
+    trace "[request_ots_verify] Verifying error"
+  fi
+
+  echo "${result}"
   return ${returncode}
 }
