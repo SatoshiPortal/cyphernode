@@ -72,6 +72,11 @@ main()
         trace "[main] line=${line}"
       fi
       case "${cmd}" in
+        helloworld)
+          # GET http://192.168.111.152:8080/helloworld
+          response_to_client "Hello, world!" 0
+          break
+          ;;
         installation_info)
           # GET http://192.168.111.152:8080/info
           if [ -f "$DB_PATH/info.json" ]; then
@@ -286,7 +291,7 @@ main()
           ;;
         getmempoolinfo)
           # curl GET http://192.168.111.152:8080/getmempoolinfo
-          
+
           response=$(get_mempool_info)
           response_to_client "${response}" ${?}
           break
