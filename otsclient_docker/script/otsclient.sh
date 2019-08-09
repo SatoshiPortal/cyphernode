@@ -95,7 +95,7 @@ verify() {
 
   # Let's create the OTS file locally from the base64
   trace "[verify] Creating /otsfiles/otsfile-$$.ots"
-  echo "${base64otsfile}" > /otsfiles/otsfile-$$.ots
+  echo "${base64otsfile}" | base64 -d > /otsfiles/otsfile-$$.ots
   trace "[verify] ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
   result=$(ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
   returncode=$?
