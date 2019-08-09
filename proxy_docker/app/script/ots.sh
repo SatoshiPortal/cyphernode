@@ -244,6 +244,7 @@ serve_ots_verify() {
   local result
   local returncode
 
+  trace "[serve_ots_verify] request_ots_verify \"${hash}\" \"${base64otsfile}\""
   result=$(request_ots_verify "${hash}" "${base64otsfile}")
   returncode=$?
   trace_rc ${returncode}
