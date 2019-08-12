@@ -63,6 +63,8 @@ curl_it() {
   else
     response=
   fi
+  # When curl is unable to connect, http_code is "000" which is not a valid JSON number
+  [ "${rc}" -eq "0" ] && rc=0
   response="{\"curl_code\":${returncode},\"http_code\":${rc},\"body\":\"${response}\"}"
 
   echo "${response}"
