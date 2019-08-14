@@ -91,6 +91,7 @@ verify() {
 
   local result
   local returncode
+  local message
   local data
 
   # Let's create the OTS file locally from the base64
@@ -147,12 +148,24 @@ verify() {
   trace_rc ${returncode}
 
   if [ "${returncode}" -eq "0" ]; then
-    # String found
-    data="${data}success\"}"
+    # "Success!" found
+    data="${data}success"
   else
-    # String not found
-    data="${data}error\",\"error\":\"${result}\"}"
+    # "Success!" not found
+    echo "${result}" | grep "Pending" > /dev/null
+    returncode=$?
+    trace_rc ${returncode}
+
+    if [ "${returncode}" -eq "0" ]; then
+      # "Pending" found
+      data="${data}pending"
+    else
+      # "Pending" not found
+      data="${data}error"
+    fi
   fi
+
+  data="${data}\",\"message\":\"${result}\"}"
 
   trace "[verify] data=${data}"
 
