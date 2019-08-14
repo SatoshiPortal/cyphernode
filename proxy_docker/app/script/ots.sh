@@ -242,6 +242,7 @@ serve_ots_verify() {
   trace "[serve_ots_verify] base64otsfile=${base64otsfile}"
 
   local result
+  local message
   local returncode
 
   trace "[serve_ots_verify] request_ots_verify \"${hash}\" \"${base64otsfile}\""
@@ -249,7 +250,9 @@ serve_ots_verify() {
   returncode=$?
   trace_rc ${returncode}
 
-  result="{\"method\":\"ots_verify\",\"hash\":\"${hash}\",\"result\":\"${result}\"}"
+  message=$(echo ${result} | jq ".message")
+  result=$(echo ${result} | jq ".result")
+  result="{\"method\":\"ots_verify\",\"hash\":\"${hash}\",\"result\":${result},\"message\":${message}}"
 
   trace "[serve_ots_verify] result=${result}"
 

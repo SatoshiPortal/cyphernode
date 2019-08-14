@@ -4,7 +4,9 @@ RUN apk add --update --no-cache \
     git \
     jq \
     su-exec \
- && yarn global add javascript-opentimestamps
+ && git clone --branch bitcoinconf_props https://github.com/Kexkey/javascript-opentimestamps.git \
+ && cd javascript-opentimestamps \
+ && npm install -g
 
 WORKDIR /script
 
