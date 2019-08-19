@@ -202,14 +202,23 @@ serve_ots_backoffice() {
         url=$(echo "${row}" | cut -d '|' -f2)
         trace "[serve_ots_backoffice] url=${url}"
 
-        # Call back newly upgraded stamps
-        notify_web "${url}"
-        returncode=$?
-        trace_rc ${returncode}
+        # Call back newly upgraded stamps if url provided
+        if [ -n ${url} ]; then
+          trace "[serve_ots_backoffice] url is not empty, now trying to call it!"
 
-        # Even if curl executed ok, we need to make sure the http return code is also ok
+          notify_web "${url}"
+          returncode=$?
+          trace_rc ${returncode}
 
-        if [ "${returncode}" -eq "0" ]; then
+          # Even if curl executed ok, we need to make sure the http return code is also ok
+
+          if [ "${returncode}" -eq "0" ]; then
+            sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
+            trace_rc $?
+          fi
+        else
+          trace "[serve_ots_backoffice] url is empty, obviously won't try to call it!"
+
           sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
           trace_rc $?
         fi

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# There an OTS server on testnet: ots.test4mind.com
+
 . ./trace.sh
 
 stamp() {
@@ -12,9 +14,15 @@ stamp() {
   local returncode
   local data
 
-  trace "[stamp] ots-cli.js stamp -d ${hash}"
-  result=$(cd /otsfiles && ots-cli.js stamp -d ${hash} 2>&1)
-  returncode=$?
+  if [ "${TESTNET}" -eq "1" ]; then
+    trace "[stamp] ots-cli.js stamp -c \"https://ots.testnet.kexkey.com\" -d ${hash}"
+    result=$(cd /otsfiles && ots-cli.js stamp -c "https://ots.testnet.kexkey.com" -d ${hash} 2>&1)
+    returncode=$?
+  else
+    trace "[stamp] ots-cli.js stamp -d ${hash}"
+    result=$(cd /otsfiles && ots-cli.js stamp -d ${hash} 2>&1)
+    returncode=$?
+  fi
   trace_rc ${returncode}
   trace "[stamp] result=${result}"
 
@@ -51,9 +59,15 @@ upgrade() {
   local result
   local returncode
 
-  trace "[upgrade] ots-cli.js upgrade ${hash}.ots"
-  result=$(cd /otsfiles && ots-cli.js upgrade ${hash}.ots 2>&1)
-  returncode=$?
+  if [ "${TESTNET}" -eq "1" ]; then
+    trace "[upgrade] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
+    result=$(cd /otsfiles && ots-cli.js -l "https://testnet.calendar.kexkey.com/" upgrade -c "https://testnet.calendar.kexkey.com/" ${hash}.ots 2>&1)
+    returncode=$?
+  else
+    trace "[upgrade] ots-cli.js upgrade ${hash}.ots"
+    result=$(cd /otsfiles && ots-cli.js upgrade ${hash}.ots 2>&1)
+    returncode=$?
+  fi
   trace_rc ${returncode}
   trace "[upgrade] result=${result}"
 
@@ -97,11 +111,21 @@ verify() {
   # Let's create the OTS file locally from the base64
   trace "[verify] Creating /otsfiles/otsfile-$$.ots"
   echo "${base64otsfile}" | base64 -d > /otsfiles/otsfile-$$.ots
-  trace "[verify] ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
-  result=$(ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
-  returncode=$?
+
+  if [ "${TESTNET}" -eq "1" ]; then
+    trace "[verify] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" verify -d ${hash} /otsfiles/otsfile-$$.ots"
+    result=$(ots-cli.js -l "https://testnet.calendar.kexkey.com/" verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    returncode=$?
+  else
+    trace "[verify] ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
+    result=$(ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    returncode=$?
+  fi
   trace_rc ${returncode}
   trace "[verify] result=${result}"
+
+  trace "[verify] Removing temporary file /otsfiles/otsfile-$$.ots..."
+  rm /otsfiles/otsfile-$$.ots
 
   # /script $ ots-cli.js -v v -d 7d694f669d6da235a5fb9ef8c89da55e30b59eb662a7131f85344d798fc3280c /otsfiles/Order_10019_1543447088465.ots
   # Assuming target hash is '7d694f669d6da235a5fb9ef8c89da55e30b59eb662a7131f85344d798fc3280c'

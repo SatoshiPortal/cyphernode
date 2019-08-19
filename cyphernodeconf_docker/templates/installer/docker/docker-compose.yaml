@@ -160,6 +160,9 @@ services:
     environment:
       - "TRACING=1"
       - "OTSCLIENT_LISTENING_PORT=6666"
+      <% if (net === 'testnet') { %>
+      - "TESTNET=1"
+      <% } %>
     volumes:
       - "<%= otsclient_datapath %>:/otsfiles"
       - "<%= otsclient_datapath %>/bitcoin.conf:/.bitcoin/bitcoin.conf"
