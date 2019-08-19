@@ -30,14 +30,7 @@
     "gatekeeper_clientkeyspassword",
     "gatekeeper_datapath",
     "gatekeeper_port",
-    "lightning_announce",
-    "lightning_expose",
-    "lightning_implementation",
-    "lightning_datapath",
-    "lightning_nodename",
-    "lightning_nodecolor",
     "proxy_datapath",
-    "otsclient_datapath",
     "traefik_datapath",
     "traefik_http_port",
     "traefik_https_port"
@@ -89,6 +82,47 @@
       "then": {
         "required": [
           "bitcoin_prune_size"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "lightning"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lightning_announce",
+          "lightning_expose",
+          "lightning_implementation",
+          "lightning_datapath",
+          "lightning_nodename",
+          "lightning_nodecolor"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "otsclient"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "otsclient_datapath"
         ]
       }
     }
