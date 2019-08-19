@@ -378,6 +378,8 @@ main() {
           # POST http://192.168.111.152:8080/ots_stamp
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}
 
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\"}" localhost:8888/ots_stamp
+
           response=$(serve_ots_stamp "${line}")
           response_to_client "${response}" ${?}
           break
@@ -399,7 +401,7 @@ main() {
           # POST http://192.168.111.152:8080/ots_verify
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
 
-          # curl -v -d "{\"hash\":\"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7\",\"base64otsfile\":\"$(cat 1dd.ots.base64)\"}" localhost:8888/ots_verify
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_verify
 
           response=$(serve_ots_verify "${line}")
           response_to_client "${response}" ${?}
