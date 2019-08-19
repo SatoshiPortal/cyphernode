@@ -60,8 +60,8 @@ upgrade() {
   local returncode
 
   if [ "${TESTNET}" -eq "1" ]; then
-    trace "[upgrade] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
-    result=$(cd /otsfiles && ots-cli.js -l "https://testnet.calendar.kexkey.com/" upgrade -c "https://testnet.calendar.kexkey.com/" ${hash}.ots 2>&1)
+    trace "[upgrade] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
+    result=$(cd /otsfiles && ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist upgrade -c "https://testnet.calendar.kexkey.com/" ${hash}.ots 2>&1)
     returncode=$?
   else
     trace "[upgrade] ots-cli.js upgrade ${hash}.ots"
@@ -113,8 +113,8 @@ verify() {
   echo "${base64otsfile}" | base64 -d > /otsfiles/otsfile-$$.ots
 
   if [ "${TESTNET}" -eq "1" ]; then
-    trace "[verify] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(ots-cli.js -l "https://testnet.calendar.kexkey.com/" verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    trace "[verify] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots"
+    result=$(ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
     returncode=$?
   else
     trace "[verify] ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"

@@ -4,7 +4,7 @@ RUN apk add --update --no-cache \
     git \
     jq \
     su-exec \
- && git clone --branch bitcoinconf_props https://github.com/Kexkey/javascript-opentimestamps.git \
+ && git clone --branch parsecommon https://github.com/Kexkey/javascript-opentimestamps.git \
  && cd javascript-opentimestamps \
  && npm install -g
 
