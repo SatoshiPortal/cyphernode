@@ -3,8 +3,8 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-RUN git clone --branch Features/Rpc-Server --recursive https://github.com/lontivero/Wasabito.git /WalletWasabi
-#RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+#RUN git clone --branch Features/Rpc-Server --recursive https://github.com/lontivero/Wasabito.git /WalletWasabi
+RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
@@ -29,7 +29,7 @@ FROM mcr.microsoft.com/dotnet/core/runtime:2.2-alpine3.8
 
 ENV APPDATA=/root/.walletwasabi/client
 
-RUN apk add --no-cache expect tor icu
+RUN mkdir -p ${APPDATA}/Wallets/ && apk add --no-cache expect tor icu
 
 COPY --from=builder /app /app
 
