@@ -10,6 +10,7 @@ serve_ots_stamp() {
   local hash=$(echo "${request}" | jq -r ".hash")
   trace "[serve_ots_stamp] hash=${hash}"
   local callbackUrl=$(echo "${request}" | jq -r ".callbackUrl")
+  [ "${callbackUrl}" = "null" ] && callbackUrl=
   trace "[serve_ots_stamp] callbackUrl=${callbackUrl}"
 
   local result
@@ -203,7 +204,7 @@ serve_ots_backoffice() {
         trace "[serve_ots_backoffice] url=${url}"
 
         # Call back newly upgraded stamps if url provided
-        if [ -n ${url} ]; then
+        if [ ${#url} -gt 0 ]; then
           trace "[serve_ots_backoffice] url is not empty, now trying to call it!"
 
           notify_web "${url}"
