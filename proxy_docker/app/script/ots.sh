@@ -14,6 +14,8 @@ serve_ots_stamp() {
   if [ "$?" -ne "0" ]; then
     # callbackUrl tag null, so there's no callbackUrl provided
     callbackUrl=
+  else
+    callbackUrl=$(echo "${callbackUrl}" | tr -d '"')
   fi
   trace "[serve_ots_stamp] callbackUrl=${callbackUrl}"
 
@@ -312,17 +314,21 @@ serve_ots_info() {
 
   local request=${1}
   local hash
-  hash=$(echo "${request}" | jq -e ".hash" | tr -d '"')
+  hash=$(echo "${request}" | jq -e ".hash")
   if [ "$?" -ne "0" ]; then
     # Hash tag null, so there's no hash provided
     hash=
+  else
+    hash=$(echo "${hash}" | tr -d '"')
   fi
   trace "[serve_ots_info] hash=${hash}"
   local base64otsfile
-  base64otsfile=$(echo "${request}" | jq -e ".base64otsfile" | tr -d '"')
+  base64otsfile=$(echo "${request}" | jq -e ".base64otsfile")
   if [ "$?" -ne "0" ]; then
     # base64otsfile tag null, so there's no base64otsfile provided
     base64otsfile=
+  else
+    base64otsfile=$(echo "${base64otsfile}" | tr -d '"')
   fi
   trace "[serve_ots_info] base64otsfile=${base64otsfile}"
 
