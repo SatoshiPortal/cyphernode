@@ -197,3 +197,62 @@ verify() {
 
   return ${returncode}
 }
+
+info() {
+  trace "Entering info()..."
+
+  local request=${1}
+  local base64otsfile=$(echo "${request}" | jq ".base64otsfile" | tr -d '"')
+  trace "[info] base64otsfile=${base64otsfile}"
+
+  local result
+  local returncode
+  local message
+  local data
+
+  # Let's create the OTS file locally from the base64
+  trace "[info] Creating /otsfiles/otsfile-$$.ots"
+  echo "${base64otsfile}" | base64 -d > /otsfiles/otsfile-$$.ots
+
+  trace "[info] ots-cli.js info /otsfiles/otsfile-$$.ots"
+  result=$(ots-cli.js info /otsfiles/otsfile-$$.ots 2>&1 | base64 | tr -d '\n')
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[info] result=${result}"
+
+  trace "[info] Removing temporary file /otsfiles/otsfile-$$.ots..."
+  rm /otsfiles/otsfile-$$.ots
+
+  # /otsfiles # ots-cli.js info a2d4ff9c70b7b884e04e04c184a7bf8a07dca029a68efa4d0477cea0c6f8ac2b.ots
+  # File sha256 hash: a2d4ff9c70b7b884e04e04c184a7bf8a07dca029a68efa4d0477cea0c6f8ac2b
+  # Timestamp:
+  # append 0736f76dfd242f5156321c561d11ef47
+  # sha256
+  #  -> append 4820230d20f302a17a45f0de0e3e23a6
+  #     sha256
+  #     prepend 5d5da8e6
+  #     append 8b6d6af19f6ac839
+  #     verify PendingAttestation('https://alice.btc.calendar.opentimestamps.org')
+  #  -> append 9c5e80c7251b313b180acc6e2341d9de
+  #     sha256
+  #     prepend 5d5da8e6
+  #     append 59d56c4ad5d8d6e4
+  #     verify PendingAttestation('https://bob.btc.calendar.opentimestamps.org')
+  #  -> append a437fa964b029950dc8f507de448cd08
+  #     sha256
+  #     prepend 5d5da8e6
+  #     append d25542b20883d479
+  #     verify PendingAttestation('https://finney.calendar.eternitywall.com')
+  #  -> append a34c1ae4a38e776450a643d298abf428
+  #     sha256
+  #     prepend 5d5da8e7
+  #     append 60ed070138239971
+  #     verify PendingAttestation('https://btc.calendar.catallaxy.com')
+
+  data="{\"method\":\"info\",\"result\":\"${result}\"}"
+  trace "[info] data=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}

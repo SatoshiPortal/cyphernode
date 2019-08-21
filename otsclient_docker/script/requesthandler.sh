@@ -82,6 +82,14 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        info)
+          # POST http://192.168.111.152:8080/info
+          # BODY {"base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+
+          response=$(info "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
       esac
       break
     fi
