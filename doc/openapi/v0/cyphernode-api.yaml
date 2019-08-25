@@ -1391,6 +1391,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_verify:
+    post:
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Verify an OTS file with hash"
+      description: "If base64 of the OTS file is not supplied, look for local OTS file named after the supplied hash suffixed with .ots."
+      operationId: "otsVerify"
+      requestBody:
+        description: "JSON object containing hash and base64otsfile."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "hash"
+              properties:
+                hash:
+                  $ref: '#/components/schemas/TypeHashString'
+                base64otsfile:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_info:
+    post:
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Get information about an OTS file"
+      description: "If base64 of the OTS file is not supplied, look for local OTS file named after the supplied hash suffixed with .ots."
+      operationId: "otsInfo"
+      requestBody:
+        description: "JSON object containing hash and/or base64otsfile."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                hash:
+                  $ref: '#/components/schemas/TypeHashString'
+                base64otsfile:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /ots_getfile/{hash}:
     get:
       parameters:

@@ -252,10 +252,39 @@ serve_ots_verify() {
   trace "Entering serve_ots_verify()..."
 
   local request=${1}
-  local hash=$(echo "${request}" | jq ".hash" | tr -d '"')
+  local hash
+  hash=$(echo "${request}" | jq -e ".hash")
+  if [ "$?" -ne "0" ]; then
+    # Hash tag null, so there's no hash provided
+    trace "[serve_ots_verify] hash field missing!"
+    echo "{\"method\":\"ots_verify\",\"result\":\"error\",\"message\":\"hash must be provided\"}"
+    return 1
+  else
+    hash=$(echo "${hash}" | tr -d '"')
+  fi
   trace "[serve_ots_verify] hash=${hash}"
-  local base64otsfile=$(echo "${request}" | jq ".base64otsfile" | tr -d '"')
+  local base64otsfile
+  base64otsfile=$(echo "${request}" | jq -e ".base64otsfile")
+  if [ "$?" -ne "0" ]; then
+    # base64otsfile tag null, so there's no base64otsfile provided
+    base64otsfile=
+  else
+    base64otsfile=$(echo "${base64otsfile}" | tr -d '"')
+  fi
   trace "[serve_ots_verify] base64otsfile=${base64otsfile}"
+
+  # If file is provided, we will execute info on it
+  # If file not provided, we will check for hash.ots in our folder and execute info on it
+  if [ -z "${base64otsfile}" ]; then
+    if [ -f otsfiles/${hash}.ots ]; then
+      trace "[serve_ots_verify] Constructing base64otsfile from provided hash, file otsfiles/${hash}.ots"
+      base64otsfile=$(cat otsfiles/${hash}.ots | base64 | tr -d '\n')
+    else
+      trace "[serve_ots_verify] File otsfiles/${hash}.ots does not exists!"
+      echo "{\"method\":\"ots_verify\",\"hash\":\"${hash}\",\"result\":\"error\",\"message\":\"OTS File not found\"}"
+      return 1
+    fi
+  fi
 
   local result
   local message
