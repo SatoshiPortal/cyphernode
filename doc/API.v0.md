@@ -1041,12 +1041,6 @@ Proxy response:
 }
 ```
 
-ots_info)
-  # POST http://192.168.111.152:8080/ots_info
-  # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7"}
-  # BODY {"base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
-  # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
-
 ### Get info an OTS file
 
 Will return the base64 string of the detailed information of the supplied OTS file, or of the local OTS file named after the supplied hash suffixed with .ots.
