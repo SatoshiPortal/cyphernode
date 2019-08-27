@@ -799,7 +799,6 @@ paths:
               type: "object"
               required:
                 - "txid"
-                - "confTarget"
               properties:
                 txid:
                   $ref: '#/components/schemas/TypeHashString'
