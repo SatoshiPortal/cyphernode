@@ -294,7 +294,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
 
 ### Get mempool information
 
-Returns the mempool information of the Bitcoin node. 
+Returns the mempool information of the Bitcoin node.
 ```http
 GET http://cyphernode:8888/getmempoolinfo
 ```
@@ -615,6 +615,27 @@ Proxy response:
 {
   "status": "accepted",
   "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"
+}
+```
+
+### Bump transaction's fees (called by application)
+
+Calls bumpfee RPC on the spending wallet with supplied info.
+
+```http
+POST http://cyphernode:8888/bumpfee
+with body...
+{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
+```
+
+Proxy response:
+
+```json
+{
+  "txid": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "origfee": 0.00041221,
+  "fee": 0.00068112,
+  "errors": [ "Blabla don't do that" ]
 }
 ```
 

@@ -62,6 +62,32 @@ spend() {
   return ${returncode}
 }
 
+bumpfee() {
+  trace "Entering bumpfee()..."
+
+  local request=${1}
+  local txid=$(echo "${request}" | jq ".txid" | tr -d '"')
+  trace "[bumpfee] txid=${txid}"
+  local confTarget=$(echo "${request}" | jq ".confTarget")
+  trace "[bumpfee] confTarget=${confTarget}"
+  local response
+
+  response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[bumpfee] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    trace "[bumpfee] error!"
+  else
+    trace "[bumpfee] success!"
+  fi
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 getbalance() {
   trace "Entering getbalance()..."
 
