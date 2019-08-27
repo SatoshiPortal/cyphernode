@@ -632,7 +632,7 @@ Proxy response:
 
 ```json
 {
-  "txid": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "txid": "7c048f43af90315e201ff4dada8796605a2505c7ab54054ba0e9e05cadd9079b",
   "origfee": 0.00041221,
   "fee": 0.00068112,
   "errors": [ "Blabla don't do that" ]
