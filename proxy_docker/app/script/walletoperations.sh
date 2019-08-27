@@ -68,12 +68,24 @@ bumpfee() {
   local request=${1}
   local txid=$(echo "${request}" | jq ".txid" | tr -d '"')
   trace "[bumpfee] txid=${txid}"
-  local confTarget=$(echo "${request}" | jq ".confTarget")
-  trace "[bumpfee] confTarget=${confTarget}"
-  local response
 
-  response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
-  local returncode=$?
+  local confTarget
+  local response
+  local returncode
+
+  # jq -e will have a return code of 1 if the supplied tag is null.
+  confTarget=$(echo "${request}" | jq -e ".confTarget")
+  if [ "$?" -ne "0" ]; then
+    # confTarget tag null, so there's no confTarget
+    trace "[bumpfee] confTarget="
+    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+    returncode=$?
+  else
+    trace "[bumpfee] confTarget=${confTarget}"
+    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    returncode=$?
+  fi
+
   trace_rc ${returncode}
   trace "[bumpfee] response=${response}"
 

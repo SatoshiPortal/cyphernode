@@ -626,6 +626,8 @@ Calls bumpfee RPC on the spending wallet with supplied info.
 POST http://cyphernode:8888/bumpfee
 with body...
 {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
+or...
+{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
 ```
 
 Proxy response:
