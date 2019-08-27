@@ -256,6 +256,14 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        bumpfee)
+          # POST http://192.168.111.152:8080/bumpfee
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
+
+          response=$(bumpfee "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         addtobatch)
           # POST http://192.168.111.152:8080/addtobatch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}

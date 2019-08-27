@@ -782,6 +782,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bumpfee:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Bump the fees of an unconfirmed transaction"
+      description: "Calls bumpfee RPC on the spending wallet with supplied info."
+      operationId: "bumpfee"
+      requestBody:
+        description: "txid and confirmation target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "txid"
+                - "confTarget"
+              properties:
+                txid:
+                  $ref: '#/components/schemas/TypeHashString'
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "txid"
+                  - "origfee"
+                  - "fee"
+                  - "errors"
+                properties:
+                  txid:
+                    $ref: '#/components/schemas/TypeHashString'
+                  origfee:
+                    type: "number"
+                  fee:
+                    type: "number"
+                  errors:
+                    type: "array"
+                    items:
+                      type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /addtobatch:
     post:
       tags:
