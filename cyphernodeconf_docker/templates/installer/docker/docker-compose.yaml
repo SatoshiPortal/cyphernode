@@ -354,6 +354,16 @@ services:
   # WASABI                 #
   ##########################
 
+  <%   if ( net === 'regtest' ) { %>
+  wasabi-backend:
+    image: cyphernode/wasabi-backend:<%= wasabi_version %>
+    networks:
+      - cyphernodenet
+    volumes:
+      - "<%= wasabi_datapath %>/backend:/root/.walletwasabi/backend"
+    restart: always
+  <%   } %>
+
   <%   for ( let index=0; index<wasabi_instance_count; index++ ) { %>
   wasabi_<%= index %>:
     image: cyphernode/wasabi:<%= wasabi_version %>
