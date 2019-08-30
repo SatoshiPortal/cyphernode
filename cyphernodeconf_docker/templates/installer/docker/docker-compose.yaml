@@ -292,6 +292,8 @@ services:
       - cyphernodenet
     volumes:
       - "<%= wasabi_datapath %>/backend:/root/.walletwasabi/backend"
+    depends_on:
+      - bitcoin
     restart: always
   <%   } %>
 
@@ -302,6 +304,8 @@ services:
       - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
     networks:
       - cyphernodenet
+    depends_on:
+      - bitcoin
     restart: always
 #    deploy:
 #      placement:

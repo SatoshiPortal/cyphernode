@@ -192,3 +192,5 @@ wasabi_get_transactions() {
 #   ],
 #   "id": "1"
 # }
+
+# for i in 0 1 2 3 4; do echo $i = $(curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_$i:18099/); done
