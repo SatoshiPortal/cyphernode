@@ -605,15 +605,15 @@ install_docker() {
   fi
 
   if [[ $FEATURE_WASABI == true ]]; then
-    if [ ! -d $WASABI_DATAPATH ]; then
       for ((i=0;i<$WASABI_INSTANCE_COUNT;i++));
       do
-        step "   [32mcreate[0m $WASABI_DATAPATH/$i"
-        sudo_if_required mkdir -p $WASABI_DATAPATH/$i
+        if [ ! -d $WASABI_DATAPATH/$i ]; then
+          step "   [32mcreate[0m $WASABI_DATAPATH/$i"
+          sudo_if_required mkdir -p $WASABI_DATAPATH/$i
+          next
+        fi
         copy_file "$cyphernodeconf_filepath/wasabi/Config.json" "$WASABI_DATAPATH/$i/Config.json" 1 $SUDO_REQUIRED
-        next
       done
-    fi
   fi
 
   docker swarm join-token worker > /dev/null 2>&1
