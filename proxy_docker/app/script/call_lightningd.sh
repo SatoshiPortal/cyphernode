@@ -2,8 +2,7 @@
 
 . ./trace.sh
 
-ln_create_invoice()
-{
+ln_create_invoice() {
   trace "Entering ln_create_invoice()..."
 
   local result
@@ -11,15 +10,15 @@ ln_create_invoice()
   local id
 
   local request=${1}
-  local msatoshi=$(echo "${request}" | jq ".msatoshi" | tr -d '"')
+  local msatoshi=$(echo "${request}" | jq -r ".msatoshi")
   trace "[ln_create_invoice] msatoshi=${msatoshi}"
-  local label=$(echo "${request}" | jq ".label" | tr -d '"')
+  local label=$(echo "${request}" | jq -r ".label")
   trace "[ln_create_invoice] label=${label}"
-  local description=$(echo "${request}" | jq ".description" | tr -d '"')
+  local description=$(echo "${request}" | jq -r ".description")
   trace "[ln_create_invoice] description=${description}"
-  local expiry=$(echo "${request}" | jq ".expiry" | tr -d '"')
+  local expiry=$(echo "${request}" | jq -r ".expiry")
   trace "[ln_create_invoice] expiry=${expiry}"
-  local callback_url=$(echo "${request}" | jq ".callbackUrl" | tr -d '"')
+  local callback_url=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[ln_create_invoice] callback_url=${callback_url}"
 
   #/proxy $ ./lightning-cli invoice 10000 "t1" "t1d" 60
@@ -38,11 +37,11 @@ ln_create_invoice()
   if [ "${returncode}" -ne "0" ]; then
     data=${result}
   else
-    local bolt11=$(echo "${result}" | jq ".bolt11" | tr -d '"')
+    local bolt11=$(echo "${result}" | jq -r ".bolt11")
     trace "[ln_create_invoice] bolt11=${bolt11}"
-    local payment_hash=$(echo "${result}" | jq ".payment_hash" | tr -d '"')
+    local payment_hash=$(echo "${result}" | jq -r ".payment_hash")
     trace "[ln_create_invoice] payment_hash=${payment_hash}"
-    local expires_at=$(echo "${result}" | jq ".expires_at" | tr -d '"')
+    local expires_at=$(echo "${result}" | jq -r ".expires_at")
     trace "[ln_create_invoice] expires_at=${expires_at}"
 
     # Let's get the connect string if provided in configuration
@@ -88,15 +87,14 @@ get_connection_string() {
   echo ${getinfo} | jq -e '.address[0]' > /dev/null
   if [ "$?" -eq 0 ]; then
     # If there's an address
-    connectstring="$(echo ${getinfo} | jq '((.id + "@") + (.address[0] | ((.address + ":") + (.port | tostring))))' | tr -d '"')"
+    connectstring="$(echo ${getinfo} | jq -r '((.id + "@") + (.address[0] | ((.address + ":") + (.port | tostring))))')"
     trace "[get_connection_string] connectstring=${connectstring}"
   fi
 
   echo "${connectstring}"
 }
 
-ln_getinfo()
-{
+ln_getinfo() {
   trace "Entering ln_get_info()..."
 
   local result
@@ -190,11 +188,11 @@ ln_connectfund() {
   local msg
 
   local request=${1}
-  local peer=$(echo "${request}" | jq ".peer" | tr -d '"')
+  local peer=$(echo "${request}" | jq -r ".peer")
   trace "[ln_connectfund] peer=${peer}"
   local msatoshi=$(echo "${request}" | jq ".msatoshi")
   trace "[ln_connectfund] msatoshi=${msatoshi}"
-  local callback_url=$(echo "${request}" | jq ".callbackUrl" | tr -d '"')
+  local callback_url=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[ln_connectfund] callback_url=${callback_url}"
 
   # Let's first try to connect to peer
@@ -215,7 +213,7 @@ ln_connectfund() {
 # ./lightning-cli connect 021a1b197aa79242532b23cb9a8d9cb78631f95f811457675fa1b362fe6d1c24b8@172.81.180.244:9735
 # { "code" : -1, "message" : "172.1.180.244:9735: Connection establishment: Operation timed out. " }
 
-    nodeId=$(echo "${result}" | jq ".id" | tr -d '"')
+    nodeId=$(echo "${result}" | jq -r ".id")
     trace "[ln_connectfund] nodeId=${nodeId}"
 
     # Now let's fund a channel with peer
@@ -288,7 +286,7 @@ ln_pay() {
   local payment_hash
 
   local request=${1}
-  local bolt11=$(echo "${request}" | jq ".bolt11" | tr -d '"')
+  local bolt11=$(echo "${request}" | jq -r ".bolt11")
   trace "[ln_pay] bolt11=${bolt11}"
   local expected_msatoshi=$(echo "${request}" | jq ".expected_msatoshi")
   trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
@@ -344,7 +342,7 @@ ln_pay() {
 
           if [ "${code}" -eq "200" ]; then
             trace "[ln_pay] Code 200, let's fetch status in data, should be pending..."
-            status=$(echo "${result}" | jq ".data.status" | tr -d '"')
+            status=$(echo "${result}" | jq -r ".data.status")
             trace "[ln_pay] status=${status}"
           else
             trace "[ln_pay] Failure code, response will be the cli result."
@@ -352,14 +350,14 @@ ln_pay() {
         else
           # code tag not found
           trace "[ln_pay] No error code, getting the status..."
-          status=$(echo "${result}" | jq ".status" | tr -d '"')
+          status=$(echo "${result}" | jq -r ".status")
           trace "[ln_pay] status=${status}"
         fi
 
         if [ "${status}" = "pending" ]; then
           trace "[ln_pay] Ok let's deal with pending status with waitsendpay."
 
-          payment_hash=$(echo "${result}" | jq ".data.payment_hash" | tr -d '"')
+          payment_hash=$(echo "${result}" | jq -r ".data.payment_hash")
           trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash} 15"
           result=$(./lightning-cli waitsendpay ${payment_hash} 15)
           returncode=$?
@@ -420,8 +418,7 @@ ln_pay() {
   return ${returncode}
 }
 
-ln_newaddr()
-{
+ln_newaddr() {
   trace "Entering ln_newaddr()..."
 
   local result

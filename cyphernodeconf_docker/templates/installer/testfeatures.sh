@@ -103,7 +103,7 @@ checknotifier() {
   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\"}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
-  http_code=$(echo "${response}" | jq ".http_code" | tr -d '"')
+  http_code=$(echo "${response}" | jq -r ".http_code")
   [ "${http_code}" -ge "400" ] && return 118
 
   echo -e "\e[1;36mNotifier rocks!" > /dev/console

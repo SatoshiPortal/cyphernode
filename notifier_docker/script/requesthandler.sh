@@ -18,10 +18,10 @@ main() {
     trace "[main] New msg just arrived!"
     trace "[main] msg=${msg}"
 
-    cmd=$(echo ${msg} | jq ".cmd" | tr -d '"')
+    cmd=$(echo ${msg} | jq -r ".cmd")
     trace "[main] cmd=${cmd}"
 
-    response_topic=$(echo ${msg} | jq '."response-topic"' | tr -d '"')
+    response_topic=$(echo ${msg} | jq -r '."response-topic"')
     trace "[main] response_topic=${response_topic}"
 
     case "${cmd}" in
