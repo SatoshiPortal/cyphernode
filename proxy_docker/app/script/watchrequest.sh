@@ -11,9 +11,9 @@ watchrequest() {
 
   local returncode
   local request=${1}
-  local address=$(echo "${request}" | jq ".address" | tr -d '"')
-  local cb0conf_url=$(echo "${request}" | jq ".unconfirmedCallbackURL" | tr -d '"')
-  local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL" | tr -d '"')
+  local address=$(echo "${request}" | jq -r ".address")
+  local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL")
+  local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL")
   local imported
   local inserted
   local id_inserted
@@ -76,17 +76,17 @@ watchpub32request() {
 
   local returncode
   local request=${1}
-  local label=$(echo "${request}" | jq ".label" | tr -d '"')
+  local label=$(echo "${request}" | jq -r ".label")
   trace "[watchpub32request] label=${label}"
-  local pub32=$(echo "${request}" | jq ".pub32" | tr -d '"')
+  local pub32=$(echo "${request}" | jq -r ".pub32")
   trace "[watchpub32request] pub32=${pub32}"
-  local path=$(echo "${request}" | jq ".path" | tr -d '"')
+  local path=$(echo "${request}" | jq -r ".path")
   trace "[watchpub32request] path=${path}"
   local nstart=$(echo "${request}" | jq ".nstart")
   trace "[watchpub32request] nstart=${nstart}"
-  local cb0conf_url=$(echo "${request}" | jq ".unconfirmedCallbackURL" | tr -d '"')
+  local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL")
   trace "[watchpub32request] cb0conf_url=${cb0conf_url}"
-  local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL" | tr -d '"')
+  local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL")
   trace "[watchpub32request] cb1conf_url=${cb1conf_url}"
 
   watchpub32 ${label} ${pub32} ${path} ${nstart} ${cb0conf_url} ${cb1conf_url}
@@ -297,11 +297,11 @@ watchtxidrequest() {
   local returncode
   local request=${1}
   trace "[watchtxidrequest] request=${request}"
-  local txid=$(echo "${request}" | jq ".txid" | tr -d '"')
+  local txid=$(echo "${request}" | jq -r ".txid")
   trace "[watchtxidrequest] txid=${txid}"
-  local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL" | tr -d '"')
+  local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL")
   trace "[watchtxidrequest] cb1conf_url=${cb1conf_url}"
-  local cbxconf_url=$(echo "${request}" | jq ".xconfCallbackURL" | tr -d '"')
+  local cbxconf_url=$(echo "${request}" | jq -r ".xconfCallbackURL")
   trace "[watchtxidrequest] cbxconf_url=${cbxconf_url}"
   local nbxconf=$(echo "${request}" | jq ".nbxconf")
   trace "[watchtxidrequest] nbxconf=${nbxconf}"

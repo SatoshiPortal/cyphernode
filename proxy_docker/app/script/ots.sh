@@ -7,9 +7,9 @@ serve_ots_stamp() {
   trace "Entering serve_ots_stamp()..."
 
   local request=${1}
-  local hash=$(echo "${request}" | jq ".hash" | tr -d '"')
+  local hash=$(echo "${request}" | jq -r ".hash")
   trace "[serve_ots_stamp] hash=${hash}"
-  local callbackUrl=$(echo "${request}" | jq ".callbackUrl" | tr -d '"')
+  local callbackUrl=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[serve_ots_stamp] callbackUrl=${callbackUrl}"
 
   local result

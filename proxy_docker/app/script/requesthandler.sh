@@ -20,8 +20,7 @@
 . ./ots.sh
 . ./newblock.sh
 
-main()
-{
+main() {
   trace "Entering main()..."
 
   local step=0
@@ -269,7 +268,7 @@ main()
           # POST http://192.168.111.152:8080/addtobatch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 
-          response=$(addtobatching $(echo "${line}" | jq ".address" | tr -d '"') $(echo "${line}" | jq ".amount"))
+          response=$(addtobatching $(echo "${line}" | jq -r ".address") $(echo "${line}" | jq ".amount"))
           response_to_client "${response}" ${?}
           break
           ;;

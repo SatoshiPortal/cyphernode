@@ -3,8 +3,7 @@
 . ./trace.sh
 . ./sendtobitcoinnode.sh
 
-get_best_block_hash()
-{
+get_best_block_hash() {
   trace "Entering get_best_block_hash()..."
 
   local data='{"method":"getbestblockhash"}'
@@ -12,8 +11,7 @@ get_best_block_hash()
   return $?
 }
 
-getestimatesmartfee()
-{
+getestimatesmartfee() {
   trace "Entering getestimatesmartfee()..."
 
   local nb_blocks=${1}
@@ -22,8 +20,7 @@ getestimatesmartfee()
   return $?
 }
 
-get_block_info()
-{
+get_block_info() {
   trace "Entering get_block_info()..."
 
   local block_hash=${1}
@@ -34,18 +31,16 @@ get_block_info()
   return $?
 }
 
-get_best_block_info()
-{
+get_best_block_info() {
   trace "Entering get_best_block_info()..."
 
-  local block_hash=$(echo "$(get_best_block_hash)" | jq ".result" | tr -d '"')
+  local block_hash=$(echo "$(get_best_block_hash)" | jq -r ".result")
   trace "[get_best_block_info] block_hash=${block_hash}"
   get_block_info ${block_hash}
   return $?
 }
 
-get_rawtransaction()
-{
+get_rawtransaction() {
   trace "Entering get_rawtransaction()..."
 
   local txid=${1}
@@ -74,8 +69,7 @@ get_transaction() {
   return $?
 }
 
-get_blockchain_info()
-{
+get_blockchain_info() {
   trace "Entering get_blockchain_info()..."
 
   local data='{"method":"getblockchaininfo"}'
@@ -83,8 +77,7 @@ get_blockchain_info()
   return $?
 }
 
-get_mempool_info()
-{
+get_mempool_info() {
   trace "Entering get_mempool_info()..."
 
   local data='{"method":"getmempoolinfo"}'

@@ -24,9 +24,9 @@ notify_web() {
   # The response looks like this: {"curl_code":0,"http_code":200,"body":"..."} where the body
   # is the base64(response body) but we don't need the response content here.
   trace "[notify_web] response=${response}"
-  curl_code=$(echo "${response}" | jq ".curl_code" | tr -d '"')
+  curl_code=$(echo "${response}" | jq -r ".curl_code")
   trace "[notify_web] curl_code=${curl_code}"
-  http_code=$(echo "${response}" | jq ".http_code" | tr -d '"')
+  http_code=$(echo "${response}" | jq -r ".http_code")
   trace "[notify_web] http_code=${http_code}"
 
   if [ "${curl_code}" -eq "0" ] && [ "${returncode}" -eq "0" ]; then

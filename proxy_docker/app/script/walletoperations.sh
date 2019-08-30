@@ -8,7 +8,7 @@ spend() {
 
   local data
   local request=${1}
-  local address=$(echo "${request}" | jq ".address" | tr -d '"')
+  local address=$(echo "${request}" | jq -r ".address")
   trace "[spend] address=${address}"
   local amount=$(echo "${request}" | jq ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[spend] amount=${amount}"
@@ -23,7 +23,7 @@ spend() {
   trace "[spend] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local txid=$(echo "${response}" | jq ".result" | tr -d '"')
+    local txid=$(echo "${response}" | jq -r ".result")
     trace "[spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
@@ -66,7 +66,7 @@ bumpfee() {
   trace "Entering bumpfee()..."
 
   local request=${1}
-  local txid=$(echo "${request}" | jq ".txid" | tr -d '"')
+  local txid=$(echo "${request}" | jq -r ".txid")
   trace "[bumpfee] txid=${txid}"
 
   local confTarget
@@ -273,7 +273,7 @@ batchspend() {
   trace "[batchspend] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local txid=$(echo "${response}" | jq ".result" | tr -d '"')
+    local txid=$(echo "${response}" | jq -r ".result")
     trace "[batchspend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information

@@ -16,8 +16,7 @@
 
 . ./trace.sh
 
-verify_sign()
-{
+verify_sign() {
   local returncode
 
   local header64=$(echo "${1}" | cut -sd '.' -f1)
@@ -38,7 +37,7 @@ verify_sign()
 
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
-    local id=$(echo "${payload}" | jq ".id" | tr -d '"')
+    local id=$(echo "${payload}" | jq -r ".id")
     trace "[verify_sign] id=${id}"
 
     # Check for code injection
@@ -82,8 +81,7 @@ verify_sign()
   return 1
 }
 
-verify_group()
-{
+verify_group() {
   trace "[verify_group] Verifying group..."
 
   local id=${1}
