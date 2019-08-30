@@ -92,7 +92,7 @@ verify_group() {
 
   # Check for code injection
   # action can be alphanum... and _ and - but nothing else
-	local actiontoinspect=$(echo "$action" | tr -d '_-')
+  local actiontoinspect=$(echo "$action" | tr -d '_-')
   case $actiontoinspect in (*[![:alnum:]]*|"")
     trace "[verify_group] Potential code injection, exiting"
     return 1
