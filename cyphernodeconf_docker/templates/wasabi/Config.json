@@ -1,6 +1,8 @@
 ﻿{
 <% if (net === 'testnet') { %>
   "Network": "TestNet",
+<% } else if (net === 'regtest') { %>
+  "Network": "RegTest",
 <% } else { %>
   "Network": "Main",
 <% } %>

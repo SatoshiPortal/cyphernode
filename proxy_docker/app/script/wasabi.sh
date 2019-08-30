@@ -85,3 +85,64 @@ wasabi_get_transactions() {
   # return all transactions of either one wasabi instance
   # or all instances, depending on the id parameter
 }
+
+# Getting an address:
+#
+# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"getnewaddress","params":["t1"]}' http://127.0.0.1:18099/ | jq
+# {
+#   "jsonrpc": "2.0",
+#   "result": {
+#     "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j",
+#     "keyPath": "84'/0'/0'/0/21",
+#     "label": "t1",
+#     "publicKey": "03cb77191ef66857227eba1f210ac7daaa308628dc072b0dae97f8fa25a8157461",
+#     "p2wpkh": "0014038f21097bef2007bde1f8abb2183c03764a3903"
+#   },
+#   "id": "1"
+# }
+#
+# Sending funds:
+#
+# mm01:dist kexkey$ docker exec -it 8a3 bitcoin-cli -rpcwallet=spending01.dat sendtoaddress tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j 0.2
+# a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439
+#
+# unconfirmed utxo:
+#
+# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins"}' http://127.0.0.1:18099/ | jq
+# {
+#   "jsonrpc": "2.0",
+#   "result": [
+#     {
+#       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
+#       "index": 0,
+#       "amount": 20000000,
+#       "anonymitySet": 1,
+#       "confirmed": false,
+#       "label": "t1",
+#       "keyPath": "84'/0'/0'/0/21",
+#       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
+#     }
+#   ],
+#   "id": "1"
+# }
+#
+
+# confirmed utxo:
+#
+# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://127.0.0.1:18099/ | jq
+# {
+#   "jsonrpc": "2.0",
+#   "result": [
+#     {
+#       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
+#       "index": 0,
+#       "amount": 20000000,
+#       "anonymitySet": 1,
+#       "confirmed": true,
+#       "label": "t1",
+#       "keyPath": "84'/0'/0'/0/21",
+#       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
+#     }
+#   ],
+#   "id": "1"
+# }
