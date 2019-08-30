@@ -1,0 +1,15 @@
+﻿{
+  "Denomination": "0.10",
+  "ConfirmationTarget": 144,
+  "ConfirmationTargetReductionRate": 0.7,
+  "CoordinatorFeePercent": 0.003,
+  "AnonymitySet": 100,
+  "InputRegistrationTimeout": 604800,
+  "ConnectionConfirmationTimeout": 60,
+  "OutputRegistrationTimeout": 60,
+  "SigningTimeout": 60,
+  "DosSeverity": 1,
+  "DosDurationHours": 730,
+  "DosNoteBeforeBan": true,
+  "MaximumMixingLevelCount": 11
+}
