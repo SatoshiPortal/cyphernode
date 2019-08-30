@@ -7,7 +7,7 @@
 #WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>
 #WASABI_DATAPATH=<%= wasabi_datapath %>
 
-send_to_wasabi() {
+send_to_wasabi_prod() {
   local index=$1 # instance index
   local method=$2 # method
   local params=$3 # json string escaped
@@ -23,6 +23,29 @@ send_to_wasabi() {
   fi
 
   echo curl -u "$WASABI_RPCUSER:$WASABI_RPCPASSWORD" -s --data-binary "'{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"${method}\", \"params\": ${params} }'" http://wasabi_${index}:18099/
+  return $?
+}
+
+send_to_wasabi() {
+  local index=$1 # instance index
+  local method=$2 # method
+  local params=$3 # json string escaped
+
+  if [ "$#" -ne 3 ]; then
+      echo "Wrong number of arguments"
+      return 1
+  fi
+
+  if [ ! $index -lt "${WASABI_INSTANCE_COUNT}" ]; then
+    echo "No such wasabi instance ${index}"
+    return 1
+  fi
+
+  if [ "$method" = "getnewaddress" ]; then
+    cat ././../../../wasabi_docker/newaddr.json
+  elif [ "$method" = "listunspentcoins" ]; then
+    cat ././../../../wasabi_docker/listunspentcoins.json
+  fi
   return $?
 }
 
@@ -43,11 +66,14 @@ wasabi_newaddr() {
     label="unknown"
   fi
 
-  send_to_wasabi $(random_wasabi_index) getnewaddress '{ "label": "'${label}'" }'
+  send_to_wasabi $(random_wasabi_index) getnewaddress '{ "label": "'${label}'" }' | jq '.result'
   return $?
 }
 
 wasabi_get_balance() {
+
+  local private=$1
+  local index=$2
 
   # wasabi rpc: listunspentcoins
 
@@ -63,6 +89,26 @@ wasabi_get_balance() {
   # if id is defined, it will return the balance of
   # the wasabi instance with id <id>, else it will
   # return the balance of all instances
+
+  # sum up all result array amount fields, private and non private
+  local minInstanceIndex=0
+  local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+
+  if [ $index ]; then
+    minInstanceIndex=$index
+    maxInstanceIndex=$index
+  fi
+
+  local sum=10
+
+  for ((index=minInstanceIndex;index<=maxInstanceIndex;index++)); do
+    balance=$(send_to_wasabi ${index} listunspentcoins '{}' | jq 'reduce .result[].amount as $x (0; . + $x)')
+    echo $index $sum $balance
+    sum=$((sum + balance))
+  done
+
+  jq -n --arg b "$balance" '.balance=$b'
+
 }
 
 wasabi_spend() {

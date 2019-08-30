@@ -3,8 +3,8 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-#RUN git clone --branch Features/Rpc-Server --recursive https://github.com/lontivero/Wasabito.git /WalletWasabi
-RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+#RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+RUN git clone --recursive --branch Features/remote_regtest https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator

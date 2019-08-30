@@ -43,7 +43,8 @@ build_docker_images() {
   && docker build cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION \
   && docker build pycoin_docker/ -t cyphernode/pycoin:$PYCOIN_VERSION \
   && docker build otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION \
-  && docker build wasabi_docker/ -t cyphernode/wasabi:$WASABI_VERSION
+  && docker build wasabi_docker/ -t cyphernode/wasabi:$WASABI_VERSION \
+  && docker build wasabi_docker/backend -t cyphernode/wasabi-backend:$WASABI_VERSION
 }
 
 build_docker_images

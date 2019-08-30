@@ -56,6 +56,10 @@ module.exports = {
     ];
   },
   templates: function( props ) {
-    return featureCondition(props)?['Config.json']:[];
+    let files = ['Config.json'];
+    if( props.net === 'regtest' ) {
+      files = files.concat( ['backend/Config.json', 'backend/CcjRoundConfig.json'] )
+    }
+    return featureCondition(props)?files:[];
   }
 };
