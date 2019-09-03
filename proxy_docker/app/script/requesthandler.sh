@@ -182,6 +182,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        getblockhash)
+          # curl (GET) http://192.168.111.152:8080/getblockhash/522322
+
+          response=$(get_blockhash $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getblockinfo)
           # curl (GET) http://192.168.111.152:8080/getblockinfo/000000006f82a384c208ecfa04d05beea02d420f3f398ddda5c7f900de5718ea
 
