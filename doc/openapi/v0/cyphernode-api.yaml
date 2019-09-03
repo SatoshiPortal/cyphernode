@@ -436,8 +436,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
 
-  /getblockhash:
+  /getblockhash/{height}:
     get:
+      parameters:
+        - in: "path"
+          name: "height"
+          description: "Blockhash"
+          required: true
+          schema:
+           type: "integer"
       tags:
         - "block"
         - "core features"
