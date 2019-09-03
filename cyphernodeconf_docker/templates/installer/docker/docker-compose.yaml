@@ -4,7 +4,7 @@ services:
 
   bitcoin_monitor:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command: $USER sh -c 'rm -f /bitcoin_monitor/up ; while true ; do [ "$$(bitcoin-cli echo &> /dev/null ; echo $$?)" -eq "0" ] && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up ; sleep 2 ; done'
+    command: 0:0 sh -c 'rm -f /bitcoin_monitor/up ; while true ; do [ "$$(bitcoin-cli echo &> /dev/null ; echo $$?)" -eq "0" ] && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up ; sleep 10 ; done'
     volumes:
       - bitcoin_monitor:/bitcoin_monitor
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/root/.bitcoin/bitcoin.conf"
@@ -47,12 +47,12 @@ services:
     command: $USER ./startproxy.sh
     environment:
       - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %> : <%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
+      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
       - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
       - "WATCHER_BTC_NODE_XPUB_WALLET=xpubwatching01.dat"
       - "WATCHER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %> : <%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
+      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
       - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
       - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
@@ -241,9 +241,7 @@ services:
 
   lightning:
     image: cyphernode/clightning:<%= lightning_version %>
-#    command: $USER sh -c 'a=1 ; while [ "$$a" -ne "0" ]; do echo "bitcoin not ready" ; sleep 2 ; bitcoin-cli echo ; a=$$? ; done ; echo "bitcoin ready!" ; lightningd'
-#    command: $USER sh -c 'while [ "$$(bitcoin-cli echo &> /dev/null ; echo $$?)" -ne "0" ]; do echo "bitcoin not ready" ; sleep 2 ; done ; echo "bitcoin ready!" ; lightningd'
-    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 2 ; done ; echo "bitcoin ready!" ; lightningd'
+    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
     <% if( lightning_expose ) { %>
     ports:
       - "9735:9735"
