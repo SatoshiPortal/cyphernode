@@ -376,6 +376,24 @@ Proxy response:
 }
 ```
 
+### Get the Block Hash from Height (called by application)
+
+Returns the best block hash matching height provided.
+
+```http
+GET http://cyphernode:8888/getblockhash/593104
+```
+
+Proxy response:
+
+```json
+{
+  "result":"00000000000000000005dc459f0575b17413dbe7685e3e0fd382ed521f1be68b",
+  "error":null,
+  "id":null
+}
+```
+
 ### Get the Best Block Hash (called by application)
 
 Returns the best block hash of the watching Bitcoin node.
