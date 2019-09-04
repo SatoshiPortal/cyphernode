@@ -2,19 +2,6 @@ version: "3"
 
 services:
 
-  bitcoin_monitor:
-    image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command: 0:0 sh -c 'rm -f /bitcoin_monitor/up ; while true ; do [ "$$(bitcoin-cli echo &> /dev/null ; echo $$?)" -eq "0" ] && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up ; sleep 10 ; done'
-    volumes:
-      - bitcoin_monitor:/bitcoin_monitor
-      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/root/.bitcoin/bitcoin.conf"
-    networks:
-      - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-
   <% if( bitcoin_mode === 'internal' ) { %>
   ##########################
   # BITCOIN                #
@@ -30,6 +17,12 @@ services:
     <% } %>
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
+      - bitcoin_monitor:/bitcoin_monitor
+    healthcheck:
+      test: bitcoin-cli echo && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up
+      interval: 10s
+      timeout: 5s
+      retries: 1
     networks:
       - cyphernodenet
     restart: always
