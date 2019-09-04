@@ -508,6 +508,7 @@ main() {
           # if id is defined, it will return the balance of
           # the wasabi instance with id <id>, else it will
           # return the balance of all instances
+          response_to_client "0" 0
           break
           ;;
         wasabi_spend)
