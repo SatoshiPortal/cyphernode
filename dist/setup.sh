@@ -477,8 +477,6 @@ install_docker() {
       sudo_if_required mkdir -p $OTSCLIENT_DATAPATH
       next
     fi
-
-    copy_file $cyphernodeconf_filepath/otsclient/bitcoin.conf $OTSCLIENT_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
   fi
 
   docker swarm join-token worker > /dev/null 2>&1

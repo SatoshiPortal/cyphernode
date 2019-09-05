@@ -166,6 +166,7 @@ services:
     volumes:
       - "<%= otsclient_datapath %>:/otsfiles"
       - "<%= otsclient_datapath %>/bitcoin.conf:/.bitcoin/bitcoin.conf"
+      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
