@@ -63,6 +63,7 @@ esac
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
+-v cyphernode_bitcoin_monitor:/bitcoin_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:1.6.2 /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then

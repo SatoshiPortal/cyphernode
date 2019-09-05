@@ -349,11 +349,11 @@ fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
 
+<% if (features.indexOf('otsclient') != -1) { %>
 #############################
 # OTSCLIENT                 #
 #############################
 
-<% if (features.indexOf('otsclient') != -1) { %>
 result="${result},{\"coreFeature\":false, \"name\":\"otsclient\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"otsclient\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
@@ -370,6 +370,9 @@ result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 # BITCOIN                   #
 #############################
 
+echo -e "\r\n\e[1;36mWaiting for Bitcoin Core to be ready... " > /dev/console
+timeout_feature '[ -f "/bitcoin_monitor/up" ]'
+
 result="${result},{\"coreFeature\":true, \"name\":\"bitcoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
@@ -381,11 +384,11 @@ fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
 
+<% if (features.indexOf('lightning') != -1) { %>
 #############################
 # LIGHTNING                 #
 #############################
 
-<% if (features.indexOf('lightning') != -1) { %>
 result="${result},{\"coreFeature\":false, \"name\":\"lightning\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"lightning\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
