@@ -9,8 +9,15 @@
 
 send_to_wasabi_prod() {
   local index=$1 # instance index
+  trace "[send_to_wasabi] index=${index}"
+
   local method=$2 # method
+  trace "[send_to_wasabi] method=${method}"
+
   local params=$3 # json string escaped
+  trace "[send_to_wasabi] params=${params}"
+
+  local response
 
   if [ "$#" -ne 3 ]; then
       echo "Wrong number of arguments"
@@ -22,14 +29,25 @@ send_to_wasabi_prod() {
     return 1
   fi
 
-  echo curl -u "$WASABI_RPCUSER:$WASABI_RPCPASSWORD" -s --data-binary "'{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"${method}\", \"params\": ${params} }'" http://wasabi_${index}:18099/
+  trace "[send_to_wasabi] curl --config ${WASABI_RPC_CFG} -s -d \"{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"${method}\",\"params\":${params}}\" http://wasabi_${index}:18099/"
+  response=$(curl --config ${WASABI_RPC_CFG} -s -d "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"${method}\", \"params\":${params}}" http://wasabi_${index}:18099/)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[send_to_wasabi] response=${response}"
+
+  echo "${response}"
   return $?
 }
 
 send_to_wasabi() {
   local index=$1 # instance index
+  trace "[send_to_wasabi] index=${index}"
+
   local method=$2 # method
+  trace "[send_to_wasabi] method=${method}"
+
   local params=$3 # json string escaped
+  trace "[send_to_wasabi] params=${params}"
 
   if [ "$#" -ne 3 ]; then
       echo "Wrong number of arguments"
@@ -50,23 +68,27 @@ send_to_wasabi() {
 }
 
 random_wasabi_index() {
-  echo $(( $(od -An -N2 < /dev/urandom) % $WASABI_INSTANCE_COUNT ))
+  echo $(( $(od -An -N2 < /dev/urandom) % ${WASABI_INSTANCE_COUNT} ))
 }
 
 wasabi_newaddr() {
   # wasabi rpc: getnewaddress
   # args:
-  # - label (0), optional
+  # - {"label":"Pay #12 for 2018"}
 
   # queries random instance for a new bech32 address
   # returns {"jsonrpc":"2.0","result":{"address":"tb1qpgpe7mdhdpgz6894vl5a2rhvhukwjc35h99rqc","keyPath":"84'/0'/0'/0/24","label":"blah","publicKey":"024eaa964530e5a72059951cdab8d22c5df7543536b011a8bab85bc1f6089654d9","p2wpkh":"00140a039f6db768502d1cb567e9d50eecbf2ce96234"},"id":"12"}
-  local label=$1
-
-  if [ ! ${label} ]; then
+  local request=${1}
+  trace "[wasabi_newaddr] request=${request}"
+  local label
+  label=$(echo "${request}" | jq -e ".label")
+  if [ "$?" -ne "0" ]; then
+    # label tag null, so there's no label
     label="unknown"
   fi
+  trace "[wasabi_newaddr] label=${label}"
 
-  send_to_wasabi $(random_wasabi_index) getnewaddress '{ "label": "'${label}'" }' | jq '.result'
+  send_to_wasabi_prod $(random_wasabi_index) getnewaddress "[${label}]" | jq '.result'
   return $?
 }
 
@@ -101,11 +123,11 @@ wasabi_get_balance() {
 
   local sum=10
 
-  for ((index=minInstanceIndex;index<=maxInstanceIndex;index++)); do
-    balance=$(send_to_wasabi ${index} listunspentcoins '{}' | jq 'reduce .result[].amount as $x (0; . + $x)')
-    echo $index $sum $balance
-    sum=$((sum + balance))
-  done
+  # for ((index=minInstanceIndex;index<=maxInstanceIndex;index++)); do
+  #   balance=$(send_to_wasabi ${index} listunspentcoins '{}' | jq 'reduce .result[].amount as $x (0; . + $x)')
+  #   echo $index $sum $balance
+  #   sum=$((sum + balance))
+  # done
 
   jq -n --arg b "$balance" '.balance=$b'
 
