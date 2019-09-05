@@ -8,6 +8,8 @@
 #WASABI_DATAPATH=<%= wasabi_datapath %>
 
 send_to_wasabi_prod() {
+  trace "Entering send_to_wasabi_prod()..."
+
   local index=$1 # instance index
   trace "[send_to_wasabi] index=${index}"
 
@@ -40,6 +42,8 @@ send_to_wasabi_prod() {
 }
 
 send_to_wasabi() {
+  trace "Entering send_to_wasabi()..."
+
   local index=$1 # instance index
   trace "[send_to_wasabi] index=${index}"
 
@@ -68,10 +72,14 @@ send_to_wasabi() {
 }
 
 random_wasabi_index() {
+  trace "Entering random_wasabi_index()..."
+
   echo $(( $(od -An -N2 < /dev/urandom) % ${WASABI_INSTANCE_COUNT} ))
 }
 
 wasabi_newaddr() {
+  trace "Entering wasabi_newaddr()..."
+
   # wasabi rpc: getnewaddress
   # args:
   # - {"label":"Pay #12 for 2018"}
@@ -93,6 +101,7 @@ wasabi_newaddr() {
 }
 
 wasabi_get_balance() {
+  trace "Entering wasabi_get_balance()..."
 
   local private=$1
   local index=$2
@@ -134,6 +143,7 @@ wasabi_get_balance() {
 }
 
 wasabi_spend() {
+  trace "Entering wasabi_spend()..."
 
   # wasabi rpc: spend
 
@@ -145,6 +155,7 @@ wasabi_spend() {
 }
 
 wasabi_get_transactions() {
+  trace "Entering wasabi_get_transactions()..."
 
   # No rpc call. Needs to be implemented
 
