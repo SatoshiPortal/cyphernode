@@ -419,13 +419,17 @@ install_docker() {
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
           copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
+              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
+                      break;;
               [Nn]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -435,6 +439,7 @@ install_docker() {
         fi
       elif [[ $cmpStatus == 'incompatible' ]]; then
         copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
         echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
         echo "          [31mYour cyphernode installation is most likely broken.[0m"
         echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
@@ -443,6 +448,7 @@ install_docker() {
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
         copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
       fi
     fi
   fi
@@ -461,7 +467,6 @@ install_docker() {
         fi
 
         copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
 
     fi
   fi
@@ -539,6 +544,7 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/testfeatures.sh $current_path/testfeatures.sh 0
   copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
   copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
+  copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
@@ -555,6 +561,12 @@ install_docker() {
   if [[ ! -x $current_path/testfeatures.sh ]]; then
     step "     [32mmake[0m testfeatures.sh executable"
     try chmod +x $current_path/testfeatures.sh
+    next
+  fi
+
+  if [[ ! -x $current_path/testdeployment.sh ]]; then
+    step "     [32mmake[0m testdeployment.sh executable"
+    try chmod +x $current_path/testdeployment.sh
     next
   fi
 }

@@ -975,3 +975,110 @@ Proxy response:
 }
 ```
 
+### Stamp a hash on the Bitcoin blockchain using OTS (called by application)
+
+Will stamp the supplied hash to the Bitcoin blockchain using OTS.  Cyphernode will curl the callback when the OTS stamping is complete.
+
+```http
+POST http://cyphernode:8888/ots_stamp
+with body...
+{"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/otscallback?id=1234567"}
+```
+
+Proxy response:
+
+```json
+{
+  "method": "ots_stamp",
+  "hash": "1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7",
+  "id": "422",
+  "result": "success"
+}
+```
+
+```json
+{
+  "method": "ots_stamp",
+  "hash": "1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7",
+  "id": "422",
+  "result": "error",
+  "error": "Error message from OTS client."
+}
+```
+
+### Get the OTS file of the supplied hash
+
+Returns the binary OTS file of the supplied hash.  If stamp is complete, will return a complete OTS file, or an incomplete OTS file otherwise.
+
+```http
+GET http://cyphernode:8888/ots_getfile/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
+```
+
+Proxy response:
+
+Binary application/octet-stream content type.
+
+### Verify an OTS file
+
+Will verify the supplied OTS file, or verify the local OTS file named after the supplied hash suffixed with .ots.
+
+```http
+POST http://cyphernode:8888/ots_verify
+with body...
+{"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7"}
+or
+{"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+```
+
+Proxy response:
+
+```json
+{
+  "method": "ots_verify",
+  "hash": "1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7",
+  "result": "success",
+  "message": "Message from OTS client."
+}
+```
+
+```json
+{
+  "method": "ots_verify",
+  "hash": "1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7",
+  "result": "pending",
+  "message": "Message from OTS client."
+}
+```
+
+```json
+{
+  "method": "ots_verify",
+  "hash": "1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7",
+  "result": "error",
+  "message": "Error message from OTS client."
+}
+```
+
+### Get info an OTS file
+
+Will return the base64 string of the detailed information of the supplied OTS file, or of the local OTS file named after the supplied hash suffixed with .ots.
+
+```http
+POST http://cyphernode:8888/ots_info
+with body...
+{"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7"}
+or
+{"base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+or
+{"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+```
+
+Proxy response:
+
+```json
+{
+  "method": "ots_info",
+  "result": "success",
+  "message": "Base64 string of the information text"
+}
+```

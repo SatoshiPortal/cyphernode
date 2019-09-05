@@ -105,6 +105,7 @@ services:
 #        constraints: [node.hostname==dev]
     volumes:
       - "~/cn-files/cn-otsfiles:/otsfiles"
+      - "~/cn-files/cn-otsfiles/bitcoin.conf:/.bitcoin/bitcoin.conf"
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
