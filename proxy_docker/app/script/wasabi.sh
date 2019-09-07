@@ -1,22 +1,16 @@
-#@IgnoreInspection BashAddShebang
+#!/bin/sh
 
 . ${DB_PATH}/config.sh
-
-#WASABI_RPCUSER=<%= wasabi_rpcuser %>
-#WASABI_RPCPASSWORD=<%= wasabi_rpcpassword %>
-#WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>
-#WASABI_DATAPATH=<%= wasabi_datapath %>
 
 send_to_wasabi_prod() {
   trace "Entering send_to_wasabi_prod()..."
 
+  local returncode
   local index=$1 # instance index
-  trace "[send_to_wasabi] index=${index}"
-
   local method=$2 # method
-  trace "[send_to_wasabi] method=${method}"
-
   local params=$3 # json string escaped
+  trace "[send_to_wasabi] index=${index}"
+  trace "[send_to_wasabi] method=${method}"
   trace "[send_to_wasabi] params=${params}"
 
   local response
@@ -41,36 +35,6 @@ send_to_wasabi_prod() {
   return $?
 }
 
-send_to_wasabi() {
-  trace "Entering send_to_wasabi()..."
-
-  local index=$1 # instance index
-  trace "[send_to_wasabi] index=${index}"
-
-  local method=$2 # method
-  trace "[send_to_wasabi] method=${method}"
-
-  local params=$3 # json string escaped
-  trace "[send_to_wasabi] params=${params}"
-
-  if [ "$#" -ne 3 ]; then
-      echo "Wrong number of arguments"
-      return 1
-  fi
-
-  if [ ! $index -lt "${WASABI_INSTANCE_COUNT}" ]; then
-    echo "No such wasabi instance ${index}"
-    return 1
-  fi
-
-  if [ "$method" = "getnewaddress" ]; then
-    cat ././../../../wasabi_docker/newaddr.json
-  elif [ "$method" = "listunspentcoins" ]; then
-    cat ././../../../wasabi_docker/listunspentcoins.json
-  fi
-  return $?
-}
-
 random_wasabi_index() {
   trace "Entering random_wasabi_index()..."
 
@@ -81,32 +45,35 @@ wasabi_newaddr() {
   trace "Entering wasabi_newaddr()..."
 
   # wasabi rpc: getnewaddress
-  # args:
+  # optional args:
   # - {"label":"Pay #12 for 2018"}
 
   # queries random instance for a new bech32 address
   # returns {"jsonrpc":"2.0","result":{"address":"tb1qpgpe7mdhdpgz6894vl5a2rhvhukwjc35h99rqc","keyPath":"84'/0'/0'/0/24","label":"blah","publicKey":"024eaa964530e5a72059951cdab8d22c5df7543536b011a8bab85bc1f6089654d9","p2wpkh":"00140a039f6db768502d1cb567e9d50eecbf2ce96234"},"id":"12"}
+
+  local returncode
   local request=${1}
   trace "[wasabi_newaddr] request=${request}"
+  local response
   local label
   label=$(echo "${request}" | jq -e ".label")
-  if [ "$?" -ne "0" ]; then
+  if [ "$?" -ne "0" ] || [ -z ${label} ]; then
     # label tag null, so there's no label
-    label="unknown"
+    label='"unknown"'
   fi
   trace "[wasabi_newaddr] label=${label}"
 
-  send_to_wasabi_prod $(random_wasabi_index) getnewaddress "[${label}]" | jq '.result'
+  response=$(send_to_wasabi_prod $(random_wasabi_index) getnewaddress "[${label}]")
+  returncode=$?
+  trace_rc ${returncode}
+
+  echo "${response}"
+
   return $?
 }
 
 wasabi_get_balance() {
   trace "Entering wasabi_get_balance()..."
-
-  local private=$1
-  local index=$2
-
-  # wasabi rpc: listunspentcoins
 
   # args:
   # - id: integer, optional
@@ -121,25 +88,60 @@ wasabi_get_balance() {
   # the wasabi instance with id <id>, else it will
   # return the balance of all instances
 
+  # {"id":1,"private":true}
+  # {"private":true}
+  # {}
+
+  local request=${1}
+
+  local index
+  index=$(echo "${request}" | jq -er ".id")
+  if [ "$?" -ne "0" ]; then
+    # id tag null, let's check all instances
+    index=
+  fi
+  trace "[wasabi_get_balance] index=${index}"
+
+  local private
+  private=$(echo "${request}" | jq -er ".private")
+  if [ "$?" -ne "0" ]; then
+    # private tag null, let's default to false
+    private="false"
+  fi
+  trace "[wasabi_get_balance] private=${private}"
+
+  local response
+  local balance=0
+
+  # wasabi rpc: listunspentcoins
+
   # sum up all result array amount fields, private and non private
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  if [ $index ]; then
+  if [ -n "${index}" ]; then
     minInstanceIndex=$index
     maxInstanceIndex=$index
   fi
 
-  local sum=10
+  trace "[wasabi_get_balance] minInstanceIndex=${minInstanceIndex}"
+  trace "[wasabi_get_balance] maxInstanceIndex=${maxInstanceIndex}"
 
-  # for ((index=minInstanceIndex;index<=maxInstanceIndex;index++)); do
-  #   balance=$(send_to_wasabi ${index} listunspentcoins '{}' | jq 'reduce .result[].amount as $x (0; . + $x)')
-  #   echo $index $sum $balance
-  #   sum=$((sum + balance))
-  # done
+  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
+  do
+    response=$(send_to_wasabi_prod ${i} listunspentcoins "[]")
+#    trace "[wasabi_get_balance] response=${response}"
+    if [ "${private}" = "true" ]; then
+      balance=$((${balance}+$(echo "${response}" | jq ".result | map(select(.anonymitySet > ${WASABI_MIXUNTIL}) | .amount) | add")))
+    else
+      balance=$((${balance}+$(echo "${response}" | jq ".result | map(.amount) | add")))
+    fi
+    trace "[wasabi_get_balance] balance=${balance}"
+  done
 
-  jq -n --arg b "$balance" '.balance=$b'
+  echo "{\"balance\":${balance}}"
 
+  return 0
 }
 
 wasabi_spend() {
@@ -227,3 +229,26 @@ wasabi_get_transactions() {
 # }
 
 # for i in 0 1 2 3 4; do echo $i = $(curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_$i:18099/); done
+
+#
+# How to get utxo with anonymitySet > 25
+#
+# curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
+#
+# How to add up amounts of utxo with anonymitySet > 25
+#
+# curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25) | .amount) | add"
+#
+
+
+
+# Wasabi management:
+# - After rotating through the wasabi wallets for receiving addresses, we assume that there will be a randomized flow of coins coming in
+# - after being mixed, some coins from one wallet are mixed with other coins from other wallets (including our own)
+# - every time there is a new block, we look up the status of our utxos for any utxo which is above the anonymity set (e.g. 10). - we take the utxo of each of our wasabi wallets and we send it to the spender. We batch transactions together within each wallets when there is more than one input.
+# - the spender will generate basically 3 receiving addresses (one per wasabi instance) each block
+# - BONUS: we set a 4th wasabi wallet which receives the change from the Bitcoin core spender and sends it back every block. This requires us to play around with the Bitcoin core spender configs to set the xpub of the wasabi #4 (edited)
+#
+# francis  3 days ago
+# It looks like a few utxos are leaking out of the coinjoin cycle randomly, much better than big clusters to one address
+

@@ -68,7 +68,7 @@ main() {
     esac
     if [ ${step} -eq 1 ]; then
       trace "[main] step=${step}"
-      if [ "${http_method}" = "POST" ]; then
+      if [ "${http_method}" = "POST" ] && [ "${content_length}" -gt "0" ]; then
         read -rd '' -n ${content_length} line
         line=$(echo "${line}" | jq -c)
         trace "[main] line=${line}"
@@ -492,15 +492,17 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        wasabi_newaddr)
+        wasabi_getnewaddress)
           # queries random instance for a new bech32 address
-          # POST http://192.168.111.152:8080/wasabi_newaddr
+          # POST http://192.168.111.152:8080/wasabi_getnewaddress
           # BODY {"label":"Pay #12 for 2018"}
+          # BODY {}
+          # Empty BODY: Label will be "unknown"
           response=$(wasabi_newaddr "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
-        wasabi_get_balance)
+        wasabi_getbalance)
           # args:
           # - id: integer, optional
           # - private: boolean, optional, default=false
@@ -513,7 +515,12 @@ main() {
           # if id is defined, it will return the balance of
           # the wasabi instance with id <id>, else it will
           # return the balance of all instances
-          response_to_client "0" 0
+          # POST http://192.168.111.152:8080/wasabi_getbalance
+          # BODY {"id":1,"private":true}
+          # BODY {"private":true}
+          # Empty BODY: all instances, not private
+          response=$(wasabi_get_balance "${line}")
+          response_to_client "${response}" ${?}
           break
           ;;
         wasabi_spend)

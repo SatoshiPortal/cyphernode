@@ -35,6 +35,7 @@ WASABI_RPCUSER=<%= wasabi_rpcuser %>
 WASABI_RPCPASSWORD=<%= wasabi_rpcpassword %>
 WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>
 WASABI_DATAPATH=<%= wasabi_datapath %>
+WASABI_MIXUNTIL=<%= wasabi_mixuntil %>
 <% } %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
