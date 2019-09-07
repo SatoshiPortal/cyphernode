@@ -165,7 +165,7 @@ checkwasabi_<%= index %>() {
   echo -en "\r\n\e[1;36mTesting Wasabi #<%= index %>... " > /dev/console
   local rc
 
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d '{"id":<%= index %>}' http://proxy:8888/wasabi_get_balance)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d '{"id":<%= index %>}' http://proxy:8888/wasabi_getbalance)
   [ "${rc}" -ne "200" ] && return 300
 
   echo -e "\e[1;36mWasabi #<%= index %> rocks!" > /dev/console
