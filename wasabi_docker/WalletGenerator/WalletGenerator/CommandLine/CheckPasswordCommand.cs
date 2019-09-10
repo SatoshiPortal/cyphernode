@@ -70,7 +70,7 @@ namespace WalletGenerator.CommandLine
             }
 
 
-            if ( manager.TestPassword( password ) ) {
+            if ( PasswordHelper.TryPassword(manager, password, out string compatibilityPasswordUsed) ) {
               passwordCorrect = true;
             }
 

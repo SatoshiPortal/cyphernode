@@ -4,18 +4,19 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 RUN apk add --no-cache git
 
 #RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
-RUN git clone --recursive --branch Features/remote_regtest https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+#RUN git clone --recursive --branch Features/remote_regtest https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontivero/Wasabito.git /WalletWasabi
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
 
-RUN dotnet restore
+#RUN dotnet restore
 RUN dotnet build -c Release -o /app/ -r linux-x64
 RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
 WORKDIR /WalletWasabi/WalletWasabi.Gui
 
-RUN dotnet restore
+#RUN dotnet restore
 RUN dotnet build -c Release -o /app/ -r linux-x64
 RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
