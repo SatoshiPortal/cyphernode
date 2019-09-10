@@ -102,13 +102,13 @@ wasabi_get_balance() {
 
   local request=${1}
 
-  local index
-  index=$(echo "${request}" | jq -er ".id")
+  local instanceid
+  instanceid=$(echo "${request}" | jq -er ".id")
   if [ "$?" -ne "0" ]; then
     # id tag null, let's check all instances
-    index=
+    instanceid=
   fi
-  trace "[wasabi_get_balance] index=${index}"
+  trace "[wasabi_get_balance] instanceid=${instanceid}"
 
   local private
   private=$(echo "${request}" | jq -er ".private")
@@ -127,9 +127,9 @@ wasabi_get_balance() {
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  if [ -n "${index}" ]; then
-    minInstanceIndex=$index
-    maxInstanceIndex=$index
+  if [ -n "${instanceid}" ]; then
+    minInstanceIndex=$instanceid
+    maxInstanceIndex=$instanceid
   fi
 
   trace "[wasabi_get_balance] minInstanceIndex=${minInstanceIndex}"
@@ -163,31 +163,72 @@ wasabi_batchprivatetospender() {
 }
 
 build_utxo_to_spend() {
+  trace "Entering build_utxo_to_spend()..."
 
   # build_utxo_to_spend <amount> <anonset> [id]
   # build_utxo_to_spend 72873 33
 
-  local amount=${1}
+  local spendingAmount=${1}
   local anonset=${2}
-  local id=${3}
-  trace "[build_utxo_to_spend] amount=${amount}"
+  local instanceid=${3}
+  trace "[build_utxo_to_spend] spendingAmount=${spendingAmount}"
   trace "[build_utxo_to_spend] anonset=${anonset}"
-  trace "[build_utxo_to_spend] id=${id}"
+  trace "[build_utxo_to_spend] instanceid=${instanceid}"
 
   local utxo
+  local nbUtxo
   local response
+  local builtUtxo
 
   # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
-  response=$(send_to_wasabi_prod ${id} listunspentcoins "[]")
-  utxo=$(echo "${response}" | jq -Marc ".result | map(select(.anonymitySet > ${anonset}))")
+  response=$(send_to_wasabi_prod ${instanceid} listunspentcoins "[]")
+  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet > ${anonset}) | [.txid, .index, .amount]")
+  trace "[build_utxo_to_spend] utxos=${utxos}"
+
+#  nbUtxo=$(echo "${utxo}" | jq "length")
 
   # from...
   # [{"txid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8","index":1,"amount":1040365,"anonymitySet":29,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/720","address":"tb1qdytlanjjw9q7a86tsn8rwnhrn96yjvmu33h374"},{"txid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de","index":1,"amount":1040749,"anonymitySet":28,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/715","address":"tb1q3wepep4apqvcjg0n9ajn9eng4h57advysez658"}]
   # to...
   # [{"transactionid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8", "index":1},{"transactionid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de", "index":1}]
 
-#  for 
+  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
 
+  local txid
+  local index
+  local amount
+  local totalAmount=0
+  local IFS=$'\n'
+
+  for utxo in ${utxos}
+  do
+    txid=$(echo "${utxo}" | jq ".[0]")
+    index=$(echo "${utxo}" | jq ".[1]")
+    amount=$(echo "${utxo}" | jq ".[2]")
+    trace "[build_utxo_to_spend] txid=${txid}"
+    trace "[build_utxo_to_spend] index=${index}"
+    trace "[build_utxo_to_spend] amount=${amount}"
+
+    if [ -n "${builtUtxo}" ]; then
+      builtUtxo="${builtUtxo},"
+    fi
+
+    builtUtxo="${builtUtxo}{\"transactionId\":${txid},\"index\":${index}}"
+    trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
+
+    totalAmount=$((totalAmount+amount))
+    trace "[build_utxo_to_spend] totalAmount=${totalAmount}"
+    [ "${totalAmount}" -ge "${spendingAmount}" ] && break
+  done
+
+  [ "${totalAmount}" -lt "${spendingAmount}" ] && return 1
+
+  builtUtxo="[${builtUtxo}]"
+  trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
+
+  echo "${builtUtxo}"
+
+  return 0
 }
 
 wasabi_spend() {
@@ -200,24 +241,94 @@ wasabi_spend() {
   # - private: boolean, optional, default=false
   # - address: string, required
   # - amount: number, required
-}
 
-wasabi_spend() {
-  trace "Entering wasabi_spend()..."
+  # If no instance id supplied, will find the first with enough funds
+  # There must be enough funds on at least one instance
 
-  # wasabi rpc: spend
+  # {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
-  # args:
-  # - id: integer, optional
-  # - private: boolean, optional, default=false
-  # - address: string, required
-  # - amount: number, required
-
+  local request=${1}
+  local returncode
   local response
 
-  # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
-  response=$(send_to_wasabi_prod ${i} send "{}")
+  local spendingAmount
+  spendingAmount=$(echo "${request}" | jq -er ".amount")
+  if [ "$?" -ne "0" ]; then
+    # amount tag null but required
+    trace "[wasabi_spend] spendingAmount is required"
+    return 1
+  fi
+  trace "[wasabi_spend] spendingAmount=${spendingAmount}"
 
+  local address
+  address=$(echo "${request}" | jq -er ".address")
+  if [ "$?" -ne "0" ]; then
+    # address tag null but required
+    trace "[wasabi_spend] address is required"
+    return 1
+  fi
+  trace "[wasabi_spend] address=${address}"
+
+  local instanceid
+  instanceid=$(echo "${request}" | jq -er ".id")
+  if [ "$?" -ne "0" ]; then
+    # id tag null
+    instanceid=
+  fi
+  trace "[wasabi_spend] instanceid=${instanceid}"
+
+  local private
+  private=$(echo "${request}" | jq -er ".private")
+  if [ "$?" -ne "0" ]; then
+    # private tag null
+    private=false
+  fi
+  trace "[wasabi_spend] private=${private}"
+
+  local minInstanceIndex=0
+  local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+
+  if [ -n "${instanceid}" ]; then
+    minInstanceIndex=$instanceid
+    maxInstanceIndex=$instanceid
+  fi
+
+  trace "[wasabi_get_balance] minInstanceIndex=${minInstanceIndex}"
+  trace "[wasabi_get_balance] maxInstanceIndex=${maxInstanceIndex}"
+
+  local balance
+  local i
+  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
+  do
+    # {"id":1,"private":true}
+    balance=$(wasabi_get_balance "{\"id\":\"$i\",\"private\":${private}}")
+    returncode=$?
+    trace_rc ${returncode}
+
+    if [ "${returncode}" -eq "0" ]; then
+      balance=$(echo "${balance}" | jq ".balance")
+      if [ "${balance}" -ge "${spendingAmount}" ]; then
+        instanceid=$i
+        break
+      fi
+    fi
+  done
+
+  local utxostring
+  if [ "${balance}" -ge "${spendingAmount}" ]; then
+    utxostring=$(build_utxo_to_spend ${spendingAmount} ${WASABI_MIXUNTIL} ${instanceid})
+
+    # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
+    response=$(send_to_wasabi_prod ${instanceid} send "{\"sendto\":\"${address}\",\"coins\":${utxostring},\"amount\":${spendingAmount},\"label\":\"tx\",\"feeTarget\":2}")
+    returncode=$?
+    trace_rc ${returncode}
+  else
+    response="{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"Not enough funds\"}"
+  fi
+
+  echo ${response}
+
+  return ${returncode}
 }
 
 wasabi_get_transactions() {
