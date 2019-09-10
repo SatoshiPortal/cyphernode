@@ -92,6 +92,14 @@ wasabi_get_balance() {
   # {"private":true}
   # {}
 
+  # Tests:
+  # /proxy # curl -s -d "" proxy:8888/wasabi_getbalance | jq ".balance" ; echo $(($(curl -s -d "{\"id\":\"0\"}" proxy:8888/wasabi_getbalance | jq ".balance")+$(curl -s -d "{\"id\":\"1\"}" proxy:8888/wasabi_getbalance | jq ".balance")))
+  # 200650200
+  # 200650200
+  # /proxy # curl -s -d "{\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance" ; echo $(($(curl -s -d "{\"id\":\"0\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")+$(curl -s -d "{\"id\":\"1\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")))
+  # 180653937
+  # 180653937
+
   local request=${1}
 
   local index
@@ -144,16 +152,72 @@ wasabi_get_balance() {
   return 0
 }
 
+wasabi_batchprivatetospender() {
+  trace "Entering wasabi_batchprivatetospender()..."
+
+  # Get spender newaddress
+  # Get list of UTXO with anonymityset > configured threshold
+  # Add amounts
+  # Call spend
+
+}
+
+build_utxo_to_spend() {
+
+  # build_utxo_to_spend <amount> <anonset> [id]
+  # build_utxo_to_spend 72873 33
+
+  local amount=${1}
+  local anonset=${2}
+  local id=${3}
+  trace "[build_utxo_to_spend] amount=${amount}"
+  trace "[build_utxo_to_spend] anonset=${anonset}"
+  trace "[build_utxo_to_spend] id=${id}"
+
+  local utxo
+  local response
+
+  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
+  response=$(send_to_wasabi_prod ${id} listunspentcoins "[]")
+  utxo=$(echo "${response}" | jq -Marc ".result | map(select(.anonymitySet > ${anonset}))")
+
+  # from...
+  # [{"txid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8","index":1,"amount":1040365,"anonymitySet":29,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/720","address":"tb1qdytlanjjw9q7a86tsn8rwnhrn96yjvmu33h374"},{"txid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de","index":1,"amount":1040749,"anonymitySet":28,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/715","address":"tb1q3wepep4apqvcjg0n9ajn9eng4h57advysez658"}]
+  # to...
+  # [{"transactionid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8", "index":1},{"transactionid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de", "index":1}]
+
+#  for 
+
+}
+
 wasabi_spend() {
   trace "Entering wasabi_spend()..."
 
   # wasabi rpc: spend
 
   # args:
-  # - id: integer, required
+  # - id: integer, optional
   # - private: boolean, optional, default=false
   # - address: string, required
   # - amount: number, required
+}
+
+wasabi_spend() {
+  trace "Entering wasabi_spend()..."
+
+  # wasabi rpc: spend
+
+  # args:
+  # - id: integer, optional
+  # - private: boolean, optional, default=false
+  # - address: string, required
+  # - amount: number, required
+
+  local response
+
+  # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
+  response=$(send_to_wasabi_prod ${i} send "{}")
+
 }
 
 wasabi_get_transactions() {
@@ -240,6 +304,10 @@ wasabi_get_transactions() {
 # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25) | .amount) | add"
 #
 
+# Spend
+#
+# curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
+#
 
 
 # Wasabi management:

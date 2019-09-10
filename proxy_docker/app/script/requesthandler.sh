@@ -523,9 +523,16 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        wasabi_batchprivatetospender)
+          # curl (GET) http://192.168.111.152:8080/wasabi_batchprivatetospender
+
+          response=$(wasabi_batchprivatetospender)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         wasabi_spend)
           # args:
-          # - id: integer, required
+          # - id: integer, optional
           # - private: boolean, optional, default=false
           # - address: string, required
           # - amount: number, required

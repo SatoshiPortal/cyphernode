@@ -22,4 +22,5 @@ newblock() {
   trace_rc ${returncode}
 
   do_callbacks_txid
+  wasabi_batchprivatetospender
 }
