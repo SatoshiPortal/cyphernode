@@ -6,6 +6,12 @@ RUN apk add --no-cache git
 #RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
 #RUN git clone --recursive --branch Features/remote_regtest https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
 RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontivero/Wasabito.git /WalletWasabi
+
+WORKDIR /WalletWasabi
+
+COPY patches/remote_regtest.diff .
+RUN patch -u WalletWasabi.Gui/Global.cs -i remote_regtest.diff
+
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
