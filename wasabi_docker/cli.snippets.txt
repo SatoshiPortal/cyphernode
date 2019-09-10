@@ -1,0 +1,22 @@
+
+bitcoin-cli -rpcwallet=spending01.dat getnewaddress mining bech32
+Mining address: bcrt1q6f8hxsm3csjyw7q4llrlhll9rxj0le6cv3ltdr
+
+bitcoin-cli generatetoaddress 200 bcrt1q6f8hxsm3csjyw7q4llrlhll9rxj0le6cv3ltdr
+bitcoin-cli -rpcwallet=spending01.dat getbalance
+
+curl -u wasabi:CHANGEME -s --data-binary  '{"jsonrpc":"2.0","id":"0","method":"getnewaddress", "params": { "label":"test"} }' http://wasabi_0:18099/ | jq
+wasabi_0: bcrt1qdldzqv7j9z7py5shl0ntquksu97ah4l27y73aa
+
+curl -u wasabi:CHANGEME -s --data-binary  '{"jsonrpc":"2.0","id":"0","method":"getnewaddress", "params": { "label":"test"} }' http://wasabi_1:18099/ | jq
+wasabi_1: bcrt1qqg32sqk965kprlcy886c2z8ggmyyfw5uqemx5j
+
+bitcoin-cli -rpcwallet=spending01.dat sendtoaddress bcrt1qdldzqv7j9z7py5shl0ntquksu97ah4l27y73aa 20
+
+bitcoin-cli -rpcwallet=spending01.dat sendtoaddress bcrt1qqg32sqk965kprlcy886c2z8ggmyyfw5uqemx5j 20
+
+bitcoin-cli generatetoaddress 1 bcrt1q6f8hxsm3csjyw7q4llrlhll9rxj0le6cv3ltdr
+
+
+curl -u wasabi:CHANGEME -s --data-binary  '{"jsonrpc":"2.0","id":"0","method":"getwalletinfo" }' http://wasabi_0:18099/|jq
+curl -u wasabi:CHANGEME -s --data-binary  '{"jsonrpc":"2.0","id":"0","method":"listunspentcoins" }' http://wasabi_0:18099/|jq
