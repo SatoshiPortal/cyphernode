@@ -498,6 +498,7 @@ main() {
           # BODY {"label":"Pay #12 for 2018"}
           # BODY {}
           # Empty BODY: Label will be "unknown"
+
           response=$(wasabi_newaddr "${line}")
           response_to_client "${response}" ${?}
           break
@@ -515,18 +516,13 @@ main() {
           # if id is defined, it will return the balance of
           # the wasabi instance with id <id>, else it will
           # return the balance of all instances
+          #
           # POST http://192.168.111.152:8080/wasabi_getbalance
           # BODY {"id":1,"private":true}
           # BODY {"private":true}
           # Empty BODY: all instances, not private
-          response=$(wasabi_get_balance "${line}")
-          response_to_client "${response}" ${?}
-          break
-          ;;
-        wasabi_batchprivatetospender)
-          # curl (GET) http://192.168.111.152:8080/wasabi_batchprivatetospender
 
-          response=$(wasabi_batchprivatetospender)
+          response=$(wasabi_get_balance "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -536,9 +532,16 @@ main() {
           # - private: boolean, optional, default=false
           # - address: string, required
           # - amount: number, required
+          #
+          # POST http://192.168.111.152:8080/wasabi_spend
+          # BODY {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+          # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+
+          response=$(wasabi_spend "${line}")
+          response_to_client "${response}" ${?}
           break
           ;;
-        wasabi_get_transactions)
+#        wasabi_get_transactions)
           # args:
           # - id: integer, optional
           # return all transactions of either one wasabi instance
