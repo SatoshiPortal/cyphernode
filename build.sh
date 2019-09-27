@@ -2,17 +2,17 @@
 
 TRACING=1
 
-# CYPHERNODE VERSION "v0.2.4-rc.1"
-CONF_VERSION="v0.2.4-rc.1-local"
-GATEKEEPER_VERSION="v0.2.4-rc.1-local"
-PROXY_VERSION="v0.2.4-rc.1-local"
-NOTIFIER_VERSION="v0.2.4-rc.1-local"
-PROXYCRON_VERSION="v0.2.4-rc.1-local"
-OTSCLIENT_VERSION="v0.2.4-rc.1-local"
-PYCOIN_VERSION="v0.2.4-rc.1-local"
+# CYPHERNODE VERSION "v0.2.4-rc.2"
+CONF_VERSION="v0.2.4-rc.2-local"
+GATEKEEPER_VERSION="v0.2.4-rc.2-local"
+PROXY_VERSION="v0.2.4-rc.2-local"
+NOTIFIER_VERSION="v0.2.4-rc.2-local"
+PROXYCRON_VERSION="v0.2.4-rc.2-local"
+OTSCLIENT_VERSION="v0.2.4-rc.2-local"
+PYCOIN_VERSION="v0.2.4-rc.2-local"
 BITCOIN_VERSION="v0.18.0"
 LIGHTNING_VERSION="v0.7.1"
-GRAFANA_VERSION="v0.2.4-rc.1-local"
+GRAFANA_VERSION="v0.2.4-rc.2-local"
 
 trace()
 {
