@@ -20,9 +20,9 @@ services:
       - bitcoin_monitor:/bitcoin_monitor
     healthcheck:
       test: bitcoin-cli echo && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up
-      interval: 10s
+      interval: 20s
       timeout: 5s
-      retries: 1
+      retries: 10
     networks:
       - cyphernodenet
     restart: always

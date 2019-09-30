@@ -3,16 +3,16 @@
 export SETUP_DIR=$(pwd)/../dist
 export DEFAULT_USER=$USER
 export DEFAULT_CERT_HOSTNAME=disk0book.local
-export PROXYCRON_VERSION=v0.2.3
-export PYCOIN_VERSION=v0.2.3
-export SETUP_VERSION=v0.2.3
+export PROXYCRON_VERSION=v0.2.4
+export PYCOIN_VERSION=v0.2.4
+export SETUP_VERSION=v0.2.4
 export BITCOIN_VERSION=v0.18.0
 export LIGHTNING_VERSION=v0.7.1
 export DEFAULT_DATADIR_BASE=$HOME
-export GATEKEEPER_VERSION=v0.2.3
-export PROXY_VERSION=v0.2.3
-export OTSCLIENT_VERSION=v0.2.3
-export NOTIFIER_VERSION=v0.2.3
+export GATEKEEPER_VERSION=v0.2.4
+export PROXY_VERSION=v0.2.4
+export OTSCLIENT_VERSION=v0.2.4
+export NOTIFIER_VERSION=v0.2.4
 export EDITOR=/usr/bin/nano
 
 user=$(id -u):$(id -g)
@@ -40,4 +40,3 @@ if [ "${MODE}" = 'docker' ]; then
 else
   /usr/local/bin/node index.js $@
 fi
-

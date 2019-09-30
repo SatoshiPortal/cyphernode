@@ -6,6 +6,9 @@ RUN apk add --update --no-cache \
     su-exec \
  && git clone https://github.com/opentimestamps/javascript-opentimestamps.git \
  && cd javascript-opentimestamps \
+# Handle 'Error: could not get uid/gid'
+# See: https://github.com/npm/uid-number/issues/3
+ && npm config set unsafe-perm true \
  && npm install -g
 
 WORKDIR /script
