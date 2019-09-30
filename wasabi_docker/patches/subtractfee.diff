@@ -13,10 +13,10 @@ index 7a39684e..29b33e25 100644
 +++ b/WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs
 @@ -101,11 +101,11 @@ namespace WalletWasabi.Gui.Rpc
  		}
- 
+
  		[JsonRpcMethod("send")]
 -		public async Task<object> SendTransaction(Payment[] payments, TxoRef[] coins, int feeTarget)
-+		public async Task<object> SendTransaction(Payment[] payments, TxoRef[] coins, int feeTarget, bool subtractFee)
++		public async Task<object> SendTransaction(Payment[] payments, TxoRef[] coins, int feeTarget, bool subtractFee = false )
  		{
  			AssertWalletIsLoaded();
  			var sync = _global.Synchronizer;
@@ -25,6 +25,6 @@ index 7a39684e..29b33e25 100644
  			var feeStrategy = FeeStrategy.CreateFromConfirmationTarget(feeTarget);
  			var password = string.Empty;
  			var result = _global.WalletService.BuildTransaction(
--- 
+--
 2.21.0
 
