@@ -1,0 +1,30 @@
+From ab74a79bada7f7447d17df4b37ad51981ae6cfd2 Mon Sep 17 00:00:00 2001
+From: SKP <jash@schulterklopfer-productions.de>
+Date: Mon, 30 Sep 2019 20:50:07 +0200
+Subject: [PATCH] Added subtractFee to SendTransaction RPC-method
+
+---
+ WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs b/WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs
+index 7a39684e..29b33e25 100644
+--- a/WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs
++++ b/WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs
+@@ -101,11 +101,11 @@ namespace WalletWasabi.Gui.Rpc
+ 		}
+ 
+ 		[JsonRpcMethod("send")]
+-		public async Task<object> SendTransaction(Payment[] payments, TxoRef[] coins, int feeTarget)
++		public async Task<object> SendTransaction(Payment[] payments, TxoRef[] coins, int feeTarget, bool subtractFee)
+ 		{
+ 			AssertWalletIsLoaded();
+ 			var sync = _global.Synchronizer;
+-			var payment = new PaymentIntent( payments.Select(p=> new DestinationRequest(p.sendto.ScriptPubKey, MoneyRequest.Create(p.amount), new SmartLabel(p.label))));
++			var payment = new PaymentIntent( payments.Select(p=> new DestinationRequest(p.sendto.ScriptPubKey, MoneyRequest.Create(p.amount, subtractFee), new SmartLabel(p.label))));
+ 			var feeStrategy = FeeStrategy.CreateFromConfirmationTarget(feeTarget);
+ 			var password = string.Empty;
+ 			var result = _global.WalletService.BuildTransaction(
+-- 
+2.21.0
+
