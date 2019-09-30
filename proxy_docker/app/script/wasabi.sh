@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. walletsoperations.sh
+. walletoperations.sh
 
 . ${DB_PATH}/config.sh
 
@@ -178,7 +178,7 @@ wasabi_batchprivatetospender() {
 
   # Get spender newaddress
   local toaddress
-  toaddress=$(getnewaddress)
+  toaddress=$(getnewaddress | jq ".address")
   trace "[wasabi_batchprivatetospender] toaddress=${toaddress}"
 
   # Get list of UTXO with anonymityset > configured threshold
@@ -190,9 +190,12 @@ wasabi_batchprivatetospender() {
   trace "[wasabi_batchprivatetospender] amount=${amount}"
   utxo_to_spend="[$(echo "${utxo_to_spend}" | cut -d '[' -f2)"
   trace "[wasabi_batchprivatetospender] utxo_to_spend=${utxo_to_spend}"
+  local balance
+  balance=$(wasabi_get_balance "{\"id\":${instanceid},\"private\":true}")
+  trace "[wasabi_batchprivatetospender] balance=${balance}"
 
   # Call spend
-  response=$(send_to_wasabi ${instanceid} send "{\"sendto\":\"${toaddress}\",\"coins\":${utxo_to_spend},\"amount\":${amount},\"label\":\"tx\",\"feeTarget\":2}")
+  response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\"}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"subtractFee\":true}")
   returncode=$?
   trace_rc ${returncode}
 
@@ -252,7 +255,7 @@ build_utxo_to_spend() {
     fi
 
     builtUtxo="${builtUtxo}{\"transactionId\":${txid},\"index\":${index}}"
-    trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
+#    trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
 
     totalAmount=$((totalAmount+amount))
     trace "[build_utxo_to_spend] totalAmount=${totalAmount}"
@@ -365,7 +368,7 @@ wasabi_spend() {
     utxostring="[$(echo "${utxostring}" | cut -d '[' -f2)"
 
     # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
-    response=$(send_to_wasabi ${instanceid} send "{\"sendto\":\"${address}\",\"coins\":${utxostring},\"amount\":${spendingAmount},\"label\":\"tx\",\"feeTarget\":2}")
+    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"tx\"}],\"coins\":${utxostring},\"feeTarget\":2}")
     returncode=$?
     trace_rc ${returncode}
   else
@@ -463,7 +466,7 @@ wasabi_get_transactions() {
 
 # Spend
 #
-# curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
+# curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "amount": 15000, "label": "test transaction"}], "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "feeTarget":2 }}' http://wasabi_0:18099/
 #
 
 
