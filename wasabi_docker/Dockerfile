@@ -9,8 +9,9 @@ RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontiv
 
 WORKDIR /WalletWasabi
 
-COPY patches/remote_regtest.diff .
-RUN patch -u WalletWasabi.Gui/Global.cs -i remote_regtest.diff
+COPY patches/subtractfee.diff .
+RUN patch -u WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs -i subtractfee.diff
+RUN rm subtractfee.diff
 
 COPY WalletGenerator /WalletGenerator
 
