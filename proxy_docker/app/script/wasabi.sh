@@ -199,9 +199,9 @@ wasabi_batchprivatetospender() {
     #  trace "[wasabi_batchprivatetospender] balance=${balance}"
 
       # Call spend
-  #    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\"}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"subtractFee\":true}")
-  #    returncode=$?
-  #    trace_rc ${returncode}
+      response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2}")
+      returncode=$?
+      trace_rc ${returncode}
     fi
   done
 }
@@ -510,3 +510,10 @@ wasabi_get_transactions() {
 #
 # echo '[{"a":1,"b":"aa"},{"a":5,"b":"bb"},{"a":6,"b":"cc"},{"a":3,"b":"dd"},{"a":9,"b":"ee"}]'
 #
+
+
+
+#curl -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "bcrt1q4vemf397tyuwdktqzhneux8r8v9dg65ydzgvla", "amount": 15000, "label": "test transaction", "subtractFee": true},{"sendto": "bcrt1q5jr80cyx62hhq5mhu8wa64jcamxytnr0lskm4g", "amount": 25000, "label": "test transaction", "subtractFee": true}], "coins":[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}], "feeTarget":2 }}' http://wasabi_2:18099/
+
+#[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}]
+
