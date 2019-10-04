@@ -134,10 +134,6 @@ wasabi_get_balance() {
 
   local response
   local balance=0
-
-  # wasabi rpc: listunspentcoins
-
-  # sum up all result array amount fields, private and non private
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
@@ -151,10 +147,11 @@ wasabi_get_balance() {
 
   for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
   do
+    # wasabi rpc: listunspentcoins
     response=$(send_to_wasabi ${i} listunspentcoins "[]")
 #    trace "[wasabi_get_balance] response=${response}"
     if [ "${private}" = "true" ]; then
-      balance=$((${balance}+$(echo "${response}" | jq ".result | map(select(.anonymitySet > ${WASABI_MIXUNTIL}) | .amount) | add")))
+      balance=$((${balance}+$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${WASABI_MIXUNTIL}) | .amount) | add")))
     else
       balance=$((${balance}+$(echo "${response}" | jq ".result | map(.amount) | add")))
     fi
@@ -178,28 +175,35 @@ wasabi_batchprivatetospender() {
 
   # Get spender newaddress
   local toaddress
-  toaddress=$(getnewaddress | jq ".address")
-  trace "[wasabi_batchprivatetospender] toaddress=${toaddress}"
-
-  # Get list of UTXO with anonymityset > configured threshold
   local utxo_to_spend
-  # build_utxo_to_spend <spendingAmount> <anonset> <instanceid>
-  utxo_to_spend=$(build_utxo_to_spend 0 ${WASABI_MIXUNTIL} ${instanceid})
-  # Amount is prefixed to utxostring, let's consider it
-  amount=$(echo "${utxo_to_spend}" | cut -d '[' -f1)
-  trace "[wasabi_batchprivatetospender] amount=${amount}"
-  utxo_to_spend="[$(echo "${utxo_to_spend}" | cut -d '[' -f2)"
-  trace "[wasabi_batchprivatetospender] utxo_to_spend=${utxo_to_spend}"
   local balance
-  balance=$(wasabi_get_balance "{\"id\":${instanceid},\"private\":true}")
-  trace "[wasabi_batchprivatetospender] balance=${balance}"
 
-  # Call spend
-  response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\"}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"subtractFee\":true}")
-  returncode=$?
-  trace_rc ${returncode}
+  for instanceid in `seq 0 $((WASABI_INSTANCE_COUNT-1))`
+  do
+    # Get list of UTXO with anonymityset > configured threshold
+    # build_utxo_to_spend <spendingAmount> <anonset> <instanceid>
+    utxo_to_spend=$(build_utxo_to_spend 0 ${WASABI_MIXUNTIL} ${instanceid})
+    # Amount is prefixed to utxostring, let's consider it
+    amount=$(echo "${utxo_to_spend}" | cut -d '[' -f1)
+    trace "[wasabi_batchprivatetospender] amount=${amount}"
 
-  return ${returncode}
+    if [ "${amount}" -gt "0" ]; then
+      trace "[wasabi_batchprivatetospender] We have mixed coins ready to consume!"
+
+      toaddress=$(getnewaddress | jq ".address")
+      trace "[wasabi_batchprivatetospender] toaddress=${toaddress}"
+
+      utxo_to_spend="[$(echo "${utxo_to_spend}" | cut -d '[' -f2)"
+      trace "[wasabi_batchprivatetospender] utxo_to_spend=${utxo_to_spend}"
+    #  balance=$(wasabi_get_balance "{\"id\":${instanceid},\"private\":true}")
+    #  trace "[wasabi_batchprivatetospender] balance=${balance}"
+
+      # Call spend
+  #    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\"}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"subtractFee\":true}")
+  #    returncode=$?
+  #    trace_rc ${returncode}
+    fi
+  done
 }
 
 # build_utxo_to_spend <spendingAmount> <anonset> <instanceid>
@@ -223,7 +227,7 @@ build_utxo_to_spend() {
 
   # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
   response=$(send_to_wasabi ${instanceid} listunspentcoins "[]")
-  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet > ${anonset}) | [.txid, .index, .amount]")
+  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset}) | [.txid, .index, .amount]")
   trace "[build_utxo_to_spend] utxos=${utxos}"
 
 #  nbUtxo=$(echo "${utxo}" | jq "length")
@@ -481,3 +485,28 @@ wasabi_get_transactions() {
 # It looks like a few utxos are leaking out of the coinjoin cycle randomly, much better than big clusters to one address
 
 # [{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0},{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0},{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}]
+
+
+# {"jsonrpc":"2.0","result":[{"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},{"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/144","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}],"id":"0"}
+#
+# from
+#
+# {"jsonrpc":"2.0","result":
+# [
+# {"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},
+# {"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/44","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}
+# ],
+# "id":"0"}
+#
+# to
+#
+# [{"transactionid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f", "index":1},{"transactionid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806", "index":0}]
+#
+# jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
+#
+# ["59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f",1,1780644]
+# ["e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806",0,1999460]
+#
+#
+# echo '[{"a":1,"b":"aa"},{"a":5,"b":"bb"},{"a":6,"b":"cc"},{"a":3,"b":"dd"},{"a":9,"b":"ee"}]'
+#
