@@ -69,7 +69,9 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 
 ## Documentation
 
-* Read the API docs here: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.md
+* Read the API docs here: 
+  * API v0 (Current): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
+  * API v1 (RESTful): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v1.md 
 * Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
 * Step-by-step manual install (deprecated): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
 
