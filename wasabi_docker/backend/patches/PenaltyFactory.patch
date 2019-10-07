@@ -1,0 +1,19 @@
+diff --git a/WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs b/WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs
+index 9d88c4b2..e215dfbc 100644
+--- a/WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs
++++ b/WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs
+@@ -12,10 +12,10 @@ namespace Gma.QrCodeNet.Encoding.Masking.Scoring
+ 		{
+ 			return penaltyRule switch
+ 			{
+-				PenaltyRules.Rule01 => new Penalty1(),
+-				PenaltyRules.Rule02 => new Penalty2(),
+-				PenaltyRules.Rule03 => new Penalty3(),
+-				PenaltyRules.Rule04 => new Penalty4(),
++				PenaltyRules.Rule01 => (Penalty) new Penalty1(),
++				PenaltyRules.Rule02 => (Penalty) new Penalty2(),
++				PenaltyRules.Rule03 => (Penalty) new Penalty3(),
++				PenaltyRules.Rule04 => (Penalty) new Penalty4(),
+ 				_ => throw new ArgumentException($"Unsupport penalty rule: {penaltyRule}", nameof(penaltyRule))
+ 			};
+ 		}
