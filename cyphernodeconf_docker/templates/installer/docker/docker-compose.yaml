@@ -394,7 +394,7 @@ services:
   <%   for ( let index=0; index<wasabi_instance_count; index++ ) { %>
   wasabi_<%= index %>:
     image: cyphernode/wasabi:<%= wasabi_version %>
-    entrypoint: sh -c 'sleep <%= index * 30 + 11 %> ; while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep <%= index * 30 + 10 %> ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
+    entrypoint: sh -c 'sleep <%= (index+1) * 20 + 11 %> ; while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep <%= (index+1) * 20 %> ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
     volumes:
       - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
       - bitcoin_monitor:/bitcoin_monitor:ro
