@@ -3,29 +3,34 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-#RUN git clone --recursive https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
-#RUN git clone --recursive --branch Features/remote_regtest https://github.com/schulterklopfer/WalletWasabi.git /WalletWasabi
+#RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontivero/Wasabito.git /WalletWasabi
 
 WORKDIR /WalletWasabi
 
-#COPY patches/subtractfee.diff .
-#RUN patch -u WalletWasabi.Gui/Rpc/WasabiJsonRpcService.cs -i subtractfee.diff
-#RUN rm subtractfee.diff
+COPY backend/patches/ITxStoreOperation.patch .
+RUN patch WalletWasabi/Transactions/ITxStoreOperation.cs -i ITxStoreOperation.patch
+RUN rm ITxStoreOperation.patch
+
+COPY backend/patches/PenaltyFactory.patch .
+RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs -i PenaltyFactory.patch
+RUN rm PenaltyFactory.patch
+
+COPY backend/patches/PatternFactory.patch .
+RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
+RUN rm PatternFactory.patch
 
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
 
-#RUN dotnet restore
-RUN dotnet build -c Release -o /app/ -r linux-x64
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
+RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
+RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none /p:langversion=8.0
 
 WORKDIR /WalletWasabi/WalletWasabi.Gui
 
-#RUN dotnet restore
-RUN dotnet build -c Release -o /app/ -r linux-x64
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
+RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
+RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none /p:langversion=8.0
 
 # remove unused files
 #RUN rm /app/TorDaemons/tor-osx64.zip /app/TorDaemons/tor-win32.zip
