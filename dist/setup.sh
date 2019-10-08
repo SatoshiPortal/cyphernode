@@ -615,7 +615,7 @@ install_docker() {
       copy_file "$cyphernodeconf_filepath/wasabi/Config.json" "$WASABI_DATAPATH/$i/Config.json" 1 $SUDO_REQUIRED
     done
 
-    if [[ $NETWORK == "regtest" ]]; then
+#    if [[ $NETWORK == "regtest" ]]; then
       if [ ! -d "$WASABI_DATAPATH/backend" ]; then
         step "   [32mcreate[0m $WASABI_DATAPATH/backend"
         sudo_if_required mkdir -p $WASABI_DATAPATH/backend
@@ -623,7 +623,7 @@ install_docker() {
       fi
       copy_file "$cyphernodeconf_filepath/wasabi/backend/Config.json" "$WASABI_DATAPATH/backend/Config.json" 1 $SUDO_REQUIRED
       copy_file "$cyphernodeconf_filepath/wasabi/backend/CcjRoundConfig.json" "$WASABI_DATAPATH/backend/CcjRoundConfig.json" 1 $SUDO_REQUIRED
-    fi
+#    fi
   fi
 
   docker swarm join-token worker > /dev/null 2>&1

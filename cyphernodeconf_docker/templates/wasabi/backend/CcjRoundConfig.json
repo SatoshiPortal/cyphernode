@@ -3,7 +3,7 @@
   "ConfirmationTarget": 144,
   "ConfirmationTargetReductionRate": 0.7,
   "CoordinatorFeePercent": 0.003,
-  "AnonymitySet": 100,
+  "AnonymitySet": <%= wasabi_mixuntil %>,
   "InputRegistrationTimeout": 60,
   "ConnectionConfirmationTimeout": 60,
   "OutputRegistrationTimeout": 60,
