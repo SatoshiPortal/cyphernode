@@ -1061,6 +1061,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getrawmempool:
+    get:
+      tags:
+        - "stats"
+        - "core features"
+      summary: "Show raw mempool"
+      description: "Returns mempool raw information."
+      operationId: "getrawmempool"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/RawMempool'
+                  - $ref: '#/components/schemas/RawMempoolVerbose'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /ln_getinfo:
     get:
       tags:
@@ -1846,6 +1873,53 @@ components:
           type: "number"
         minrelaytxfee:
           type: "integer"
+    RawMempool:
+      type: "array"
+      items:
+        type: "string"
+        properties:
+          txid:
+            type: "string"
+    RawMempoolVerbose:
+      type: "object"
+      properties:
+        fees:
+          type: "object"
+          properties:
+            base: "integer"
+            modified: "integer"
+            ancestor: "integer"
+            descendant: "integer"
+        size:
+          type: "integer"
+        fee:
+          type: "number"
+        modifiedfee:
+          type: "integer"
+        time:
+          type: "integer"
+        height:
+          type: "integer"
+        descendantcount:
+          type: "integer"
+        descendantsize:
+          type: "integer"
+        descendantfees:
+          type: "integer"
+        ancestorcount:
+          type: "integer"
+        ancestorsize:
+          type: "integer"
+        ancestorfees:
+          type: "integer"
+        wtxid:
+          type: "string"
+        depends:
+          type: "array"
+        spentby:
+          type: "array"
+        bip125-replaceable:
+          type: "boolean"
     TypeHexString:
       description: "variable length hex string"
       type: "string"

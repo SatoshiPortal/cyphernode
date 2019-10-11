@@ -84,10 +84,12 @@ get_mempool_info() {
   send_to_watcher_node "${data}" | jq ".result"
   return $?
 }
-get_blockhash() {
-  trace "Entering get_blockhash()..."
-  local blockheight=${1}
-  local data="{\"method\":\"getblockhash\",\"params\":[${blockheight}]}"
+
+get_raw_mempool() {
+  trace "Entering get_raw_mempool()..."
+
+  local verbose=${1}
+  local data="{\"method\":\"getrawmempool\",\"params\":${verbose}}"
   send_to_watcher_node "${data}" | jq ".result"
   return $?
 }
