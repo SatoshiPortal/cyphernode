@@ -306,8 +306,15 @@ main() {
           ;;
         getmempoolinfo)
           # curl GET http://192.168.111.152:8080/getmempoolinfo
-
+          
           response=$(get_mempool_info)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getrawmempool)
+          # curl GET http://192.168.111.152:8080/getrawmempool
+          
+          response=$(get_raw_mempool ${line})
           response_to_client "${response}" ${?}
           break
           ;;

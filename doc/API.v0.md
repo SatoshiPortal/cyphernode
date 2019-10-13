@@ -294,7 +294,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
 
 ### Get mempool information
 
-Returns the mempool information of the Bitcoin node.
+Returns the mempool information of the Bitcoin node. 
 ```http
 GET http://cyphernode:8888/getmempoolinfo
 ```
@@ -310,6 +310,81 @@ Proxy response:
   "mempoolminfee": 1e-05,
   "minrelaytxfee": 1e-05
 }
+```
+
+### Get raw mempool
+
+Returns raw mempool information of the Bitcoin node. 
+```http
+POST http://cyphernode:8888/getrawlinfo/true
+```
+
+Proxy response:
+
+```json
+{
+  "a20b97e2ee7f576700055d2a1594e7ce25dd6d90f8d8e094af9d043af5d44c98": {
+    "fees": {
+      "base": 5.7e-05,
+      "modified": 5.7e-05,
+      "ancestor": 5.7e-05,
+      "descendant": 5.7e-05
+    },
+    "size": 283,
+    "fee": 5.7e-05,
+    "modifiedfee": 5.7e-05,
+    "time": 1570808521,
+    "height": 1582368,
+    "descendantcount": 1,
+    "descendantsize": 283,
+    "descendantfees": 5700,
+    "ancestorcount": 1,
+    "ancestorsize": 283,
+    "ancestorfees": 5700,
+    "wtxid": "a20b97e2ee7f576700055d2a1594e7ce25dd6d90f8d8e094af9d043af5d44c98",
+    "depends": [],
+    "spentby": [],
+    "bip125-replaceable": false
+  },
+  "87969069267cae47dc029843e9f5cecfa783b5917a128b8d9206fc014b10eb49": {
+    "fees": {
+      "base": 0.00016791,
+      "modified": 0.00016791,
+      "ancestor": 0.00016791,
+      "descendant": 0.00016791
+    },
+    "size": 166,
+    "fee": 0.00016791,
+    "modifiedfee": 0.00016791,
+    "time": 1570808524,
+    "height": 1582369,
+    "descendantcount": 1,
+    "descendantsize": 166,
+    "descendantfees": 16791,
+    "ancestorcount": 1,
+    "ancestorsize": 166,
+    "ancestorfees": 16791,
+    "wtxid": "61150ab11f62840beeba3c48fcab8a01e0a1089efa5537180f3121a10328d92e",
+    "depends": [],
+    "spentby": [],
+    "bip125-replaceable": false
+  }
+}
+```
+
+```http
+POST http://cyphernode:8888/getrawlinfo/false
+```
+
+Proxy response:
+
+```json
+[
+  "147fbd9ebd3c1ff4d3d3ac5ab28757ddbc72bf9642de4f3e08be099053381420",
+  "d73f1f773775508ab1f9545e6f54a9184d9b2653d58c6cf845fad9c69dfc2f9c",
+  "d507bbc0bff5eb2a3adec6b754c637ede84873b8185d6373cb59c7de7cd1595f",
+  "9e8854196061ce0da4ce1d528f6482393ef8c873f31fb323fb46bc38fd030035"
+]
 ```
 
 ### Get the blockchain information (called by application)
