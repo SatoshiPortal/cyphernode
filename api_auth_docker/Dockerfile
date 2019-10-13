@@ -7,8 +7,7 @@ RUN apk add --update --no-cache \
     fcgiwrap \
     spawn-fcgi \
     curl \
-    jq \
-    su-exec
+    jq
 
 COPY auth.sh /etc/nginx/conf.d/
 COPY default.conf /etc/nginx/conf.d/default.conf

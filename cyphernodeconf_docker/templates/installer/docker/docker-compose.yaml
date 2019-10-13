@@ -332,7 +332,6 @@ services:
       - "<%= logs_datapath %>:/cnlogs"
       - "<%= otsclient_datapath %>:/otsfiles"
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
-    command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>
@@ -361,14 +360,14 @@ services:
   wasabi-backend:
     image: cyphernode/wasabi-backend:<%= wasabi_version %>
     entrypoint: sh -c 'sleep 25 ; while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 20 ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
-    networks:
-      - cyphernodenet
     volumes:
       - "<%= wasabi_datapath %>/backend:/root/.walletwasabi/backend"
       - bitcoin_monitor:/bitcoin_monitor:ro
+    networks:
+      - cyphernodenet
+    restart: always
     depends_on:
       - bitcoin
-    restart: always
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -383,10 +382,10 @@ services:
       - bitcoin_monitor:/bitcoin_monitor:ro
     networks:
       - cyphernodenet
+    restart: always
     depends_on:
       - bitcoin
       - wasabi-backend
-    restart: always
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
