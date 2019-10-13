@@ -1,0 +1,53 @@
+diff --git a/WalletWasabi/Services/IndexBuilderService.cs b/WalletWasabi/Services/IndexBuilderService.cs
+index b4faafac..702deb25 100644
+--- a/WalletWasabi/Services/IndexBuilderService.cs
++++ b/WalletWasabi/Services/IndexBuilderService.cs
+@@ -239,8 +239,9 @@ namespace WalletWasabi.Services
+ 									syncInfo = await GetSyncInfoAsync();
+ 								}
+ 
+-								if (syncInfo.BlockCount - heightToRequest <= 100)
++								if (syncInfo.BlockCount - heightToRequest <= 1000)
+ 								{
++									Logger.LogInfo("Both Wasabi and our Core node is in sync. Start doing stuff through P2P from now on.");
+ 									// Both Wasabi and our Core node is in sync. Start doing stuff through P2P from now on.
+ 									if (syncInfo.IsCoreSynchornized && syncInfo.BlockCount == heightToRequest - 1)
+ 									{
+@@ -248,6 +249,12 @@ namespace WalletWasabi.Services
+ 										// Double it to make sure not to accidentally miss any notification.
+ 										if (syncInfo.IsCoreSynchornized && syncInfo.BlockCount == heightToRequest - 1)
+ 										{
++											if (File.Exists(Bech32UtxoSetFilePath))
++											{
++												File.Delete(Bech32UtxoSetFilePath);
++											}
++											await File.WriteAllLinesAsync(Bech32UtxoSetFilePath, Bech32UtxoSet.Select(entry => entry.Key.Hash + ":" + entry.Key.N + ":" + ByteHelpers.ToHex(entry.Value.ToCompressedBytes())));
++
+ 											// Mark the process notstarted, so it can be started again and finally block can mark it is stopped.
+ 											Interlocked.Exchange(ref _running, 0);
+ 											return;
+@@ -348,17 +355,17 @@ namespace WalletWasabi.Services
+ 								{
+ 									Index.Add(filterModel);
+ 								}
+-								if (File.Exists(Bech32UtxoSetFilePath))
+-								{
+-									File.Delete(Bech32UtxoSetFilePath);
+-								}
+-								await File.WriteAllLinesAsync(Bech32UtxoSetFilePath, Bech32UtxoSet
+-									.Select(entry => entry.Key.Hash + ":" + entry.Key.N + ":" + ByteHelpers.ToHex(entry.Value.ToCompressedBytes())));
+ 
+ 								// If not close to the tip, just log debug.
+ 								// Use height.Value instead of simply height, because it cannot be negative height.
+-								if (syncInfo.BlockCount - heightToRequest.Value <= 3 || heightToRequest % 100 == 0)
++								if (syncInfo.BlockCount - heightToRequest.Value <= 3 || heightToRequest % 1000 == 0)
+ 								{
++									if (File.Exists(Bech32UtxoSetFilePath))
++									{
++										File.Delete(Bech32UtxoSetFilePath);
++									}
++									await File.WriteAllLinesAsync(Bech32UtxoSetFilePath, Bech32UtxoSet.Select(entry => entry.Key.Hash + ":" + entry.Key.N + ":" + ByteHelpers.ToHex(entry.Value.ToCompressedBytes())));
++
+ 									Logger.LogInfo($"Created filter for block: {heightToRequest}.");
+ 								}
+ 								else

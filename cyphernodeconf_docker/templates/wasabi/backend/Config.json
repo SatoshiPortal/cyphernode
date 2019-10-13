@@ -7,9 +7,9 @@
   "Network": "Main",
 <% } %>
   "BitcoinRpcConnectionString": "wallet=wasabi_backend.dat;server=bitcoin;<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>",
-  "MainNetBitcoinCoreHost": "bitcoin:8333",
-  "TestNetBitcoinCoreHost": "bitcoin:18333",
-  "RegTestBitcoinCoreHost": "bitcoin:18444",
+  "MainNetBitcoinP2pEndPoint": "bitcoin:8333",
+  "TestNetBitcoinP2pEndPoint": "bitcoin:18333",
+  "RegTestBitcoinP2pEndPoint": "bitcoin:18444",
   "MainNetBitcoinCoreRpcEndPoint": "bitcoin:8332",
   "TestNetBitcoinCoreRpcEndPoint": "bitcoin:18332",
   "RegTestBitcoinCoreRpcEndPoint": "bitcoin:18443"
