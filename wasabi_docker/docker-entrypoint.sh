@@ -4,7 +4,7 @@ wallet_name=${WALLET_NAME:-wasabi}
 
 # check if we have a wallet file
 if [ ! -f "/root/.walletwasabi/client/Wallets/$wallet_name.json" ]; then
-  echo "Missinsg wallet file. Generating wallet with name $wallet_name and saving the seed words"
+  echo "Missing wallet file. Generating wallet with name $wallet_name and saving the seed words"
   echo "" | /app/scripts/generateWallet.sh $wallet_name > "/root/.walletwasabi/client/Wallets/$wallet_name.seed"
 fi
 

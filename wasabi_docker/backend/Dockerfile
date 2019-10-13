@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:2.2-alpine3.8 AS builder
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine3.9 AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
@@ -20,25 +20,32 @@ COPY patches/PatternFactory.patch .
 RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
 RUN rm PatternFactory.patch
 
+COPY patches/IndexBuilderService.patch .
+RUN patch WalletWasabi/Services/IndexBuilderService.cs -i IndexBuilderService.patch
+RUN rm IndexBuilderService.patch
+
 WORKDIR /WalletWasabi/WalletWasabi.Backend
 
-RUN dotnet restore
 RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
 RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none /p:langversion=8.0
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:2.2-alpine3.8
+FROM mcr.microsoft.com/dotnet/core/aspnet:2.2-alpine3.9
 
-ENV HOME=/root
-RUN apk add --no-cache icu nginx
+RUN apk add --no-cache --update \
+    icu \
+    nginx \
+ && mkdir -p /run/nginx
 
 COPY --from=builder /app /app
-
 COPY default.conf /etc/nginx/conf.d/default.conf
-RUN mkdir -p /run/nginx
 
 WORKDIR /app
 
 COPY docker-entrypoint.sh docker-entrypoint.sh
+
+# Do not run as root user
+#RUN chown -R whateveruser:whateveruser /app
+#USER whateveruser
 
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT false
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
