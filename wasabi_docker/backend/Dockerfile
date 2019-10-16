@@ -9,7 +9,7 @@ RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontiv
 WORKDIR /WalletWasabi
 
 COPY patches/ITxStoreOperation.patch .
-RUN patch WalletWasabi/Transactions/ITxStoreOperation.cs -i ITxStoreOperation.patch
+RUN patch WalletWasabi/Transactions/Operations/ITxStoreOperation.cs -i ITxStoreOperation.patch
 RUN rm ITxStoreOperation.patch
 
 COPY patches/PenaltyFactory.patch .

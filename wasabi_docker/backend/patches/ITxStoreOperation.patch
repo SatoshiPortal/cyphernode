@@ -1,8 +1,8 @@
-diff --git a/WalletWasabi/Transactions/ITxStoreOperation.cs b/WalletWasabi/Transactions/ITxStoreOperation.cs
+diff --git a/WalletWasabi/Transactions/Operations/ITxStoreOperation.cs b/WalletWasabi/Transactions/Operations/ITxStoreOperation.cs
 index 5c4702fd..bd5e8d32 100644
---- a/WalletWasabi/Transactions/ITxStoreOperation.cs
-+++ b/WalletWasabi/Transactions/ITxStoreOperation.cs
-@@ -6,6 +6,6 @@ namespace WalletWasabi.Transactions
+--- a/WalletWasabi/Transactions/Operations/ITxStoreOperation.cs
++++ b/WalletWasabi/Transactions/Operations/ITxStoreOperation.cs
+@@ -6,6 +6,6 @@ namespace WalletWasabi.Transactions.Operations
  {
  	public interface ITxStoreOperation
  	{
