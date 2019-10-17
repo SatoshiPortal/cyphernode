@@ -20,10 +20,6 @@ COPY backend/patches/PatternFactory.patch .
 RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
 RUN rm PatternFactory.patch
 
-COPY backend/patches/IndexBuilderService.patch .
-RUN patch WalletWasabi/Services/IndexBuilderService.cs -i IndexBuilderService.patch
-RUN rm IndexBuilderService.patch
-
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
