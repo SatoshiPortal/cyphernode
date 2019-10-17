@@ -356,7 +356,7 @@ services:
   ##########################
 
   <%   if ( net === 'regtest' ) { %>
-  # regtest
+  # regtest only
   wasabi-backend:
     image: cyphernode/wasabi-backend:<%= wasabi_version %>
     entrypoint: sh -c 'sleep 25 ; while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 20 ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
