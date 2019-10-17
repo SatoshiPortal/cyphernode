@@ -61,6 +61,7 @@ Currently used to make sure callbacks have been called for missed transactions.
 * Created and maintained by www.satoshiportal.com
 * Dedicated full-time developer @kexkey
 * Project manager @FrancisPouliot
+* Contributor: @\_\_escapee\_\_
 * Disclaimer: as of release on Sept. 23 2018 the project is still it its early stages (Alpha) and many of the features have yet to be implemented. The core architecture and basic wallet operations and blockchain query functions are fully functional.
 
 # How to use cyphernode?
