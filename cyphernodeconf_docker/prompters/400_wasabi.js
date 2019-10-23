@@ -20,8 +20,8 @@ const correctCountValidator = function( count ) {
     throw 'Count should be a number';
   }
 
-  if ( count < 1 || count > 5 ) {
-    throw 'Count should be between 1 and 5';
+  if ( count < 1 || count > 2 ) {
+    throw 'Count should be between 1 and 2';
   }
 
   return true;
@@ -57,9 +57,9 @@ module.exports = {
   },
   templates: function( props ) {
     let files = ['Config.json'];
-//    if( props.net === 'regtest' ) {
+    if( props.net === 'regtest' ) {
       files = files.concat( ['backend/Config.json', 'backend/CcjRoundConfig.json'] )
-//    }
+    }
     return featureCondition(props)?files:[];
   }
 };

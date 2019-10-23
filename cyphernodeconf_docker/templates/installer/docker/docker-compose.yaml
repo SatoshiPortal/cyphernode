@@ -404,7 +404,9 @@ services:
     restart: always
     depends_on:
       - bitcoin
+      <%   if ( net === 'regtest' ) { %>
       - wasabi-backend
+      <%   } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
