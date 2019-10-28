@@ -66,7 +66,7 @@ wasabi_newaddr() {
   local response
   local label
   label=$(echo "${request}" | jq -e ".label")
-  if [ "$?" -ne "0" ] || [ -z ${label} ]; then
+  if [ "$?" -ne "0" ] || [ -z "${label}" ]; then
     # label tag null, so there's no label
     label='"unknown"'
   fi

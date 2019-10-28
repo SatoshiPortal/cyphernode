@@ -20,6 +20,10 @@ COPY patches/PatternFactory.patch .
 RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
 RUN rm PatternFactory.patch
 
+COPY patches/Program.patch .
+RUN patch WalletWasabi.Backend/Program.cs -i Program.patch
+RUN rm Program.patch
+
 WORKDIR /WalletWasabi/WalletWasabi.Backend
 
 RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
