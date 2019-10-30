@@ -76,6 +76,11 @@ wasabi_newaddr() {
   returncode=$?
   trace_rc ${returncode}
 
+  # response={"jsonrpc":"2.0","result":{"address":"tb1qzurfz22v3ayx4kfex2q9hf2u253p55cdrqtr3t","keyPath":"84'/0'/0'/0/29","label":["Order #10015"],"publicKey":"03113ba8f1e525ee2aa4a73dd72ea587529ab29776f9573fc4edadd47cc12e0ffc","p2wpkh":"0014170691294c8f486ad93932805ba55c55221a530d"},"id":"0"}
+  response=$(echo ${response} | jq -Mac '.result | {"address":"\(.address)","keyPath":"\(.keyPath)","label":"\(.label)"}')
+  # response={"address":"tb1qzurfz22v3ayx4kfex2q9hf2u253p55cdrqtr3t","keyPath":"84'/0'/0'/0/29","label":["Order #10015"]}
+  trace "[wasabi_newaddr] response=${response}"
+
   echo "${response}"
 
   return $?
@@ -158,7 +163,7 @@ wasabi_get_balance() {
     trace "[wasabi_get_balance] balance=${balance}"
   done
 
-  echo "{\"balance\":${balance}}"
+  echo "{\"balance\":${balance},\"instanceid\":\"${instanceid}\"\"private\":${private}}"
 
   return 0
 }
