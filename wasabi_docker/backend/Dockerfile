@@ -32,12 +32,9 @@ RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:De
 FROM mcr.microsoft.com/dotnet/core/aspnet:2.2-alpine3.9
 
 RUN apk add --no-cache --update \
-    icu \
-    nginx \
- && mkdir -p /run/nginx
+    icu
 
 COPY --from=builder /app /app
-COPY default.conf /etc/nginx/conf.d/default.conf
 
 WORKDIR /app
 

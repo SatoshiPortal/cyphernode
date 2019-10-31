@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-nginx && dotnet WalletWasabi.Backend.dll
+dotnet WalletWasabi.Backend.dll
