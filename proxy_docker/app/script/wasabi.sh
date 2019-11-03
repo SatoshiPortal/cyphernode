@@ -163,7 +163,7 @@ wasabi_get_balance() {
     trace "[wasabi_get_balance] balance=${balance}"
   done
 
-  echo "{\"balance\":${balance},\"instanceid\":\"${instanceid}\"\"private\":${private}}"
+  echo "{\"balance\":${balance},\"instanceid\":\"${instanceid}\",\"private\":${private}}"
 
   return 0
 }
@@ -207,6 +207,8 @@ wasabi_batchprivatetospender() {
       response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2}")
       returncode=$?
       trace_rc ${returncode}
+    else
+      trace "[wasabi_batchprivatetospender] NO mixed coins to spend!"
     fi
   done
 }
@@ -229,11 +231,14 @@ build_utxo_to_spend() {
   local nbUtxo
   local response
   local builtUtxo
+  local amounts
 
   # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
   response=$(send_to_wasabi ${instanceid} listunspentcoins "[]")
-  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset}) | [.txid, .index, .amount]")
+  #utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset}) | [.txid, .index, .amount]")
+  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index}")
   trace "[build_utxo_to_spend] utxos=${utxos}"
+  amounts=$(echo "${response}" | jq -Mac '.result[].amount')
 
 #  nbUtxo=$(echo "${utxo}" | jq "length")
 
@@ -247,23 +252,29 @@ build_utxo_to_spend() {
   local txid
   local index
   local amount
+  local n=1
   local totalAmount=0
   local IFS=$'\n'
 
   for utxo in ${utxos}
   do
-    txid=$(echo "${utxo}" | jq ".[0]")
-    index=$(echo "${utxo}" | jq ".[1]")
-    amount=$(echo "${utxo}" | jq ".[2]")
-    trace "[build_utxo_to_spend] txid=${txid}"
-    trace "[build_utxo_to_spend] index=${index}"
+#    txid=$(echo "${utxo}" | jq ".[0]")
+#    index=$(echo "${utxo}" | jq ".[1]")
+#    amount=$(echo "${utxo}" | jq ".[2]")
+    amount=$(echo "${amounts}" | cut -d$'\n' -f$n)
     trace "[build_utxo_to_spend] amount=${amount}"
+    n=$((n+1))
+    trace "[build_utxo_to_spend] n=${n}"
+#    trace "[build_utxo_to_spend] txid=${txid}"
+#    trace "[build_utxo_to_spend] index=${index}"
 
     if [ -n "${builtUtxo}" ]; then
-      builtUtxo="${builtUtxo},"
+      builtUtxo="${builtUtxo},${utxo}"
+    else
+      builtUtxo="${utxo}"
     fi
 
-    builtUtxo="${builtUtxo}{\"transactionId\":${txid},\"index\":${index}}"
+#    builtUtxo="${builtUtxo}{\"transactionId\":${txid},\"index\":${index}}"
 #    trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
 
     totalAmount=$((totalAmount+amount))
@@ -273,6 +284,7 @@ build_utxo_to_spend() {
     [ "${spendingAmount}" -ne "0" ] && [ "${totalAmount}" -ge "${spendingAmount}" ] && break
   done
 
+  # If not enough funds...
   [ "${spendingAmount}" -ne "0" ] && [ "${totalAmount}" -lt "${spendingAmount}" ] && return 1
 
   builtUtxo="${totalAmount}[${builtUtxo}]"
@@ -536,3 +548,22 @@ wasabi_get_transactions() {
 #
 # for i in `docker stack ps -q -f name=cyphernode_wasabi cyphernode`; do echo -e "\n################################### $i:\n$(docker service logs --tail 40 $i)" ; done
 #
+
+# [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]
+#
+# 0-4: [{"desc":"hammer","color":"red","qty":4}]
+# 5-11: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7}]
+# 12-51: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40}]
+# 52-81: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30}]
+# 82-84: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3}]
+# 85-98: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]
+#
+
+# ! /bin/bash
+#JSON='[{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]'
+
+#CUSTOM_FILTERS="def addBucket(f): f | map( { g: ( (f.qty / 5) | floor *5 ), o: f} )"
+
+#echo $JSON | jq "$CUSTOM_FILTERS; . | addBucket(.) | group_by(.g)"
+
+# jq -Mac '.result[] | {"transactionId": .txid, index, amount}'
