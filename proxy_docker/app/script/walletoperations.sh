@@ -39,10 +39,12 @@ spend() {
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+    # Sometimes raw tx are too long to be passed as paramater, so let's write
+    # it to a temp file for it to be read by sqlite3 and then delete the file
+    echo "${tx_raw_details}" > rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
@@ -51,6 +53,9 @@ spend() {
 
     data="{\"status\":\"accepted\""
     data="${data},\"hash\":\"${txid}\"}"
+
+    # Delete the temp file containing the raw tx (see above)
+    rm rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -289,10 +294,12 @@ batchspend() {
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+    # Sometimes raw tx are too long to be passed as paramater, so let's write
+    # it to a temp file for it to be read by sqlite3 and then delete the file
+    echo "${tx_raw_details}" > rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
@@ -304,6 +311,9 @@ batchspend() {
 
     data="{\"status\":\"accepted\""
     data="${data},\"hash\":\"${txid}\"}"
+
+    # Delete the temp file containing the raw tx (see above)
+    rm rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
