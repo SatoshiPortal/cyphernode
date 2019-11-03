@@ -233,21 +233,14 @@ build_utxo_to_spend() {
   local builtUtxo
   local amounts
 
-  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
   response=$(send_to_wasabi ${instanceid} listunspentcoins "[]")
-  #utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset}) | [.txid, .index, .amount]")
+
+  # We only want mixed coins with correct minimum anonymitySet and we'll spend only the confirmed one to avoid problems.
   utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index}")
   trace "[build_utxo_to_spend] utxos=${utxos}"
+
+  # We'll use this amount list to increase up to the amount to spend in the following loop.
   amounts=$(echo "${response}" | jq -Mac '.result[].amount')
-
-#  nbUtxo=$(echo "${utxo}" | jq "length")
-
-  # from...
-  # [{"txid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8","index":1,"amount":1040365,"anonymitySet":29,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/720","address":"tb1qdytlanjjw9q7a86tsn8rwnhrn96yjvmu33h374"},{"txid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de","index":1,"amount":1040749,"anonymitySet":28,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/715","address":"tb1q3wepep4apqvcjg0n9ajn9eng4h57advysez658"}]
-  # to...
-  # [{"transactionid":"f344bb3b62175a4f5ce7193cdf1e661b3dafe1ffe6a41c283be231cd2f70b6d8", "index":1},{"transactionid":"cf09568720fdeecff3408c9ddd7868d2e072b104ce27069d854ac741303cc5de", "index":1}]
-
-  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
 
   local txid
   local index
@@ -258,24 +251,15 @@ build_utxo_to_spend() {
 
   for utxo in ${utxos}
   do
-#    txid=$(echo "${utxo}" | jq ".[0]")
-#    index=$(echo "${utxo}" | jq ".[1]")
-#    amount=$(echo "${utxo}" | jq ".[2]")
     amount=$(echo "${amounts}" | cut -d$'\n' -f$n)
-    trace "[build_utxo_to_spend] amount=${amount}"
+    trace "[build_utxo_to_spend] n=${n}, amount=${amount}"
     n=$((n+1))
-    trace "[build_utxo_to_spend] n=${n}"
-#    trace "[build_utxo_to_spend] txid=${txid}"
-#    trace "[build_utxo_to_spend] index=${index}"
 
     if [ -n "${builtUtxo}" ]; then
       builtUtxo="${builtUtxo},${utxo}"
     else
       builtUtxo="${utxo}"
     fi
-
-#    builtUtxo="${builtUtxo}{\"transactionId\":${txid},\"index\":${index}}"
-#    trace "[build_utxo_to_spend] builtUtxo=${builtUtxo}"
 
     totalAmount=$((totalAmount+amount))
     trace "[build_utxo_to_spend] totalAmount=${totalAmount}"
