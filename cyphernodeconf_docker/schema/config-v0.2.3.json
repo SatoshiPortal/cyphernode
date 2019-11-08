@@ -91,6 +91,24 @@
           "features": {
             "contains": {
               "enum": [
+                "tor"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "tor_datapath"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
                 "lightning"
               ]
             }
@@ -123,24 +141,6 @@
       "then": {
         "required": [
           "otsclient_datapath"
-        ]
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "features": {
-            "contains": {
-              "enum": [
-                "tor"
-              ]
-            }
-          }
-        }
-      },
-      "then": {
-        "required": [
-          "tor_datapath"
         ]
       }
     }
@@ -180,16 +180,16 @@
         "$id": "#/properties/features/items",
         "type": "string",
         "enum": [
+          "tor",
           "lightning",
-          "otsclient",
-          "tor"
+          "otsclient"
         ],
         "title": "The feature",
         "default": "",
         "examples": [
+          "tor",
           "lightning",
-          "otsclient",
-          "tor"
+          "otsclient"
         ]
       }
     },

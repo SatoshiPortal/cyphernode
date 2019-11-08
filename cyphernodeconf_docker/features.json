@@ -1,14 +1,14 @@
 [
   {
+    "name": "TOR Hidden Service/Gateway",
+    "value": "tor"
+  },
+  {
     "name": "Lightning node",
     "value": "lightning"
   },
   {
     "name": "Opentimestamps client",
     "value": "otsclient"
-  },
-  {
-    "name": "Tor Hidden Service/Gateway",
-    "value": "tor"
   }
 ]

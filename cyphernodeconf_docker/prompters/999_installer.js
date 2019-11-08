@@ -98,13 +98,13 @@ module.exports = {
       message: prefix()+'Where do you want to store your tor data?'+utils.getHelp('tor_datapath'),
     },
     {
-      when: (props)=>{ return installerDocker(props) && props.features.indexOf('tor') !== -1 && props.otsclient_datapath === '_custom' },
+      when: (props)=>{ return installerDocker(props) && props.features.indexOf('tor') !== -1 && props.tor_datapath === '_custom' },
       type: 'input',
       name: 'tor_datapath_custom',
       default: utils.getDefault( 'tor_datapath_custom' ),
       filter: utils.trimFilter,
       validate: utils.pathValidator,
-      message: prefix()+'Custom path for tor data?'+utils.getHelp('tor_datapath_custom'),
+      message: prefix()+'Custom path for TOR data?'+utils.getHelp('tor_datapath_custom'),
     },
     {
       when: installerDocker,
