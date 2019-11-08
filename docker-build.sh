@@ -75,6 +75,7 @@ echo "arch_docker=$arch_docker\n"
 image "gatekeeper" "api_auth_docker/" ${arch_docker} \
 && image "proxycron" "cron_docker/" ${arch_docker} \
 && image "otsclient" "otsclient_docker/" ${arch_docker} \
+&& image "tor" "tor_docker/" ${arch_docker} \
 && image "proxy" "proxy_docker/" ${arch_docker} \
 && image "notifier" "notifier_docker/" ${arch_docker} \
 && image "pycoin" "pycoin_docker/" ${arch_docker} \
@@ -89,6 +90,7 @@ image "gatekeeper" "api_auth_docker/" ${arch_docker} \
 manifest "gatekeeper" \
 && manifest "proxycron" \
 && manifest "otsclient" \
+&& manifest "tor" \
 && manifest "proxy" \
 && manifest "notifier" \
 && manifest "pycoin" \

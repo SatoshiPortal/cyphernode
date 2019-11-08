@@ -33,8 +33,7 @@
     "proxy_datapath",
     "traefik_datapath",
     "traefik_http_port",
-    "traefik_https_port",
-    "tor_datapath"
+    "traefik_https_port"
   ],
   "allOf": [
     {
@@ -126,6 +125,24 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "tor"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "tor_datapath"
+        ]
+      }
     }
   ],
   "properties": {
@@ -164,13 +181,15 @@
         "type": "string",
         "enum": [
           "lightning",
-          "otsclient"
+          "otsclient",
+          "tor"
         ],
         "title": "The feature",
         "default": "",
         "examples": [
           "lightning",
-          "otsclient"
+          "otsclient",
+          "tor"
         ]
       }
     },

@@ -466,6 +466,13 @@ module.exports = class App {
     const optional_features = [];
 
     const optional_features_data = {
+      tor: {
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
+        extra: {
+          hostname: 'tor_hostname_placeholder',
+        }
+      },
       otsclient: {
         docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient']
       },

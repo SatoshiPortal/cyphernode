@@ -100,7 +100,7 @@ checknotifier() {
   local response
   local returncode
 
-  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\"}")
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\",\"torbypass\":true}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")
@@ -120,6 +120,18 @@ checkots() {
   [ "$?" -ne "0" ] && return 200
 
   echo -e "\e[1;36mOTSclient rocks!" > /dev/console
+
+  return 0
+}
+
+checktor() {
+  echo -en "\r\n\e[1;36mTesting TOR... " > /dev/console
+  local rc
+
+  rc=$(curl -s -o /dev/null -w "%{http_code}" --socks5-hostname tor:9050 http://expyuzz4wqqyqhjn.onion/)
+  [ "${rc}" -ne "200" ] && return 250
+
+  echo -e "\e[1;36mTOR rocks!" > /dev/console
 
   return 0
 }
@@ -161,12 +173,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -185,10 +197,11 @@ checkservice() {
   #    { "name": "proxycron", "active":true },
   #    { "name": "pycoin", "active":true },
   #    { "name": "otsclient", "active":true },
+  #    { "name": "tor", "active":true },
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
   #  ]
-  for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -245,6 +258,7 @@ feature_status() {
 #    { "name": "proxycron", "active":true },
 #    { "name": "pycoin", "active":true },
 #    { "name": "otsclient", "active":true },
+#    { "name": "tor", "active":true },
 #    { "name": "bitcoin", "active":true },
 #    { "name": "lightning", "active":true },
 #  ],
@@ -252,6 +266,7 @@ feature_status() {
 #    { "name": "gatekeeper", "working":true },
 #    { "name": "pycoin", "working":true },
 #    { "name": "otsclient", "working":true },
+#    { "name": "tor", "working":true },
 #    { "name": "bitcoin", "working":true },
 #    { "name": "lightning", "working":true },
 #  ]
@@ -285,6 +300,7 @@ fi
 #    { "name": "gatekeeper", "working":true },
 #    { "name": "pycoin", "working":true },
 #    { "name": "otsclient", "working":true },
+#    { "name": "tor", "working":true },
 #    { "name": "bitcoin", "working":true },
 #    { "name": "lightning", "working":true },
 #  ]
@@ -364,6 +380,23 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
+<% } %>
+
+<% if (features.indexOf('tor') != -1) { %>
+#############################
+# TOR                       #
+#############################
+
+result="${result},{\"coreFeature\":false, \"name\":\"tor\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"tor\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  timeout_feature checktor
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'TOR error!')}"
 <% } %>
 
 #############################

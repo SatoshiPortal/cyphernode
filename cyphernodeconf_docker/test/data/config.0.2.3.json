@@ -4,7 +4,8 @@
   "docker_versions": {},
   "features": [
     "lightning",
-    "otsclient"
+    "otsclient",
+    "tor"
   ],
   "net": "testnet",
   "use_xpub": true,

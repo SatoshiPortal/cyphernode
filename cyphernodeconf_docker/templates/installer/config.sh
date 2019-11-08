@@ -7,7 +7,10 @@ PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
 GATEKEEPER_PORT=<%= gatekeeper_port %>
 TRAEFIK_DATAPATH=<%= traefik_datapath %>
+FEATURE_TOR=<%= (features.indexOf('tor') != -1)?'true':'false' %>
+<% if ( features.indexOf('tor') !== -1 ) { %>
 TOR_DATAPATH=<%= tor_datapath %>
+<% } %>
 DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>
 CLEANUP=<%= installer_cleanup?'true':'false' %>

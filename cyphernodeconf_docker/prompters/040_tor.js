@@ -19,6 +19,6 @@ module.exports = {
     ];
   },
   templates: function( props ) {
-    return [ 'torrc' ];
+    return [ 'torrc', 'curlcfg' ];
   }
 };
