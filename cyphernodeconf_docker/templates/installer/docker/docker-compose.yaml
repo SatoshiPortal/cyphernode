@@ -73,6 +73,9 @@ services:
       <% if ( features.indexOf('otsclient') !== -1 ) { %>
       - "<%= otsclient_datapath %>:/proxy/otsfiles"
       <% } %>
+      <% if ( features.indexOf('tor') !== -1 ) { %>
+      - "<%= tor_datapath %>:/proxy/tor"
+      <% } %>
     networks:
       - cyphernodenet
     restart: always
@@ -119,6 +122,8 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
+    volumes:
+      - "<%= tor_datapath %>/curlcfg:/notifier/curlcfg"
     networks:
       - cyphernodenet
       - cyphernodeappsnet
@@ -233,6 +238,7 @@ services:
 #      placement:
 #        constraints: [node.hostname==dev]
 
+  <% if ( features.indexOf('tor') !== -1 ) { %>
   ##########################
   # TOR                    #
   ##########################
@@ -251,6 +257,7 @@ services:
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
+  <% } %>
 
   <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   ##########################

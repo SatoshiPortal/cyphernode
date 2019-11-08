@@ -398,14 +398,17 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
-  if [ ! -d $TOR_DATAPATH ]; then
-    step "   [32mcreate[0m $TOR_DATAPATH"
-    sudo_if_required mkdir -p $TOR_DATAPATH/hidden_service
-    sudo_if_required chmod 700 $TOR_DATAPATH/hidden_service
-    next
-  fi
+  if [[ $FEATURE_TOR == true ]]; then
+    if [ ! -d $TOR_DATAPATH ]; then
+      step "   [32mcreate[0m $TOR_DATAPATH"
+      sudo_if_required mkdir -p $TOR_DATAPATH/hidden_service
+      sudo_if_required chmod 700 $TOR_DATAPATH/hidden_service
+      next
+    fi
 
-  copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/curlcfg $TOR_DATAPATH/curlcfg 1 $SUDO_REQUIRED
+  fi
 
 
   if [ ! -d $PROXY_DATAPATH ]; then

@@ -69,7 +69,7 @@ module.exports = {
       message: prefix()+'Custom path for traefik data?'+utils.getHelp('traefik_datapath_custom'),
     },
     {
-      when: installerDocker,
+      when: (props)=>{ return installerDocker(props) && props.features.indexOf('tor') !== -1 },
       type: 'list',
       name: 'tor_datapath',
       default: utils.getDefault( 'tor_datapath' ),
@@ -98,7 +98,7 @@ module.exports = {
       message: prefix()+'Where do you want to store your tor data?'+utils.getHelp('tor_datapath'),
     },
     {
-      when: (props)=>{ return installerDocker(props) && (props.tor_datapath === '_custom') },
+      when: (props)=>{ return installerDocker(props) && props.features.indexOf('tor') !== -1 && props.otsclient_datapath === '_custom' },
       type: 'input',
       name: 'tor_datapath_custom',
       default: utils.getDefault( 'tor_datapath_custom' ),

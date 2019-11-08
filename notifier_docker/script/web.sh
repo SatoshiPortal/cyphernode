@@ -8,6 +8,7 @@ web() {
   local msg=${1}
   local url
   local body
+  local torbypass
   local returncode
   local response
   local result
@@ -28,7 +29,15 @@ web() {
     trace "[web] no body, GET request"
   fi
 
-  response=$(curl_it "${url}" "${body}")
+  torbypass=$(echo ${msg} | jq -e ".torbypass")
+  # jq -e will have a return code of 1 if the supplied tag is null.
+  if [ "$?" -ne "0" ]; then
+    # torbypass tag null
+    torbypass=false
+  fi
+  trace "[web] torbypass=${torbypass}"
+
+  response=$(curl_it "${url}" "${body}", "${torbypass}")
   returncode=$?
   trace_rc ${returncode}
 
@@ -42,17 +51,24 @@ curl_it() {
 
   local url=$(echo "${1}" | tr -d '"')
   local data=${2}
+  local torbypass=${3}
   local returncode
   local response
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
+  if [ "${torbypass}" = "true" ]; then
+    torbypass=""
+  else
+    torbypass="-K curlcfg"
+  fi
+
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
+    trace "[curl_it] curl ${torbypass} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl ${torbypass} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
-    trace "[curl_it] curl -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
+    trace "[curl_it] curl ${torbypass} -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
+    rc=$(curl ${torbypass} -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
     returncode=$?
   fi
   trace "[curl_it] HTTP return code=${rc}"
