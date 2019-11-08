@@ -1,0 +1,5 @@
+HiddenServiceDir /tor/hidden_service/
+HiddenServiceVersion 3
+HiddenServicePort 80 traefik:80
+HiddenServicePort 443 traefik:443
+SocksPort 0.0.0.0:9050
