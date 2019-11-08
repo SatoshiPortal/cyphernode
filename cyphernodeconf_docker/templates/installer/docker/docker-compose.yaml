@@ -26,6 +26,10 @@ services:
     networks:
       - cyphernodenet
     restart: always
+    <% if ( features.indexOf('tor') !== -1 ) { %>
+    depends_on:
+      - tor
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
