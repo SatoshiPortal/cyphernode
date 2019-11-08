@@ -71,6 +71,44 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
+      name: 'tor_datapath',
+      default: utils.getDefault( 'tor_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/tor",
+          value: utils.setupDir()+"/cyphernode/tor"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/tor",
+          value: utils.defaultDataDirBase()+"/cyphernode/tor"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/tor",
+          value: utils.defaultDataDirBase()+"/.cyphernode/tor"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/tor",
+          value: utils.defaultDataDirBase()+"/tor"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your tor data?'+utils.getHelp('tor_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.tor_datapath === '_custom') },
+      type: 'input',
+      name: 'tor_datapath_custom',
+      default: utils.getDefault( 'tor_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for tor data?'+utils.getHelp('tor_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
       name: 'gatekeeper_datapath',
       default: utils.getDefault( 'gatekeeper_datapath' ),
       choices: [

@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -185,6 +185,7 @@ configure() {
              -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
+             -e TOR_VERSION=$TOR_VERSION \
              -e PROXY_VERSION=$PROXY_VERSION \
              -e NOTIFIER_VERSION=$NOTIFIER_VERSION \
              -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
@@ -397,6 +398,16 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
+  if [ ! -d $TOR_DATAPATH ]; then
+    step "   [32mcreate[0m $TOR_DATAPATH"
+    sudo_if_required mkdir -p $TOR_DATAPATH/hidden_service
+    sudo_if_required chmod 700 $TOR_DATAPATH/hidden_service
+    next
+  fi
+
+  copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
+
+
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
     sudo_if_required mkdir -p $PROXY_DATAPATH
@@ -567,7 +578,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -671,7 +682,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -720,6 +731,7 @@ AUTOSTART=0
 SETUP_VERSION="v0.2.4"
 CONF_VERSION="v0.2.4"
 GATEKEEPER_VERSION="v0.2.4"
+TOR_VERSION="v0.2.4"
 PROXY_VERSION="v0.2.4"
 NOTIFIER_VERSION="v0.2.4"
 PROXYCRON_VERSION="v0.2.4"
@@ -780,6 +792,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     CONF_VERSION="$CONF_VERSION-local"
     GATEKEEPER_VERSION="$GATEKEEPER_VERSION-local"
+    TOR_VERSION="$TOR_VERSION-local"
     PROXY_VERSION="$PROXY_VERSION-local"
     NOTIFIER_VERSION="$NOTIFIER_VERSION-local"
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"

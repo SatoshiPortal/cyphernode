@@ -79,6 +79,7 @@ module.exports = class App {
       setupDir: process.env.SETUP_DIR || path.join( process.env.HOME, 'cyphernode' ),
       default_username: process.env.DEFAULT_USER || '',
       gatekeeper_version: process.env.GATEKEEPER_VERSION,
+      tor_version: process.env.TOR_VERSION,
       gatekeeper_cns: process.env.DEFAULT_CERT_HOSTNAME,
       proxy_version: process.env.PROXY_VERSION,
       proxycron_version: process.env.PROXYCRON_VERSION,
@@ -137,6 +138,7 @@ module.exports = class App {
       docker_versions: {
         'cyphernode/bitcoin': this.sessionData.bitcoin_version,
         'cyphernode/gatekeeper': this.sessionData.gatekeeper_version,
+        'cyphernode/tor': this.sessionData.tor_version,
         'cyphernode/proxy': this.sessionData.proxy_version,
         'cyphernode/proxycron': this.sessionData.proxycron_version,
         'cyphernode/pycoin': this.sessionData.pycoin_version,
@@ -334,6 +336,7 @@ module.exports = class App {
     const pathProps = [
       'gatekeeper_datapath',
       'traefik_datapath',
+      'tor_datapath',
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',

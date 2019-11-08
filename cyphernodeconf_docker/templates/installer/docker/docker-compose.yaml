@@ -233,6 +233,25 @@ services:
 #      placement:
 #        constraints: [node.hostname==dev]
 
+  ##########################
+  # TOR                    #
+  ##########################
+
+  tor:
+    image: cyphernode/tor:<%= tor_version %>
+    command: $USER sh -c 'export HOME=/tor && tor -f /tor/torrc'
+    depends_on:
+      - traefik
+    volumes:
+      - "<%= tor_datapath %>:/tor"
+    restart: always
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
   <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
   ##########################
   # LIGHTNING              #

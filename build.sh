@@ -5,6 +5,7 @@ TRACING=1
 # CYPHERNODE VERSION "v0.2.4"
 CONF_VERSION="v0.2.4-local"
 GATEKEEPER_VERSION="v0.2.4-local"
+TOR_VERSION="v0.2.4-local"
 PROXY_VERSION="v0.2.4-local"
 NOTIFIER_VERSION="v0.2.4-local"
 PROXYCRON_VERSION="v0.2.4-local"
@@ -36,6 +37,7 @@ build_docker_images() {
 
   trace "Creating cyphernode images"
   docker build api_auth_docker/ -t cyphernode/gatekeeper:$GATEKEEPER_VERSION \
+  && docker build tor_docker/ -t cyphernode/tor:$TOR_VERSION \
   && docker build proxy_docker/ -t cyphernode/proxy:$PROXY_VERSION \
   && docker build notifier_docker/ -t cyphernode/notifier:$NOTIFIER_VERSION \
   && docker build cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION \
