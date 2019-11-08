@@ -3,9 +3,9 @@
   "setup_version": "setup_version",
   "docker_versions": {},
   "features": [
+    "tor",
     "lightning",
-    "otsclient",
-    "tor"
+    "otsclient"
   ],
   "net": "testnet",
   "use_xpub": true,
