@@ -16,6 +16,13 @@ rgb=<%= lightning_nodecolor %>
 
 addr=0.0.0.0:9735
 
+<% if ( features.indexOf('tor') !== -1 ) { %>
+#tor
+proxy=tor:9050
+#always-use-proxy=true
+#disable-dns
+<% } else { %>
 <% if( locals.lightning_external_ip ) { %>
 announce-addr=<%= locals.lightning_external_ip %>:9735
+<% } %>
 <% } %>

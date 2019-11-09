@@ -3,3 +3,4 @@ HiddenServiceVersion 3
 HiddenServicePort 80 traefik:80
 HiddenServicePort 443 traefik:443
 SocksPort 0.0.0.0:9050
+ExitPolicy reject *:* # no exits allowed
