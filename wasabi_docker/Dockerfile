@@ -20,6 +20,10 @@ COPY backend/patches/PatternFactory.patch .
 RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
 RUN rm PatternFactory.patch
 
+COPY backend/patches/SmartCoinSelector.patch .
+RUN patch WalletWasabi/Transactions/TransactionBuilding/SmartCoinSelector.cs -i SmartCoinSelector.patch
+RUN rm SmartCoinSelector.patch
+
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
