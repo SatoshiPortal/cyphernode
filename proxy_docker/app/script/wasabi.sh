@@ -15,7 +15,7 @@ send_to_wasabi() {
   local params=$3 # json string escaped
   trace "[send_to_wasabi] index=${index}"
   trace "[send_to_wasabi] method=${method}"
-  trace "[send_to_wasabi] params=${params}"
+#  trace "[send_to_wasabi] params=${params}"
 
   local response
 
@@ -345,8 +345,8 @@ wasabi_spend() {
     maxInstanceIndex=$instanceid
   fi
 
-  trace "[wasabi_get_balance] minInstanceIndex=${minInstanceIndex}"
-  trace "[wasabi_get_balance] maxInstanceIndex=${maxInstanceIndex}"
+  trace "[wasabi_spend] minInstanceIndex=${minInstanceIndex}"
+  trace "[wasabi_spend] maxInstanceIndex=${maxInstanceIndex}"
 
   local balance
   local i
@@ -358,22 +358,33 @@ wasabi_spend() {
     trace_rc ${returncode}
 
     if [ "${returncode}" -eq "0" ]; then
+      trace "[wasabi_spend] balance=${balance}"
       balance=$(echo "${balance}" | jq ".balance")
+      trace "[wasabi_spend] balance=${balance}"
       if [ "${balance}" -ge "${spendingAmount}" ]; then
         instanceid=$i
+        trace "[wasabi_spend] spendingAmount=${spendingAmount}"
         break
       fi
     fi
   done
 
+  trace "[wasabi_spend] Using instance ${instanceid}"
+
   local utxostring
   if [ "${balance}" -ge "${spendingAmount}" ]; then
-    utxostring=$(build_utxo_to_spend ${spendingAmount} ${WASABI_MIXUNTIL} ${instanceid})
+    if [ "${private}" = "true" ]; then
+      trace "[wasabi_spend] Spending only private coins"
+      utxostring=$(build_utxo_to_spend ${spendingAmount} ${WASABI_MIXUNTIL} ${instanceid})
+    else
+      trace "[wasabi_spend] Spending private and non-private coins"
+      utxostring=$(build_utxo_to_spend ${spendingAmount} 0 ${instanceid})
+    fi
     # Amount is prefixed to utxostring, let's remove it
     utxostring="[$(echo "${utxostring}" | cut -d '[' -f2)"
 
     # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
-    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"tx\"}],\"coins\":${utxostring},\"feeTarget\":2}")
+    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2}")
     returncode=$?
     trace_rc ${returncode}
   else
@@ -532,22 +543,3 @@ wasabi_get_transactions() {
 #
 # for i in `docker stack ps -q -f name=cyphernode_wasabi cyphernode`; do echo -e "\n################################### $i:\n$(docker service logs --tail 40 $i)" ; done
 #
-
-# [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]
-#
-# 0-4: [{"desc":"hammer","color":"red","qty":4}]
-# 5-11: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7}]
-# 12-51: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40}]
-# 52-81: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30}]
-# 82-84: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3}]
-# 85-98: [{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]
-#
-
-# ! /bin/bash
-#JSON='[{"desc":"hammer","color":"red","qty":4},{"desc":"screwdriver","color":"blue","qty":7},{"desc":"nail","color":"yellow","qty":40},{"desc":"screw","color":"pink","qty":30},{"desc":"plyer","color":"white","qty":3},{"desc":"gluetube","color":"black","qty":14}]'
-
-#CUSTOM_FILTERS="def addBucket(f): f | map( { g: ( (f.qty / 5) | floor *5 ), o: f} )"
-
-#echo $JSON | jq "$CUSTOM_FILTERS; . | addBucket(.) | group_by(.g)"
-
-# jq -Mac '.result[] | {"transactionId": .txid, index, amount}'
