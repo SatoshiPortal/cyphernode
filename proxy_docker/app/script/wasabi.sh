@@ -1,5 +1,20 @@
 #!/bin/sh
 
+#
+# USEFUL
+#
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -sd "{\"id\":$i,\"private\":false}" localhost:8888/wasabi_getbalance); done'
+#
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"getnewaddress\",\"params\":[\"a\"]}" http://wasabi_$i:18099/); done'
+#
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"listunspentcoins\",\"params\":[]}" http://wasabi_$i:18099/); done'
+#
+# docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm
+# while true; do docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm; sleep 120; done
+#
+# for i in `docker stack ps -q -f name=cyphernode_wasabi cyphernode`; do echo -e "\n################################### $i:\n$(docker service logs --tail 40 $i)" ; done
+#
+
 . walletoperations.sh
 
 . ${DB_PATH}/config.sh
@@ -60,6 +75,21 @@ wasabi_newaddr() {
   # queries random instance for a new bech32 address
   # returns {"jsonrpc":"2.0","result":{"address":"tb1qpgpe7mdhdpgz6894vl5a2rhvhukwjc35h99rqc","keyPath":"84'/0'/0'/0/24","label":"blah","publicKey":"024eaa964530e5a72059951cdab8d22c5df7543536b011a8bab85bc1f6089654d9","p2wpkh":"00140a039f6db768502d1cb567e9d50eecbf2ce96234"},"id":"12"}
 
+  # Getting an address:
+  #
+  # /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"getnewaddress","params":["t1"]}' http://127.0.0.1:18099/ | jq
+  # {
+  #   "jsonrpc": "2.0",
+  #   "result": {
+  #     "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j",
+  #     "keyPath": "84'/0'/0'/0/21",
+  #     "label": "t1",
+  #     "publicKey": "03cb77191ef66857227eba1f210ac7daaa308628dc072b0dae97f8fa25a8157461",
+  #     "p2wpkh": "0014038f21097bef2007bde1f8abb2183c03764a3903"
+  #   },
+  #   "id": "1"
+  # }
+
   local returncode
   local request=${1}
   trace "[wasabi_newaddr] request=${request}"
@@ -118,6 +148,36 @@ wasabi_get_balance() {
   # /proxy # curl -s -d "{\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance" ; echo $(($(curl -s -d "{\"id\":\"0\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")+$(curl -s -d "{\"id\":\"1\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")))
   # 180653937
   # 180653937
+
+  # {"jsonrpc":"2.0","result":[{"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},{"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/144","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}],"id":"0"}
+  #
+  # from
+  #
+  # {"jsonrpc":"2.0","result":
+  # [
+  # {"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},
+  # {"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/44","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}
+  # ],
+  # "id":"0"}
+  #
+  # to
+  #
+  # [{"transactionid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f", "index":1},{"transactionid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806", "index":0}]
+  #
+  # jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
+  #
+  # ["59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f",1,1780644]
+  # ["e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806",0,1999460]
+  #
+  #
+  # echo '[{"a":1,"b":"aa"},{"a":5,"b":"bb"},{"a":6,"b":"cc"},{"a":3,"b":"dd"},{"a":9,"b":"ee"}]'
+  #
+
+
+
+  #curl -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "bcrt1q4vemf397tyuwdktqzhneux8r8v9dg65ydzgvla", "amount": 15000, "label": "test transaction", "subtractFee": true},{"sendto": "bcrt1q5jr80cyx62hhq5mhu8wa64jcamxytnr0lskm4g", "amount": 25000, "label": "test transaction", "subtractFee": true}], "coins":[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}], "feeTarget":2 }}' http://wasabi_2:18099/
+
+  #[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}]
 
   local request=${1}
 
@@ -219,6 +279,42 @@ build_utxo_to_spend() {
 
   # build_utxo_to_spend <amount> <anonset> [id]
   # build_utxo_to_spend 72873 33
+  # confirmed utxo:
+  #
+  # /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://127.0.0.1:18099/ | jq
+  # {
+  #   "jsonrpc": "2.0",
+  #   "result": [
+  #     {
+  #       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
+  #       "index": 0,
+  #       "amount": 20000000,
+  #       "anonymitySet": 1,
+  #       "confirmed": true,
+  #       "label": "t1",
+  #       "keyPath": "84'/0'/0'/0/21",
+  #       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
+  #     }
+  #   ],
+  #   "id": "1"
+  # }
+
+  # for i in 0 1 2 3 4; do echo $i = $(curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_$i:18099/); done
+
+  #
+  # How to get utxo with anonymitySet > 25
+  #
+  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
+  #
+  # How to add up amounts of utxo with anonymitySet > 25
+  #
+  # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25) | .amount) | add"
+  #
+
+  # Spend
+  #
+  # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "amount": 15000, "label": "test transaction"}], "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "feeTarget":2 }}' http://wasabi_0:18099/
+  #
 
   local spendingAmount=${1}
   local anonset=${2}
@@ -298,6 +394,34 @@ wasabi_spend() {
   # There must be enough funds on at least one instance
 
   # {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+
+
+  # Sending funds:
+  #
+  # mm01:dist kexkey$ docker exec -it 8a3 bitcoin-cli -rpcwallet=spending01.dat sendtoaddress tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j 0.2
+  # a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439
+  #
+  # unconfirmed utxo:
+  #
+  # /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins"}' http://127.0.0.1:18099/ | jq
+  # {
+  #   "jsonrpc": "2.0",
+  #   "result": [
+  #     {
+  #       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
+  #       "index": 0,
+  #       "amount": 20000000,
+  #       "anonymitySet": 1,
+  #       "confirmed": false,
+  #       "label": "t1",
+  #       "keyPath": "84'/0'/0'/0/21",
+  #       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
+  #     }
+  #   ],
+  #   "id": "1"
+  # }
+  #
+
 
   local request=${1}
   local returncode
@@ -405,141 +529,31 @@ wasabi_get_transactions() {
   # - id: integer, optional
   # return all transactions of either one wasabi instance
   # or all instances, depending on the id parameter
+
+  # New RPC call: gethistory
+
+  # curl -s --data-binary '{"jsonrpc":"2.0","id":"1","method":"gethistory"}' http:/127.0.0.1:18099
+  # "jsonrpc": "2.0",
+  # "result": [
+  #   {
+  #     "datetime": "2019-10-01T12:31:57+00:00",
+  #     "height": 597871,
+  #     "amount": -2110090,
+  #     "label": "David",
+  #     "tx": "680d8940145f53cf2a0c24b27ba0bb53fbd639011eba3d23c9d53123ddae5f32"
+  #   },
+  #   {
+  #     "datetime": "2019-10-04T17:00:15+00:00",
+  #     "height": 597872,
+  #     "amount": -2120000,
+  #     "label": "Pablo",
+  #     "tx": "e5e4486ad2c9fc6f3c262c4c64fa5fbcc607aa301182d45848a6692c5a0d0fc0"
+  #   },
+  #   {
+  #     "datetime": "2019-09-22T11:59:32+00:00",
+  #     "height": 5965600,
+  #     "amount": 44480000,
+  #     "label": "Coinbase",
+  #     "tx": "6a2e99298dbbd201230a99e62ea584d7f63f62ad1de7166f24eb2e24867f6faf"
+  #   },
 }
-
-# Getting an address:
-#
-# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"getnewaddress","params":["t1"]}' http://127.0.0.1:18099/ | jq
-# {
-#   "jsonrpc": "2.0",
-#   "result": {
-#     "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j",
-#     "keyPath": "84'/0'/0'/0/21",
-#     "label": "t1",
-#     "publicKey": "03cb77191ef66857227eba1f210ac7daaa308628dc072b0dae97f8fa25a8157461",
-#     "p2wpkh": "0014038f21097bef2007bde1f8abb2183c03764a3903"
-#   },
-#   "id": "1"
-# }
-#
-# Sending funds:
-#
-# mm01:dist kexkey$ docker exec -it 8a3 bitcoin-cli -rpcwallet=spending01.dat sendtoaddress tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j 0.2
-# a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439
-#
-# unconfirmed utxo:
-#
-# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins"}' http://127.0.0.1:18099/ | jq
-# {
-#   "jsonrpc": "2.0",
-#   "result": [
-#     {
-#       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
-#       "index": 0,
-#       "amount": 20000000,
-#       "anonymitySet": 1,
-#       "confirmed": false,
-#       "label": "t1",
-#       "keyPath": "84'/0'/0'/0/21",
-#       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
-#     }
-#   ],
-#   "id": "1"
-# }
-#
-
-# confirmed utxo:
-#
-# /app # curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://127.0.0.1:18099/ | jq
-# {
-#   "jsonrpc": "2.0",
-#   "result": [
-#     {
-#       "txid": "a4ac6530d82fd16e724c1ed8082890bb9dd33bf817c3504ec6e2722aaaa92439",
-#       "index": 0,
-#       "amount": 20000000,
-#       "anonymitySet": 1,
-#       "confirmed": true,
-#       "label": "t1",
-#       "keyPath": "84'/0'/0'/0/21",
-#       "address": "tb1qqw8jzztmausq000plz4myxpuqdmy5wgrrcj63j"
-#     }
-#   ],
-#   "id": "1"
-# }
-
-# for i in 0 1 2 3 4; do echo $i = $(curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins","params":[]}' http://wasabi_$i:18099/); done
-
-#
-# How to get utxo with anonymitySet > 25
-#
-# curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25))"
-#
-# How to add up amounts of utxo with anonymitySet > 25
-#
-# curl -s -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"135","method":"listunspentcoins","params":[]}' http://wasabi_0:18099/ | jq ".result | map(select(.anonymitySet > 25) | .amount) | add"
-#
-
-# Spend
-#
-# curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "amount": 15000, "label": "test transaction"}], "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "feeTarget":2 }}' http://wasabi_0:18099/
-#
-
-
-# Wasabi management:
-# - After rotating through the wasabi wallets for receiving addresses, we assume that there will be a randomized flow of coins coming in
-# - after being mixed, some coins from one wallet are mixed with other coins from other wallets (including our own)
-# - every time there is a new block, we look up the status of our utxos for any utxo which is above the anonymity set (e.g. 10). - we take the utxo of each of our wasabi wallets and we send it to the spender. We batch transactions together within each wallets when there is more than one input.
-# - the spender will generate basically 3 receiving addresses (one per wasabi instance) each block
-# - BONUS: we set a 4th wasabi wallet which receives the change from the Bitcoin core spender and sends it back every block. This requires us to play around with the Bitcoin core spender configs to set the xpub of the wasabi #4 (edited)
-#
-# francis  3 days ago
-# It looks like a few utxos are leaking out of the coinjoin cycle randomly, much better than big clusters to one address
-
-# [{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0},{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0},{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}]
-
-
-# {"jsonrpc":"2.0","result":[{"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},{"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/144","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}],"id":"0"}
-#
-# from
-#
-# {"jsonrpc":"2.0","result":
-# [
-# {"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},
-# {"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/44","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}
-# ],
-# "id":"0"}
-#
-# to
-#
-# [{"transactionid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f", "index":1},{"transactionid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806", "index":0}]
-#
-# jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
-#
-# ["59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f",1,1780644]
-# ["e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806",0,1999460]
-#
-#
-# echo '[{"a":1,"b":"aa"},{"a":5,"b":"bb"},{"a":6,"b":"cc"},{"a":3,"b":"dd"},{"a":9,"b":"ee"}]'
-#
-
-
-
-#curl -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "bcrt1q4vemf397tyuwdktqzhneux8r8v9dg65ydzgvla", "amount": 15000, "label": "test transaction", "subtractFee": true},{"sendto": "bcrt1q5jr80cyx62hhq5mhu8wa64jcamxytnr0lskm4g", "amount": 25000, "label": "test transaction", "subtractFee": true}], "coins":[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}], "feeTarget":2 }}' http://wasabi_2:18099/
-
-#[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}]
-
-#
-# USEFUL
-#
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -sd "{\"id\":$i,\"private\":false}" localhost:8888/wasabi_getbalance); done'
-#
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"getnewaddress\",\"params\":[\"a\"]}" http://wasabi_$i:18099/); done'
-#
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"listunspentcoins\",\"params\":[]}" http://wasabi_$i:18099/); done'
-#
-# docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm
-# while true; do docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm; sleep 120; done
-#
-# for i in `docker stack ps -q -f name=cyphernode_wasabi cyphernode`; do echo -e "\n################################### $i:\n$(docker service logs --tail 40 $i)" ; done
-#
