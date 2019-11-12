@@ -127,8 +127,9 @@ services:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
     <% if ( features.indexOf('tor') !== -1 ) { %>
-    volumes:
-      - "<%= tor_datapath %>/curlcfg:/notifier/curlcfg"
+    environment:
+      - "TOR_HOST=tor"
+      - "TOR_PORT=9050"
     <% } %>
     networks:
       - cyphernodenet
@@ -174,6 +175,10 @@ services:
       - "OTSCLIENT_LISTENING_PORT=6666"
       <% if (net === 'testnet') { %>
       - "TESTNET=1"
+      <% } %>
+      <% if ( features.indexOf('tor') !== -1 ) { %>
+      - "TOR_HOST=tor"
+      - "TOR_PORT=9050"
       <% } %>
     volumes:
       - "<%= otsclient_datapath %>:/otsfiles"

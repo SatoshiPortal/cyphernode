@@ -56,11 +56,11 @@ curl_it() {
   local response
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
-  if [ "${torbypass}" = "true" ] || [ ! -f "curlcfg" ]; then
+  if [ "${torbypass}" = "true" ] || [ -z "${TOR_HOST}" ]; then
     # If we want to bypass tor or the config file doesn't exist
     torbypass=""
   else
-    torbypass="-K curlcfg"
+    torbypass="--socks5-hostname ${TOR_HOST}:${TOR_PORT}"
   fi
 
   if [ -n "${data}" ]; then
