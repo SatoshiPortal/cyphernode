@@ -407,7 +407,6 @@ install_docker() {
     fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/curlcfg $TOR_DATAPATH/curlcfg 1 $SUDO_REQUIRED
   fi
 
 
