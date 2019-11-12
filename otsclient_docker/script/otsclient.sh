@@ -15,7 +15,7 @@ stamp() {
   local data
   local proxychains=""
 
-  if [ -n ${TOR_HOST} ]; then
+  if [ -n "${TOR_HOST}" ]; then
     proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
   fi
 
@@ -65,7 +65,7 @@ upgrade() {
   local returncode
   local proxychains=""
 
-  if [ -n ${TOR_HOST} ]; then
+  if [ -n "${TOR_HOST}" ]; then
     proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
   fi
 
@@ -119,7 +119,7 @@ verify() {
   local data
   local proxychains=""
 
-  if [ -n ${TOR_HOST} ]; then
+  if [ -n "${TOR_HOST}" ]; then
     proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
   fi
 
