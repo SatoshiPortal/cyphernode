@@ -16,16 +16,16 @@ stamp() {
   local proxychains=""
 
   if [ -n "${TOR_HOST}" ]; then
-    proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
   fi
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[stamp] ${proxychains} ots-cli.js stamp -c \"https://ots.testnet.kexkey.com\" -d ${hash}"
-    result=$(cd /otsfiles && ${proxychains} ots-cli.js stamp -c "https://ots.testnet.kexkey.com" -d ${hash} 2>&1)
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -c 'https://ots.testnet.kexkey.com' -d ${hash} 2>&1")
     returncode=$?
   else
     trace "[stamp] ${proxychains} ots-cli.js stamp -d ${hash}"
-    result=$(cd /otsfiles && ${proxychains} ots-cli.js stamp -d ${hash} 2>&1)
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -d ${hash} 2>&1")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -66,16 +66,16 @@ upgrade() {
   local proxychains=""
 
   if [ -n "${TOR_HOST}" ]; then
-    proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
   fi
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[upgrade] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
-    result=$(cd /otsfiles && ${proxychains} ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist upgrade -c "https://testnet.calendar.kexkey.com/" ${hash}.ots 2>&1)
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist upgrade -c 'https://testnet.calendar.kexkey.com/' ${hash}.ots 2>&1")
     returncode=$?
   else
     trace "[upgrade] ${proxychains} ots-cli.js upgrade ${hash}.ots"
-    result=$(cd /otsfiles && ${proxychains} ots-cli.js upgrade ${hash}.ots 2>&1)
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js upgrade ${hash}.ots 2>&1")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -120,7 +120,7 @@ verify() {
   local proxychains=""
 
   if [ -n "${TOR_HOST}" ]; then
-    proxychains="PROXYCHAINS_ONE_PROXY=\"socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}\" proxychains4"
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
   fi
 
   # Let's create the OTS file locally from the base64
@@ -129,11 +129,11 @@ verify() {
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[verify] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(${proxychains} ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    result=$(sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1")
     returncode=$?
   else
     trace "[verify] ${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    result=$(sh -c "${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1")
     returncode=$?
   fi
   trace_rc ${returncode}
