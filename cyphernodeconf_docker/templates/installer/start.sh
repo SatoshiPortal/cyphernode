@@ -2,11 +2,8 @@
 
 . ./.cyphernodeconf/installer/config.sh
 
-# be aware that randomly downloaded cyphernode apps will have access to
-# your configuration and filesystem.
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 # !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
-# TODO: Test if we can mitigate this security issue by
-# running app dockers inside a docker container
 
 start_apps() {
   local SCRIPT_NAME="start.sh"
@@ -17,20 +14,14 @@ start_apps() {
   for i in $current_path/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
-    if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
+    if [ -d "$APP_SCRIPT_PATH" ]; then
       APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
       APP_ID=$(basename $APP_SCRIPT_PATH)
 
-      if [ -f "$APP_START_SCRIPT_PATH" ]; then
-        . $APP_START_SCRIPT_PATH
-      elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
-        export SHARED_HTPASSWD_PATH
-        export GATEKEEPER_DATAPATH
-        export GATEKEEPER_PORT
-        export LIGHTNING_DATAPATH
-        export BITCOIN_DATAPATH
-        export APP_SCRIPT_PATH
-        export APP_ID
+      if [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
+        export GATEKEEPER_CERT_FILE="$GATEKEEPER_DATAPATH/cert.pem"
+        export CLIGHTNING_RPC_SOCKET="$LIGHTNING_DATAPATH/lightning-rpc"
+        export APP_DATA="$APP_SCRIPT_PATH"
         export DOCKER_MODE
 
         if [ "$DOCKER_MODE" = "swarm" ]; then
