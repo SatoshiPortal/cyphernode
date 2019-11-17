@@ -698,7 +698,7 @@ sanity_checks_pre_install() {
   fi
 }
 
-install_apps() {
+install_default_apps() {
   if [ ! -d "$current_path/apps" ]; then
     sudo_if_required mkdir -p "$current_path/apps"
   fi
@@ -706,8 +706,8 @@ install_apps() {
   copy_file "$cyphernodeconf_filepath/gatekeeper/keys.properties" "$current_path/.cam/keys.properties" 1 $SUDO_REQUIRED
   ./cam.sh u
   ./cam.sh a i G-bToO5cvzSg1dZbYSINSYs93ao #welcome from official repo
-  ./cam.sh a i YFeXUM86dipa0ORC2iclAcMcSFU #sparkwallet from official repo
   ./cam.sh a k a G-bToO5cvzSg1dZbYSINSYs93ao 000 #give welcome the stats key
+  ./cam.sh a i YFeXUM86dipa0ORC2iclAcMcSFU #sparkwallet from official repo
 }
 
 install() {
@@ -826,7 +826,7 @@ if [[ $INSTALL == 1 ]]; then
   install
   modify_owner
   modify_permissions
-  install_apps
+  install_default_apps
   if [[ ! $AUTOSTART == 1 ]]; then
     cowsay
   fi
