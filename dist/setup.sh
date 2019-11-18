@@ -702,12 +702,12 @@ install_default_apps() {
   if [ ! -d "$current_path/apps" ]; then
     sudo_if_required mkdir -p "$current_path/apps"
   fi
-  ./cam.sh i
+  ./cam.sh init
   copy_file "$cyphernodeconf_filepath/gatekeeper/keys.properties" "$current_path/.cam/keys.properties" 1 $SUDO_REQUIRED
-  ./cam.sh u
-  ./cam.sh a i G-bToO5cvzSg1dZbYSINSYs93ao #welcome from official repo
-  ./cam.sh a k a G-bToO5cvzSg1dZbYSINSYs93ao 000 #give welcome the stats key
-  ./cam.sh a i YFeXUM86dipa0ORC2iclAcMcSFU #sparkwallet from official repo
+  ./cam.sh update
+  ./cam.sh app install G-bToO5cvzSg1dZbYSINSYs93ao #welcome from official repo
+  ./cam.sh app kay add G-bToO5cvzSg1dZbYSINSYs93ao 000 #give welcome the stats key
+  ./cam.sh app install YFeXUM86dipa0ORC2iclAcMcSFU #sparkwallet from official repo
 }
 
 install() {
