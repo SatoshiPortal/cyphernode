@@ -19,7 +19,7 @@ stop_apps() {
       APP_ID=$(basename $APP_SCRIPT_PATH)
 
       if [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
-        export GATEKEEPER_CERT_FILE="$GATEKEEPER_DATAPATH/cert.pem"
+        export GATEKEEPER_CERT_FILE="$GATEKEEPER_DATAPATH/certs/cert.pem"
         export CLIGHTNING_RPC_SOCKET="$LIGHTNING_DATAPATH/lightning-rpc"
         export APP_DATA="$APP_SCRIPT_PATH"
         export DOCKER_MODE
