@@ -706,9 +706,9 @@ install_default_apps() {
   copy_file "$cyphernodeconf_filepath/gatekeeper/keys.properties" "$current_path/.cam/keys.properties" 1 $SUDO_REQUIRED
   copy_file "$cyphernodeconf_filepath/cyphernode/info.json" "$current_path/.cam/cyphernode.json" 1 $SUDO_REQUIRED
   ./cam.sh update
-  ./cam.sh app install G-bToO5cvzSg1dZbYSINSYs93ao #welcome from official repo
+  ./cam.sh app install G-bToO5cvzSg1dZbYSINSYs93ao@$CYPHERAPPS_VERSION #welcome from official repo
   ./cam.sh app key add G-bToO5cvzSg1dZbYSINSYs93ao 000 #give welcome the stats key
-  ./cam.sh app install YFeXUM86dipa0ORC2iclAcMcSFU #sparkwallet from official repo
+  ./cam.sh app install YFeXUM86dipa0ORC2iclAcMcSFU@$CYPHERAPPS_VERSION #sparkwallet from official repo
 }
 
 install() {
