@@ -19,10 +19,11 @@ start_apps() {
       APP_ID=$(basename $APP_SCRIPT_PATH)
 
       if [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
-        export GATEKEEPER_CERT_FILE="$GATEKEEPER_DATAPATH/certs/cert.pem"
-        export CLIGHTNING_RPC_SOCKET="$LIGHTNING_DATAPATH/lightning-rpc"
+        export GATEKEEPER_CERTS_PATH="$GATEKEEPER_DATAPATH/certs"
+        export UNSAFE__CLIGHTNING_PATH="$LIGHTNING_DATAPATH"
         export APP_DATA="$APP_SCRIPT_PATH"
         export DOCKER_MODE
+        export GATEKEEPER_URL="https://gatekeeper:${GATEKEEPER_PORT}"
 
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
