@@ -44,7 +44,7 @@ const cryptojs = require("crypto-js");
 //note maybe this should be an env var
 const expiryInSeconds = 36000;
 //set your API key here 
-const api_key = "75459c072c20d762997820c05671b678a5861b3ac8d068b38d88db0a1a4df62a";
+const api_key = "";
 //set your cyphernode URL 
 const cyphernodeurl = "https://localhost:2009/v0/"
 //create a bearer token
