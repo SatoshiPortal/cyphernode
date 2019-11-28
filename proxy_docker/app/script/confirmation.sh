@@ -58,7 +58,7 @@ confirmation() {
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index FROM watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index, event_message FROM watching WHERE address IN (${addresseswhere}) AND watching")
   if [ ${#rows} -eq 0 ]; then
     trace "[confirmation] No watched address in this tx!"
     return 0
@@ -137,45 +137,63 @@ confirmation() {
   rm rawtx-${txid}.blob
 
   ########################################################################################################
-  # Let's now insert in the join table if not already done
+
+  local event_message
+
+  # Let's see if we need to insert tx in the join table
   tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
 
-  if [ -z "${tx}" ]; then
-    trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
-    local watching_id
+  for row in ${rows}
+  do
 
-    # If the tx is batched and pays multiple watched addresses, we have to insert
-    # those additional addresses in watching_tx!
-    for row in ${rows}
-    do
+    address=$(echo "${row}" | cut -d '|' -f2)
+    ########################################################################################################
+    # Let's now insert in the join table if not already done
+    if [ -z "${tx}" ]; then
+      trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
+      local watching_id
+
+      # If the tx is batched and pays multiple watched addresses, we have to insert
+      # those additional addresses in watching_tx!
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      address=$(echo "${row}" | cut -d '|' -f2)
       # In the case of us spending to a watched address, the address appears twice in the details,
       # once on the spend side (negative amount) and once on the receiving side (positive amount)
       tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
       tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
       trace_rc $?
-    done
-  else
-    trace "[confirmation] For this tx, there's already watching_tx rows"
-  fi
-  ########################################################################################################
+    else
+      trace "[confirmation] For this tx, there's already watching_tx rows"
+    fi
+    ########################################################################################################
 
-  ########################################################################################################
-  # Let's now grow the watch window in the case of a xpub watcher...
-  trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
-
-  for row in ${rows}
-  do
+    ########################################################################################################
+    # Let's now grow the watch window in the case of a xpub watcher...
     watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
-    pub32_index=$(echo "${row}" | cut -d '|' -f4)
     if [ -n "${watching_by_pub32_id}" ]; then
+      trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
+
+      pub32_index=$(echo "${row}" | cut -d '|' -f4)
       extend_watchers ${watching_by_pub32_id} ${pub32_index}
     fi
-  done
+    ########################################################################################################
 
-  ########################################################################################################
+    ########################################################################################################
+    # Let's publish the event if needed
+    event_message=$(echo "${row}" | cut -d '|' -f5)
+    if [ -n "${event_message}" ]; then
+      # There's an event message, let's publish it!
+
+      # We use the pid as the response-topic, so there's no conflict in responses.
+      trace "[confirmation] mosquitto_pub -h broker -t conf_event -m \"{\"address\":\"${address}\",\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t conf_event -m "{\"address\":\"${address}\",\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
+      returncode=$?
+      trace_rc ${returncode}
+
+    fi
+    ########################################################################################################
+
+  done
 
   ) 201>./.confirmation.lock
 

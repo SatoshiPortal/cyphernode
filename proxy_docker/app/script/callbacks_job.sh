@@ -11,7 +11,7 @@ do_callbacks() {
   trace "Entering do_callbacks()..."
 
   # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
+  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
   trace "[do_callbacks] callbacks0conf=${callbacks}"
 
   local returncode
@@ -30,7 +30,7 @@ do_callbacks() {
     fi
   done
 
-  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
+  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
   trace "[do_callbacks] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}
@@ -61,6 +61,17 @@ ln_manage_callback() {
 
   local row=$@
   trace "[ln_manage_callback] row=${row}"
+  
+  local callback_url=$(echo "${row}" | cut -d '|' -f4)
+  trace "[ln_manage_callback] callback_url=${callback_url}"
+
+  if [ -z "${callback_url}" ]; then
+    # No callback url provided for that invoice
+    trace "[ln_manage_callback] No callback url provided for that invoice"
+    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
+    trace_rc $?
+    return
+  fi
 
   local id=$(echo "${row}" | cut -d '|' -f1)
   trace "[ln_manage_callback] id=${id}"
@@ -68,8 +79,6 @@ ln_manage_callback() {
   trace "[ln_manage_callback] label=${label}"
   local bolt11=$(echo "${row}" | cut -d '|' -f3)
   trace "[ln_manage_callback] bolt11=${bolt11}"
-  local callback_url=$(echo "${row}" | cut -d '|' -f4)
-  trace "[ln_manage_callback] callback_url=${callback_url}"
   local payment_hash=$(echo "${row}" | cut -d '|' -f5)
   trace "[ln_manage_callback] payment_hash=${payment_hash}"
   local msatoshi=$(echo "${row}" | cut -d '|' -f6)
@@ -87,13 +96,6 @@ ln_manage_callback() {
   local expires_at=$(echo "${row}" | cut -d '|' -f12)
   trace "[ln_manage_callback] expires_at=${expires_at}"
   local returncode
-
-  if [ -z "${callback_url}" ]; then
-    # No callback url provided for that invoice
-    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
-    trace_rc $?
-    return
-  fi
 
   data="{\"id\":\"${id}\","
   data="${data}\"label\":\"${label}\","
@@ -149,13 +151,22 @@ build_callback() {
   local label
   local derivation_path
 
-  # callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id
+  local event_message
+
+  # w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime,
+  # w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message
+
+  url=$(echo "${row}" | cut -d '|' -f1)
+  trace "[build_callback] url=${url}"
+  if [ -z "${url}" ]; then
+    # No callback url provided for that watch
+    trace "[build_callback] No callback url provided for that watch, skipping webhook call"
+    return
+  fi
 
   trace "[build_callback] row=${row}"
   id=$(echo "${row}" | cut -d '|' -f14)
   trace "[build_callback] id=${id}"
-  url=$(echo "${row}" | cut -d '|' -f1)
-  trace "[build_callback] url=${url}"
   address=$(echo "${row}" | cut -d '|' -f2)
   trace "[build_callback] address=${address}"
   txid=$(echo "${row}" | cut -d '|' -f3)
@@ -199,6 +210,8 @@ build_callback() {
     derivation_path=$(echo "${row}" | cut -d '|' -f19)
     trace "[build_callback] derivation_path=${derivation_path}"
   fi
+  event_message=$(echo "${row}" | cut -d '|' -f20)
+  trace "[build_callback] event_message=${event_message}"
 
   data="{\"id\":\"${id}\","
   data="${data}\"address\":\"${address}\","
@@ -212,19 +225,19 @@ build_callback() {
   if [ -n "${fee}" ]; then
     data="${data}\"fees\":${fee},"
   fi
-  data="${data}\"is_replaceable\":${is_replaceable}"
+  data="${data}\"is_replaceable\":${is_replaceable},"
   if [ -n "${blocktime}" ]; then
-    data="${data},\"blockhash\":\"${blockhash}\","
+    data="${data}\"blockhash\":\"${blockhash}\","
     data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
-    data="${data}\"blockheight\":${blockheight}"
+    data="${data}\"blockheight\":${blockheight},"
   fi
   if [ -n "${pub32_index}" ]; then
     data="${data}\"pub32\":\"${pub32}\","
     data="${data}\"pub32_label\":\"${label}\","
     derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
-    data="${data}\"pub32_derivation_path\":\"${derivation_path}\""
+    data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
-  data="${data}}"
+  data="${data}\"event_message\":\"${event_message}\"}"
   trace "[build_callback] data=${data}"
 
   curl_callback "${url}" "${data}"

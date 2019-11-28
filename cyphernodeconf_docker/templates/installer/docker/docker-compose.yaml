@@ -106,6 +106,7 @@ services:
     image: eclipse-mosquitto:1.6
     networks:
       - cyphernodenet
+      - cyphernodeappsnet
     restart: always
 #    deploy:
 #      placement:
