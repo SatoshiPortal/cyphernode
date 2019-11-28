@@ -167,17 +167,15 @@ getbalancebyxpub() {
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[getbalancebyxpub] data=${data}"
   addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
-
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
-
-  data="{\"method\":\"listunspent\",\"params\":[0,9999999,\"${addresses}\"]}"
+  data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[getbalancebyxpub] balance=${balance}"
 
-  data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance}}"
+  data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance:-0}}"
 
   echo "${data}"
 
