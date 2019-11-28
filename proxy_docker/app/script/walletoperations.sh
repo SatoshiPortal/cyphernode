@@ -164,15 +164,15 @@ getbalancebyxpub() {
   local returncode
 
   # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
-  data="{\"method\":\"getaddressesbylabel\",\"params\":[${xpub}]}"
+  data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_watcher_wallet ${data} | jq "keys" | tr -d '\n ')
+  addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
 
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
 
-  data="{\"method\":\"listunspent\",\"params\":[0, 9999999, \"${addresses}\"]}"
+  data="{\"method\":\"listunspent\",\"params\":[0,9999999,\"${addresses}\"]}"
   trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.[].amount] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[getbalancebyxpub] balance=${balance}"
