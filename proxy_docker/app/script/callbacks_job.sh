@@ -61,7 +61,9 @@ ln_manage_callback() {
 
   local row=$@
   trace "[ln_manage_callback] row=${row}"
-  
+
+  local id=$(echo "${row}" | cut -d '|' -f1)
+  trace "[ln_manage_callback] id=${id}"
   local callback_url=$(echo "${row}" | cut -d '|' -f4)
   trace "[ln_manage_callback] callback_url=${callback_url}"
 
@@ -73,8 +75,6 @@ ln_manage_callback() {
     return
   fi
 
-  local id=$(echo "${row}" | cut -d '|' -f1)
-  trace "[ln_manage_callback] id=${id}"
   local label=$(echo "${row}" | cut -d '|' -f2)
   trace "[ln_manage_callback] label=${label}"
   local bolt11=$(echo "${row}" | cut -d '|' -f3)
