@@ -89,6 +89,7 @@ main() {
         watch)
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"{\"bounce_address}\":\"tb1q6s0ppwk2msdewal3mu90ahfhpyepawnw6wdk8t\",\"nb_conf\":6}"}
 
           response=$(watchrequest "${line}")
           response_to_client "${response}" ${?}

@@ -14,11 +14,12 @@ watchrequest() {
   local address=$(echo "${request}" | jq -r ".address")
   local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL")
   local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL")
+  local event_message=$(echo "${request}" | jq -r ".event_message")
   local imported
   local inserted
   local id_inserted
   local result
-  trace "[watchrequest] Watch request on address (${address}), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url})"
+  trace "[watchrequest] Watch request on address (${address}), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
 
   result=$(importaddress_rpc "${address}")
   returncode=$?
@@ -29,7 +30,7 @@ watchrequest() {
     imported=0
   fi
 
-  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported) VALUES (\"${address}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${imported})"
+  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${imported}, '${event_message}')"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
@@ -63,7 +64,8 @@ watchrequest() {
   \"estimatesmartfee2blocks\":\"${fees2blocks}\",
   \"estimatesmartfee6blocks\":\"${fees6blocks}\",
   \"estimatesmartfee36blocks\":\"${fees36blocks}\",
-  \"estimatesmartfee144blocks\":\"${fees144blocks}\"}"
+  \"estimatesmartfee144blocks\":\"${fees144blocks}\",
+  \"event_message\":\"${event_message}\"}"
   trace "[watchrequest] responding=${data}"
 
   echo "${data}"

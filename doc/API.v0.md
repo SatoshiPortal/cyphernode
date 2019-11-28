@@ -9,7 +9,7 @@ Inserts the address and callbacks in the DB and imports the address to the Watch
 ```http
 POST http://cyphernode:8888/watch
 with body...
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"{\"bounce_address}\":\"tb1q6s0ppwk2msdewal3mu90ahfhpyepawnw6wdk8t\",\"nb_conf\":6}"}
 ```
 
 Proxy response:
@@ -26,7 +26,8 @@ Proxy response:
     "estimatesmartfee2blocks": "0.000010",
     "estimatesmartfee6blocks": "0.000010",
     "estimatesmartfee36blocks": "0.000010",
-    "estimatesmartfee144blocks": "0.000010"
+    "estimatesmartfee144blocks": "0.000010",
+    "eventMessage": "{\"bounce_address}\":\"tb1q6s0ppwk2msdewal3mu90ahfhpyepawnw6wdk8t\",\"nb_conf\":6}"
 }
 ```
 
@@ -66,7 +67,8 @@ Proxy response:
   "imported":"1",
   "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
   "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
-  "watching_since":"2018-09-06 21:14:03"}
+  "watching_since":"2018-09-06 21:14:03",
+  "eventMessage":"{\"bounce_address}\":\"tb1q6s0ppwk2msdewal3mu90ahfhpyepawnw6wdk8t\",\"nb_conf\":6}"}
   ]
 }
 ```
