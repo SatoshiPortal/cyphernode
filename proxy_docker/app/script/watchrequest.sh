@@ -11,10 +11,28 @@ watchrequest() {
 
   local returncode
   local request=${1}
-  local address=$(echo "${request}" | jq -r ".address")
-  local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL")
-  local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL")
-  local event_message=$(echo "${request}" | jq -r ".event_message")
+  local address=$(echo "${request}" | jq -er ".address")
+  local cb0conf_url
+  cb0conf_url=$(echo "${request}" | jq -er ".unconfirmedCallbackURL")
+  if [ "$?" -ne "0" ]; then
+    # unconfirmedCallbackURL tag null, so there's no unconfirmedCallbackURL
+    trace "[watchrequest] unconfirmedCallbackURL="
+    unconfirmedCallbackURL=
+  fi
+  local cb1conf_url
+  cb1conf_url=$(echo "${request}" | jq -er ".confirmedCallbackURL")
+  if [ "$?" -ne "0" ]; then
+    # confirmedCallbackURL tag null, so there's no confirmedCallbackURL
+    trace "[watchrequest] confirmedCallbackURL="
+    confirmedCallbackURL=
+  fi
+  local event_message
+  event_message=$(echo "${request}" | jq -er ".eventMessage")
+  if [ "$?" -ne "0" ]; then
+    # event_message tag null, so there's no event_message
+    trace "[watchrequest] event_message="
+    event_message=
+  fi
   local imported
   local inserted
   local id_inserted

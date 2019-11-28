@@ -189,7 +189,6 @@ confirmation() {
       response=$(mosquitto_pub -h broker -t conf_event -m "{\"address\":\"${address}\",\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
-
     fi
     ########################################################################################################
 
