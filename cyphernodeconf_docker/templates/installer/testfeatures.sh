@@ -440,3 +440,6 @@ result="{${result}]}"
 echo "${result}" > /gatekeeper/installation.json
 
 echo "EXIT_STATUS=${finalreturncode}" > /dist/exitStatus.sh
+<% if (features.indexOf('tor') != -1) { %>
+echo "TOR_HOSTNAME=$(cat /dist/cyphernode/tor/hidden_service/hostname)" >> /dist/exitStatus.sh
+<% } %>

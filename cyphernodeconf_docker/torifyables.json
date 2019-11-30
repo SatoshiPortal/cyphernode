@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Cyphernode as Hidden Service",
+    "value": "tor_hiddenservice"
+  },
+  {
+    "name": "Bitcoin Node",
+    "value": "tor_bitcoinnode"
+  },
+  {
+    "name": "LN Node",
+    "value": "tor_lnnode"
+  },
+  {
+    "name": "OTS stamp, upgrade and verify",
+    "value": "tor_otsoperations"
+  },
+  {
+    "name": "OTS Callbacks (webhooks)",
+    "value": "tor_otswebhooks"
+  },
+  {
+    "name": "Address Watches Callbacks (webhooks)",
+    "value": "tor_addrwatcheswebhooks"
+  },
+  {
+    "name": "TXID Watches Callbacks (webhooks)",
+    "value": "tor_txidwatcheswebhooks"
+  }
+]

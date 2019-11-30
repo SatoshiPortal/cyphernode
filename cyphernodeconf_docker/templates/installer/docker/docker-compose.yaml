@@ -2,6 +2,54 @@ version: "3"
 
 services:
 
+  <% if ( features.indexOf('tor') !== -1 ) { %>
+  ##########################
+  # TOR                    #
+  ##########################
+
+  tor:
+    image: cyphernode/tor:<%= tor_version %>
+    # Sleeping 7 seconds to let lightning and traefik start
+    command: $USER sh -c 'sleep 7 ; export HOME=/tor ; tor -f /tor/torrc'
+    volumes:
+      - "<%= tor_datapath %>:/tor"
+    restart: always
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+  <% } %>
+
+  <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
+  ##########################
+  # LIGHTNING              #
+  ##########################
+
+  lightning:
+    image: cyphernode/clightning:<%= lightning_version %>
+    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
+    <% if( lightning_expose ) { %>
+    ports:
+      - "9735:9735"
+    <% } %>
+    volumes:
+      - "<%= lightning_datapath %>:/.lightning"
+      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
+      - bitcoin_monitor:/bitcoin_monitor:ro
+    networks:
+      - cyphernodenet
+    restart: always
+    <% if ( features.indexOf('tor') !== -1 ) { %>
+    depends_on:
+      - tor
+    <% } %>
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+  <% } %>
+
   <% if( bitcoin_mode === 'internal' ) { %>
   ##########################
   # BITCOIN                #
@@ -248,51 +296,6 @@ services:
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
-
-  <% if ( features.indexOf('tor') !== -1 ) { %>
-  ##########################
-  # TOR                    #
-  ##########################
-
-  tor:
-    image: cyphernode/tor:<%= tor_version %>
-    command: $USER sh -c 'export HOME=/tor && tor -f /tor/torrc'
-    volumes:
-      - "<%= tor_datapath %>:/tor"
-    restart: always
-    networks:
-      - cyphernodenet
-      - cyphernodeappsnet
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-  <% } %>
-
-  <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
-  ##########################
-  # LIGHTNING              #
-  ##########################
-
-  lightning:
-    image: cyphernode/clightning:<%= lightning_version %>
-    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
-    <% if( lightning_expose ) { %>
-    ports:
-      - "9735:9735"
-    <% } %>
-    volumes:
-      - "<%= lightning_datapath %>:/.lightning"
-      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
-      - bitcoin_monitor:/bitcoin_monitor:ro
-    networks:
-      - cyphernodenet
-    restart: always
-    depends_on:
-      - bitcoin
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-  <% } %>
 
 volumes:
   bitcoin_monitor:
