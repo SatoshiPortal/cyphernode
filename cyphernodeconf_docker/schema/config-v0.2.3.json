@@ -100,6 +100,8 @@
       "then": {
         "required": [
           "tor_datapath"
+          "torifyables",
+          "clearnet"
         ]
       }
     },
@@ -190,6 +192,56 @@
           "tor",
           "lightning",
           "otsclient"
+        ]
+      }
+    },
+    "torifyables": {
+      "$id": "#/properties/torifyables",
+      "type": "array",
+      "title": "The TORified features of this cyphernode",
+      "default": [],
+      "items": {
+        "$id": "#/properties/torifyables/items",
+        "type": "string",
+        "enum": [
+          "tor_hiddenservice",
+          "tor_bitcoinnode",
+          "tor_lnnode",
+          "tor_otsoperations",
+          "tor_otswebhooks",
+          "tor_addrwatcheswebhooks",
+          "tor_txidwatcheswebhooks"
+        ],
+        "title": "The TORified feature",
+        "default": "",
+        "examples": [
+          "tor_hiddenservice",
+          "tor_bitcoinnode",
+          "tor_lnnode",
+          "tor_otsoperations",
+          "tor_otswebhooks",
+          "tor_addrwatcheswebhooks",
+          "tor_txidwatcheswebhooks"
+        ]
+      }
+    },
+    "clearnet": {
+      "$id": "#/properties/clearnet",
+      "type": "array",
+      "title": "The clearnet-allowed TORified features of this cyphernode",
+      "default": [],
+      "items": {
+        "$id": "#/properties/clearnet/items",
+        "type": "string",
+        "enum": [
+          "clearnet_bitcoinnode",
+          "clearnet_lnnode"
+        ],
+        "title": "The clearnet-allowed TORified feature",
+        "default": "",
+        "examples": [
+          "clearnet_bitcoinnode",
+          "clearnet_lnnode"
         ]
       }
     },

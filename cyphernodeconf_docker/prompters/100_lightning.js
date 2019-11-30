@@ -60,7 +60,7 @@ module.exports = {
       default: utils.getDefault( 'lightning_external_ip' ),
       filter: utils.trimFilter,
       validate: utils.ipOrFQDNValidator,
-      message: prefix()+'What external ip does your lightning node have?'+utils.getHelp('lightning_external_ip'),
+      message: prefix()+'What external IP does your lightning node have?'+utils.getHelp('lightning_external_ip'),
     },
     {
       when: featureCondition,

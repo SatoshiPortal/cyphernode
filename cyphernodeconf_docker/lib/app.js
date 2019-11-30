@@ -22,6 +22,7 @@ const SplashScreen = require( './splashScreen.js' );
 const ansi = require( './ansi.js' );
 
 const features = require('../features.json');
+const torifyables = require('../torifyables.json');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
@@ -56,6 +57,7 @@ module.exports = class App {
 
   constructor() {
     this.features = features;
+    this.torifyables = torifyables;
 
     if( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
       fs.unlinkSync(path.join('/data', destinationDirName, 'exitStatus.sh'));
@@ -224,6 +226,9 @@ module.exports = class App {
       feature.checked = this.isChecked( 'features', feature.value );
     }
 
+    for( let torifyable of this.torifyables ) {
+      torifyable.checked = this.isChecked( 'torifyables', torifyable.value );
+    }
   }
 
   async startWizard() {
@@ -395,6 +400,10 @@ module.exports = class App {
 
     for( let feature of this.features ) {
       feature.checked = this.isChecked( 'features', feature.value );
+    }
+
+    for( let torifyable of this.torifyables ) {
+      torifyable.checked = this.isChecked( 'torifyables', torifyable.value );
     }
 
     const cert = new Cert();
@@ -636,6 +645,10 @@ module.exports = class App {
 
   featureChoices() {
     return this.features;
+  }
+
+  torifyableChoices() {
+    return this.torifyables;
   }
 
   setupDir() {
