@@ -257,7 +257,7 @@ main() {
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="}
 
           response=$(spend "${line}")
           response_to_client "${response}" ${?}
