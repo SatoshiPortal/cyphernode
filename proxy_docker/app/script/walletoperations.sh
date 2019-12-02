@@ -43,6 +43,24 @@ spend() {
     # it to a temp file for it to be read by sqlite3 and then delete the file
     echo "${tx_raw_details}" > rawtx-${txid}.blob
 
+    ########################################################################################################
+    # Let's publish the event if needed
+    local event_message
+    event_message=$(echo "${request}" | jq -er ".eventMessage")
+    if [ "$?" -ne "0" ]; then
+      # event_message tag null, so there's no event_message
+      trace "[spend] event_message="
+      event_message=
+    else
+      # There's an event message, let's publish it!
+
+      trace "[spend] mosquitto_pub -h broker -t spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"event_message\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"event_message\":\"${event_message}\"}")
+      returncode=$?
+      trace_rc ${returncode}
+    fi
+    ########################################################################################################
+
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     trace_rc $?
