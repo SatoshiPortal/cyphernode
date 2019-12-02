@@ -184,9 +184,8 @@ confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      # We use the pid as the response-topic, so there's no conflict in responses.
-      trace "[confirmation] mosquitto_pub -h broker -t conf_event -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t conf_event -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
