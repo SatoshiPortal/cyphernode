@@ -139,6 +139,7 @@ confirmation() {
   ########################################################################################################
 
   local event_message
+  local watching_id
 
   # Let's see if we need to insert tx in the join table
   tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
@@ -147,19 +148,19 @@ confirmation() {
   do
 
     address=$(echo "${row}" | cut -d '|' -f2)
+    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
+    # In the case of us spending to a watched address, the address appears twice in the details,
+    # once on the spend side (negative amount) and once on the receiving side (positive amount)
+    tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+
     ########################################################################################################
     # Let's now insert in the join table if not already done
-    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
     if [ -z "${tx}" ]; then
       trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
-      local watching_id
 
       # If the tx is batched and pays multiple watched addresses, we have to insert
       # those additional addresses in watching_tx!
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      # In the case of us spending to a watched address, the address appears twice in the details,
-      # once on the spend side (negative amount) and once on the receiving side (positive amount)
-      tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
       trace_rc $?
     else
@@ -184,8 +185,8 @@ confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"event_message\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
