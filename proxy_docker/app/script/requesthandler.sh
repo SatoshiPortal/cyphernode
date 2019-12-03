@@ -89,7 +89,7 @@ main() {
         watch)
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
 
           response=$(watchrequest "${line}")
           response_to_client "${response}" ${?}
@@ -257,7 +257,7 @@ main() {
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 
           response=$(spend "${line}")
           response_to_client "${response}" ${?}
