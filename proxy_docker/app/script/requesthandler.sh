@@ -161,6 +161,18 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        get_txns_by_watchlabel)
+          # curl (GET) 192.168.111.152:8080/get_txns_by_watchlabel
+          response=$(get_txns_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        get_unused_addresses_by_watchlabel)
+          # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel
+          response=$(get_unused_addresses_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         conf)
           # curl (GET) 192.168.111.152:8080/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
 
