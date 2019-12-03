@@ -797,6 +797,9 @@ paths:
                   $ref: '#/components/schemas/TypeAddressString'
                 amount:
                   type: "number"
+                eventMessage:
+                  description: "Will be part of the published message on spend"
+                  type: "string"
       responses:
         '200':
           description: "operation successful"

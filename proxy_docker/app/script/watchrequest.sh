@@ -83,7 +83,7 @@ watchrequest() {
   \"estimatesmartfee6blocks\":\"${fees6blocks}\",
   \"estimatesmartfee36blocks\":\"${fees36blocks}\",
   \"estimatesmartfee144blocks\":\"${fees144blocks}\",
-  \"event_message\":\"${event_message}\"}"
+  \"eventMessage\":\"${event_message}\"}"
   trace "[watchrequest] responding=${data}"
 
   echo "${data}"
