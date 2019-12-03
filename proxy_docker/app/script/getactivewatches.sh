@@ -6,7 +6,14 @@
 get_txns_by_watchlabel(){
   trace "Entering get_txns_by_watchlabel()..."
   local label_txns
-  $sql = "SELECT w32.label, w.address, wtxn.txn_id, wtxn.v_out, wtxn.amount FROM watching_by_pub32 as w32 INNER JOIN watching ON w32.id = w.watching_by_pub32_id INNER JOIN watching_tx as wtxn ON w.id = wtxn.watching_id WHERE w32.label={$1}" 
+  $sql=<<HERE
+	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.v_out, wtxn.amount 
+	FROM watching_by_pub32 as w32 
+	INNER JOIN watching ON w32.id = w.watching_by_pub32_id 
+	INNER JOIN watching_tx as wtxn ON w.id = wtxn.watching_id 
+	INNER JOIN tx as tx ON wtxn.tx_id = tx.id 
+	WHERE w32.label={$1} 
+HERE
   $label_txns = $(sql "$sql")
   returncode=$?
   trace_rc ${returncode}
@@ -15,7 +22,7 @@ get_txns_by_watchlabel(){
     [inputs
      | . / "\n"
      | (.[] | select(length > 0) | . / "|") as $input
-     | {"label": $input[0], "address": $input[1], "txn_id": "$input[2], "v_out": $input[3], "amount" : $input[4]}]}
+     | {"label": $input[0], "address": $input[1], "txid": "$input[2], "confirmations": $input[3], "blockheight" : $input[4], "v_out":$input[5], "amount": $input[6]}]}
   ' <$($label_txns)
   return $label_txns_json
 }
