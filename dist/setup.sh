@@ -437,12 +437,6 @@ install_docker() {
             esac
           done
         fi
-      elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
-        echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
-        echo "          [31mYour cyphernode installation is most likely broken.[0m"
-        echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
       else
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
