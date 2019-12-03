@@ -166,7 +166,7 @@ services:
       <% } %>
     volumes:
       - "<%= otsclient_datapath %>:/otsfiles"
-      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf":ro
+      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
@@ -191,15 +191,15 @@ services:
       - "<%= gatekeeper_port %>:<%= gatekeeper_port %>"
     <% } %>
     volumes:
-      - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs":ro
-      - "<%= gatekeeper_datapath %>/private:/etc/ssl/private":ro
-      - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties":ro
-      - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties":ro
-      - "<%= gatekeeper_datapath %>/default.conf:/etc/nginx/conf.d/default.conf":ro
-      - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd":ro
-      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json":ro
-      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z":ro
-      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z":ro
+      - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs:ro"
+      - "<%= gatekeeper_datapath %>/private:/etc/ssl/private:ro"
+      - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties:ro"
+      - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties:ro"
+      - "<%= gatekeeper_datapath %>/default.conf:/etc/nginx/conf.d/default.conf:ro"
+      - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd:ro"
+      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json:ro"
+      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z:ro"
+      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z:ro"
     networks:
       - cyphernodenet
       - cyphernodeappsnet
@@ -221,9 +221,9 @@ services:
       - 443:443
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml":ro
+      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml:ro"
       - "<%= traefik_datapath%>/acme.json:/acme.json"
-      - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd":ro
+      - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet
     restart: always
@@ -247,7 +247,7 @@ services:
     <% } %>
     volumes:
       - "<%= lightning_datapath %>:/.lightning"
-      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf":ro
+      - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
       - bitcoin_monitor:/bitcoin_monitor:ro
     networks:
       - cyphernodenet
