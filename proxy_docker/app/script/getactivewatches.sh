@@ -3,6 +3,39 @@
 . ./trace.sh
 . ./sql.sh
 
+get_txns_by_watchlabel(){
+  trace "Entering get_txns_by_watchlabel()..."
+  local label_txns
+  $sql = "SELECT w32.label, w.address, wtxn.txn_id, wtxn.v_out, wtxn.amount FROM watching_by_pub32 as w32 INNER JOIN watching ON w32.id = w.watching_by_pub32_id INNER JOIN watching_tx as wtxn ON w.id = wtxn.watching_id WHERE w32.label={$1}" 
+  $label_txns = $(sql "$sql")
+  returncode=$?
+  trace_rc ${returncode}
+  $label_txns_json = jq -Rsn '
+  {"label_txns":
+    [inputs
+     | . / "\n"
+     | (.[] | select(length > 0) | . / "|") as $input
+     | {"label": $input[0], "address": $input[1], "txn_id": "$input[2], "v_out": $input[3], "amount" : $input[4]}]}
+  ' <$($label_txns)
+  return $label_txns_json
+}
+get_unused_addresses_by_watchlabel(){
+  trace "Entering get_unused_addresses_by_watchlabel()..."
+  local label_txns
+  $sql = "SELECT w.watching_by_pub32_id, w.pub32_index, w.address FROM watching as w WHERE w.id NOT IN (SELECT watching_id FROM watching_tx) WHERE w.label=${1}" 
+  $label_txns = $(sql "$sql")
+  returncode=$?
+  trace_rc ${returncode}
+  $label_txns_json = jq -Rsn '
+  {"label_unused_addresses":
+    [inputs
+     | . / "\n"
+     | (.[] | select(length > 0) | . / "|") as $input
+     | {"pub32_watch_id": $input[0], "address_pub32_index": $input[1], "address": "$input[2] }]}
+  ' <$($label_txns)
+  return $label_txns_json
+}
+
 getactivewatches() {
   trace "Entering getactivewatches()..."
 
