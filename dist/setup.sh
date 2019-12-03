@@ -692,9 +692,11 @@ sanity_checks_pre_install() {
 
 install_apps() {
   if [ ! -d "$current_path/apps" ]; then
+    local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
     local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "   [32mclone[0m $apps_repo into apps"
     docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
+    sudo_if_required chown -R $user $current_path/apps
   fi
 }
 
