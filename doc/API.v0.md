@@ -9,7 +9,7 @@ Inserts the address and callbacks in the DB and imports the address to the Watch
 ```http
 POST http://cyphernode:8888/watch
 with body...
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
 ```
 
 Proxy response:
@@ -27,7 +27,7 @@ Proxy response:
     "estimatesmartfee6blocks": "0.000010",
     "estimatesmartfee36blocks": "0.000010",
     "estimatesmartfee144blocks": "0.000010",
-    "eventMessage": "eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="
+    "eventMessage": "eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"
 }
 ```
 
@@ -68,7 +68,7 @@ Proxy response:
   "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
   "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
   "watching_since":"2018-09-06 21:14:03",
-  "eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6InRiMXE2czBwcHdrMm1zZGV3YWwzbXU5MGFoZmhweWVwYXdudzZ3ZGs4dCIsIm5iX2NvbmYiOjZ9Cg=="}
+  "eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
   ]
 }
 ```
@@ -621,12 +621,14 @@ Proxy response:
 
 ### Spend coins from spending wallet (called by application)
 
-Calls sendtoaddress RPC on the spending wallet with supplied info.
+Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.
 
 ```http
 POST http://cyphernode:8888/spend
 with body...
 {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
 ```
 
 Proxy response:

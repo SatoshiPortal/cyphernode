@@ -237,7 +237,7 @@ build_callback() {
     derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
-  data="${data}\"event_message\":\"${event_message}\"}"
+  data="${data}\"eventMessage\":\"${event_message}\"}"
   trace "[build_callback] data=${data}"
 
   curl_callback "${url}" "${data}"
