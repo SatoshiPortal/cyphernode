@@ -50,9 +50,6 @@ paths:
               type: "object"
               required:
                 - "address"
-                - "confirmedCallbackURL"
-                - "unconfirmedCallbackURL"
-                - "event_message"
               properties:
                 address:
                   $ref: '#/components/schemas/TypeAddressString'
@@ -62,7 +59,8 @@ paths:
                 confirmedCallbackURL:
                   type: "string"
                   format: "url"
-                event_message:
+                eventMessage:
+                  description: "Will be part of the published message on confirmations"
                   type: "string"
       responses:
         '200':
@@ -1546,7 +1544,7 @@ components:
         - "address"
         - "unconfirmedCallbackURL"
         - "confirmedCallbackURL"
-        - "event_message"
+        - "eventMessage"
       properties:
         id:
           type: "string"
@@ -1578,7 +1576,7 @@ components:
           type: "string"
         watching_since:
           type: "string"
-        event_message:
+        eventMessage:
           type: "string"
     WatchedByXpubAddress:
       type: "object"
