@@ -4,7 +4,7 @@
 
 ### Watch a Bitcoin Address (called by application)
 
-Inserts the address and callbacks in the DB and imports the address to the Watching wallet.
+Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
 
 ```http
 POST http://cyphernode:8888/watch
