@@ -302,8 +302,8 @@ module.exports = {
   },
   templates: function( props ) {
     if( props.installer_mode === 'docker' ) {
-      return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', 'testdeployment.sh', path.join('docker', 'docker-compose.yaml')];
+      return ['config.sh','start.sh', 'stop.sh', 'cam.sh', 'testfeatures.sh', 'testdeployment.sh', path.join('docker', 'docker-compose.yaml')];
     }
-    return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', 'testdeployment.sh'];
+    return ['config.sh','start.sh', 'stop.sh', 'cam.sh', 'testfeatures.sh', 'testdeployment.sh'];
   }
 };

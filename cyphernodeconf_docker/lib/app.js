@@ -88,6 +88,7 @@ module.exports = class App {
       lightning_version: process.env.LIGHTNING_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       setup_version: process.env.SETUP_VERSION,
+      cam_version: process.env.CAM_VERSION || 'latest',
       noWizard: !!options.noWizard,
       noSplashScreen: !!options.noSplashScreen,
       lightning_nodename: name.generate(),

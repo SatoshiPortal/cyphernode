@@ -193,6 +193,7 @@ configure() {
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
+             -e CAM_VERSION=$CAM_VERSION \
              --log-driver=none$pw_env \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user node index.js$recreate
@@ -538,6 +539,7 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/testfeatures.sh $current_path/testfeatures.sh 0
   copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
   copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
+  copy_file $cyphernodeconf_filepath/installer/cam.sh $current_path/cam.sh 0
   copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
@@ -549,6 +551,12 @@ install_docker() {
   if [[ ! -x $current_path/stop.sh ]]; then
     step "     [32mmake[0m stop.sh executable"
     try chmod +x $current_path/stop.sh
+    next
+  fi
+
+  if [[ ! -x $current_path/cam.sh ]]; then
+    step "     [32mmake[0m cam.sh executable"
+    try chmod +x $current_path/cam.sh
     next
   fi
 
@@ -690,12 +698,17 @@ sanity_checks_pre_install() {
   fi
 }
 
-install_apps() {
+install_default_apps() {
   if [ ! -d "$current_path/apps" ]; then
-    local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
-    echo "   [32mclone[0m $apps_repo into apps"
-    docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
+    sudo_if_required mkdir -p "$current_path/apps"
   fi
+  ./cam.sh init
+  copy_file "$cyphernodeconf_filepath/gatekeeper/keys.properties" "$current_path/.cam/keys.properties" 1 $SUDO_REQUIRED
+  copy_file "$cyphernodeconf_filepath/cyphernode/info.json" "$current_path/.cam/cyphernode.json" 1 $SUDO_REQUIRED
+  ./cam.sh update
+  ./cam.sh app install G-bToO5cvzSg1dZbYSINSYs93ao@$CYPHERAPPS_VERSION #welcome from official repo
+  ./cam.sh app key add G-bToO5cvzSg1dZbYSINSYs93ao 000 #give welcome the stats key
+  ./cam.sh app install YFeXUM86dipa0ORC2iclAcMcSFU@$CYPHERAPPS_VERSION #sparkwallet from official repo
 }
 
 install() {
@@ -726,6 +739,7 @@ PYCOIN_VERSION="v0.2.4"
 CYPHERAPPS_VERSION="v0.2.2"
 BITCOIN_VERSION="v0.18.0"
 LIGHTNING_VERSION="v0.7.1"
+CAM_VERSION="v0.1.0"
 
 SETUP_DIR=$(dirname $(realpath $0))
 
@@ -813,7 +827,7 @@ if [[ $INSTALL == 1 ]]; then
   install
   modify_owner
   modify_permissions
-  install_apps
+  install_default_apps
   if [[ ! $AUTOSTART == 1 ]]; then
     cowsay
   fi
