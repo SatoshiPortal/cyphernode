@@ -16,10 +16,10 @@ rgb=<%= lightning_nodecolor %>
 
 addr=0.0.0.0:9735
 
-<% if ( features.indexOf('tor_lnnode') !== -1 ) { %>
+<% if ( torifyables.indexOf('tor_lnnode') !== -1 ) { %>
 #tor
 proxy=tor:9050
-<% if ( features.indexOf('clearnet_lnnode') == -1 ) { %>
+<% if ( clearnet.indexOf('clearnet_lnnode') == -1 ) { %>
 always-use-proxy=true
 <% } %>
 #disable-dns
@@ -29,10 +29,11 @@ announce-addr=<%= locals.lightning_external_ip %>:9735
 <% } %>
 <% } %>
 <% if (lightning_announce) { %>
-  <% if ( features.indexOf('tor_lnnode') !== -1 ) { %>
+  <% if ( torifyables.indexOf('tor_lnnode') !== -1 ) { %>
     announce-addr=<%= locals.lightning_external_ip %>:1234
-    <% if ( features.indexOf('clearnet_lnnode') == -1 ) { %>
-      announce-addr=onionaddress:9735
+    <% if ( clearnet.indexOf('clearnet_lnnode') == -1 ) { %>
+      announce-addr=<%= locals.tor_hostname %>:9735
+      
     <% } %>
   <% } %>
 <% } %>

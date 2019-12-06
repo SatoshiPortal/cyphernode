@@ -407,6 +407,7 @@ install_docker() {
     fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/hidden_service/* $TOR_DATAPATH/hidden_service/ 1 $SUDO_REQUIRED
   fi
 
 
@@ -721,22 +722,6 @@ install() {
   fi
 }
 
-manage_tor_keys() {
-  until [ -f hostname ] && [ -f hs_ed25519_secret_key ] && [ -f hs_ed25519_public_key ]
-do
-    sleep 0.1
-    max=$(($max-1))
-    if [[ $max == 0 ]]
-    then
-        # Kill Tor on timeout and exit with error code 1.
-        kill -9 $pid >/dev/null 2>&1
-        rm -f torrc hostname hs_ed25519_secret_key hs_ed25519_public_key
-        popd >/dev/null 2>&1
-        exit 1
-    fi
-done
-}
-
 CONFIGURE=0
 INSTALL=0
 RECREATE=0
@@ -828,10 +813,6 @@ if [[ $CONFIGURE == 1 ]]; then
   sanity_checks_pre_config
   configure $RECREATE
 fi
-
-# If TOR is installed, we want to create the Hidden Serivce hostname now to make it
-# available to LN and whatever needs it at this point...
-manage_tor_keys
 
 if [[ -f "$cyphernodeconf_filepath/installer/config.sh" ]]; then
   . "$cyphernodeconf_filepath/installer/config.sh"
