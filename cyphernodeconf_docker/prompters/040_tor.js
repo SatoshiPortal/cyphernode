@@ -27,21 +27,21 @@ module.exports = {
       name: 'torifyables',
       message: prefix()+'What features do you want to TORify?'+utils.getHelp('torifyables'),
       choices: utils.torifyableChoices()
+    },
+    {
+      when: featureCondition,
+      type: 'checkbox',
+      name: 'clearnet',
+      default: utils.getDefault( 'clearnet' ),
+      message: prefix()+'What features do you want to allow using clearnet?'+utils.getHelp('clearnet'),
+      choices: [{
+        name: "Bitcoin Node",
+        value: "clearnet_bitcoinnode"
+      },{
+        name: "LN Node",
+        value: "clearnet_lnnode"
+      }]
     }];
-  },
-  {
-    when: featureCondition,
-    type: 'checkbox',
-    name: 'clearnet',
-    default: utils.getDefault( 'clearnet' ),
-    message: prefix()+'What features do you want to allow using clearnet?'+utils.getHelp('clearnet'),
-    choices: [{
-      name: "Bitcoin Node",
-      value: "clearnet_bitcoinnode"
-    },{
-      name: "LN Node",
-      value: "clearnet_lnnode"
-    }]
   },
   templates: function( props ) {
     return [ 'torrc' ];
@@ -67,11 +67,11 @@ module.exports = {
 // - Address Watches Callbacks (webhooks)
 // - TXID Watches Callbacks (webhooks)
 
-Certain services can also use clearnet.  What do you want to allow to use clearnet?
-- Bitcoin Node
-- LN Node
-
-Do you want to announce your LN node onion address and/or IP address?
-
-What is your public IP address?
+// Certain services can also use clearnet.  What do you want to allow to use clearnet?
+// - Bitcoin Node
+// - LN Node
+// 
+// Do you want to announce your LN node onion address and/or IP address?
+// 
+// What is your public IP address?
 

@@ -14,6 +14,7 @@ const ejsRenderFileAsync = promisify( ejs.renderFile ).bind( ejs );
 const html2ansi = require('./html2ansi.js');
 const name = require('./name.js');
 const Archive = require('./archive.js');
+const TorGen = require('./torgen.js');
 const ApiKey = require('./apikey.js');
 const Cert = require('./cert.js');
 const htpasswd = require( './htpasswd.js');
@@ -271,6 +272,12 @@ module.exports = class App {
 
   async processProps() {
 
+    // TOR...
+    if( this.isChecked( 'features', 'tor' ) ) {
+      const torgen = new TorGen(this.destinationPath( path.join( destinationDirName, 'tor/hidden_service' ) ));
+      this.sessionData.tor_hostname = await torgen.generateTorFiles();
+    }
+
     // creates keys if they don't exist or we say so.
     if( this.config.data.gatekeeper_recreatekeys ||
       this.config.data.gatekeeper_keys.configEntries.length===0 ) {
@@ -479,7 +486,7 @@ module.exports = class App {
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
         extra: {
-          hostname: 'tor_hostname_placeholder',
+          hostname: this.sessionData.tor_hostname,
         }
       },
       otsclient: {

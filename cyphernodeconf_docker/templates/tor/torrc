@@ -1,4 +1,4 @@
-<% if ( features.indexOf('tor_hiddenservice') !== -1 ) { %>
+<% if ( torifyables.indexOf('tor_hiddenservice') !== -1 ) { %>
 HiddenServiceDir /tor/hidden_service/
 HiddenServiceVersion 3
 HiddenServicePort 80 traefik:80

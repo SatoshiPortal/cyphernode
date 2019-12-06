@@ -99,7 +99,7 @@
       },
       "then": {
         "required": [
-          "tor_datapath"
+          "tor_datapath",
           "torifyables",
           "clearnet"
         ]
