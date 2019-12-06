@@ -20,6 +20,11 @@ ln_create_invoice() {
   trace "[ln_create_invoice] expiry=${expiry}"
   local callback_url=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[ln_create_invoice] callback_url=${callback_url}"
+  if [ "${callback_url}" != "null" ]; then
+    # If not null, let's add double-quotes so we don't need to add the double-quotes in the sql insert,
+    # so if it's null, it will insert the actual sql NULL value.
+    callback_url="\"${callback_url}\""
+  fi
 
   #/proxy $ ./lightning-cli invoice 10000 "t1" "t1d" 60
   #{
@@ -53,9 +58,9 @@ ln_create_invoice() {
     local connectstring=$(get_connection_string)
 
     if [ "${msatoshi}" = "null" ]; then
-      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, \"${description}\", \"unpaid\")"
+      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, \"${description}\", \"unpaid\")"
     else
-      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
+      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
     fi
     trace_rc $?
     id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
@@ -67,7 +72,9 @@ ln_create_invoice() {
     if [ -n "${connectstring}" ]; then
       data="${data}\"connectstring\":\"${connectstring}\","
     fi
-    data="${data}\"callback_url\":\"${callback_url}\","
+    if [ "${callback_url}" != "null" ]; then
+      data="${data}\"callback_url\":${callback_url},"
+    fi
     data="${data}\"payment_hash\":\"${payment_hash}\","
     if [ "${msatoshi}" != "null" ]; then
       data="${data}\"msatoshi\":${msatoshi},"
