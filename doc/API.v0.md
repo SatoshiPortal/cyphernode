@@ -782,12 +782,14 @@ Proxy response:
 
 ### Create a Lightning Network invoice (called by application)
 
-Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds.
+Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds.  If msatoshi is not supplied, will use "any" (ie donation invoice).
 
 ```http
 POST http://cyphernode:8888/ln_create_invoice
 with body...
 {"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
+or
+{"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
 ```
 
 Proxy response:
@@ -802,7 +804,7 @@ Proxy response:
 
 ### Pay a Lightning Network invoice (called by application)
 
-Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.
+Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.  If the bolt11 invoice doesn't contain an amount, then the expected_msatoshi supplied here will be used as the paid amount.
 
 ```http
 POST http://cyphernode:8888/ln_pay

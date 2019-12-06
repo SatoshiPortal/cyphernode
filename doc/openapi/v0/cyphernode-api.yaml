@@ -1113,7 +1113,6 @@ paths:
             schema:
               type: "object"
               required:
-                - "msatoshi"
                 - "label"
                 - "description"
                 - "expiry"
@@ -1166,7 +1165,6 @@ paths:
               required:
                 - "bolt11"
                 - "expected_msatoshi"
-                - "expected_description"
               properties:
                 bolt11:
                   type: "string"
