@@ -193,13 +193,13 @@ services:
     volumes:
       - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs:ro"
       - "<%= gatekeeper_datapath %>/private:/etc/ssl/private:ro"
-      - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties:ro"
-      - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties:ro"
-      - "<%= gatekeeper_datapath %>/default.conf:/etc/nginx/conf.d/default.conf:ro"
-      - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd:ro"
-      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json:ro"
-      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z:ro"
-      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z:ro"
+      - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
+      - "<%= gatekeeper_datapath %>/api.properties:/etc/nginx/conf.d/api.properties"
+      - "<%= gatekeeper_datapath %>/default.conf:/etc/nginx/conf.d/default.conf"
+      - "<%= gatekeeper_datapath %>/htpasswd:/etc/nginx/conf.d/status/htpasswd"
+      - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
+      - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
+      - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
     networks:
       - cyphernodenet
       - cyphernodeappsnet
