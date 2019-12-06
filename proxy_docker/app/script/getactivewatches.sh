@@ -4,41 +4,43 @@
 . ./sql.sh
 
 get_txns_by_watchlabel(){
-  trace "Entering get_txns_by_watchlabel()..."
+  trace "Entering get_txns_by_watchlabel() for label ${1}..."
   local label_txns
-  $query=<<HERE
-	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.v_out, wtxn.amount
+  query=$(cat <<-HERE
+	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.vout, wtxn.amount
 	FROM watching_by_pub32 as w32
-	INNER JOIN watching ON w32.id = w.watching_by_pub32_id
-	INNER JOIN watching_tx as wtxn ON w.id = wtxn.watching_id
-	INNER JOIN tx as tx ON wtxn.tx_id = tx.id
+	INNER JOIN watching AS w ON w32.id = w.watching_by_pub32_id
+	INNER JOIN watching_tx AS wtxn ON w.id = wtxn.watching_id
+	INNER JOIN tx AS tx ON wtxn.tx_id = tx.id
 	WHERE w32.label="$1"
 HERE
-  $label_txns=$(sql "$query")
+  )
+  label_txns=$(sql "$query")
   returncode=$?
   trace_rc ${returncode}
-  $label_txns_json = $(echo "$label_txns" | jq -Rcsn '
+  label_txns_json=$(echo "$label_txns" | jq -Rcsn '
   {"label_txns":
     [inputs
      | . / "\n"
      | (.[] | select(length > 0) | . / "|") as $input
-     | {"label": $input[0], "address": $input[1], "txid": "$input[2], "confirmations": $input[3], "blockheight" : $input[4], "v_out":$input[5], "amount": $input[6]}
+     | {"label": $input[0], "address": $input[1], "txid": $input[2], "confirmations": $input[3], "blockheight": $input[4], "v_out": $input[5], "amount": $input[6]}
     ]
-  }')
+  }
+  ')
   echo "$label_txns_json"
   return ${returncode}
 }
 get_unused_addresses_by_watchlabel(){
-  trace "Entering get_unused_addresses_by_watchlabel()... $1"
+  trace "Entering get_unused_addresses_by_watchlabel() for label ${1}..."
   local label_unused_addrs
   query=$(cat <<-HERE
         SELECT w32.id, w32.label, w32.pub32, w.pub32_index, w.address
         FROM watching as w
         INNER JOIN watching_by_pub32 AS w32 ON w.watching_by_pub32_id = w32.id
-        WHERE w.id NOT IN (
+        WHERE w32.label="$1"
+        AND w.id NOT IN (
                 SELECT watching_id FROM watching_tx
         )
-        AND w32.label="$1"
 HERE
   )
   label_unused_addrs=$(sql "$query")
@@ -49,7 +51,7 @@ HERE
     [inputs
      | . / "\n"
      | (.[] | select(length > 0) | . / "|") as $input
-     | {"pub32_watch_id": $input[0], "pub32_label": $input[1], "pub32" : $input[2], "address_pub32_index": $input[3], "address": $input[4]
+     | {"pub32_watch_id": $input[0], "pub32_label": $input[1], "pub32" : $input[2], "address_pub32_index": $input[3], "address": $input[4]}
     ]
   }
   ')
