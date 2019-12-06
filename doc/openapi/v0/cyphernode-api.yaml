@@ -1399,6 +1399,9 @@ paths:
                   type: "string"
                 expiry:
                   type: "integer"
+                callbackUrl:
+                  type: "string"
+                  format: "url"
       responses:
         '200':
           description: "successful operation"

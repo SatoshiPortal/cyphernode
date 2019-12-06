@@ -786,12 +786,12 @@ Proxy response:
 
 ### Create a Lightning Network invoice (called by application)
 
-Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds.  If msatoshi is not supplied, will use "any" (ie donation invoice).
+Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
 
 ```http
 POST http://cyphernode:8888/ln_create_invoice
 with body...
-{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
+{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900,"callbackUrl":"https://thesite/lnwebhook/9d8sa98yd"}
 or
 {"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
 ```
