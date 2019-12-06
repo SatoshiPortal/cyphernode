@@ -73,7 +73,7 @@ ln_create_invoice() {
       data="${data}\"connectstring\":\"${connectstring}\","
     fi
     if [ "${callback_url}" != "null" ]; then
-      data="${data}\"callback_url\":${callback_url},"
+      data="${data}\"callbackUrl\":${callback_url},"
     fi
     data="${data}\"payment_hash\":\"${payment_hash}\","
     if [ "${msatoshi}" != "null" ]; then
