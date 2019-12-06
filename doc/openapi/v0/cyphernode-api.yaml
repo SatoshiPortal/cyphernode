@@ -1115,7 +1115,6 @@ paths:
               required:
                 - "label"
                 - "description"
-                - "expiry"
               properties:
                 msatoshi:
                   type: "integer"
