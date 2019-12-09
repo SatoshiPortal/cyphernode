@@ -407,7 +407,9 @@ install_docker() {
     fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/hidden_service/* $TOR_DATAPATH/hidden_service/ 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/hidden_service/hostname $TOR_DATAPATH/hidden_service/hostname 1 $SUDO_REQUIRED
   fi
 
 

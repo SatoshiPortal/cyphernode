@@ -224,7 +224,7 @@ services:
       <% if (net === 'testnet') { %>
       - "TESTNET=1"
       <% } %>
-      <% if ( features.indexOf('tor') !== -1 ) { %>
+      <% if ( torifyables.indexOf('tor_otsoperations') !== -1 ) { %>
       - "TOR_HOST=tor"
       - "TOR_PORT=9050"
       <% } %>

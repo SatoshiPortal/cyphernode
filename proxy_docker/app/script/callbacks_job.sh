@@ -249,7 +249,7 @@ curl_callback() {
 
   local returncode
 
-  notify_web "${1}" "${2}"
+  notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS}
   returncode=$?
   trace_rc ${returncode}
 

@@ -75,3 +75,17 @@ module.exports = {
 // 
 // What is your public IP address?
 
+// TOR
+//  - HS
+//   - torrc
+//   - hostname, secret, public
+//  - Bitcoin Node
+//   - bitcoin.conf: 
+//  - LN Node
+//   - config
+//  - OTS
+//  - OTS webhooks
+//  - Address Watch webhooks
+//  - TXID Watch webhooks
+//  - Clearnet Bitcoin Node
+//  - Clearnet LN Node

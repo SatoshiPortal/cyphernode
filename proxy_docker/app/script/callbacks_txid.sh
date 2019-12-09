@@ -115,7 +115,7 @@ curl_callback_txid() {
 
   local returncode
 
-  notify_web "${1}" "${2}"
+  notify_web "${1}" "${2}" ${TOR_TXID_WATCH_WEBHOOKS}
   returncode=$?
   trace_rc ${returncode}
 
