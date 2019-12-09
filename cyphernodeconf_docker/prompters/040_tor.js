@@ -33,7 +33,7 @@ module.exports = {
       type: 'checkbox',
       name: 'clearnet',
       default: utils.getDefault( 'clearnet' ),
-      message: prefix()+'What features do you want to allow using clearnet?'+utils.getHelp('clearnet'),
+      message: prefix()+'What features do you want to also allow using clearnet?'+utils.getHelp('clearnet'),
       choices: [{
         name: "Bitcoin Node",
         value: "clearnet_bitcoinnode"
