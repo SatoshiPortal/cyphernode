@@ -321,7 +321,7 @@
         "compose"
       ],
       "title": "How to run the containers",
-      "default": "compose",
+      "default": "swarm",
       "examples": [
         "compose"
       ]

@@ -10,8 +10,6 @@ module.exports = class TorGen {
   }
 
   async generateTorFiles() {
-//    console.log(chalk.green( 'TOR datapath=' + this.path ));
-
     if( !fs.existsSync(this.path) ) {
       console.log(chalk.green( 'Creating TOR Hidden Service directory...' ));
       fs.mkdirSync(this.path, { recursive: true });
@@ -19,7 +17,7 @@ module.exports = class TorGen {
 
     if( !fs.existsSync(this.path + '/hostname') ) {
 
-      console.log(chalk.bold.green( 'Generating TOR Hidden Service secret key, public key and hostname...' ));
+      console.log(chalk.green( 'Generating TOR Hidden Service secret key, public key and hostname...' ));
 
       const torgenbin = spawn('./torgen/torgen', [this.path]);
       try {
@@ -29,14 +27,13 @@ module.exports = class TorGen {
         return "";
       }
 
-//      console.log(chalk.bold.green( 'Generated TOR Hidden Service secret key, public key and hostname.' ));
-
     } else {
-      console.log(chalk.red('TOR config files already exist, skipping generation') );
+      console.log(chalk.green('TOR config files already exist, skipping TOR generation.') );
     }
 
     try {
       var data = fs.readFileSync(this.path + '/hostname', 'utf8');
+      // Remove the LF at the end of the host name
       return data.slice(0, -1);
     } catch (err) {
       console.log(chalk.bold.red('Error: ' + err) );

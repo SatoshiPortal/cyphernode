@@ -83,9 +83,17 @@ func main() {
   fileBytes.Write(bytes.Repeat([]byte{0x00}, 3))
   fileBytes.Write(h[:])
 
-  prvFile, _ := os.Create(path + "/hs_ed25519_secret_key")
-  fileBytes.WriteTo(prvFile)
-  prvFile.Close()
+  prvFile, err := os.Create(path + "/hs_ed25519_secret_key")
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
+  _, err = fileBytes.WriteTo(prvFile)
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
+  err = prvFile.Close()
 
   // Create the Tor Hidden Service public key file
   fmt.Println("Creating public file...")
@@ -94,8 +102,16 @@ func main() {
   fileBytes.Write(bytes.Repeat([]byte{0x00}, 3))
   fileBytes.Write([]byte(publicKey))
 
-  pubFile, _ := os.Create(path + "/hs_ed25519_public_key")
-  fileBytes.WriteTo(pubFile)
+  pubFile, err := os.Create(path + "/hs_ed25519_public_key")
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
+  _, err = fileBytes.WriteTo(pubFile)
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
   pubFile.Close()
 
   // From https://github.com/rdkr/oniongen-go
@@ -116,8 +132,16 @@ func main() {
 
   // Create the Tor Hidden Service hostname file
   fmt.Println("Creating onion address file...")
-  nameFile, _ := os.Create(path + "/hostname")
-  nameFile.WriteString(strings.ToLower(onionAddress) + ".onion\n")
+  nameFile, err := os.Create(path + "/hostname")
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
+  _, err = nameFile.WriteString(strings.ToLower(onionAddress) + ".onion\n")
+  if err != nil {
+      fmt.Println(err)
+      os.Exit(1)
+  }
   nameFile.Close()
 
   fmt.Println("Done!")

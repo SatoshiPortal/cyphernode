@@ -427,7 +427,9 @@ module.exports = class App {
           prune: this.config.data.bitcoin_prune,
           prune_size: this.config.data.bitcoin_prune_size,
           expose: this.config.data.bitcoin_expose,
-          uacomment: this.config.data.bitcoin_uacomment
+          uacomment: this.config.data.bitcoin_uacomment,
+          torified: this.torifyables.find(data => data.value === 'tor_bitcoinnode').checked,
+          clearnet: this.isChecked('clearnet', 'clearnet_bitcoinnode')
         }
       },
       {
@@ -446,7 +448,12 @@ module.exports = class App {
         label: 'proxy',
         host: 'proxy',
         networks: ['cyphernodenet'],
-        docker: 'cyphernode/proxy:'+this.config.docker_versions['cyphernode/proxy']
+        docker: 'cyphernode/proxy:'+this.config.docker_versions['cyphernode/proxy'],
+        extra: {
+          torified_addr_watch_webhooks: this.torifyables.find(data => data.value === 'tor_addrwatcheswebhooks').checked,
+          torified_txid_watch_webhooks: this.torifyables.find(data => data.value === 'tor_txidwatcheswebhooks').checked,
+          torified_ots_watch_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
+        }
       },
       {
         name: 'Proxy cron',
@@ -491,7 +498,11 @@ module.exports = class App {
       },
       otsclient: {
         networks: ['cyphernodenet'],
-        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient']
+        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient'],
+        extra: {
+          torified: this.torifyables.find(data => data.value === 'tor_otsoperations').checked,
+          torified_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
+        }
       },
       lightning: {
         networks: ['cyphernodenet'],
@@ -501,7 +512,9 @@ module.exports = class App {
           nodecolor: this.config.data.lightning_nodecolor,
           expose: this.config.data.lightning_expose,
           external_ip: this.config.data.lightning_external_ip,
-          implementation: this.config.data.lightning_implementation
+          implementation: this.config.data.lightning_implementation,
+          torified: this.torifyables.find(data => data.value === 'tor_lnnode').checked,
+          clearnet: this.isChecked('clearnet', 'clearnet_lnnode')
         }
       }
     }
