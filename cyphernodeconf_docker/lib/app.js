@@ -449,7 +449,7 @@ module.exports = class App {
         name: 'MQ broker',
         label: 'broker',
         host: 'broker',
-        networks: ['cyphernodenet'],
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
       }
 
