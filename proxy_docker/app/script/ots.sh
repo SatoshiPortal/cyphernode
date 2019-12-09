@@ -213,7 +213,7 @@ serve_ots_backoffice() {
         if [ -n ${url} ]; then
           trace "[serve_ots_backoffice] url is not empty, now trying to call it!"
 
-          notify_web "${url}"
+          notify_web "${url}" ${TOR_OTS_WEBHOOKS}
           returncode=$?
           trace_rc ${returncode}
 

@@ -53,8 +53,11 @@ module.exports = {
       default: utils.getDefault( 'lightning_announce' ),
       message: prefix()+'Do you want to announce your lightning node?'+utils.getHelp('lightning_announce'),
     },
+    /*
+      Next question is asked when lightning_annouce is YES and (not TOR or (TOR and LN clearnet)).
+    */
     {
-      when: (props) => { return featureCondition(props) && props.lightning_announce },
+      when: (props) => { return featureCondition(props) && props.lightning_announce && (props.torifyables.indexOf('tor_lnnode') == -1 || props.clearnet.indexOf('clearnet_lnnode') != -1) },
       type: 'input',
       name: 'lightning_external_ip',
       default: utils.getDefault( 'lightning_external_ip' ),
