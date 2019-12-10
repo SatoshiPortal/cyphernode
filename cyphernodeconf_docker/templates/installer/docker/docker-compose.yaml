@@ -29,7 +29,7 @@ services:
 
   lightning:
     image: cyphernode/clightning:<%= lightning_version %>
-    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
+    command: $USER /.lightning/entrypoint.sh
     <% if( lightning_expose ) { %>
     ports:
       - "9735:9735"
