@@ -38,9 +38,10 @@ get_unused_addresses_by_watchlabel(){
         FROM watching as w
         INNER JOIN watching_by_pub32 AS w32 ON w.watching_by_pub32_id = w32.id
         WHERE w32.label="$1"
-        AND w.id NOT IN (
-                SELECT watching_id FROM watching_tx
+        AND NOT EXISTS (
+                SELECT 1 FROM watching_tx WHERE watching_id = w.id
         )
+        ORDER BY w.pub32_index ASC
 HERE
   )
   label_unused_addrs=$(sql "$query")
