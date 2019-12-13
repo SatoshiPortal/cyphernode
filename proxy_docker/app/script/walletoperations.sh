@@ -123,6 +123,32 @@ bumpfee() {
   return ${returncode}
 }
 
+gettxnslist() {
+  trace "Entering gettxnslist()... with count: $1 , skip: $2"
+  local count="$1"
+  local skip="$2" 
+  local response
+  local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
+  response=$(send_to_spender_node "${data}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[gettxnlist] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local txns=$(echo ${response} | jq -rc ".result")
+    trace "[gettxnlist] txns=${txns}"
+
+    data="{\"txns\":${txns}}"
+  else
+    trace "[gettxnlist] Coudn't get txns!"
+    data=""
+  fi
+
+  trace "[gettransactions] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
 getbalance() {
   trace "Entering getbalance()..."
 
