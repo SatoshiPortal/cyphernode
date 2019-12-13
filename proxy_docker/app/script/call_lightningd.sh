@@ -332,12 +332,13 @@ ln_pay() {
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
       returncode=1
     elif [ -n "${expected_description}" ] && [ "${expected_description}" != "null" ] && [ "${expected_description}" != "${invoice_description}" ]; then
-      # If expected description is empty, we accept any description on the invoice.  Amount is the most important thing.
+      # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
+      # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
       result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
       returncode=1
     else
-      # Amount and description is as expected, let's pay!
+      # Amount and description are as expected (or empty description), let's pay!
       trace "[ln_pay] Amount and description are as expected, let's try to pay!"
 
       if [ "${invoice_msatoshi}" = "null" ]; then
