@@ -179,7 +179,7 @@ getbalancebyxpub() {
 
   echo "${data}"
 
-  return ${returncode}
+  return "${returncode}"
 }
 
 getnewaddress() {
