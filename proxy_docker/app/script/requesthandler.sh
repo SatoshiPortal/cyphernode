@@ -163,14 +163,14 @@ main() {
           break
           ;;
         get_txns_by_watchlabel)
-          # curl (GET) 192.168.111.152:8080/get_txns_by_watchlabel
-          response=$(get_txns_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          # curl (GET) 192.168.111.152:8080/get_txns_by_watchlabel/<label>/<count>
+          response=$(get_txns_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
           response_to_client "${response}" ${?}
           break
           ;;
         get_unused_addresses_by_watchlabel)
-          # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel
-          response=$(get_unused_addresses_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
+          response=$(get_unused_addresses_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
           response_to_client "${response}" ${?}
           break
           ;;
