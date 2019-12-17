@@ -237,10 +237,10 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        gettxnslist)
-          # curl (GET) http://192.168.111.152:8080/gettxnslist/20/10
+        get_txns_spending)
+          # curl (GET) http://192.168.111.152:8080/get_txns_spending/20/10
 
-          response=$(gettxnslist $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response=$(get_txns_spending $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
           response_to_client "${response}" ${?}
           break
           ;;
