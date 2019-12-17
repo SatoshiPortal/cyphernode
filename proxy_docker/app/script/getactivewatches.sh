@@ -7,12 +7,13 @@ get_txns_by_watchlabel(){
   trace "Entering get_txns_by_watchlabel() for label ${1}..."
   local label_txns
   query=$(cat <<-HERE
-	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.vout, wtxn.amount
+	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.vout, wtxn.amount, tx.blockhash, tx.blocktime, tx.timereceived 
 	FROM watching_by_pub32 as w32
 	INNER JOIN watching AS w ON w32.id = w.watching_by_pub32_id
 	INNER JOIN watching_tx AS wtxn ON w.id = wtxn.watching_id
 	INNER JOIN tx AS tx ON wtxn.tx_id = tx.id
 	WHERE w32.label="$1"
+	LIMIT 0,${2-10}
 HERE
   )
   label_txns=$(sql "$query")
@@ -23,7 +24,7 @@ HERE
     [inputs
      | . / "\n"
      | (.[] | select(length > 0) | . / "|") as $input
-     | {"label": $input[0], "address": $input[1], "txid": $input[2], "confirmations": $input[3], "blockheight": $input[4], "v_out": $input[5], "amount": $input[6]}
+     | {"label": $input[0], "address": $input[1], "txid": $input[2], "confirmations": $input[3], "blockheight": $input[4], "v_out": $input[5], "amount": $input[6], "blockhash": $input[7], "blocktime": $input[8], "timereceived": $input[9]}
     ]
   }
   ')
@@ -41,6 +42,7 @@ get_unused_addresses_by_watchlabel(){
         AND NOT EXISTS (
                 SELECT 1 FROM watching_tx WHERE watching_id = w.id
         )
+	LIMIT 0,${2-10}
         ORDER BY w.pub32_index ASC
 HERE
   )
