@@ -42,8 +42,8 @@ get_unused_addresses_by_watchlabel(){
         AND NOT EXISTS (
                 SELECT 1 FROM watching_tx WHERE watching_id = w.id
         )
-	LIMIT 0,${2-10}
         ORDER BY w.pub32_index ASC
+	LIMIT 0,${2-10}
 HERE
   )
   label_unused_addrs=$(sql "$query")
