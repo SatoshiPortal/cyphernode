@@ -5,7 +5,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WalletWasabi.Helpers;
-using WalletWasabi.KeyManagement;
+using WalletWasabi.Blockchain.Keys;
 
 namespace WalletGenerator.CommandLine
 {
