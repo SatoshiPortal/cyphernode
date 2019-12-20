@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine3.9 AS builder
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
@@ -8,33 +8,17 @@ RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontiv
 
 WORKDIR /WalletWasabi
 
-COPY backend/patches/ITxStoreOperation.patch .
-RUN patch WalletWasabi/Transactions/Operations/ITxStoreOperation.cs -i ITxStoreOperation.patch
-RUN rm ITxStoreOperation.patch
-
-COPY backend/patches/PenaltyFactory.patch .
-RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/Scoring/PenaltyFactory.cs -i PenaltyFactory.patch
-RUN rm PenaltyFactory.patch
-
-COPY backend/patches/PatternFactory.patch .
-RUN patch WalletWasabi/Gma/QrCodeNet/Encoding/Masking/PatternFactory.cs -i PatternFactory.patch
-RUN rm PatternFactory.patch
-
-COPY backend/patches/SmartCoinSelector.patch .
-RUN patch WalletWasabi/Transactions/TransactionBuilding/SmartCoinSelector.cs -i SmartCoinSelector.patch
-RUN rm SmartCoinSelector.patch
-
 COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
 
-RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none /p:langversion=8.0
+RUN dotnet build -c Release -o /app/ -r linux-x64
+RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
 WORKDIR /WalletWasabi/WalletWasabi.Gui
 
-RUN dotnet build -c Release -o /app/ -r linux-x64 /p:langversion=8.0
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none /p:langversion=8.0
+RUN dotnet build -c Release -o /app/ -r linux-x64
+RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
 # remove unused files
 #RUN rm /app/TorDaemons/tor-osx64.zip /app/TorDaemons/tor-win32.zip
@@ -42,7 +26,7 @@ RUN rm -rf /app/TorDaemons
 RUN rm -rf /app/runtimes/osx /app/runtimes/tizen-armel /app/runtimes/tizen-x86 /app/runtimes/win /app/runtimes/win-x64 /app/runtimes/win--x86
 RUN rm -rf /app/Hwi/Software/hwi-osx64.zip /app/Hwi/Software/hwi-win64
 
-FROM mcr.microsoft.com/dotnet/core/runtime:2.2-alpine3.9
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine
 
 ENV APPDATA=/root/.walletwasabi/client
 

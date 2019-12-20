@@ -1,5 +1,5 @@
 diff --git a/WalletWasabi.Backend/Program.cs b/WalletWasabi.Backend/Program.cs
-index f04fe513..c2e8f9f8 100644
+index fc5cbe51..95789a6c 100644
 --- a/WalletWasabi.Backend/Program.cs
 +++ b/WalletWasabi.Backend/Program.cs
 @@ -22,7 +22,7 @@ namespace WalletWasabi.Backend
@@ -9,5 +9,5 @@ index f04fe513..c2e8f9f8 100644
 -				var endPoint = "http://localhost:37127/";
 +				var endPoint = "http://wasabi-backend:37127/";
  
- 				using var host = WebHost.CreateDefaultBuilder(args)
- 					.UseStartup<Startup>()
+ 				using var host = Host.CreateDefaultBuilder(args)
+ 					.ConfigureWebHostDefaults(webBuilder => webBuilder

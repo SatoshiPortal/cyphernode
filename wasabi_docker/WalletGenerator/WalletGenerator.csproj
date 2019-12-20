@@ -3,7 +3,7 @@
   <PropertyGroup>
     <PlatformTarget>x64</PlatformTarget>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <LangVersion>latest</LangVersion>
@@ -15,13 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NBitcoin" Version="4.2.15" />
+    <PackageReference Include="NBitcoin" Version="5.0.5" />
     <PackageReference Include="Nito.AsyncEx" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WalletWasabi\WalletWasabi\WalletWasabi.csproj" />
   </ItemGroup>
-
-
 </Project>
