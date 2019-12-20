@@ -11,14 +11,15 @@ using Newtonsoft.Json;
 
 using NBitcoin;
 using WalletWasabi.Helpers;
-using WalletWasabi.KeyManagement;
 using WalletWasabi.Models;
 using WalletWasabi.Logging;
+using WalletWasabi.Blockchain.Keys;
+
 namespace WalletGenerator
 {
   class WalletGenerator
   {
-
+       
     public static string DataDir = GetDataDir();
     public static string WalletsDir = GetDataDir( "Wallets" );
     public static string WalletBackupsDir = GetDataDir( "WalletBackups" );
