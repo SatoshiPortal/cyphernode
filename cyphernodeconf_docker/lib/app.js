@@ -149,6 +149,11 @@ module.exports = class App {
     } );
 
     if( !fs.existsSync(this.destinationPath(configArchiveFileName)) ) {
+      if( this.sessionData.noWizard ) {
+        console.log(chalk.bold.red('Unable to run in no wizard mode without a config.7z')+'\n');
+        process.exit();
+        return;
+      }
       let r = {};
       process.stdout.write(ansi.clear+ansi.reset);
       while( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
