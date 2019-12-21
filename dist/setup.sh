@@ -479,6 +479,12 @@ install_docker() {
         copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
         copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
 
+        if [[ ! -x $LIGHTNING_DATAPATH/entrypoint.sh ]]; then
+          step "     [32mmake[0m entrypoint.sh executable"
+          sudo_if_required chmod +x $LIGHTNING_DATAPATH/entrypoint.sh
+          next
+        fi
+
     fi
   fi
 
