@@ -33,6 +33,7 @@ start_apps() {
         export APP_SCRIPT_PATH
         export APP_ID
         export DOCKER_MODE
+        export NETWORK=<%= net %>
 
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
