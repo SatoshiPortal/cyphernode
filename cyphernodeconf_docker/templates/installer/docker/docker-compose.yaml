@@ -29,7 +29,7 @@ services:
 
   lightning:
     image: cyphernode/clightning:<%= lightning_version %>
-    command: $USER /.lightning/entrypoint.sh
+    command: $USER /.lightning/bitcoin/entrypoint.sh
     <% if( lightning_expose ) { %>
     ports:
       - "9735:9735"

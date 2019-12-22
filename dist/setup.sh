@@ -477,11 +477,11 @@ install_docker() {
         fi
 
         copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1 $SUDO_REQUIRED
 
-        if [[ ! -x $LIGHTNING_DATAPATH/entrypoint.sh ]]; then
+        if [[ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]]; then
           step "     [32mmake[0m entrypoint.sh executable"
-          sudo_if_required chmod +x $LIGHTNING_DATAPATH/entrypoint.sh
+          sudo_if_required chmod +x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh
           next
         fi
 
@@ -749,7 +749,7 @@ NOTIFIER_VERSION="v0.2.4"
 PROXYCRON_VERSION="v0.2.4"
 OTSCLIENT_VERSION="v0.2.4"
 PYCOIN_VERSION="v0.2.4"
-CYPHERAPPS_VERSION="v0.2.2"
+CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v0.19.0.1"
 LIGHTNING_VERSION="v0.8.0"
 
