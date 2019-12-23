@@ -22,6 +22,7 @@
     "bitcoin_datapath",
     "bitcoin_mode",
     "bitcoin_expose",
+    "psbt_wallet_active",
     "gatekeeper_expose",
     "gatekeeper_keys",
     "gatekeeper_sslcert",
@@ -145,6 +146,22 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "psbt_wallet_active": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "psbt_xpub"
+        ]
+      }
     }
   ],
   "properties": {
@@ -153,7 +170,7 @@
       "enum": [
         "0.2.3"
       ],
-      "default": "0.3.0",
+      "default": "0.2.3",
       "examples": [
         "0.2.3"
       ]
@@ -385,6 +402,21 @@
       "examples": [
         "/tmp/cyphernode/bitcoin"
       ]
+    },
+    "psbt_wallet_active": {
+      "$id": "#/properties/psbt_wallet_active",
+      "type": "boolean",
+      "title": "Do we have a PSBT watcher wallet",
+      "examples": [
+        true, false
+      ],
+      "default": false
+    },
+    "psbt_xpub": {
+      "$id": "#/properties/psbt_xpub",
+      "type": "string",
+      "title": "PSBT xpub to watch",
+      "pattern": "^(\\w+)$"
     },
     "lightning_datapath": {
       "$id": "#/properties/lightning_datapath",

@@ -30,3 +30,7 @@ OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } %>
+PSBT_WALLET_ACTIVE=<%= psbt_wallet_active %>
+<% if ( psbt_wallet_active ) { %>
+PSBT_XPUB=<%= psbt_xpub %>
+<% } %>
