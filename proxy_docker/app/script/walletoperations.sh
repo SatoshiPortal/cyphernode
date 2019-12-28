@@ -66,7 +66,7 @@ spend() {
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
-    sql "INSERT OR IGNORE INTO recipient (address, amount, tx_id) VALUES (\"${address}\", ${amount}, ${id_inserted})"
+    sql "INSERT OR IGNORE INTO recipient (wallet_name, address, amount, tx_id) VALUES (\"spending01\", \"${address}\", ${amount}, ${id_inserted})"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
@@ -294,7 +294,7 @@ addtobatching() {
   local amount=${2}
   trace "[addtobatching] amount=${amount}"
 
-  sql "INSERT OR IGNORE INTO recipient (address, amount) VALUES (\"${address}\", ${amount})"
+  sql "INSERT OR IGNORE INTO recipient (wallet_name, address, amount) VALUES (\"spending01\", \"${address}\", ${amount})"
   returncode=$?
   trace_rc ${returncode}
 
@@ -313,7 +313,7 @@ batchspend() {
   local tx_raw_details
 
   # We will batch all the addresses in DB without a TXID
-  local batching=$(sql 'SELECT address, amount FROM recipient WHERE tx_id IS NULL')
+  local batching=$(sql 'SELECT address, amount FROM recipient WHERE tx_id IS NULL AND wallet_name="spending01"')
   trace "[batchspend] batching=${batching}"
 
   local returncode
