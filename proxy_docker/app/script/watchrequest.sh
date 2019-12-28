@@ -115,10 +115,15 @@ watchpub32() {
   trace "[watchpub32] cb0conf_url=${cb0conf_url}"
   local cb1conf_url=${6}
   trace "[watchpub32] cb1conf_url=${cb1conf_url}"
-
   # upto_n is used when extending the watching window
   local upto_n=${7}
   trace "[watchpub32] upto_n=${upto_n}"
+  local wallet_name=${8:-${WATCHER_BTC_NODE_XPUB_WALLET}}
+  trace "[watchpub32] wallet_name=${wallet_name}"
+  local event_type=${9:-watchxpub}
+  trace "[watchpub32] event_type=${event_type}"
+  local rescan=${10:-"false"}
+  trace "[watchpub32] rescan=${rescan}"
 
   local id_inserted
   local result
@@ -148,7 +153,7 @@ watchpub32() {
 
     if [ "${returncode}" -eq 0 ]; then
       # Importmulti in Bitcoin Core...
-      result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" "${pub32}" "${addresses}")
+      result=$(importmulti_rpc "${wallet_name}" "${pub32}" "${addresses}" "${rescan}")
       returncode=$?
       trace_rc ${returncode}
       trace "[watchpub32] result=${result}"
@@ -185,7 +190,7 @@ watchpub32() {
 
   if [ -z "${error_msg}" ]; then
     data="{\"id\":\"${id_inserted}\",
-    \"event\":\"watchxpub\",
+    \"event\":\"${event_type}\",
     \"pub32\":\"${pub32}\",
     \"label\":\"${label}\",
     \"path\":\"${path}\",
@@ -196,7 +201,7 @@ watchpub32() {
     returncode=0
   else
     data="{\"error\":\"${error_msg}\",
-    \"event\":\"watchxpub\",
+    \"event\":\"${event_type}\",
     \"pub32\":\"${pub32}\",
     \"label\":\"${label}\",
     \"path\":\"${path}\",

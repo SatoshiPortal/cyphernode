@@ -23,6 +23,13 @@ importmulti_rpc() {
   local walletname=${1}
   local label=${2}
   local addresses=$(echo "${3}" | jq ".addresses" | tr -d '\n ')
+  local rescan=${4}
+
+  # always false unless true
+  if [ "$rescan" == "true" ]; then
+      rescan="false"
+  fi
+
 #  trace "[importmulti_rpc] addresses=${addresses}"
 
   # Will look like:
@@ -39,7 +46,7 @@ importmulti_rpc() {
 
   # Now we use that in the RPC string
 
-  local rpcstring="{\"method\":\"importmulti\",\"params\":[${addresses},{\"rescan\":false}]}"
+  local rpcstring="{\"method\":\"importmulti\",\"params\":[${addresses},{\"rescan\":${rescan}}]}"
 #  trace "[importmulti_rpc] rpcstring=${rpcstring}"
 
   local result

@@ -27,6 +27,7 @@ unwatchpub32request() {
   trace "Entering unwatchpub32request()..."
 
   local request=${1}
+  local event_type=${2:-unwatchxpubbyxpub}
   local pub32=$(echo "${request}" | cut -d ' ' -f2 | cut -d '/' -f3)
   local id
   local returncode
@@ -43,7 +44,7 @@ unwatchpub32request() {
   returncode=$?
   trace_rc ${returncode}
 
-  data="{\"event\":\"unwatchxpubbyxpub\",\"pub32\":\"${pub32}\"}"
+  data="{\"event\":\"${event_type}\",\"pub32\":\"${pub32}\"}"
   trace "[unwatchpub32request] responding=${data}"
 
   echo "${data}"
