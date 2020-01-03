@@ -351,7 +351,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-  /get_txns_by_watchlabel/{label}/{count}:
+  /get_txns_by_watchlabel/{label}:
     get:
       parameters:
         - in: "path"
@@ -360,16 +360,10 @@ paths:
           required: true
           schema:
             type: "string"
-        - in: "path"
-          name: "count"
-          description: "Number of transactions to return"
-          required: false
-          schema:
-            type: "number"
       tags:
-        - "watching transactions"
+        - "transactions"
         - "core features"
-      summary: "Get list of transactions observed for addreses belonging to this label"
+      summary: "Get list of upto 10 transactions observed for addreses belonging to this label"
       description: "Get list of transactions observed for addreses belonging to this label"
       operationId: "get_txns_by_watchlabel"
       responses:
@@ -394,26 +388,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-  /get_txns_spending/{count}/{skip}:
+  /get_txns_by_watchlabel/{label}/{count}:
     get:
       parameters:
         - in: "path"
-          name: "count"
-          description: "Number of txns to return"
-          required: false
+          name: "label"
+          description: "Xpub label"
+          required: true
           schema:
-            type: "number"
+            type: "string"
         - in: "path"
-          name: "skip"
-          description: "Skip/offset to start from"
-          required: false
+          name: "count"
+          description: "Number of transactions to return"
+          required: true
           schema:
             type: "number"
       tags:
-        - "spending transactions"
+        - "transactions"
         - "core features"
-      summary: "Get list of spending wallets transactions"
-      description: "Get list of spending wallets transactions"
+      summary: "Get list of transactions observed for addreses belonging to this label"
+      description: "Get list of upto count number of transactions observed for addreses belonging to this label"
+      operationId: "get_txns_by_watchlabel_count"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "label_txns"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/WatchXPubTxn'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /get_txns_spending:
+    get:
+      tags:
+        - "transactions"
+        - "core features"
+      summary: "Get list of upto 10 spending wallet transactions"
+      description: "Get list of upto 10 spending wallet transactions"
       operationId: "get_txns_spending"
       responses:
         '200':
@@ -437,6 +461,123 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /get_txns_spending/{count}/:
+    get:
+      parameters:
+        - in: "path"
+          name: "count"
+          description: "Number of txns to return"
+          required: true
+          schema:
+            type: "integer"
+      tags:
+        - "transactions"
+        - "core features"
+      summary: "Get list of upto count spending wallet transactions"
+      description: "Get list of upto count wallets transactions"
+      operationId: "get_txns_spending_count"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "txns"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/TransactionsSpending'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /get_txns_spending/{count}/{skip}:
+    get:
+      parameters:
+        - in: "path"
+          name: "count"
+          description: "Number of txns to return"
+          required: true
+          schema:
+            type: "integer"
+        - in: "path"
+          name: "skip"
+          description: "Number of txns to skip (start from)"
+          required: true
+          schema:
+            type: "integer"
+      tags:
+        - "transactions"
+        - "core features"
+      summary: "Get list of upto count spending wallet transactions, skipping over the first {skip} number of transactions"
+      description: "Get list of upto count spending wallet transactions, skipping over the first {skip} number of transactions"
+      operationId: "get_txns_spending_count_skip"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "txns"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/TransactionsSpending'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /get_unused_addresses_by_watchlabel/{label}/:
+    get:
+      parameters:
+        - in: "path"
+          name: "label"
+          description: "Xpub label"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Get list of upto 10 unused derived addreses belonging to this label"
+      description: "Gets an unused subset of addreses from the set of derived addresses belonging to this label"
+      operationId: "get_unused_addresses_by_watchlabel"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "label_unused_addresses"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/UnusedWatchXPubAddress'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /get_unused_addresses_by_watchlabel/{label}/{count}:
     get:
       parameters:
@@ -449,15 +590,15 @@ paths:
         - in: "path"
           name: "count"
           description: "Number of addresses to return"
-          required: false
+          required: true
           schema:
-            type: "number"
+            type: "integer"
       tags:
         - "watching addresses"
         - "core features"
-      summary: "Get list of unused derived addreses belonging to this label"
-      description: "Gets an unused subset of addreses from the set of derived addresses belonging to this label"
-      operationId: "get_unused_addresses_by_watchlabel"
+      summary: "Get list of unused upto to {count} derived addreses belonging to this label"
+      description: "Get list of unused upto to {count} derived addreses belonging to this label"
+      operationId: "get_unused_addresses_by_watchlabel_count"
       responses:
         '200':
           description: "successful operation"
@@ -1814,38 +1955,6 @@ components:
           type: "string"
         abandoned:
           type: "boolean"
-    WatchXPubTxn:
-      type: "object"
-      required:
-        - "label"
-        - "address"
-        - "txid"
-        - "confirmations"
-        - "blockheight"
-        - "v_out"
-        - "amount"
-        - "blockhash"
-        - "blocktime"
-        - "timereceived"
-      properties:
-        label:
-          type: "string"
-        address:
-          $ref: '#/components/schemas/TypeAddressString'
-        txid:
-          $ref: '#/components/schemas/TypeHashString'
-        confirmations:
-          type: "integer"
-        v_out:
-          type: "integer"
-        amount:
-          type: "number"
-        blockhash:
-          $ref: '#/components/schemas/TypeHashString'
-        blocktime:
-          type: "number"
-        timereceived:
-          type: "number"
     WatchXPubTxn:
       type: "object"
       required:

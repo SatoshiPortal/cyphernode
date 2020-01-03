@@ -10,7 +10,7 @@ spend() {
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
   trace "[spend] address=${address}"
-  local amount=$(echo "${request}" | jq ".amount" | awk '{ printf "%.8f", $0 }')
+  local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[spend] amount=${amount}"
   local response
   local id_inserted
