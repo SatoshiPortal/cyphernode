@@ -272,7 +272,7 @@ module.exports = class App {
 
   async processProps() {
 
-    // TOR...
+    // Tor...
     if( this.isChecked( 'features', 'tor' ) ) {
       const torgen = new TorGen(this.destinationPath( path.join( destinationDirName, 'tor/hidden_service' ) ));
       this.sessionData.tor_hostname = await torgen.generateTorFiles();

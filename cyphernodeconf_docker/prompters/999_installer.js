@@ -104,7 +104,7 @@ module.exports = {
       default: utils.getDefault( 'tor_datapath_custom' ),
       filter: utils.trimFilter,
       validate: utils.pathValidator,
-      message: prefix()+'Custom path for TOR data?'+utils.getHelp('tor_datapath_custom'),
+      message: prefix()+'Custom path for Tor data?'+utils.getHelp('tor_datapath_custom'),
     },
     {
       when: installerDocker,

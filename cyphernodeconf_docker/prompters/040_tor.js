@@ -25,7 +25,7 @@ module.exports = {
       when: featureCondition,
       type: 'checkbox',
       name: 'torifyables',
-      message: prefix()+'What features do you want to TORify?'+utils.getHelp('torifyables'),
+      message: prefix()+'What features do you want to Torify?'+utils.getHelp('torifyables'),
       choices: utils.torifyableChoices()
     },
     {
@@ -48,17 +48,17 @@ module.exports = {
   }
 };
 
-// Do you want to access Cyphernode via a TOR Hidden Service?
+// Do you want to access Cyphernode via a Tor Hidden Service?
 // Do you want to access Cyphernode also via clearnet?
-// Do you want your Bitcoin node to use TOR?
+// Do you want your Bitcoin node to use Tor?
 // Do you want your Bitcoin node to also use clearnet?
-// Do you want your LN node to use TOR?
+// Do you want your LN node to use Tor?
 // Do you want your LN node to also use clearnet?
-// Do you want your OTS client to use TOR?
-// Do you want your Cyphernode callbacks (address watches, TXID watches and OTS notifications) to perform through TOR?
+// Do you want your OTS client to use Tor?
+// Do you want your Cyphernode callbacks (address watches, TXID watches and OTS notifications) to perform through Tor?
 
-// Do you want TOR?
-// What do you want to TOR?
+// Do you want Tor?
+// What do you want to Tor?
 // - Cyphernode as Hidden Service
 // - Bitcoin Node
 // - LN Node
@@ -75,7 +75,7 @@ module.exports = {
 // 
 // What is your public IP address?
 
-// TOR
+// Tor
 //  - HS
 //   - torrc
 //   - hostname, secret, public

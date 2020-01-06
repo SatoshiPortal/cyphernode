@@ -78,7 +78,7 @@ printf "\r\n\033[0;92mDepending on your current location and DNS settings, point
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
 <% if ( features.indexOf('tor') !== -1 ) { %>
-printf "\033[0;92mYou can also use TOR Browser and navigate to your onion address:\r\n"
+printf "\033[0;92mYou can also use Tor Browser and navigate to your onion address:\r\n"
 printf "\033[0;95mhttps://${TOR_HOSTNAME}/welcome\033[0m\r\n\r\n"
 <% } %>
 printf "\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n\r\n\033[0m"
