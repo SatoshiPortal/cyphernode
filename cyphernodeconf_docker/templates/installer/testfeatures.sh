@@ -125,13 +125,13 @@ checkots() {
 }
 
 checktor() {
-  echo -en "\r\n\e[1;36mTesting TOR... " > /dev/console
+  echo -en "\r\n\e[1;36mTesting Tor... " > /dev/console
   local rc
 
   rc=$(curl -s -o /dev/null -w "%{http_code}" --socks5-hostname tor:9050 http://expyuzz4wqqyqhjn.onion/)
   [ "${rc}" -ne "200" ] && return 250
 
-  echo -e "\e[1;36mTOR rocks!" > /dev/console
+  echo -e "\e[1;36mTor rocks!" > /dev/console
 
   return 0
 }
@@ -396,7 +396,7 @@ else
   returncode=1
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
-result="${result}$(feature_status ${returncode} 'TOR error!')}"
+result="${result}$(feature_status ${returncode} 'Tor error!')}"
 <% } %>
 
 #############################

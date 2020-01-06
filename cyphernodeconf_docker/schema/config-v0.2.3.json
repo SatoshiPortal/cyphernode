@@ -198,7 +198,7 @@
     "torifyables": {
       "$id": "#/properties/torifyables",
       "type": "array",
-      "title": "The TORified features of this cyphernode",
+      "title": "The Torified features of this cyphernode",
       "default": [],
       "items": {
         "$id": "#/properties/torifyables/items",
@@ -212,7 +212,7 @@
           "tor_addrwatcheswebhooks",
           "tor_txidwatcheswebhooks"
         ],
-        "title": "The TORified feature",
+        "title": "The Torified feature",
         "default": "",
         "examples": [
           "tor_hiddenservice",
@@ -228,7 +228,7 @@
     "clearnet": {
       "$id": "#/properties/clearnet",
       "type": "array",
-      "title": "The clearnet-allowed TORified features of this cyphernode",
+      "title": "The clearnet-allowed Torified features of this cyphernode",
       "default": [],
       "items": {
         "$id": "#/properties/clearnet/items",
@@ -237,7 +237,7 @@
           "clearnet_bitcoinnode",
           "clearnet_lnnode"
         ],
-        "title": "The clearnet-allowed TORified feature",
+        "title": "The clearnet-allowed Torified feature",
         "default": "",
         "examples": [
           "clearnet_bitcoinnode",

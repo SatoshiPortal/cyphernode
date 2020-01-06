@@ -70,7 +70,7 @@ func main() {
   // Convert seed to expanded private key...
   // Ref.: https://gitweb.torproject.org/tor.git/tree/src/ext/ed25519/donna/ed25519_tor.c?h=tor-0.4.1.6#n61
   // Ref.: https://gitweb.torproject.org/tor.git/tree/src/ext/curve25519_donna/README?h=tor-0.4.1.6#n28
-  fmt.Println("Converting keys for TOR...")
+  fmt.Println("Converting keys for Tor...")
   h := sha512.Sum512(privateKey[:32])
   h[0] &= 248
   h[31] &= 127

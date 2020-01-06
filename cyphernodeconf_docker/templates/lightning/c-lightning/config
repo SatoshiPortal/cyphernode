@@ -17,15 +17,15 @@ rgb=<%= lightning_nodecolor %>
 addr=0.0.0.0:9735
 
 <% if ( torifyables.indexOf('tor_lnnode') !== -1 ) { %>
-# TOR
+# Tor
 # proxy=tor:9050 this has to be made at execution time because of getaddrinfo and alpine not being friends, see entrypoint.sh
 <% if ( clearnet.indexOf('clearnet_lnnode') == -1 ) { %>
-# TOR only, no clearnet
+# Tor only, no clearnet
 always-use-proxy=true
 disable-dns
 <% } %>
 <% if (lightning_announce) { %>
-# Announcing TOR address
+# Announcing Tor address
 announce-addr=<%= locals.tor_hostname %>:9735
 <% if ( clearnet.indexOf('clearnet_lnnode') !== -1 ) { %>
 <% if( locals.lightning_external_ip ) { %>
