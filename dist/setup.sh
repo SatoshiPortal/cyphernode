@@ -470,9 +470,9 @@ install_docker() {
           dockerfile="Dockerfile-alpine"
         fi
 
-        if [ ! -d $LIGHTNING_DATAPATH ]; then
+        if [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          sudo_if_required mkdir -p $LIGHTNING_DATAPATH
+          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
           next
         fi
 
