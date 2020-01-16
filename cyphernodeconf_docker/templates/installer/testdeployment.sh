@@ -14,6 +14,8 @@ test_apps() {
   local APP_START_SCRIPT_PATH
   local APP_ID
   local returncode=0
+  local TRAEFIK_HTTP_PORT=<%= traefik_http_port %>
+  local TRAEFIK_HTTPS_PORT=<%= traefik_https_port %>
 
   for i in $current_path/apps/*
   do

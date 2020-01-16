@@ -1,8 +1,8 @@
 <% if ( torifyables.indexOf('tor_hiddenservice') !== -1 ) { %>
 HiddenServiceDir /tor/hidden_service/
 HiddenServiceVersion 3
-HiddenServicePort 80 traefik:80
-HiddenServicePort 443 traefik:443
+HiddenServicePort <%= traefik_http_port %> traefik:<%= traefik_http_port %>
+HiddenServicePort <%= traefik_https_port %> traefik:<%= traefik_https_port %>
 <% if ( torifyables.indexOf('tor_lnnode') !== -1 && lightning_expose ) { %>
 HiddenServicePort 9735 lightning:9735
 <% } %>

@@ -281,8 +281,8 @@ services:
   traefik:
     image: traefik:v1.7.9-alpine
     ports:
-      - 80:80
-      - 443:443
+      - <%= traefik_http_port %>:<%= traefik_http_port %>
+      - <%= traefik_https_port %>:<%= traefik_https_port %>
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "<%= traefik_datapath%>/traefik.toml:/traefik.toml:ro"

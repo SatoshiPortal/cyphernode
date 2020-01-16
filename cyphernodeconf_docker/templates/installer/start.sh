@@ -21,20 +21,20 @@ start_apps() {
       APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
       APP_ID=$(basename $APP_SCRIPT_PATH)
 
+      export SHARED_HTPASSWD_PATH
+      export GATEKEEPER_DATAPATH
+      export GATEKEEPER_PORT
+      export TOR_DATAPATH
+      export LIGHTNING_DATAPATH
+      export BITCOIN_DATAPATH
+      export APP_SCRIPT_PATH
+      export APP_ID
+      export DOCKER_MODE
+      export NETWORK=<%= net %>
+
       if [ -f "$APP_START_SCRIPT_PATH" ]; then
         . $APP_START_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
-        export SHARED_HTPASSWD_PATH
-        export GATEKEEPER_DATAPATH
-        export GATEKEEPER_PORT
-        export TOR_DATAPATH
-        export LIGHTNING_DATAPATH
-        export BITCOIN_DATAPATH
-        export APP_SCRIPT_PATH
-        export APP_ID
-        export DOCKER_MODE
-        export NETWORK=<%= net %>
-
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
         elif [ "$DOCKER_MODE" = "compose" ]; then
