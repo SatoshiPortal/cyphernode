@@ -401,15 +401,48 @@ install_docker() {
   if [[ $FEATURE_TOR == true ]]; then
     if [ ! -d $TOR_DATAPATH ]; then
       step "   [32mcreate[0m $TOR_DATAPATH"
-      sudo_if_required mkdir -p $TOR_DATAPATH/hidden_service
-      sudo_if_required chmod 700 $TOR_DATAPATH/hidden_service
+      sudo_if_required mkdir -p $TOR_DATAPATH
+      sudo_if_required chmod 700 $TOR_DATAPATH
       next
+    fi
+    if [ ! -d $TOR_DATAPATH/traefik ]; then
+      step "   [32mcreate[0m $TOR_DATAPATH/traefik"
+      sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
+      sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
+      next
+    fi
+    if [[ $TOR_LN == true ]]; then
+      if [ ! -d $TOR_DATAPATH/ln ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/ln"
+        sudo_if_required mkdir -p $TOR_DATAPATH/ln/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/ln/hidden_service
+        next
+      fi
+    fi
+    if [[ $TOR_BITCOIN == true ]]; then
+      if [ ! -d $TOR_DATAPATH/bitcoin ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/bitcoin"
+        sudo_if_required mkdir -p $TOR_DATAPATH/bitcoin/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/bitcoin/hidden_service
+        next
+      fi
     fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/hidden_service/hostname $TOR_DATAPATH/hidden_service/hostname 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hostname $TOR_DATAPATH/traefik/hidden_service/hostname 1 $SUDO_REQUIRED
+
+    if [[ $TOR_LN == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/ln/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/ln/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hostname $TOR_DATAPATH/ln/hidden_service/hostname 1 $SUDO_REQUIRED
+    fi
+    if [[ $TOR_BITCOIN == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1 $SUDO_REQUIRED
+    fi
   fi
 
 

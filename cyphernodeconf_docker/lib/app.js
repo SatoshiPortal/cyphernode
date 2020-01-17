@@ -274,8 +274,10 @@ module.exports = class App {
 
     // Tor...
     if( this.isChecked( 'features', 'tor' ) ) {
-      const torgen = new TorGen(this.destinationPath( path.join( destinationDirName, 'tor/hidden_service' ) ));
-      this.sessionData.tor_hostname = await torgen.generateTorFiles();
+      const torgen = new TorGen();
+      this.sessionData.tor_traefik_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/traefik/hidden_service' ) ));
+      this.sessionData.tor_ln_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/ln/hidden_service' ) ));
+      this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
     }
 
     // creates keys if they don't exist or we say so.
@@ -428,8 +430,9 @@ module.exports = class App {
           prune_size: this.config.data.bitcoin_prune_size,
           expose: this.config.data.bitcoin_expose,
           uacomment: this.config.data.bitcoin_uacomment,
-          torified: this.torifyables.find(data => data.value === 'tor_bitcoinnode').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_bitcoinnode')
+          torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
+          clearnet: this.isChecked('clearnet', 'clearnet_bitcoinnode'),
+          tor_hostname: this.sessionData.tor_bitcoin_hostname
         }
       },
       {
@@ -482,6 +485,16 @@ module.exports = class App {
         host: 'broker',
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
+      },
+      {
+        name: 'Traefik',
+        label: 'traefik',
+        host: 'traefik',
+        networks: ['cyphernodeappsnet'],
+        docker: 'cyphernode/traefik:'+this.config.docker_versions['cyphernode/traefik'],
+        extra: {
+          tor_hostname: this.sessionData.tor_traefik_hostname,
+        }
       }
 
     ];
@@ -493,7 +506,9 @@ module.exports = class App {
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
         extra: {
-          hostname: this.sessionData.tor_hostname,
+          traefik_hostname: this.sessionData.tor_traefik_hostname,
+          ln_hostname: this.sessionData.tor_ln_hostname,
+          bitcoin_hostname: this.sessionData.tor_bitcoin_hostname,
         }
       },
       otsclient: {
@@ -513,8 +528,9 @@ module.exports = class App {
           expose: this.config.data.lightning_expose,
           external_ip: this.config.data.lightning_external_ip,
           implementation: this.config.data.lightning_implementation,
-          torified: this.torifyables.find(data => data.value === 'tor_lnnode').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_lnnode')
+          torified: this.torifyables.find(data => data.value === 'tor_ln').checked,
+          clearnet: this.isChecked('clearnet', 'clearnet_lnnode'),
+          tor_hostname: this.sessionData.tor_ln_hostname
         }
       }
     }
