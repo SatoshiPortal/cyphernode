@@ -204,7 +204,7 @@
         "$id": "#/properties/torifyables/items",
         "type": "string",
         "enum": [
-          "tor_hiddenservice",
+          "tor_traefik",
           "tor_bitcoin",
           "tor_ln",
           "tor_otsoperations",
@@ -215,7 +215,7 @@
         "title": "The Torified feature",
         "default": "",
         "examples": [
-          "tor_hiddenservice",
+          "tor_traefik",
           "tor_bitcoin",
           "tor_l",
           "tor_otsoperations",

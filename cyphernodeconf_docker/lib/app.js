@@ -275,9 +275,16 @@ module.exports = class App {
     // Tor...
     if( this.isChecked( 'features', 'tor' ) ) {
       const torgen = new TorGen();
-      this.sessionData.tor_traefik_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/traefik/hidden_service' ) ));
-      this.sessionData.tor_ln_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/ln/hidden_service' ) ));
-      this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
+
+      if (this.isChecked('torifyables', 'tor_traefik')) {
+        this.sessionData.tor_traefik_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/traefik/hidden_service' ) ));
+      }
+      if (this.isChecked('torifyables', 'tor_ln')) {
+        this.sessionData.tor_ln_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/ln/hidden_service' ) ));
+      }
+      if (this.isChecked('torifyables', 'tor_bitcoin')) {
+        this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
+      }
     }
 
     // creates keys if they don't exist or we say so.

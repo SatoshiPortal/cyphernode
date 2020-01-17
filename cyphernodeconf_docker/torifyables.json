@@ -1,7 +1,7 @@
 [
   {
-    "name": "Cyphernode as Hidden Service",
-    "value": "tor_hiddenservice"
+    "name": "Traefik web proxy",
+    "value": "tor_traefik"
   },
   {
     "name": "Bitcoin Node",

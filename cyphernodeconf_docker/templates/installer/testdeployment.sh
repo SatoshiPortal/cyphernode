@@ -79,7 +79,7 @@ fi
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + ':' + traefik_https_port + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
-<% if ( features.indexOf('tor') !== -1 ) { %>
+<% if ( torifyables.indexOf('tor_traefik') !== -1 ) { %>
 printf "\033[0;92mYou can also use Tor Browser and navigate to your onion address:\r\n"
 printf "\033[0;95mhttps://${TOR_TRAEFIK_HOSTNAME}:<%= traefik_https_port %>/welcome\033[0m\r\n\r\n"
 <% } %>
