@@ -4,18 +4,18 @@
 
 send_to_watcher_node() {
   trace "Entering send_to_watcher_node()..."
-  send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} $@
+  local node_payload
+  node_payload="$(send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} $@)"
   local returncode=$?
   trace_rc ${returncode}
-
   if [ "${returncode}" -ne 0 ]; then
     # Ok, since we now have multiple watching wallets, we need to try them all if it fails
     # We have 2 right now: watching and watching-for-xpubs
-    send_to_watcher_node_wallet ${WATCHER_BTC_NODE_XPUB_WALLET} $@
+    node_payload="$(send_to_watcher_node_wallet ${WATCHER_BTC_NODE_XPUB_WALLET} $@)"
     returncode=$?
     trace_rc ${returncode}
   fi
-
+  echo "$node_payload"
   return ${returncode}
 }
 
