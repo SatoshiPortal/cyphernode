@@ -30,7 +30,7 @@ confirmation() {
   local returncode
   local txid=${1}
   local tx_details
-  tx_details=$(get_transaction ${txid})
+  tx_details="$(get_transaction ${txid})"
   returncode=$?
   trace_rc ${returncode}
   trace "[confirmation] tx_details=${tx_details}"
@@ -38,7 +38,6 @@ confirmation() {
     trace "[confirmation] Transaction not in watcher, exiting."
     return 0
   fi
-
   ########################################################################################################
   # First of all, let's make sure we're working on watched addresses...
   local address
@@ -58,7 +57,7 @@ confirmation() {
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index FROM watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index, event_message FROM watching WHERE address IN (${addresseswhere}) AND watching")
   if [ ${#rows} -eq 0 ]; then
     trace "[confirmation] No watched address in this tx!"
     return 0
@@ -68,7 +67,7 @@ confirmation() {
   local tx=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid})
-  local tx_nb_conf=$(echo "${tx_details}" | jq '.result.confirmations')
+  local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -137,45 +136,62 @@ confirmation() {
   rm rawtx-${txid}.blob
 
   ########################################################################################################
-  # Let's now insert in the join table if not already done
+
+  local event_message
+  local watching_id
+
+  # Let's see if we need to insert tx in the join table
   tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
-
-  if [ -z "${tx}" ]; then
-    trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
-    local watching_id
-
-    # If the tx is batched and pays multiple watched addresses, we have to insert
-    # those additional addresses in watching_tx!
-    for row in ${rows}
-    do
-      watching_id=$(echo "${row}" | cut -d '|' -f1)
-      address=$(echo "${row}" | cut -d '|' -f2)
-      # In the case of us spending to a watched address, the address appears twice in the details,
-      # once on the spend side (negative amount) and once on the receiving side (positive amount)
-      tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
-      tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
-      sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
-      trace_rc $?
-    done
-  else
-    trace "[confirmation] For this tx, there's already watching_tx rows"
-  fi
-  ########################################################################################################
-
-  ########################################################################################################
-  # Let's now grow the watch window in the case of a xpub watcher...
-  trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
   for row in ${rows}
   do
+
+    address=$(echo "${row}" | cut -d '|' -f2)
+    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
+    # In the case of us spending to a watched address, the address appears twice in the details,
+    # once on the spend side (negative amount) and once on the receiving side (positive amount)
+    tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+
+    ########################################################################################################
+    # Let's now insert in the join table if not already done
+    if [ -z "${tx}" ]; then
+      trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
+
+      # If the tx is batched and pays multiple watched addresses, we have to insert
+      # those additional addresses in watching_tx!
+      watching_id=$(echo "${row}" | cut -d '|' -f1)
+      sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
+      trace_rc $?
+    else
+      trace "[confirmation] For this tx, there's already watching_tx rows"
+    fi
+    ########################################################################################################
+
+    ########################################################################################################
+    # Let's now grow the watch window in the case of a xpub watcher...
     watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
-    pub32_index=$(echo "${row}" | cut -d '|' -f4)
     if [ -n "${watching_by_pub32_id}" ]; then
+      trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
+
+      pub32_index=$(echo "${row}" | cut -d '|' -f4)
       extend_watchers ${watching_by_pub32_id} ${pub32_index}
     fi
-  done
+    ########################################################################################################
 
-  ########################################################################################################
+    ########################################################################################################
+    # Let's publish the event if needed
+    event_message=$(echo "${row}" | cut -d '|' -f5)
+    if [ -n "${event_message}" ]; then
+      # There's an event message, let's publish it!
+
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      returncode=$?
+      trace_rc ${returncode}
+    fi
+    ########################################################################################################
+
+  done
 
   ) 201>./.confirmation.lock
 
