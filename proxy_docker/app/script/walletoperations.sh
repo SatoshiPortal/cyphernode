@@ -142,7 +142,7 @@ getbalances() {
 
     data="{\"balances\":${balances}}"
   else
-    trace "[getbalances] Coudn't get balances!"
+    trace "[getbalances] Couldn't get balances!"
     data=""
   fi
 
