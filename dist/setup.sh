@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -139,7 +139,7 @@ configure() {
   local recreate=""
 
   if [[ $1 == 1 ]]; then
-    recreate="recreate"
+    recreate=" recreate"
   fi
 
 
@@ -151,8 +151,6 @@ configure() {
 
   if [[ -t 1 ]]; then
     interactive=' -it'
-  else
-    gen_options=' --force 2'
   fi
 
   if [[ $CFG_PASSWORD ]]; then
@@ -183,21 +181,24 @@ configure() {
   # configure features of cyphernode
   docker run -v $current_path:/data \
              -e DEFAULT_USER=$USER \
+             -e DEFAULT_DATADIR_BASE=$HOME \
+             -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
-             -e VERSION_OVERRIDE=$VERSION_OVERRIDE \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
              -e PROXY_VERSION=$PROXY_VERSION \
+             -e NOTIFIER_VERSION=$NOTIFIER_VERSION \
              -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
              -e OTSCLIENT_VERSION=$OTSCLIENT_VERSION \
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
              --network none \
-             --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user yo --no-insight cyphernode$gen_options $recreate
-  if [[ -f $current_path/exitStatus.sh ]]; then
-    . $current_path/exitStatus.sh
-    rm $current_path/exitStatus.sh
+             --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user node index.js$recreate
+  if [[ -f $cyphernodeconf_filepath/exitStatus.sh ]]; then
+    . $cyphernodeconf_filepath/exitStatus.sh
+    rm $cyphernodeconf_filepath/exitStatus.sh
   fi
 
   if [[ ! $EXIT_STATUS == 0 ]]; then
@@ -348,7 +349,6 @@ compare_bitcoinconf() {
 }
 
 install_docker() {
-
   local archpath=$(uname -m)
 
   # compat mode for SatoshiPortal repo
@@ -363,28 +363,39 @@ install_docker() {
     next
   fi
 
-  if [ -d $GATEKEEPER_DATAPATH ]; then
-    if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
-      # prevent mounting installation.json as a directory
-      sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
-    fi
-
-    if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
-      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
-    fi
-
-    if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
-      sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
-    fi
-
-    copy_file $current_path/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-    copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-    copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-    copy_file $current_path/gatekeeper/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+  if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
+    # prevent mounting installation.json as a directory
+    sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
   fi
+
+  if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
+    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
+  fi
+
+  if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
+    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
+  fi
+
+  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+
+
+  if [ ! -d $TRAEFIK_DATAPATH ]; then
+    step "   [32mcreate[0m $TRAEFIK_DATAPATH"
+    sudo_if_required mkdir -p $TRAEFIK_DATAPATH
+    next
+  fi
+
+  copy_file $cyphernodeconf_filepath/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+
 
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
@@ -392,7 +403,8 @@ install_docker() {
     next
   fi
 
-  copy_file $current_path/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -402,18 +414,22 @@ install_docker() {
     fi
     if [ -d $BITCOIN_DATAPATH ]; then
 
-      local cmpStatus=$(compare_bitcoinconf $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
+      local cmpStatus=$(compare_bitcoinconf $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED; break;;
-              [Nn]* ) copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
+                      break;;
+              [Nn]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -422,7 +438,8 @@ install_docker() {
           done
         fi
       elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
         echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
         echo "          [31mYour cyphernode installation is most likely broken.[0m"
         echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
@@ -430,7 +447,8 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $current_path/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
       fi
     fi
   fi
@@ -441,15 +459,15 @@ install_docker() {
         if [[ $archpath == "rpi" ]]; then
           dockerfile="Dockerfile-alpine"
         fi
+
         if [ ! -d $LIGHTNING_DATAPATH ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
           sudo_if_required mkdir -p $LIGHTNING_DATAPATH
           next
         fi
-        if [ -d $LIGHTNING_DATAPATH ]; then
-          copy_file $current_path/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-          copy_file $current_path/lightning/c-lightning/bitcoin.conf $LIGHTNING_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
-        fi
+
+        copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+
     fi
   fi
 
@@ -496,10 +514,37 @@ install_docker() {
     fi
   fi
 
-  copy_file $current_path/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
-  copy_file $current_path/installer/testfeatures.sh $current_path/testfeatures.sh 0
-  copy_file $current_path/installer/start.sh $current_path/start.sh 0
-  copy_file $current_path/installer/stop.sh $current_path/stop.sh 0
+  local appsnet_entry=$(docker network ls | grep cyphernodeappsnet);
+
+  if [[ $appsnet_entry =~ 'cyphernodeappsnet' ]]; then
+    if [[ $appsnet_entry =~ 'local' && $DOCKER_MODE == 'swarm' ]]; then
+      step " [32mrecreate[0m cyphernode apps network"
+      try docker network rm cyphernodeappsnet > /dev/null 2>&1
+      try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
+      next
+    elif [[ $appsnet_entry =~ 'swarm' && $DOCKER_MODE == 'compose' ]]; then
+      step " [32mrecreate[0m cyphernode apps network"
+      try docker network rm cyphernodeappsnet > /dev/null 2>&1
+      try docker network create cyphernodeappsnet > /dev/null 2>&1
+      next
+    fi
+  else
+    if [[ $DOCKER_MODE == 'swarm' ]]; then
+      step "   [32mcreate[0m cyphernode apps network"
+      try docker network create -d overlay --attachable --opt encrypted cyphernodeappsnet > /dev/null 2>&1
+      next
+    elif [[ $DOCKER_MODE == 'compose' ]]; then
+      step "   [32mcreate[0m cyphernode apps network"
+      try docker network create cyphernodeappsnet > /dev/null 2>&1
+      next
+    fi
+  fi
+
+  copy_file $cyphernodeconf_filepath/installer/docker/docker-compose.yaml $current_path/docker-compose.yaml
+  copy_file $cyphernodeconf_filepath/installer/testfeatures.sh $current_path/testfeatures.sh 0
+  copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
+  copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
+  copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
@@ -518,14 +563,24 @@ install_docker() {
     try chmod +x $current_path/testfeatures.sh
     next
   fi
+
+  if [[ ! -x $current_path/testdeployment.sh ]]; then
+    step "     [32mmake[0m testdeployment.sh executable"
+    try chmod +x $current_path/testdeployment.sh
+    next
+  fi
 }
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
+    if [[ ''$d == '' ]]; then
+      continue
+    fi
+    d=$(realpath $d)
     if [[ -e $d ]]; then
       # is it mine and does it have rw ?
       # don't care about group rights
@@ -551,18 +606,37 @@ check_bitcoind() {
   echo 0
 }
 
-sanity_checks() {
+realpath() {
+  [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
 
-  echo "    [32mcheck[0m requirements."
 
+check_docker() {
   if ! [ -x "$(command -v docker)" ]; then
     echo "          [31mdocker is not installed on your system. Please check https://www.docker.com/get-started.[0m"
     exit
   fi
+}
 
-  if [[ $DOCKER_MODE == 'compose' && ! -x "$(command -v docker-compose)" ]]; then
+check_docker_compose() {
+  if ! [ -x "$(command -v docker-compose)" ]; then
     echo "          [31mdocker-compose is not installed on your system. Please check https://docs.docker.com/compose/install/.[0m"
     exit
+  fi
+}
+
+sanity_checks_pre_config() {
+  echo "    [32mcheck[0m requirements for configuration step."
+  check_docker
+}
+
+sanity_checks_pre_install() {
+
+  echo "    [32mcheck[0m requirements for installation step."
+
+  check_docker
+  if [[ $DOCKER_MODE == 'compose' ]]; then
+    check_docker_compose
   fi
 
   local OS=$(uname -s)
@@ -603,7 +677,7 @@ sanity_checks() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -619,6 +693,14 @@ sanity_checks() {
     fi
   else
     echo "    [32mnice![0m everything seems to be ok."
+  fi
+}
+
+install_apps() {
+  if [ ! -d "$current_path/apps" ]; then
+    local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
+    echo "   [32mclone[0m $apps_repo into apps"
+    docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
   fi
 }
 
@@ -638,16 +720,20 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.1.0-rc.2"
-VERSION_OVERRIDE="true"
-CONF_VERSION="v0.1-rc.2"
-GATEKEEPER_VERSION="v0.1-rc.2"
-PROXY_VERSION="v0.1-rc.2"
-PROXYCRON_VERSION="v0.1-rc.2"
-OTSCLIENT_VERSION="v0.1-rc.2"
-PYCOIN_VERSION="v0.1-rc.2"
-BITCOIN_VERSION="v0.17.0"
-LIGHTNING_VERSION="v0.6.2"
+# CYPHERNODE VERSION "v0.2.4"
+SETUP_VERSION="v0.2.4"
+CONF_VERSION="v0.2.4"
+GATEKEEPER_VERSION="v0.2.4"
+PROXY_VERSION="v0.2.4"
+NOTIFIER_VERSION="v0.2.4"
+PROXYCRON_VERSION="v0.2.4"
+OTSCLIENT_VERSION="v0.2.4"
+PYCOIN_VERSION="v0.2.4"
+CYPHERAPPS_VERSION="v0.2.2"
+BITCOIN_VERSION="v0.18.0"
+LIGHTNING_VERSION="v0.7.1"
+
+SETUP_DIR=$(dirname $(realpath $0))
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
@@ -658,6 +744,7 @@ function ctrl_c() {
 }
 
 export current_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export cyphernodeconf_filepath="$current_path/.cyphernodeconf"
 
 while getopts ":cirhys" opt; do
   case $opt in
@@ -690,17 +777,34 @@ while getopts ":cirhys" opt; do
   esac
 done
 
+nbbuiltimgs=$(docker images --filter=reference='cyphernode/*:*-local' | wc -l)
+if [[ $nbbuiltimgs -gt 1 ]]; then
+  read -p "Locally built Cyphernode images found!  Do you want to use them?  [yn] " -n 1 -r
+
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    CONF_VERSION="$CONF_VERSION-local"
+    GATEKEEPER_VERSION="$GATEKEEPER_VERSION-local"
+    PROXY_VERSION="$PROXY_VERSION-local"
+    NOTIFIER_VERSION="$NOTIFIER_VERSION-local"
+    PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
+    OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
+    PYCOIN_VERSION="$PYCOIN_VERSION-local"
+  fi
+fi
+
 if [[  $CONFIGURE == 0 && $INSTALL == 0 && $RECREATE == 0 ]]; then
   CONFIGURE=1
   INSTALL=1
 fi
 
 if [[ $CONFIGURE == 1 ]]; then
+  sanity_checks_pre_config
   configure $RECREATE
 fi
 
-if [[ -f $current_path/installer/config.sh ]]; then
-  . $current_path/installer/config.sh
+
+if [[ -f "$cyphernodeconf_filepath/installer/config.sh" ]]; then
+  . "$cyphernodeconf_filepath/installer/config.sh"
 fi
 
 if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cyphernodeconf ]]; then
@@ -710,15 +814,18 @@ if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cypherno
 fi
 
 if [[ $INSTALL == 1 ]]; then
-  sanity_checks
+  sanity_checks_pre_install
   create_user
   install
   modify_owner
   modify_permissions
+  install_apps
+  if [[ ! $AUTOSTART == 1 ]]; then
+    cowsay
+  fi
+
 fi
 
 if [[ $AUTOSTART == 1 ]]; then
   exec $current_path/start.sh
-else
-  cowsay
 fi

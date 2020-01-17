@@ -1,0 +1,1907 @@
+openapi: 3.0.0
+info:
+  description: "Cyphernode API v0"
+  version: "0.1.0"
+  title: "Cyphernode API"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
+servers:
+  - url: /v0
+    description: authoring
+  - url: http://localhost:8888/v0
+    description: local cyphernode
+security:
+  - BearerAuth: []
+tags:
+  - name: "cyphernode"
+    description: "Everything bitcoin"
+    externalDocs:
+      description: "Find out more"
+      url: "http://cyphernode.io"
+  - name: "openapi generator"
+    externalDocs:
+      description: "Find out more"
+      url: "https://github.com/OpenAPITools/openapi-generator"
+  - name: "watching addresses"
+  - name: "block"
+  - name: "transaction"
+  - name: "spending wallet"
+  - name: "addresses"
+  - name: "lightning"
+  - name: "open timestamps client"
+  - name: "core features"
+  - name: "optional features"
+paths:
+  /watch:
+    post:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Add a new Bitcoin address to be watched"
+      description: "Inserts the Bitcoin address and callbacks in the DB and imports the address to the Watching wallet."
+      operationId: "addWatchedAddress"
+      requestBody:
+        description: "Bitcoin address that needs to be watched"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "address"
+                - "confirmedCallbackURL"
+                - "unconfirmedCallbackURL"
+              properties:
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                unconfirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+                confirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+      responses:
+        '200':
+          description: "successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedAddress'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getactivewatches:
+    get:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Get list of watched Bitcoin addresses"
+      description: "Returns the list of currently watched Bitcoin addresses and callback information."
+      operationId: "listWatchedAddress"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "watches"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/WatchedAddress'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /unwatch/{address}:
+    get:
+      parameters:
+        - in: "path"
+          name: "address"
+          description: "Address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeAddressString'
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Stop watching a Bitcoin address"
+      description: "Updates the watched Bitcoin address row in DB so that callbacks won't be called on tx confirmations for that address."
+      operationId: "deleteWatchedAddress"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  event:
+                    type: "string"
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /watchxpub:
+    post:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Add a new xpub to be watched"
+      description: "Inserts the xpub's Bitcoin addresses and callbacks in the DB and imports the addresses to the xpub Watching wallet."
+      operationId: "addXpubWatch"
+      requestBody:
+        description: "Bitcoin xpub that needs to be watched"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "label"
+                - "pub32"
+                - "path"
+                - "nstart"
+                - "unconfirmedCallbackURL"
+                - "confirmedCallbackURL"
+              properties:
+                label:
+                  description: "Label for that xpub.  Can be used, instead for xpub, for future references in xpub-related endpoints."
+                  type: "string"
+                pub32:
+                  $ref: '#/components/schemas/TypeXpubString'
+                path:
+                  description: "Derivation path to use when deriving addresses from xpub to be watched.  Must use variable n in the path for the index."
+                  type: "string"
+                nstart:
+                  description: "Index number to start watching from."
+                  type: "integer"
+                unconfirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+                confirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+      responses:
+        '200':
+          description: "successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedAddress'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /unwatchxpubbyxpub/{xpub}:
+    get:
+      parameters:
+        - in: "path"
+          name: "xpub"
+          description: "Xpub address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeXpubString'
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Stop watching a Bitcoin xpub address"
+      description: "Updates the watched xpub Bitcoin address row in DB so that callbacks won't be called on tx confirmations for the provided xpub addresses."
+      operationId: "deleteWatchedXpubByXpub"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  event:
+                    type: "string"
+                  xpub:
+                    $ref: '#/components/schemas/TypeXpubString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /unwatchxpubbylabel/{label}:
+    get:
+      parameters:
+        - in: "path"
+          name: "label"
+          description: "Xpub label"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Stop watching a Bitcoin xpub address"
+      description: "Updates the watched xpub Bitcoin address row in DB so that callbacks won't be called on tx confirmations for the provided xpub addresses."
+      operationId: "deleteWatchedXpubByLabel"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  event:
+                    type: "string"
+                  label:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getactivewatchesbyxpub/{xpub}:
+    get:
+      parameters:
+        - in: "path"
+          name: "xpub"
+          description: "Xpub address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeXpubString'
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Get list of watched-by-xpub Bitcoin addresses"
+      description: "Returns the list of currently watched-by-xpub Bitcoin addresses and callback information."
+      operationId: "listWatchedByXpubAddressByXpub"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "watches"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/WatchedByXpubAddress'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getactivewatchesbylabel/{label}:
+    get:
+      parameters:
+        - in: "path"
+          name: "label"
+          description: "Xpub label"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Get list of watched-by-xpub Bitcoin addresses by label"
+      description: "Returns the list of currently watched-by-xpub Bitcoin addresses, by label, and callback information."
+      operationId: "listWatchedByXpubAddressByLabel"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "watches"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/WatchedByXpubAddress'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getactivexpubwatches:
+    get:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Get list of watched-by-xpub Bitcoin xpub"
+      description: "Returns the list of currently watched xpub Bitcoin addresses and callback information."
+      operationId: "listWatchedByXpubAddresses"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "id"
+                  - "pub32"
+                  - "label"
+                  - "derivation_path"
+                  - "last_imported_n"
+                  - "unconfirmedCallbackURL"
+                  - "confirmedCallbackURL"
+                  - "watching_since"
+                properties:
+                  watches:
+                    type: "array"
+                    items:
+                      $ref: '#/components/schemas/WatchedXpub'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /watchtxid:
+    post:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Add a new txid to be watched"
+      description: "Inserts the transaction id and callbacks in the DB and check number of confirmations when a new block is added.  Will eventually execute callbacks when enough confirmations for the transaction.  Useful when we want to be notified when a LN channel is ready to use."
+      operationId: "addWatchedTxid"
+      requestBody:
+        description: "Bitcoin txid that needs to be watched"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "txid"
+                - "confirmedCallbackURL"
+                - "xconfCallbackURL"
+                - "nbxconf"
+              properties:
+                txid:
+                  $ref: '#/components/schemas/TypeHashString'
+                unconfirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+                xconfCallbackURL:
+                  type: "string"
+                  format: "url"
+                nbxconf:
+                  type: "integer"
+      responses:
+        '200':
+          description: "successfully created"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedAddress'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+
+  /getblockhash/{height}:
+    get:
+      parameters:
+        - in: "path"
+          name: "height"
+          description: "Blockhash"
+          required: true
+          schema:
+           type: "integer"
+      tags:
+        - "block"
+        - "core features"
+      summary: "Get block hash matching height provided."
+      description: "Returns the block matching the height provided of the watching Bitcoin node."
+      operationId: "getBlockHash"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "result"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/TypeHashString'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbestblockhash:
+    get:
+      tags:
+        - "block"
+        - "core features"
+      summary: "Get the best block hash."
+      description: "Returns the best block hash of the watching Bitcoin node."
+      operationId: "getBestBlockHash"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "result"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/TypeHashString'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getblockchaininfo:
+    get:
+      tags:
+        - "stats"
+        - "core features"
+      summary: "Show blockchain info"
+      description: "Returns detailed blockchain information."
+      operationId: "getBlockchainInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockchainInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getinstallation_info:
+    get:
+      tags:
+        - "stats"
+      summary: "Show installation info"
+      description: "Returns detailed cyphernode installation information."
+      operationId: "getInstallationInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallationInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getblockinfo/{blockHash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "blockHash"
+          description: "Blockhash"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      tags:
+        - "block"
+        - "core features"
+      summary: "Show block info"
+      description: "Returns detailed block information."
+      operationId: "getBlockInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Block'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbestblockinfo:
+    get:
+      tags:
+        - "block"
+        - "core features"
+      summary: "Get the best block info"
+      description: "Returns detailed block information for current best block."
+      operationId: "getBestBlockInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Block'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /gettransaction/{transactionHash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "transactionHash"
+          description: "Transaction id"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeHashString'
+      tags:
+        - "transaction"
+        - "core features"
+      summary: "Get transaction info"
+      description: "Returns detailed transaction information."
+      operationId: "getTransactionInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Transaction'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbalance:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Get the spending wallet balance"
+      description: "Returns the spending wallet balance, in BTC."
+      operationId: "getSpendingWalletBalance"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbalancebyxpub/{xpub}:
+    get:
+      parameters:
+        - in: "path"
+          name: "xpub"
+          description: "Xpub address"
+          required: true
+          schema:
+            $ref: '#/components/schemas/TypeXpubString'
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Get the xpub balance"
+      description: "Returns the xpub balance, in BTC."
+      operationId: "getXpubBalanceByXpub"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbalancebyxpublabel/{label}:
+    get:
+      parameters:
+        - in: "path"
+          name: "label"
+          description: "Xpub label"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Get the xpub balance by its label"
+      description: "Returns the xpub balance by its label, in BTC."
+      operationId: "getXpubBalanceByLabel"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getnewaddress:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Generates a new address on the spending wallet"
+      description: "Generates a new address on the spending wallet. Useful to refill the spending wallet from cold wallet (ie Trezor)."
+      operationId: "getSpendingWalletNewAddress"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /spend:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Spend some amount to some address"
+      description: "Calls sendtoaddress RPC on the spending wallet with supplied info."
+      operationId: "spend"
+      requestBody:
+        description: "Address and amount"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "address"
+                - "amount"
+              properties:
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                amount:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "status"
+                  - "hash"
+                properties:
+                  status:
+                    type: "string"
+                  hash:
+                    $ref: '#/components/schemas/TypeHashString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bumpfee:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Bump the fees of an unconfirmed transaction"
+      description: "Calls bumpfee RPC on the spending wallet with supplied info."
+      operationId: "bumpfee"
+      requestBody:
+        description: "txid and confirmation target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "txid"
+              properties:
+                txid:
+                  $ref: '#/components/schemas/TypeHashString'
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "txid"
+                  - "origfee"
+                  - "fee"
+                  - "errors"
+                properties:
+                  txid:
+                    $ref: '#/components/schemas/TypeHashString'
+                  origfee:
+                    type: "number"
+                  fee:
+                    type: "number"
+                  errors:
+                    type: "array"
+                    items:
+                      type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /addtobatch:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Adds spending of some amount to some address to the next batch"
+      description: "Inserts output information in the DB.  Used when batchspend is called later."
+      operationId: "spendInNextBatch"
+      requestBody:
+        description: "Address and amount"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "address"
+                - "amount"
+              properties:
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                amount:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /batchspend:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Spend previously amounts/addresses added with addtobatch"
+      description: "Creates a batched transaction whose outputs are the previously unspent addtobatch calls."
+      operationId: "batchSpend"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "status"
+                  - "hash"
+                properties:
+                  status:
+                    type: "string"
+                  hash:
+                    $ref: '#/components/schemas/TypeHashString'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /deriveindex/{indexSpecifier}:
+    get:
+      parameters:
+        - in: "path"
+          name: "indexSpecifier"
+          description: "Index specifier. Either an integer or a range in the form n-m"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Derive address(es) using configured xpub key and derivation path"
+      description: "Derives address(es) for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
+      operationId: "deriveIndex"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  addresses:
+                    type: "array"
+                    items:
+                      type: "object"
+                      required:
+                        - "address"
+                      properties:
+                        address:
+                          $ref: '#/components/schemas/TypeAddressString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /derivepubpath:
+    post:
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Derive address(es) using supplied xpub key and derivation path"
+      description: "Derives address(es) for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used."
+      operationId: "derivePubPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "pub32"
+                - "path"
+              properties:
+                pub32:
+                  description: "xpub/ypub/zpub/tpub/upub/vpub used to derive address(es)"
+                  type: "string"
+                path:
+                  description: "Derivation path including the index, in the form n or n-m (ex.: 0/44'/86 or 0/44'/62-77)"
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  addresses:
+                    type: "array"
+                    items:
+                      type: "object"
+                      required:
+                        - "address"
+                      properties:
+                        address:
+                          $ref: '#/components/schemas/TypeAddressString'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getmempoolinfo:
+    get:
+      tags:
+        - "stats"
+        - "core features"
+      summary: "Show mempool info"
+      description: "Returns detailed mempool information."
+      operationId: "getmempoolinfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MempoolInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_getinfo:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Get lightning node info"
+      description: "Calls getinfo from lightningd. Useful to let your users know where to connect to."
+      operationId: "lightningGetNodeInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "string"
+                  alias:
+                    type: "string"
+                  color:
+                    $ref: '#/components/schemas/TypeInt32HexString'
+                  version:
+                    type: "string"
+                  blockheight:
+                    type: "integer"
+                  network:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_create_invoice:
+    post:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Create lightning invoice"
+      description: "Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds."
+      operationId: "lightningCreateInvoice"
+      requestBody:
+        description: "Information to create invoice"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "msatoshi"
+                - "label"
+                - "description"
+                - "expiry"
+              properties:
+                msatoshi:
+                  type: "integer"
+                label:
+                  type: "string"
+                description:
+                  type: "string"
+                expiry:
+                  type: "integer"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  payment_hash:
+                    $ref: '#/components/schemas/TypeHashString'
+                  expires_at:
+                    type: "integer"
+                  bolt11:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_pay:
+    post:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Pay lightning invoice"
+      description: "Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user."
+      operationId: "lightningPayInvoice"
+      requestBody:
+        description: "Information to pay invoice"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "bolt11"
+                - "expected_msatoshi"
+                - "expected_description"
+              properties:
+                bolt11:
+                  type: "string"
+                expected_msatoshi:
+                  type: "integer"
+                expected_description:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "integer"
+                  payment_hash:
+                    $ref: '#/components/schemas/TypeHashString'
+                  msatoshi:
+                    type: "integer"
+                  msatoshi_sent:
+                    type: "integer"
+                  created_at:
+                    type: "integer"
+                  status:
+                    type: "string"
+                  payment_preimage:
+                    $ref: '#/components/schemas/TypeHashString'
+                  description:
+                    type: "string"
+                  getroute_tries:
+                    type: "integer"
+                  sendpay_tries:
+                    type: "integer"
+                  route:
+                    type: "array"
+                    items:
+                      type: "object"
+                      properties:
+                        id:
+                          type: "string"
+                        channel:
+                          type: "string"
+                        msatoshi:
+                          type: "integer"
+                        delay:
+                          type: "integer"
+                  failures:
+                    type: "array"
+                    items:
+                      type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_newaddr:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Generates new address from the lightning node"
+      description: "Returns a Bitcoin bech32 address to fund your LN wallet."
+      operationId: "lightningGetNewAddress"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  address:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_getconnectionstring:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Returns the connection string to the lightning node"
+      description: "Returns the connection string to the lightning node"
+      operationId: "lightningGetConnectionString"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  connectstring:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_decodebolt11/{bolt11}:
+    get:
+      parameters:
+        - in: "path"
+          name: "bolt11"
+          description: "BOLT11 string to decode"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Get the detailed decoded bolt11 string info"
+      description: "Returns the detailed decoded bolt11 string info"
+      operationId: "getDecodedBolt11"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_getinvoice/{label}:
+    get:
+      parameters:
+        - in: "path"
+          name: "label"
+          description: "Xpub label"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Get the LN invoice by its label"
+      description: "Returns the LN invoice by its label."
+      operationId: "getLnInvoiceByLabel"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_connectfund:
+    post:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Connect LN to a peer and fund a channel"
+      description: "Connect LN node to a peer.  Fund a channel.  When channel is ready, callback will be called."
+      operationId: "lightningConnectFund"
+      requestBody:
+        description: "Information to connect, fund channel and be called back."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "peer"
+                - "msatoshi"
+                - "callbackUrl"
+              properties:
+                peer:
+                  type: "string"
+                msatoshi:
+                  type: "integer"
+                callbackUrl:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "string"
+                  txid:
+                    $ref: '#/components/schemas/TypeHashString'
+                  channel_id:
+                    type: "string"
+                  message:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_stamp:
+    post:
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Stamp a hash using OTS"
+      description: "Stamp supplied hash using OTS.  Callback called when stamping is completed."
+      operationId: "otsStamp"
+      requestBody:
+        description: "Information to stamp and callback."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "hash"
+                - "callbackUrl"
+              properties:
+                hash:
+                  $ref: '#/components/schemas/TypeHashString'
+                callbackUrl:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_verify:
+    post:
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Verify an OTS file with hash"
+      description: "If base64 of the OTS file is not supplied, look for local OTS file named after the supplied hash suffixed with .ots."
+      operationId: "otsVerify"
+      requestBody:
+        description: "JSON object containing hash and base64otsfile."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "hash"
+              properties:
+                hash:
+                  $ref: '#/components/schemas/TypeHashString'
+                base64otsfile:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_info:
+    post:
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Get information about an OTS file"
+      description: "If base64 of the OTS file is not supplied, look for local OTS file named after the supplied hash suffixed with .ots."
+      operationId: "otsInfo"
+      requestBody:
+        description: "JSON object containing hash and/or base64otsfile."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                hash:
+                  $ref: '#/components/schemas/TypeHashString'
+                base64otsfile:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                # TODO: describe response
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ots_getfile/{hash}:
+    get:
+      parameters:
+        - in: "path"
+          name: "hash"
+          description: "Stamped hash"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "ots"
+        - "optional features"
+      summary: "Get the OTS file of the stamped hash."
+      description: "Returns the OTS file of the stamped hash."
+      operationId: "getOtsFile"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+components:
+  schemas:
+    WatchedAddress:
+      type: "object"
+      required:
+        - "address"
+        - "unconfirmedCallbackURL"
+        - "confirmedCallbackURL"
+      properties:
+        id:
+          type: "string"
+        event:
+          type: "string"
+        imported:
+          type: "string"
+          enum: ["0","1"]
+        inserted:
+          type: "string"
+          enum: ["0","1"]
+        address:
+          $ref: '#/components/schemas/TypeAddressString'
+        unconfirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        confirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        estimatesmartfee2blocks:
+          type: "string"
+        estimatesmartfee6blocks:
+          type: "string"
+        estimatesmartfee36blocks:
+          type: "string"
+        estimatesmartfee144blocks:
+          type: "string"
+        watching_since:
+          type: "string"
+    WatchedByXpubAddress:
+      type: "object"
+      required:
+        - "id"
+        - "address"
+        - "imported"
+        - "unconfirmedCallbackURL"
+        - "confirmedCallbackURL"
+        - "watching_since"
+        - "derivation_path"
+        - "pub32_index"
+      properties:
+        id:
+          type: "string"
+        address:
+          $ref: '#/components/schemas/TypeAddressString'
+        imported:
+          type: "string"
+          enum: ["0","1"]
+        unconfirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        confirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        watching_since:
+          type: "string"
+        derivation_path:
+          type: "string"
+        pub32_index:
+          type: "string"
+    WatchedXpub:
+      type: "object"
+      required:
+        - "id"
+        - "pub32"
+        - "label"
+        - "derivation_path"
+        - "last_imported_n"
+        - "unconfirmedCallbackURL"
+        - "confirmedCallbackURL"
+        - "watching_since"
+      properties:
+        id:
+          type: "string"
+        pub32:
+          $ref: '#/components/schemas/TypeXpubString'
+        label:
+          type: "string"
+        derivation_path:
+          type: "string"
+        last_imported_n:
+          type: "string"
+        unconfirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        confirmedCallbackURL:
+          description: "Async callback in case of activity on address"
+          type: "string"
+          format: "url"
+        watching_since:
+          type: "string"
+    Balance:
+      type: "object"
+      required:
+        - "balance"
+      properties:
+        balance:
+          type: "number"
+    Block:
+      type: "object"
+      required:
+        - "address"
+        - "callback"
+      properties:
+        id:
+          type: "integer"
+        hash:
+          $ref: '#/components/schemas/TypeHashString'
+        confirmations:
+          type: "integer"
+        strippedsize:
+          type: "integer"
+        size:
+          type: "integer"
+        weight:
+          type: "integer"
+        height:
+          type: "integer"
+        version:
+          type: "integer"
+        versionHex:
+          $ref: '#/components/schemas/TypeInt32HexString'
+        merkleroot:
+          $ref: '#/components/schemas/TypeHashString'
+        tx:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/TypeHashString'
+        time:
+          type: "integer"
+        mediantime:
+          type: "integer"
+        nonce:
+          type: "integer"
+        bits:
+          $ref: '#/components/schemas/TypeInt32HexString'
+        difficulty:
+          type: 'integer'
+        chainwork:
+          $ref: '#/components/schemas/TypeHashString'
+        nTx:
+          type: 'integer'
+        previousblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        nextblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+    Transaction:
+      type: "object"
+      properties:
+        txid:
+          $ref: '#/components/schemas/TypeHashString'
+        hash:
+          $ref: '#/components/schemas/TypeHashString'
+        version:
+          type: "integer"
+        size:
+          type: "integer"
+        vsize:
+          type: "integer"
+        locktime:
+          type: "integer"
+        vin:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/Input'
+        vout:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/Output'
+        hex:
+          $ref: '#/components/schemas/TypeHexString'
+        blockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        confirmations:
+          type: "integer"
+        time:
+          type: "integer"
+        blocktime:
+          type: "integer"
+    BlockchainInfo:
+      type: "object"
+      properties:
+        chain:
+          type: "string"
+          enum: ["test", "main"]
+        blocks:
+          type: "integer"
+        headers:
+          type: "integer"
+        bestblockhash:
+          $ref: '#/components/schemas/TypeHashString'
+        difficulty:
+          type: "number"
+        mediantime:
+          type: "integer"
+        verificationprogress:
+          type: "number"
+        initialblockdownload:
+          type: "boolean"
+        chainwork:
+          $ref: '#/components/schemas/TypeHashString'
+        size_on_disk:
+          type: "integer"
+        pruned:
+          type: "boolean"
+        warnings:
+          type: "string"
+        softforks:
+          type: "array"
+          items:
+            $ref: '#/components/schemas/TypeSoftFork'
+        bip9_softforks:
+          type: "object"
+          additionalProperties:
+            $ref: '#/components/schemas/TypeBip9SoftFork'
+    InstallationInfo:
+      type: "object"
+      properties:
+        api_versions:
+          type: "array"
+          items:
+            type: "string"
+        setup_version:
+          type: "string"
+        bitcoin_version:
+          type: "string"
+        features:
+          type: "array"
+          items:
+            type: "object"
+            properties:
+              name:
+                type: "string"
+              label:
+                type: "string"
+              host:
+                type: "string"
+              docker:
+                type: "string"
+              networks:
+                type: "array"
+                items:
+                  type: "string"
+              extra:
+                type: "object"
+        devmode:
+          type: "boolean"
+    Input:
+      type: "object"
+      properties:
+        txid:
+          $ref: '#/components/schemas/TypeHashString'
+        vout:
+          type: "integer"
+        scriptSig:
+          type: "object"
+          properties:
+            asm:
+              type: "string"
+            hex:
+              $ref: '#/components/schemas/TypeHexString'
+    Output:
+      type: "object"
+      properties:
+        value:
+          type: "number"
+        n:
+          type: "integer"
+        scriptPubKey:
+          type: "object"
+          properties:
+            asm:
+              type: "string"
+            hex:
+              $ref: '#/components/schemas/TypeHexString'
+            reqSigs:
+              type: "integer"
+            type:
+              type: "string"
+            addresses:
+              type: "array"
+              items:
+                $ref: '#/components/schemas/TypeAddressString'
+    MempoolInfo:
+      type: "object"
+      properties:
+        size:
+          type: "integer"
+        bytes:
+          type: "integer"
+        usage:
+          type: "integer"
+        maxmempool:
+          type: "integer"
+        mempoolminfee:
+          type: "number"
+        minrelaytxfee:
+          type: "integer"
+    TypeHexString:
+      description: "variable length hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]+$"
+    TypeAddressString:
+      description: "base58 check encoded address"
+      type: "string"
+      pattern: "^[a-km-zA-HJ-NP-Z1-9]{26,35}$"
+    TypeXpubString:
+      description: "base58 check encoded xpub"
+      type: "string"
+      pattern: "^[a-km-zA-HJ-NP-Z1-9]{78,112}$"
+    TypeHashString:
+      description: "64 character hex string"
+      type: "string"
+      pattern: "^[a-fA-F0-9]{64}$"
+    TypeInt32HexString:
+      description: "8 character hex string"
+      type: "string"
+      pattern: "^([a-fA-F0-9][a-fA-F0-9]){1,4}$"
+    TypeSoftFork:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        version:
+          type: "integer"
+        reject:
+          type: "object"
+          properties:
+            status:
+              type: "boolean"
+    TypeBip9SoftFork:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        startTime:
+          type: "integer"
+        timeout:
+          type: "integer"
+        since:
+          type: "integer"
+    ApiResponseTemporarilyUnavailable:
+      type: "object"
+      properties:
+        reason:
+          type: "string"
+    ApiResponseNotAllowed:
+      description: Access token is missing or invalid
+    ApiResponseNotFound:
+      description: Not found
+    ApiResponseInvalidInput:
+      description: Invalid Input
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

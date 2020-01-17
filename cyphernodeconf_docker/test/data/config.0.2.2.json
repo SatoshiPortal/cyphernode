@@ -1,0 +1,59 @@
+{
+  "schema_version": "0.2.2",
+  "setup_version": "setup_version",
+  "docker_versions": {},
+  "features": [
+    "lightning",
+    "otsclient"
+  ],
+  "net": "testnet",
+  "use_xpub": true,
+  "installer_mode": "docker",
+  "run_as_different_user": true,
+  "username": "cyphernode",
+  "docker_mode": "compose",
+  "bitcoin_rpcuser": "bitcoin",
+  "bitcoin_rpcpassword": "test123",
+  "bitcoin_uacomment": "",
+  "bitcoin_prune": false,
+  "bitcoin_prune_size": 550,
+  "bitcoin_datapath": "/Users/jash/.cyphernode/bitcoin",
+  "bitcoin_mode": "internal",
+  "bitcoin_expose": false,
+  "lightning_expose": true,
+  "gatekeeper_port": 2009,
+  "gatekeeper_keys": {
+    "configEntries": [
+      "kapi_id=\"000\";kapi_key=\"a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a\";kapi_groups=\"watcher\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+      "kapi_id=\"001\";kapi_key=\"a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a\";kapi_groups=\"watcher\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+      "kapi_id=\"002\";kapi_key=\"fe58ddbb66d7302a7087af3242a98b6326c51a257f5eab1c06bb8cc02e25890d\";kapi_groups=\"watcher,spender\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+      "kapi_id=\"003\";kapi_key=\"f0b8bb52f4c7007938757bcdfc73b452d6ce08cc0c660ce57c5464ae95f35417\";kapi_groups=\"watcher,spender,admin\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}"
+    ],
+    "clientInformation": [
+      "000=a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a",
+      "001=a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a",
+      "002=fe58ddbb66d7302a7087af3242a98b6326c51a257f5eab1c06bb8cc02e25890d",
+      "003=f0b8bb52f4c7007938757bcdfc73b452d6ce08cc0c660ce57c5464ae95f35417"
+    ]
+  },
+  "gatekeeper_sslcert": "-----BEGIN CERTIFICATE-----\nMIIE/jCCAuagAwIBAgIJAIBv4aiI2NRtMA0GCSqGSIb3DQEBCwUAMB4xHDAaBgNV\nBAMME2Rpc2swYm9vay5mcml0ei5ib3gwHhcNMTkwMTE3MTcwMDA5WhcNMjkwMTE0\nMTcwMDA5WjAeMRwwGgYDVQQDDBNkaXNrMGJvb2suZnJpdHouYm94MIICIjANBgkq\nhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAyVKNTGlPfd4QX9HaDc9a6prbc9il4jtR\niChSlMf3/6UfAMcS+xVgR2iR8FK/DQuFzxn+6BybpoiD333rjDr7zR7y9px3Xph2\nbmsjZy0hv9SIBbx0DJvvwODTlWTAH8qgU2DN6xWc7vjgeGi5uTpnmwWrkH6BjtVr\nwoBkF0JmfH7KiLS/QjWqPKeI6o/GpvCP9meD131Sq/ReoOTrJ4F5aNdhAril4nU5\n6e7Y+Iyp35DZSLuU+pDJAhxEvkYGas1ted5RRxlho8ukaoABCbmaTeNmgsJxK2SC\nABjfUc38aAlNLuMbMMR7Q85Z84OTJiUqanVczwdSj1QHlNCWZK1McBPhj2m2Wdge\ngedrq5XcjQGChzTEozcFntU0qzY3ja1+DOE8UaMaTrDH4saUXCMZk3W1m5mmiZW3\nmcB0cKGdeg6K6USg1BwBTU9qolUusxz5T0tNxjcMlXU93P17d4s5IXfliXhMNr/6\n4fl78Ey3FNprTix4alW7hBAp/eA/LhS55s3jwdoVzJl4RELC0284pahj5exYQwU6\nzjLedMxzC+7veQYwWfZOs9jVCTP0YStuT0j9xD3ausLZyB1Egbsajyy71IeoYOf1\n9S6dFIXE5LHAw2j3D3bh5wb019I8V5szGbeemdBpb3m+bzT8qjLSNranuT41CIHd\nIYjq85vDEJsCAwEAAaM/MD0wOwYDVR0RBDQwMoITZGlzazBib29rLmZyaXR6LmJv\neIIJbG9jYWxob3N0ggpnYXRla2VlcGVyhwR/AAABMA0GCSqGSIb3DQEBCwUAA4IC\nAQBrE4bJsIMwSRPng94PcqR5F6Cux0bkwezALJCHpjHTuqok/wHHE5dZsAXcSsYc\n5givuBESih6CpY5h21Od0TBugyv3FCRY8OoaBXtlO6FYlEnVeJ8AOexJTb3qcbBS\nHU8MBWEydUh5HFA3PRKAG0Y4cvUK4WXJZ42Et3td0NkGFOv6bxdtVGB4Vz7FGn+3\nqd9fpmFCdQYDp6RSZDDz4B8XLsVuTeTES5GbUMSQAGanP7jxMr04wQ3MuoZrRODN\nFatifOJfq0fZddsBjJbrTLxArIqaPh3J4xzwiNE5du4CQDQrbbHXG22kuvbr5foA\ncixLnuyWMq0a5a70mSNS6TZ3nq4ATXNNa0cZ8fBxHqHGTLM8gQisW8vTaZfIFh/i\nhnFcGxtpo1ryi7JG9HCWsh0x20677iag5MuZfv2s4TbK71Ol6WV4FravCqU0qgbn\nTTl+BnYw3H67FO/a6RD4ISlFWK+8EVEQdMgvPoRuw323YznT0Nd8Q/Gq8raYF2wa\nz9T9OXu6TcVGtfPAgX+AM/+hDqWGxyiFR9ZtLpGOHGP8f+TZA5uCawc8Zry4yN6L\nE0yPIx96pJz59T3k8XbRHTQCaPsSUGRAZIY9LpJj0fIG7zCr9eCBpp2qyzmpyNfx\negN3ILYy1Y8JbJj73HWyP0F3Am7i76tkCWB7tQeFOb5FMg==\n-----END CERTIFICATE-----\n",
+  "gatekeeper_sslkey": "-----BEGIN PRIVATE KEY-----\n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\nmPN+iWirFH2RN5KkSaTzEtrXAgbLvic9\n-----END PRIVATE KEY-----\n",
+  "gatekeeper_cns": "disk0book.fritz.box",
+  "proxy_datapath": "/Users/jash/.cyphernode/proxy",
+  "lightning_implementation": "c-lightning",
+  "lightning_datapath": "/Users/jash/.cyphernode/lightning",
+  "lightning_nodename": "🚀 Disciplined Dormouse 🚀",
+  "lightning_nodecolor": "ff0000",
+  "otsclient_datapath": "/Users/jash/.cyphernode/otsclient",
+  "adminhash": "BsJFlh7q4JmwI\n",
+  "use_xpub": true,
+  "xpub": "abc",
+  "derivation_path": "da",
+  "gatekeeper_clientkeyspassword": "test123",
+  "gatekeeper_datapath": "/Users/jash/.cyphernode/gatekeeper",
+  "traefik_datapath": "foo",
+  "lightning_announce": true,
+  "gatekeeper_expose": false,
+  "traefik_http_port": 80,
+  "traefik_https_port": 443
+}

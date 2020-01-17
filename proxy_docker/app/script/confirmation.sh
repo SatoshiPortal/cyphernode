@@ -21,8 +21,10 @@ confirmation_request()
   return $?
 }
 
-confirmation()
-{
+confirmation() {
+  (
+  flock -x 201
+
   trace "Entering confirmation()..."
 
   local returncode
@@ -41,7 +43,7 @@ confirmation()
   # First of all, let's make sure we're working on watched addresses...
   local address
   local addresseswhere
-  local addresses=$(echo ${tx_details} | jq ".result.details[].address")
+  local addresses=$(echo "${tx_details}" | jq ".result.details[].address")
 
   local notfirst=false
   local IFS=$'\n'
@@ -56,7 +58,7 @@ confirmation()
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address FROM watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index FROM watching WHERE address IN (${addresseswhere}) AND watching")
   if [ ${#rows} -eq 0 ]; then
     trace "[confirmation] No watched address in this tx!"
     return 0
@@ -66,7 +68,7 @@ confirmation()
   local tx=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid})
-  local tx_nb_conf=$(echo ${tx_details} | jq '.result.confirmations')
+  local tx_nb_conf=$(echo "${tx_details}" | jq '.result.confirmations')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -79,13 +81,13 @@ confirmation()
 
     # Let's first insert the tx in our DB
 
-    local tx_hash=$(echo ${tx_raw_details} | jq '.result.hash')
-    local tx_ts_firstseen=$(echo ${tx_details} | jq '.result.timereceived')
-    local tx_amount=$(echo ${tx_details} | jq '.result.amount')
+    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount')
 
-    local tx_size=$(echo ${tx_raw_details} | jq '.result.size')
-    local tx_vsize=$(echo ${tx_raw_details} | jq '.result.vsize')
-    local tx_replaceable=$(echo ${tx_details} | jq '.result."bip125-replaceable"')
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
 
     local fees=$(compute_fees "${txid}")
@@ -97,9 +99,9 @@ confirmation()
     local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
-      tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
+      tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
       tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
-      tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
+      tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}.blob'))"
@@ -110,15 +112,15 @@ confirmation()
 
   else
     # TX found in our DB.
-    # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf)
+    # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf) or spending to a watched address (in this case, spend inserted the tx in the DB)
 
-    local tx_blockhash=$(echo ${tx_details} | jq '.result.blockhash')
+    local tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
     trace "[confirmation] tx_blockhash=${tx_blockhash}"
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
-      local tx_blocktime=$(echo ${tx_details} | jq '.result.blocktime')
+      local tx_blockheight=$(get_block_info $(echo "${tx_blockhash}" | tr -d '"') | jq '.result.height')
+      local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
 
       sql "UPDATE tx SET
         confirmations=${tx_nb_conf},
@@ -128,9 +130,8 @@ confirmation()
         raw_tx=readfile('rawtx-${txid}.blob')
         WHERE txid=\"${txid}\""
       trace_rc $?
-
-      id_inserted=${tx}
     fi
+    id_inserted=${tx}
   fi
   # Delete the temp file containing the raw tx (see above)
   rm rawtx-${txid}.blob
@@ -140,7 +141,7 @@ confirmation()
   tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
 
   if [ -z "${tx}" ]; then
-    trace "[confirmation] For this tx, there's no watching_tx row, let's create"
+    trace "[confirmation] For this tx, there's no watching_tx row, let's create it"
     local watching_id
 
     # If the tx is batched and pays multiple watched addresses, we have to insert
@@ -149,8 +150,10 @@ confirmation()
     do
       watching_id=$(echo "${row}" | cut -d '|' -f1)
       address=$(echo "${row}" | cut -d '|' -f2)
-      tx_vout_n=$(echo ${tx_details} | jq ".result.details[] | select(.address==\"${address}\") | .vout")
-      tx_vout_amount=$(echo ${tx_details} | jq ".result.details[] | select(.address==\"${address}\") | .amount")
+      # In the case of us spending to a watched address, the address appears twice in the details,
+      # once on the spend side (negative amount) and once on the receiving side (positive amount)
+      tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+      tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
       sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
       trace_rc $?
     done
@@ -159,8 +162,25 @@ confirmation()
   fi
   ########################################################################################################
 
-  do_callbacks
+  ########################################################################################################
+  # Let's now grow the watch window in the case of a xpub watcher...
+  trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
+  for row in ${rows}
+  do
+    watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
+    pub32_index=$(echo "${row}" | cut -d '|' -f4)
+    if [ -n "${watching_by_pub32_id}" ]; then
+      extend_watchers ${watching_by_pub32_id} ${pub32_index}
+    fi
+  done
+
+  ########################################################################################################
+
+  ) 201>./.confirmation.lock
+
+  # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
+  do_callbacks
   echo '{"result":"confirmed"}'
 
   return 0

@@ -2,119 +2,254 @@ version: "3"
 
 services:
 
-  gatekeeper:
-    # HTTP authentication API gate
-    environment:
-      - "TRACING=1"
-    image: cyphernode/gatekeeper:latest
-    ports:
-      - "443:443"
+
+  ##########################
+  # BITCOIN                #
+  ##########################
+
+  bitcoin:
+    image: cyphernode/bitcoin:v0.18.0
+    command: $USER bitcoind
+
     volumes:
-      - "~/cn-files/cn-gatekeeper/certs:/etc/ssl/certs"
-      - "~/cn-files/cn-gatekeeper/private:/etc/ssl/private"
-      - "~/cn-files/cn-gatekeeper/keys.properties:/etc/nginx/conf.d/keys.properties"
-      - "~/cn-files/cn-gatekeeper/api.properties:/etc/nginx/conf.d/api.properties"
-    command: $USER
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+      - "~/btcdata:/.bitcoin"
+      - bitcoin_monitor:/bitcoin_monitor
+    healthcheck:
+      test: bitcoin-cli echo && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up
+      interval: 10s
+      timeout: 5s
+      retries: 1
     networks:
       - cyphernodenet
     restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+
+  ##########################
+  # PROXY                  #
+  ##########################
 
   proxy:
+    image: cyphernode/proxy:v0.2.4-local
     command: $USER ./startproxy.sh
-    # Bitcoin Mini Proxy
     environment:
       - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=bitcoin:18332/wallet/watching01.dat"
+      - "WATCHER_BTC_NODE_RPC_URL=bitcoin:18332/wallet"
+      - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
+      - "WATCHER_BTC_NODE_XPUB_WALLET=xpubwatching01.dat"
       - "WATCHER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
       - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=bitcoin:18332/wallet/spending01.dat"
+      - "SPENDER_BTC_NODE_RPC_URL=bitcoin:18332/wallet"
+      - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
       - "SPENDER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
       - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
       - "PROXY_LISTENING_PORT=8888"
       - "DB_PATH=/proxy/db"
       - "DB_FILE=/proxy/db/proxydb"
       - "PYCOIN_CONTAINER=pycoin:7777"
+
       - "WATCHER_BTC_NODE_PRUNED=false"
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
-    image: cyphernode/proxy:latest
+      - "XPUB_DERIVATION_GAP=100"
 
     volumes:
-      - "~/cn-files/cn-proxydb:/proxy/db"
-      - "~/cn-files/cn-lndata:/.lightning"
-      - "~/cn-files/cn-otsfiles:/proxy/otsfiles"
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+      - "~/cn-dev/dist/cyphernode/proxy:/proxy/db"
+
+      - "~/cn-dev/dist/cyphernode/lightning:/.lightning"
+
+
+      - "~/cn-dev/dist/cyphernode/otsclient:/proxy/otsfiles"
+
     networks:
       - cyphernodenet
     restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+  ##########################
+  # PROXYCRON              #
+  ##########################
 
   proxycron:
+    image: cyphernode/proxycron:v0.2.4-local
     environment:
-      - "PROXY_URL=proxy:8888/executecallbacks"
-    image: cyphernode/proxycron:latest
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+      - "TX_CONF_URL=proxy:8888/executecallbacks"
+      - "OTS_URL=proxy:8888/ots_backoffice"
     networks:
       - cyphernodenet
     restart: always
+    depends_on:
+      - proxy
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+  ##########################
+  # BROKER                 #
+  ##########################
+
+  broker:
+    image: eclipse-mosquitto:1.6
+    networks:
+      - cyphernodenet
+    restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+  ##########################
+  # NOTIFIER               #
+  ##########################
+
+  notifier:
+    image: cyphernode/notifier:v0.2.4-local
+    command: $USER ./startnotifier.sh
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    restart: always
+    depends_on:
+      - broker
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+  ##########################
+  # PYCOIN                 #
+  ##########################
 
   pycoin:
-    # Pycoin
+    image: cyphernode/pycoin:v0.2.4-local
     command: $USER ./startpycoin.sh
-    image: cyphernode/pycoin:latest
     environment:
       - "TRACING=1"
       - "PYCOIN_LISTENING_PORT=7777"
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-    networks:
-      - cyphernodenet
-    restart: always
 
-  lightning:
-    command: $USER lightningd
-    image: cyphernode/clightning:v0.6.2
-    volumes:
-      - "~/cn-files/cn-lndata:/.lightning"
-      - "~/cn-files/cn-lndata/bitcoin.conf:/.bitcoin/bitcoin.conf"
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
     networks:
       - cyphernodenet
     restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+
+  ##########################
+  # OTSCLIENT              #
+  ##########################
 
   otsclient:
+    image: cyphernode/otsclient:v0.2.4-local
+    command: $USER /script/startotsclient.sh
     environment:
       - "TRACING=1"
       - "OTSCLIENT_LISTENING_PORT=6666"
-    image: cyphernode/otsclient:latest
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+
+      - "TESTNET=1"
+
     volumes:
-      - "~/cn-files/cn-otsfiles:/otsfiles"
+      - "~/cn-dev/dist/cyphernode/otsclient:/otsfiles"
+      - "~/btcdata/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
     restart: always
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
 
-  bitcoin:
-    command: $USER bitcoind
-    image: cyphernode/bitcoin:v0.17.0
+
+  ##########################
+  # GATEKEEPER             #
+  ##########################
+
+  gatekeeper:
+    # HTTP authentication API gate
+    image: cyphernode/gatekeeper:v0.2.4-local
+    command: $USER
+    environment:
+      - "TRACING=1"
+
+    ports:
+      - "2009:2009"
+
     volumes:
-      - "~/cn-files/cn-btcdata:/.bitcoin"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/certs:/etc/ssl/certs"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/private:/etc/ssl/private"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/keys.properties:/etc/nginx/conf.d/keys.properties"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/api.properties:/etc/nginx/conf.d/api.properties"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/default.conf:/etc/nginx/conf.d/default.conf"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/htpasswd:/etc/nginx/conf.d/status/htpasswd"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
+      - "~/cn-dev/dist/cyphernode/gatekeeper/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    restart: always
+    depends_on:
+      - proxy
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+  ##########################
+  # TRAEFIK                #
+  ##########################
+
+  traefik:
+    image: traefik:v1.7.9-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "~/cn-dev/dist/cyphernode/traefik/traefik.toml:/traefik.toml"
+      - "~/cn-dev/dist/cyphernode/traefik/acme.json:/acme.json"
+      - "~/cn-dev/dist/cyphernode/traefik/htpasswd:/htpasswd/htpasswd"
+    networks:
+      - cyphernodeappsnet
+    restart: always
+    depends_on:
+      - gatekeeper
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+
+  ##########################
+  # LIGHTNING              #
+  ##########################
+
+  lightning:
+    image: cyphernode/clightning:v0.7.1
+    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
+
+    ports:
+      - "9735:9735"
+
+    volumes:
+      - "~/cn-dev/dist/cyphernode/lightning:/.lightning"
+      - "~/btcdata/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
+      - bitcoin_monitor:/bitcoin_monitor:ro
     networks:
       - cyphernodenet
     restart: always
+    depends_on:
+      - bitcoin
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
+
+
+volumes:
+  bitcoin_monitor:
 
 networks:
   cyphernodenet:
+    external: true
+  cyphernodeappsnet:
     external: true

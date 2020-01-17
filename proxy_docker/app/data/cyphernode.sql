@@ -1,17 +1,30 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE watching_by_pub32 (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pub32 TEXT UNIQUE,
+  label TEXT UNIQUE,
+  derivation_path TEXT,
+  callback0conf TEXT,
+  callback1conf TEXT,
+  last_imported_n INTEGER,
+  watching INTEGER DEFAULT FALSE,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  address TEXT,
+  address TEXT UNIQUE,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,
   callback1conf TEXT,
   calledback1conf INTEGER DEFAULT FALSE,
   imported INTEGER DEFAULT FALSE,
+  watching_by_pub32_id INTEGER REFERENCES watching_by_pub32,
+  pub32_index INTEGER,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_watching_address ON watching (address);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
@@ -54,6 +67,19 @@ CREATE TABLE recipient (
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
 
+CREATE TABLE watching_by_txid (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  txid TEXT UNIQUE,
+  watching INTEGER DEFAULT FALSE,
+  callback1conf TEXT,
+  calledback1conf INTEGER DEFAULT FALSE,
+  callbackxconf TEXT,
+  calledbackxconf INTEGER DEFAULT FALSE,
+  nbxconf INTEGER,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
+
 CREATE TABLE stamp (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   hash TEXT UNIQUE,
@@ -63,7 +89,6 @@ CREATE TABLE stamp (
   calledback INTEGER DEFAULT FALSE,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_stamp_hash ON stamp (hash);
 CREATE INDEX idx_stamp_calledback ON stamp (calledback);
 
 CREATE TABLE cyphernode_props (
@@ -75,3 +100,24 @@ CREATE TABLE cyphernode_props (
 CREATE INDEX idx_cp_property ON cyphernode_props (property);
 
 INSERT INTO cyphernode_props (property, value) VALUES ("version", "0.1");
+INSERT INTO cyphernode_props (property, value) VALUES ("pay_index", "0");
+
+CREATE TABLE ln_invoice (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT UNIQUE,
+  bolt11 TEXT UNIQUE,
+  payment_hash TEXT,
+  msatoshi INTEGER,
+  status TEXT,
+  pay_index INTEGER,
+  msatoshi_received INTEGER,
+  paid_at INTEGER,
+  description TEXT,
+  expires_at INTEGER,
+  callback_url TEXT,
+  calledback INTEGER DEFAULT FALSE,
+  callback_failed INTEGER DEFAULT FALSE,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_lninvoice_label ON ln_invoice (label);
+CREATE INDEX idx_lninvoice_bolt11 ON ln_invoice (bolt11);

@@ -18,9 +18,9 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
+. ./newblock.sh
 
-main()
-{
+main() {
   trace "Entering main()..."
 
   local step=0
@@ -60,7 +60,7 @@ main()
     fi
     # line=content-length: 406
     case "${line}" in *[cC][oO][nN][tT][eE][nN][tT]-[lL][eE][nN][gG][tT][hH]*)
-      content_length=$(echo ${line} | cut -d ':' -f2)
+      content_length=$(echo "${line}" | cut -d ':' -f2)
       trace "[main] content_length=${content_length}";
       ;;
     esac
@@ -71,6 +71,21 @@ main()
         trace "[main] line=${line}"
       fi
       case "${cmd}" in
+        helloworld)
+          # GET http://192.168.111.152:8080/helloworld
+          response_to_client "Hello, world!" 0
+          break
+          ;;
+        installation_info)
+          # GET http://192.168.111.152:8080/info
+          if [ -f "$DB_PATH/info.json" ]; then
+            response=$( cat "$DB_PATH/info.json" )
+          else
+            response='{ "error": "missing installation data" }'
+          fi
+          response_to_client "${response}" ${?}
+          break
+          ;;
         watch)
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
@@ -83,6 +98,59 @@ main()
           # curl (GET) 192.168.111.152:8080/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
 
           response=$(unwatchrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        watchxpub)
+          # POST http://192.168.111.152:8080/watchxpub
+          # BODY {"label":"4421","pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/n","nstart":0,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # curl -H "Content-Type: application/json" -d '{"label":"2219","pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/1/n","nstart":55,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}' proxy:8888/watchxpub
+
+          response=$(watchpub32request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unwatchxpubbyxpub)
+          # GET http://192.168.111.152:8080/unwatchxpubbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+
+          response=$(unwatchpub32request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unwatchxpubbylabel)
+          # GET http://192.168.111.152:8080/unwatchxpubbylabel/4421
+
+          response=$(unwatchpub32labelrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getactivewatchesbyxpub)
+          # GET http://192.168.111.152:8080/getactivewatchesbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+
+          response=$(getactivewatchesbyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getactivewatchesbylabel)
+          # GET http://192.168.111.152:8080/getactivewatchesbylabel/4421
+
+          response=$(getactivewatchesbylabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getactivexpubwatches)
+          # GET http://192.168.111.152:8080/getactivexpubwatches
+
+          response=$(getactivexpubwatches)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        watchtxid)
+          # POST http://192.168.111.152:8080/watchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
+          # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/watchtxid
+
+          response=$(watchtxidrequest "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -100,10 +168,24 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        newblock)
+          # curl (GET) 192.168.111.152:8080/newblock/000000000000005c987120f3b6f995c95749977ef1a109c89aa74ce4bba97c1f
+
+          response=$(newblock "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getbestblockhash)
           # curl (GET) http://192.168.111.152:8080/getbestblockhash
 
           response=$(get_best_block_hash)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getblockhash)
+          # curl (GET) http://192.168.111.152:8080/getblockhash/522322
+
+          response=$(get_blockhash $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
           ;;
@@ -113,6 +195,12 @@ main()
           response=$(get_block_info $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
+          ;;
+        getblockchaininfo)
+          # http://192.168.111.152:8080/getblockchaininfo
+
+          response=$(get_blockchain_info)
+          response_to_client "${response}" ${?}
           ;;
         gettransaction)
           # curl (GET) http://192.168.111.152:8080/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
@@ -144,10 +232,25 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        getbalancebyxpub)
+          # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
+
+          response=$(getbalancebyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbalancebyxpublabel)
+          # curl (GET) http://192.168.111.152:8080/getbalancebyxpublabel/2219
+
+          response=$(getbalancebyxpublabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
+          # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
 
-          response=$(getnewaddress)
+          response=$(getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
           ;;
@@ -159,11 +262,20 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        bumpfee)
+          # POST http://192.168.111.152:8080/bumpfee
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
+
+          response=$(bumpfee "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         addtobatch)
           # POST http://192.168.111.152:8080/addtobatch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 
-          response=$(addtobatching $(echo "${line}" | jq ".address" | tr -d '"') $(echo "${line}" | jq ".amount"))
+          response=$(addtobatching $(echo "${line}" | jq -r ".address") $(echo "${line}" | jq ".amount"))
           response_to_client "${response}" ${?}
           break
           ;;
@@ -188,7 +300,14 @@ main()
           # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
           # BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
 
-          response=$(send_to_pycoin "${line}")
+          response=$(derivepubpath "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getmempoolinfo)
+          # curl GET http://192.168.111.152:8080/getmempoolinfo
+
+          response=$(get_mempool_info)
           response_to_client "${response}" ${?}
           break
           ;;
@@ -199,9 +318,16 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_getconnectionstring)
+          # GET http://192.168.111.152:8080/ln_getconnectionstring
+
+          response=$(ln_get_connection_string)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ln_create_invoice)
           # POST http://192.168.111.152:8080/ln_create_invoice
-          # BODY {"msatoshi":"10000","label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":"900"}
+          # BODY {"msatoshi":"10000","label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":"900","callback_url":"http://192.168.122.159"}
 
           response=$(ln_create_invoice "${line}")
           response_to_client "${response}" ${?}
@@ -222,9 +348,44 @@ main()
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_connectfund)
+          # POST http://192.168.111.152:8080/ln_connectfund
+          # BODY {"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+          # curl -H "Content-Type: application/json" -d '{"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}' proxy:8888/ln_connectfund
+
+          response=$(ln_connectfund "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_getinvoice)
+          # GET http://192.168.111.152:8080/ln_getinvoice/label
+          # GET http://192.168.111.152:8080/ln_getinvoice/koNCcrSvhX3dmyFhW
+
+          response=$(ln_getinvoice $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_delinvoice)
+          # GET http://192.168.111.152:8080/ln_delinvoice/label
+          # GET http://192.168.111.152:8080/ln_delinvoice/koNCcrSvhX3dmyFhW
+
+          response=$(ln_delinvoice $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_decodebolt11)
+          # GET http://192.168.111.152:8080/ln_decodebolt11/bolt11
+          # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
+
+          response=$(ln_decodebolt11 $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}
+
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\"}" localhost:8888/ots_stamp
 
           response=$(serve_ots_stamp "${line}")
           response_to_client "${response}" ${?}
@@ -243,6 +404,32 @@ main()
           serve_ots_getfile $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           break
           ;;
+        ots_verify)
+          # POST http://192.168.111.152:8080/ots_verify
+          # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7"}
+          # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\"}" localhost:8888/ots_verify
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_verify
+
+          response=$(serve_ots_verify "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ots_info)
+          # POST http://192.168.111.152:8080/ots_info
+          # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7"}
+          # BODY {"base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+          # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
+
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\"}" localhost:8888/ots_info
+          # curl -v -d "{\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
+          # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
+
+          response=$(serve_ots_info "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
       esac
       break
     fi
@@ -257,4 +444,5 @@ export DB_PATH
 export DB_FILE
 
 main
+trace "[requesthandler] exiting"
 exit $?

@@ -16,20 +16,19 @@
 
 . ./trace.sh
 
-verify_sign()
-{
+verify_sign() {
   local returncode
 
-  local header64=$(echo ${1} | cut -sd '.' -f1)
-  local payload64=$(echo ${1} | cut -sd '.' -f2)
-  local signature=$(echo ${1} | cut -sd '.' -f3)
+  local header64=$(echo "${1}" | cut -sd '.' -f1)
+  local payload64=$(echo "${1}" | cut -sd '.' -f2)
+  local signature=$(echo "${1}" | cut -sd '.' -f3)
 
   trace "[verify_sign] header64=${header64}"
   trace "[verify_sign] payload64=${payload64}"
   trace "[verify_sign] signature=${signature}"
 
-  local payload=$(echo -n ${payload64} | base64 -d)
-  local exp=$(echo ${payload} | jq ".exp")
+  local payload=$(echo -n "${payload64}" | base64 -d)
+  local exp=$(echo "${payload}" | jq ".exp")
   local current=$(date +"%s")
 
   trace "[verify_sign] payload=${payload}"
@@ -38,7 +37,7 @@ verify_sign()
 
   if [ ${exp} -gt ${current} ]; then
     trace "[verify_sign] Not expired, let's validate signature"
-    local id=$(echo ${payload} | jq ".id" | tr -d '"')
+    local id=$(echo "${payload}" | jq -r ".id")
     trace "[verify_sign] id=${id}"
 
     # Check for code injection
@@ -82,38 +81,47 @@ verify_sign()
   return 1
 }
 
-verify_group()
-{
+verify_group() {
   trace "[verify_group] Verifying group..."
 
   local id=${1}
   # REQUEST_URI should look like this: /v0/watch/2blablabla
+  local context=$(echo "${REQUEST_URI#\/}" | cut -d '/' -f1)
   local action=$(echo "${REQUEST_URI#\/}" | cut -d '/' -f2)
-  trace "[verify_group] action=${action}"
+  trace "[verify_group] context=${context} action=${action}"
 
   # Check for code injection
   # action can be alphanum... and _ and - but nothing else
-	local actiontoinspect=$(echo "$action" | tr -d '_-')
+  local actiontoinspect=$(echo "$action" | tr -d '_-')
   case $actiontoinspect in (*[![:alnum:]]*|"")
     trace "[verify_group] Potential code injection, exiting"
     return 1
   esac
 
-  # It is so much faster to include the keys here instead of grep'ing the file for key.
-  . ./api.properties
-
   local needed_group
   local ugroups
-
-  eval needed_group='$action_'${action}
-  trace "[verify_group] needed_group=${needed_group}"
 
   eval ugroups='$ugroups_'$id
   trace "[verify_group] user groups=${ugroups}"
 
-  case "${ugroups}" in
-    *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
-  esac
+  if [ ${context} = "s" ]; then
+    # static files only accessible by a certain group
+    needed_group=${action}
+  elif [ ${context} = "v0" ]; then
+    # actual api calls
+    # It is so much faster to include the keys here instead of grep'ing the file for key.
+    . ./api.properties
+    eval needed_group='$action_'${action}
+  fi
+
+  trace "[verify_group] needed_group=${needed_group}"
+
+  # If needed_group is empty, the action was not found in api.propeties.
+  if [ -n "${needed_group}" ]; then
+    case "${ugroups}" in
+      *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+    esac
+  fi
 
   trace "[verify_group] Access NOT granted"
   return 1

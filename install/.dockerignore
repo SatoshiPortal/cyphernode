@@ -1,6 +1,0 @@
-SatoshiPortal
-data
-script
-generator-cyphernode/node_modules
-generator-cyphernode/package-lock
-generator-cyphernode/__tests__

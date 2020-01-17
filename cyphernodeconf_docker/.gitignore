@@ -1,0 +1,8 @@
+*~
+*.log
+*.sw[a-z]
+DEADJOE
+node_modules
+coverage
+.DS_Store
+.idea

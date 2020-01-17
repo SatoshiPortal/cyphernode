@@ -1,0 +1,67 @@
+{
+  "env": {
+    "es6": true,
+    "node": true,
+    "mocha": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "sourceType": "module"
+  },
+  "rules": {
+    "padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "prev": "function",
+        "next": "*"
+      }
+    ],
+    "newline-per-chained-call": "error",
+    "no-tabs": "error",
+    "no-nested-ternary": "error",
+    "no-trailing-spaces": "error",
+    "no-multiple-empty-lines": "error",
+    "no-whitespace-before-property": "error",
+    "new-cap": "error",
+    "lines-around-comment": "error",
+    "key-spacing": "error",
+    "comma-style": "error",
+    "brace-style": "error",
+    "camelcase": "error",
+    "handle-callback-err": "error",
+    "no-new-require": "warn",
+    "no-sync": "warn",
+    "no-mixed-requires": "error",
+    "global-require": "error",
+    "comma-spacing": "error",
+    "eqeqeq": "error",
+    "curly": "error",
+    "keyword-spacing": "error",
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
+    "object-curly-newline": [
+      "warn",
+      "always"
+    ],
+    "indent": [
+      "error",
+      2
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ]
+  }
+}

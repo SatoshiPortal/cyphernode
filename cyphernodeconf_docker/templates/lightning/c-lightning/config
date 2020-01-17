@@ -1,0 +1,21 @@
+<% if (net === 'regtest') { %>
+# regtest
+network=regtest
+<% } else if (net === 'testnet') { %>
+# testnet
+network=testnet
+<% } else if (net === 'mainnet') { %>
+network=bitcoin
+<% } %>
+<% if( lightning_nodename ) { %>
+alias=<%= lightning_nodename %>
+<% } %>
+<% if( lightning_nodecolor ) { %>
+rgb=<%= lightning_nodecolor %>
+<% } %>
+
+addr=0.0.0.0:9735
+
+<% if( locals.lightning_external_ip ) { %>
+announce-addr=<%= locals.lightning_external_ip %>:9735
+<% } %>

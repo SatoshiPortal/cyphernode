@@ -10,7 +10,7 @@ deriveindex()
 	trace "[deriveindex] index=${index}"
 
 	local pub32=$DERIVATION_PUB32
-	local path=$(echo -e $DERIVATION_PATH | sed -En "s/n/${index}/p")
+	local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
 	#	pub32=$(grep "derivation.pub32" config.properties | cut -d'=' -f2)
 	#	path=$(grep "derivation.path" config.properties | cut -d'=' -f2 | sed -En "s/n/${index}/p")
 
@@ -18,6 +18,15 @@ deriveindex()
 	trace "[deriveindex] data=${data}"
 
 	send_to_pycoin "${data}"
+	return $?
+}
+
+derivepubpath() {
+	trace "Entering derivepubpath()..."
+
+	# {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+
+	send_to_pycoin $1
 	return $?
 }
 
