@@ -405,11 +405,13 @@ install_docker() {
       sudo_if_required chmod 700 $TOR_DATAPATH
       next
     fi
-    if [ ! -d $TOR_DATAPATH/traefik ]; then
-      step "   [32mcreate[0m $TOR_DATAPATH/traefik"
-      sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
-      sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
-      next
+    if [[ $TOR_TRAEFIK == true ]]; then
+      if [ ! -d $TOR_DATAPATH/traefik ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/traefik"
+        sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
+        next
+      fi
     fi
     if [[ $TOR_LN == true ]]; then
       if [ ! -d $TOR_DATAPATH/ln ]; then

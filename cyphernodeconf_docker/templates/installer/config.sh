@@ -13,6 +13,7 @@ TOR_DATAPATH=<%= tor_datapath %>
 TOR_OTS_WEBHOOKS=<%= (torifyables.indexOf('tor_otswebhooks') != -1)?'true':'false' %>
 TOR_ADDR_WATCH_WEBHOOKS=<%= (torifyables.indexOf('tor_addrwatcheswebhooks') != -1)?'true':'false' %>
 TOR_TXID_WATCH_WEBHOOKS=<%= (torifyables.indexOf('tor_txidwatcheswebhooks') != -1)?'true':'false' %>
+TOR_TRAEFIK=<%= (torifyables.indexOf('tor_traefik') != -1)?'true':'false' %>
 TOR_BITCOIN=<%= (torifyables.indexOf('tor_bitcoin') != -1)?'true':'false' %>
 TOR_LN=<%= (torifyables.indexOf('tor_ln') != -1)?'true':'false' %>
 <% } %>
