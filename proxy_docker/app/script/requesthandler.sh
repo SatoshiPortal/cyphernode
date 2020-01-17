@@ -232,7 +232,7 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        getbalance)
+        getbalances)
           # curl (GET) http://192.168.111.152:8080/getbalances
 
           response=$(getbalances)
