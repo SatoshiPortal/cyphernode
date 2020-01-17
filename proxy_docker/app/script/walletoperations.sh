@@ -126,6 +126,32 @@ getbalance() {
   return ${returncode}
 }
 
+getbalances() {
+  trace "Entering getbalances()..."
+
+  local response
+  local data='{"method":"getbalances"}'
+  response=$(send_to_spender_node "${data}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getbalances] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local balances=$(echo ${response} | jq ".result")
+    trace "[getbalances] balances=${balances}"
+
+    data="{\"balances\":${balances}}"
+  else
+    trace "[getbalances] Coudn't get balances!"
+    data=""
+  fi
+
+  trace "[getbalances] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
 getbalancebyxpublabel() {
   trace "Entering getbalancebyxpublabel()..."
 
