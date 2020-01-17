@@ -5,11 +5,11 @@
   },
   {
     "name": "Bitcoin Node",
-    "value": "tor_bitcoinnode"
+    "value": "tor_bitcoin"
   },
   {
     "name": "LN Node",
-    "value": "tor_lnnode"
+    "value": "tor_ln"
   },
   {
     "name": "OTS stamp, upgrade and verify",

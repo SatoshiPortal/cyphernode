@@ -5,21 +5,19 @@ const chalk = require('chalk');
 
 module.exports = class TorGen {
 
-  constructor( path ) {
-    this.path = path || './'
-  }
+  async generateTorFiles(path) {
+    path = path || './'
 
-  async generateTorFiles() {
-    if( !fs.existsSync(this.path) ) {
+    if( !fs.existsSync(path) ) {
       console.log(chalk.green( 'Creating Tor Hidden Service directory...' ));
-      fs.mkdirSync(this.path, { recursive: true });
+      fs.mkdirSync(path, { recursive: true });
     }
 
-    if( !fs.existsSync(this.path + '/hostname') ) {
+    if( !fs.existsSync(path + '/hostname') ) {
 
       console.log(chalk.green( 'Generating Tor Hidden Service secret key, public key and hostname...' ));
 
-      const torgenbin = spawn('./torgen/torgen', [this.path]);
+      const torgenbin = spawn('./torgen/torgen', [path]);
       try {
         await stringio.onExit( torgenbin );
       } catch( err ) {
@@ -32,7 +30,7 @@ module.exports = class TorGen {
     }
 
     try {
-      var data = fs.readFileSync(this.path + '/hostname', 'utf8');
+      var data = fs.readFileSync(path + '/hostname', 'utf8');
       // Remove the LF at the end of the host name
       return data.slice(0, -1);
     } catch (err) {

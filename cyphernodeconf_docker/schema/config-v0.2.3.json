@@ -205,8 +205,8 @@
         "type": "string",
         "enum": [
           "tor_hiddenservice",
-          "tor_bitcoinnode",
-          "tor_lnnode",
+          "tor_bitcoin",
+          "tor_ln",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
@@ -216,8 +216,8 @@
         "default": "",
         "examples": [
           "tor_hiddenservice",
-          "tor_bitcoinnode",
-          "tor_lnnode",
+          "tor_bitcoin",
+          "tor_l",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
