@@ -293,8 +293,9 @@ addtobatching() {
   trace "[addtobatching] address=${address}"
   local amount=${2}
   trace "[addtobatching] amount=${amount}"
+  local wallet_name=${3:-"spending01"}
 
-  sql "INSERT OR IGNORE INTO recipient (wallet_name, address, amount) VALUES (\"spending01\", \"${address}\", ${amount})"
+  sql "INSERT OR IGNORE INTO recipient (wallet_name, address, amount) VALUES (\"${wallet_name}\", \"${address}\", ${amount})"
   returncode=$?
   trace_rc ${returncode}
 
