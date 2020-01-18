@@ -127,6 +127,9 @@ services:
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
+
+      - "SERVICE_PRECONDITION=bitcoin:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %><%= ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' )?' lightning:9735':'' %>"
+
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
