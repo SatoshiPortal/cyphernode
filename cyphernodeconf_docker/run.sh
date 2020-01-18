@@ -15,6 +15,8 @@ export PROXY_VERSION=v0.2.4
 export OTSCLIENT_VERSION=v0.2.4
 export NOTIFIER_VERSION=v0.2.4
 export EDITOR=/usr/bin/nano
+export TRAEFIK_VERSION="v1.7.9-alpine"
+export MOSQUITTO_VERSION="1.6"
 
 user=$(id -u):$(id -g)
 
@@ -26,6 +28,8 @@ if [ "${MODE}" = 'docker' ]; then
            -e SETUP_DIR=$SETUP_DIR \
            -e DEFAULT_CERT_HOSTNAME=$(hostname) \
            -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
+           -e TRAEFIK_VERSION=$TRAEFIK_VERSION \
+           -e MOSQUITTO_VERSION=$MOSQUITTO_VERSION \
            -e TOR_VERSION=$TOR_VERSION \
            -e PROXY_VERSION=$PROXY_VERSION \
            -e NOTIFIER_VERSION=$NOTIFIER_VERSION \

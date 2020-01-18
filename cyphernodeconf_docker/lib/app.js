@@ -87,6 +87,8 @@ module.exports = class App {
       proxy_version: process.env.PROXY_VERSION,
       proxycron_version: process.env.PROXYCRON_VERSION,
       pycoin_version: process.env.PYCOIN_VERSION,
+      traefik_version: process.env.TRAEFIK_VERSION,
+      mosquitto_version: process.env.MOSQUITTO_VERSION,
       otsclient_version: process.env.OTSCLIENT_VERSION,
       bitcoin_version: process.env.BITCOIN_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
@@ -146,10 +148,10 @@ module.exports = class App {
         'cyphernode/proxycron': this.sessionData.proxycron_version,
         'cyphernode/pycoin': this.sessionData.pycoin_version,
         'cyphernode/otsclient': this.sessionData.otsclient_version,
+        'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
-        'traefik': 'v1.7.9-alpine',
-        'eclipse-mosquitto': '1.6'
+        'eclipse-mosquitto': this.sessionData.mosquitto_version
       }
     } );
 
@@ -498,7 +500,7 @@ module.exports = class App {
         label: 'traefik',
         host: 'traefik',
         networks: ['cyphernodeappsnet'],
-        docker: 'cyphernode/traefik:'+this.config.docker_versions['cyphernode/traefik'],
+        docker: 'traefik:'+this.config.docker_versions['traefik'],
         extra: {
           tor_hostname: this.sessionData.tor_traefik_hostname,
         }

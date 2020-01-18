@@ -387,6 +387,9 @@ result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 # TOR                       #
 #############################
 
+echo -e "\r\n\e[1;36mWaiting for Tor to be ready... " > /dev/console
+timeout_feature '[ -f "/container_monitor/tor_ready" ]'
+
 result="${result},{\"coreFeature\":false, \"name\":\"tor\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"tor\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
@@ -404,7 +407,7 @@ result="${result}$(feature_status ${returncode} 'Tor error!')}"
 #############################
 
 echo -e "\r\n\e[1;36mWaiting for Bitcoin Core to be ready... " > /dev/console
-timeout_feature '[ -f "/bitcoin_monitor/up" ]'
+timeout_feature '[ -f "/container_monitor/bitcoin_ready" ]'
 
 result="${result},{\"coreFeature\":true, \"name\":\"bitcoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
@@ -421,6 +424,9 @@ result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
 #############################
 # LIGHTNING                 #
 #############################
+
+echo -e "\r\n\e[1;36mWaiting for C-Lightning to be ready... " > /dev/console
+timeout_feature '[ -f "/container_monitor/lightning_ready" ]'
 
 result="${result},{\"coreFeature\":false, \"name\":\"lightning\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"lightning\") | .active")

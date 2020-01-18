@@ -57,8 +57,8 @@ current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
--v cyphernode_bitcoin_monitor:/bitcoin_monitor:ro \
---network cyphernodenet eclipse-mosquitto:1.6.2 /testfeatures.sh
+-v cyphernode_container_monitor:/container_monitor:ro \
+--network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then
   . $current_path/exitStatus.sh
