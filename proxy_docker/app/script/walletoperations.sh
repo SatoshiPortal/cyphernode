@@ -395,11 +395,17 @@ batchspend() {
 }
 
 create_wallet() {
+  # creates a wallet without private key
   trace "[Entering create_wallet()]"
 
   local walletname=${1}
+  local disable_private_keys='true'
 
-  local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",true]}"
+  if [ ${2} == 'false' ]; then
+      disable_private_keys='false'
+  fi
+
+  local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",${disable_private_keys}]}"
   trace "[create_wallet] rpcstring=${rpcstring}"
 
   local result
