@@ -10,13 +10,19 @@ services:
   tor:
     image: cyphernode/tor:<%= tor_version %>
     # Sleeping 7 seconds to let lightning and traefik start
-    command: $USER sh -c 'sleep 7 ; export HOME=/tor ; tor -f /tor/torrc'
+    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; tor -f /tor/torrc'
     volumes:
       - "<%= tor_datapath %>:/tor"
-    restart: always
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready && chown $USER /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
+      interval: 20s
+      timeout: 10s
+      retries: 10
     networks:
       - cyphernodenet
       - cyphernodeappsnet
+    restart: always
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -37,7 +43,12 @@ services:
     volumes:
       - "<%= lightning_datapath %>:/.lightning"
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
-      - bitcoin_monitor:/bitcoin_monitor:ro
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready && chown $USER /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
+      interval: 20s
+      timeout: 10s
+      retries: 10
     networks:
       - cyphernodenet
     restart: always
@@ -45,7 +56,7 @@ services:
     depends_on:
       - tor
     <% } %>
-#    deploy:
+#    deploy:  --lightning-dir=/.lightning
 #      placement:
 #        constraints: [node.hostname==dev]
   <% } %>
@@ -57,7 +68,7 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command: $USER bitcoind
+    command: $USER sh -c 'rm -f /container_monitor/bitcoin_ready ; while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done ; echo "tor ready" ; bitcoind'
     <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18443:18443' : ((net === 'testnet') ? '18332:18332' : '8332:8332') %>"
@@ -65,11 +76,11 @@ services:
     <% } %>
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
-      - bitcoin_monitor:/bitcoin_monitor
+      - container_monitor:/container_monitor
     healthcheck:
-      test: bitcoin-cli echo && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up
+      test: chown $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
       interval: 20s
-      timeout: 5s
+      timeout: 10s
       retries: 10
     networks:
       - cyphernodenet
@@ -158,7 +169,7 @@ services:
   ##########################
 
   broker:
-    image: eclipse-mosquitto:1.6
+    image: eclipse-mosquitto:<%= mosquitto_version %>
     networks:
       - cyphernodenet
       - cyphernodeappsnet
@@ -279,7 +290,7 @@ services:
   ##########################
 
   traefik:
-    image: traefik:v1.7.9-alpine
+    image: traefik:<%= traefik_version %>
     ports:
       - <%= traefik_http_port %>:<%= traefik_http_port %>
       - <%= traefik_https_port %>:<%= traefik_https_port %>
@@ -298,7 +309,7 @@ services:
 #        constraints: [node.hostname==dev]
 
 volumes:
-  bitcoin_monitor:
+  container_monitor:
 
 networks:
   cyphernodenet:

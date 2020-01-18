@@ -44,7 +44,7 @@ Current components in Cyphernode:
 - Bitcoin: Bitcoin Core node.  Cyphernode uses a watching wallet for watchers (no funds) and a spending wallet for spending.  Mandatory component, but optionally part of Cyphernode installation, as we can use an already running Bitcoin Core node.
 - Lightning: optional.  C-Lightning node.  The LN node will use the Bitcoin node for its tasks.
 - OTSclient: optional.  Used to stamp hashes on the Bitcoin blockchain.
-- Tor: optional.  Used to serve traefik as a HiddenService as well as Internet Gateway.
+- Tor: optional.  Used to serve traefik, bitcoin and/or lightning as a HiddenService as well as Internet Gateway.
 
 Future components:
 
