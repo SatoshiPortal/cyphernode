@@ -3,10 +3,10 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-#RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
-RUN git clone --recursive --branch Features/Rpc-Server https://github.com/lontivero/Wasabito.git /WalletWasabi
-
+RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 WORKDIR /WalletWasabi
+# commit where rpc was added. Prevent break by upgrade of source
+RUN git checkout eb318b8dcfe06870be768d2c9670fa7ff343d1aa
 
 COPY patches/Program.patch .
 RUN patch WalletWasabi.Backend/Program.cs -i Program.patch
