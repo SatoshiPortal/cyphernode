@@ -8,8 +8,8 @@
     "value": "tor_bitcoin"
   },
   {
-    "name": "LN Node",
-    "value": "tor_ln"
+    "name": "Lightning Network Node",
+    "value": "tor_lightning"
   },
   {
     "name": "OTS stamp, upgrade and verify",

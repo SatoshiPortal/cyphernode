@@ -415,11 +415,11 @@ install_docker() {
         next
       fi
     fi
-    if [[ $TOR_LN == true ]]; then
-      if [ ! -d $TOR_DATAPATH/ln ]; then
-        step "   [32mcreate[0m $TOR_DATAPATH/ln"
-        sudo_if_required mkdir -p $TOR_DATAPATH/ln/hidden_service
-        sudo_if_required chmod 700 $TOR_DATAPATH/ln/hidden_service
+    if [[ $TOR_LIGHTNING == true ]]; then
+      if [ ! -d $TOR_DATAPATH/lightning ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/lightning"
+        sudo_if_required mkdir -p $TOR_DATAPATH/lightning/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/lightning/hidden_service
         next
       fi
     fi
@@ -437,10 +437,10 @@ install_docker() {
     copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
     copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hostname $TOR_DATAPATH/traefik/hidden_service/hostname 1 $SUDO_REQUIRED
 
-    if [[ $TOR_LN == true ]]; then
-      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/ln/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/ln/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/ln/hidden_service/hostname $TOR_DATAPATH/ln/hidden_service/hostname 1 $SUDO_REQUIRED
+    if [[ $TOR_LIGHTNING == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hostname $TOR_DATAPATH/lightning/hidden_service/hostname 1 $SUDO_REQUIRED
     fi
     if [[ $TOR_BITCOIN == true ]]; then
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED

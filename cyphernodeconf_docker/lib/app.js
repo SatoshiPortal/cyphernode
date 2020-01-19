@@ -281,8 +281,8 @@ module.exports = class App {
       if (this.isChecked('torifyables', 'tor_traefik')) {
         this.sessionData.tor_traefik_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/traefik/hidden_service' ) ));
       }
-      if (this.isChecked('torifyables', 'tor_ln')) {
-        this.sessionData.tor_ln_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/ln/hidden_service' ) ));
+      if (this.isChecked('torifyables', 'tor_lightning')) {
+        this.sessionData.tor_lightning_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/lightning/hidden_service' ) ));
       }
       if (this.isChecked('torifyables', 'tor_bitcoin')) {
         this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
@@ -440,7 +440,7 @@ module.exports = class App {
           expose: this.config.data.bitcoin_expose,
           uacomment: this.config.data.bitcoin_uacomment,
           torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_bitcoinnode'),
+          clearnet: this.isChecked('clearnet', 'clearnet_bitcoin'),
           tor_hostname: this.sessionData.tor_bitcoin_hostname
         }
       },
@@ -516,7 +516,7 @@ module.exports = class App {
         docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
         extra: {
           traefik_hostname: this.sessionData.tor_traefik_hostname,
-          ln_hostname: this.sessionData.tor_ln_hostname,
+          lightning_hostname: this.sessionData.tor_lightning_hostname,
           bitcoin_hostname: this.sessionData.tor_bitcoin_hostname,
         }
       },
@@ -537,9 +537,9 @@ module.exports = class App {
           expose: this.config.data.lightning_expose,
           external_ip: this.config.data.lightning_external_ip,
           implementation: this.config.data.lightning_implementation,
-          torified: this.torifyables.find(data => data.value === 'tor_ln').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_lnnode'),
-          tor_hostname: this.sessionData.tor_ln_hostname
+          torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
+          clearnet: this.isChecked('clearnet', 'clearnet_lightning'),
+          tor_hostname: this.sessionData.tor_lightning_hostname
         }
       }
     }

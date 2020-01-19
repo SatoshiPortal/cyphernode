@@ -206,7 +206,7 @@
         "enum": [
           "tor_traefik",
           "tor_bitcoin",
-          "tor_ln",
+          "tor_lightning",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
@@ -217,7 +217,7 @@
         "examples": [
           "tor_traefik",
           "tor_bitcoin",
-          "tor_l",
+          "tor_lightning",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
@@ -234,14 +234,14 @@
         "$id": "#/properties/clearnet/items",
         "type": "string",
         "enum": [
-          "clearnet_bitcoinnode",
-          "clearnet_lnnode"
+          "clearnet_bitcoin",
+          "clearnet_lightning"
         ],
         "title": "The clearnet-allowed Torified feature",
         "default": "",
         "examples": [
-          "clearnet_bitcoinnode",
-          "clearnet_lnnode"
+          "clearnet_bitcoin",
+          "clearnet_lightning"
         ]
       }
     },

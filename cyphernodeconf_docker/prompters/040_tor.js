@@ -36,10 +36,10 @@ module.exports = {
       message: prefix()+'What features do you want to also allow using clearnet?'+utils.getHelp('clearnet'),
       choices: [{
         name: "Bitcoin Node",
-        value: "clearnet_bitcoinnode"
+        value: "clearnet_bitcoin"
       },{
-        name: "LN Node",
-        value: "clearnet_lnnode"
+        name: "Lightning Network Node",
+        value: "clearnet_lightning"
       }]
     }];
   },
