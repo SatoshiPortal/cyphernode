@@ -538,10 +538,44 @@ install_docker() {
   docker swarm join-token worker > /dev/null 2>&1
   local noSwarm=$?;
 
-  if [[ $DOCKER_MODE == 'swarm' && $noSwarm == 1 ]]; then
-    step "     [32minit[0m docker swarm"
-    try docker swarm init --task-history-limit 1 > /dev/null 2>&1
-    next
+  if [[ $DOCKER_MODE == 'swarm' ]]; then
+    if [[ $noSwarm == 1 ]]; then
+      step "     [32minit[0m docker swarm"
+      try docker swarm init --task-history-limit 1 > /dev/null 2>&1
+      next
+    fi
+
+    local nodeid
+    nodeid=$(docker node ls -f role=manager --format="{{.ID}}")
+
+    # we only support swarm in single host mode, so all labels needed to spawn containers in the swarm
+    # are given to the manager of the swarm
+    # it is possible to move the io.cyphernode.apps label to a different node,
+    # for apps which rely on shared volumes with core components, we have the io.cyphernode.clingyapps
+    if [[ $(docker node inspect ${nodeid} --format '{{ index .Spec.Labels "io.cyphernode.core" }}') == "true" ]]; then
+      step "      [32madd[0m docker node label: io.cyphernode.core"
+      try docker node update --label-add io.cyphernode.core=true ${nodeid} > /dev/null 2>&1
+      next
+    fi
+
+    if [[ $(docker node inspect ${nodeid} --format '{{ index .Spec.Labels "io.cyphernode.infra" }}') == "true" ]]; then
+      step "      [32madd[0m docker node label: io.cyphernode.infra"
+      try docker node update --label-add io.cyphernode.infra=true ${nodeid} > /dev/null 2>&1
+      next
+    fi
+
+    if [[ $(docker node inspect ${nodeid} --format '{{ index .Spec.Labels "io.cyphernode.apps" }}') == "true" ]]; then
+      step "      [32madd[0m docker node label: io.cyphernode.apps"
+      try docker node update --label-add io.cyphernode.apps=true ${nodeid} > /dev/null 2>&1
+      next
+    fi
+
+    if [[ $(docker node inspect ${nodeid} --format '{{ index .Spec.Labels "io.cyphernode.clingyapps" }}') == "true" ]]; then
+      step "      [32madd[0m docker node label: io.cyphernode.clingyapps"
+      try docker node update --label-add io.cyphernode.clingyapps=true ${nodeid} > /dev/null 2>&1
+      next
+    fi
+
   fi
 
   local net_entry=$(docker network ls | grep cyphernodenet);
