@@ -551,8 +551,8 @@ install_docker() {
     # we only support swarm in single host mode, so all labels needed to spawn containers in the swarm
     # are given to the host setup is run on. Setup must be run on any manager, if swarm mode is enabled
     # and a swarm was already initialised
-    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode" }}') == "true" ]]; then
-      step "      [32madd[0m docker node label: io.cyphernode"
+    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode" }}') != "true" ]]; then
+      step "      [32madd[0m docker node label io.cyphernode"
       try docker node update --label-add io.cyphernode=true ${localnodeid} > /dev/null 2>&1
       next
     fi
