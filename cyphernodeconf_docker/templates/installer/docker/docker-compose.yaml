@@ -27,7 +27,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -71,7 +71,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -118,7 +118,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -182,7 +182,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -210,7 +210,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -234,7 +234,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -268,7 +268,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -301,7 +301,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -341,7 +341,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -387,7 +387,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.core == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s
@@ -420,7 +420,7 @@ services:
       replicas: 1
       placement:
         constraints:
-          - node.labels.io.cyphernode.infra == true
+          - node.labels.io.cyphernode == true
       restart_policy:
         condition: "any"
         delay: 1s

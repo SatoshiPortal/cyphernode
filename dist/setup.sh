@@ -549,33 +549,13 @@ install_docker() {
     localnodeid=$(docker info -f '{{.Swarm.NodeID}}')
 
     # we only support swarm in single host mode, so all labels needed to spawn containers in the swarm
-    # are given to the manager of the swarm
-    # it is possible to move the io.cyphernode.apps label to a different node,
-    # for apps which rely on shared volumes with core components, we have the io.cyphernode.clingyapps
-    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode.core" }}') == "true" ]]; then
-      step "      [32madd[0m docker node label: io.cyphernode.core"
-      try docker node update --label-add io.cyphernode.core=true ${localnodeid} > /dev/null 2>&1
+    # are given to the host setup is run on. Setup must be run on any manager, if swarm mode is enabled
+    # and a swarm was already initialised
+    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode" }}') == "true" ]]; then
+      step "      [32madd[0m docker node label: io.cyphernode"
+      try docker node update --label-add io.cyphernode=true ${localnodeid} > /dev/null 2>&1
       next
     fi
-
-    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode.infra" }}') == "true" ]]; then
-      step "      [32madd[0m docker node label: io.cyphernode.infra"
-      try docker node update --label-add io.cyphernode.infra=true ${localnodeid} > /dev/null 2>&1
-      next
-    fi
-
-    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode.apps" }}') == "true" ]]; then
-      step "      [32madd[0m docker node label: io.cyphernode.apps"
-      try docker node update --label-add io.cyphernode.apps=true ${localnodeid} > /dev/null 2>&1
-      next
-    fi
-
-    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode.clingyapps" }}') == "true" ]]; then
-      step "      [32madd[0m docker node label: io.cyphernode.clingyapps"
-      try docker node update --label-add io.cyphernode.clingyapps=true ${localnodeid} > /dev/null 2>&1
-      next
-    fi
-
   fi
 
   local net_entry=$(docker network ls | grep cyphernodenet);
