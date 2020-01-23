@@ -958,6 +958,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbalances:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Get the spending wallet extended balances"
+      description: "Returns the spending wallet extended balances, in BTC."
+      operationId: "getSpendingWalletBalances"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balances'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /getbalancebyxpub/{xpub}:
     get:
       parameters:
@@ -2026,6 +2049,13 @@ components:
       properties:
         balance:
           type: "number"
+    Balances:
+      type: "object"
+      required:
+        - "balances"
+      properties:
+        balances:
+          type: "object"
     Block:
       type: "object"
       required:

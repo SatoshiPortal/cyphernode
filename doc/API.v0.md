@@ -592,7 +592,25 @@ Proxy response:
 }
 ```
 
+### Get spending wallet's extended balances (called by application)
 
+Calls getbalances RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/getbalances
+```
+
+Proxy response:
+
+```json
+{
+  "mine": {
+    "trusted": 1.29979716,
+    "untrusted_pending": 0.00000000,
+    "immature": 0.00000000
+  }
+}
+```
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 
