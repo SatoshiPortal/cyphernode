@@ -604,10 +604,12 @@ Proxy response:
 
 ```json
 {
-  "mine": {
-    "trusted": 1.29979716,
-    "untrusted_pending": 0.00000000,
-    "immature": 0.00000000
+  "balances": {
+    "mine": {
+      "trusted": 1.29979716,
+      "untrusted_pending": 0,
+      "immature": 0
+    }
   }
 }
 ```
