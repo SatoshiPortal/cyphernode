@@ -68,7 +68,7 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    <% if ( torifyables && torifyables.indexOf('tor_bitcoin') !== -1 ) { %>
+    <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_bitcoin') !== -1 ) { %>
     command: $USER sh -c 'rm -f /container_monitor/bitcoin_ready ; while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done ; echo "tor ready" ; bitcoind'
     <% } else { %>
     command: $USER sh -c 'rm -f /container_monitor/bitcoin_ready ; bitcoind'
@@ -239,7 +239,7 @@ services:
       <% if (net === 'testnet') { %>
       - "TESTNET=1"
       <% } %>
-      <% if ( torifyables && torifyables.indexOf('tor_otsoperations') !== -1 ) { %>
+      <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_otsoperations') !== -1 ) { %>
       - "TOR_HOST=tor"
       - "TOR_PORT=9050"
       <% } %>

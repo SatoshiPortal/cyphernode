@@ -230,7 +230,7 @@ module.exports = class App {
     }
 
     for( let torifyable of this.torifyables ) {
-      torifyable.checked = this.isChecked( 'torifyables', torifyable.value );
+      torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
     }
   }
 
@@ -421,7 +421,7 @@ module.exports = class App {
     }
 
     for( let torifyable of this.torifyables ) {
-      torifyable.checked = this.isChecked( 'torifyables', torifyable.value );
+      torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
     }
 
     const cert = new Cert();
@@ -440,7 +440,7 @@ module.exports = class App {
           expose: this.config.data.bitcoin_expose,
           uacomment: this.config.data.bitcoin_uacomment,
           torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_bitcoin'),
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_bitcoin'),
           tor_hostname: this.sessionData.tor_bitcoin_hostname
         }
       },
@@ -538,7 +538,7 @@ module.exports = class App {
           external_ip: this.config.data.lightning_external_ip,
           implementation: this.config.data.lightning_implementation,
           torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
-          clearnet: this.isChecked('clearnet', 'clearnet_lightning'),
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
       }

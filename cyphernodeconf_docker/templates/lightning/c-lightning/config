@@ -16,7 +16,7 @@ rgb=<%= lightning_nodecolor %>
 
 addr=0.0.0.0:9735
 
-<% if ( torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
+<% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 # Tor
 # proxy=tor:9050 this has to be made at execution time because of getaddrinfo and alpine not being friends, see entrypoint.sh
 <% if ( !clearnet || clearnet.indexOf('clearnet_lightning') === -1 ) { %>

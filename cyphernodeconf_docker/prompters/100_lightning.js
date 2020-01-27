@@ -57,7 +57,7 @@ module.exports = {
       Next question is asked when lightning_annouce is YES and (not Tor or (Tor and LN clearnet)).
     */
     {
-      when: (props) => { return featureCondition(props) && props.lightning_announce && ((!props.torifyables || props.torifyables.indexOf('tor_lightning') === -1) || (props.clearnet && props.clearnet.indexOf('clearnet_lightning') !== -1)) },
+      when: (props) => { return featureCondition(props) && props.lightning_announce && (props.features.indexOf('tor') === -1 || props.features.indexOf('tor') !== -1 && ((!props.torifyables || props.torifyables.indexOf('tor_lightning') === -1) || (props.clearnet && props.clearnet.indexOf('clearnet_lightning') !== -1))) },
       type: 'input',
       name: 'lightning_external_ip',
       default: utils.getDefault( 'lightning_external_ip' ),
