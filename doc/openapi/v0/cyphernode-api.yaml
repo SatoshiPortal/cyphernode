@@ -1688,6 +1688,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_listpeers:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Get lightning peer list"
+      description: "Calls listpeers from lightningd.  Returns the list of peers and the channels opened with them, even for currently offline peers."
+      operationId: "lightningListPeers"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  id:
+                    type: "string"
+                  connected:
+                    type: "boolean"
+                  netaddr:
+                    $ref: 'string'
+                  channels:
+                    type: "array"
+                    items:
+                      type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /ots_stamp:
     post:
       tags:

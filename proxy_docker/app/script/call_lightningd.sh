@@ -461,4 +461,19 @@ ln_newaddr() {
   return ${returncode}
 }
 
+ln_listpeers() {
+  trace "Entering ln_listpeers()..."
+
+  local result
+
+  result=$(./lightning-cli ln_listpeers)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_getinfo] result=${result}"
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
 case "${0}" in *call_lightningd.sh) ./lightning-cli $@;; esac
