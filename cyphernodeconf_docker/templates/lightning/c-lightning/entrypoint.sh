@@ -6,7 +6,7 @@ while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ;
 
 echo "bitcoin ready"
 
-<% if ( torifyables.indexOf('tor_lightning') !== -1 ) { %>
+<% if ( torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 #while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done
 while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | awk '{ print $1 }') ; sleep 10 ; done
 
