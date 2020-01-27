@@ -469,7 +469,7 @@ ln_listpeers() {
   result=$(./lightning-cli ln_listpeers)
   returncode=$?
   trace_rc ${returncode}
-  trace "[ln_getinfo] result=${result}"
+  trace "[ln_listpeers] result=${result}"
 
   echo "${result}"
 
