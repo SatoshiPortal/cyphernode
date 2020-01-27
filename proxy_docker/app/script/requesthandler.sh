@@ -410,6 +410,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_listpeers)
+          # GET http://192.168.111.152:8080/ln_listpeers
+
+          response=$(ln_listpeers)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}

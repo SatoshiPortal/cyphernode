@@ -1012,6 +1012,166 @@ Proxy response:
 }
 ```
 
+### Get the list of peers, with channels, from Lightning Network node (called by application)
+
+Calls listpeers from lightningd.  Returns the list of peers and the channels opened with them, even for currently offline peers.
+
+```http
+GET http://cyphernode:8888/ln_listpeers
+```
+
+Proxy response:
+
+```json
+{
+   "peers": [
+      {
+         "id": "0[REDACTED]e",
+         "connected": true,
+         "netaddr": [
+            "181.[REDACTED].228:9735"
+         ],
+         "globalfeatures": "",
+         "localfeatures": "81",
+         "features": "81",
+         "channels": [
+            {
+               "state": "CHANNELD_NORMAL",
+               "scratch_txid": "3[REDACTED]e",
+               "owner": "channeld",
+               "short_channel_id": "6[REDACTED]6x0",
+               "direction": 0,
+               "channel_id": "7[REDACTED]c",
+               "funding_txid": "0[REDACTED]f",
+               "close_to_addr": "bc1[REDACTED]f",
+               "close_to": "0[REDACTED]6",
+               "private": false,
+               "funding_allocation_msat": {
+                  "0[REDACTED]e": 0,
+                  "0[REDACTED]a": 699139000
+               },
+               "funding_msat": {
+                  "0[REDACTED]e": "0msat",
+                  "0[REDACTED]a": "699139000msat"
+               },
+               "msatoshi_to_us": 699128000,
+               "to_us_msat": "699128000msat",
+               "msatoshi_to_us_min": 699128000,
+               "min_to_us_msat": "699128000msat",
+               "msatoshi_to_us_max": 699139000,
+               "max_to_us_msat": "699139000msat",
+               "msatoshi_total": 699139000,
+               "total_msat": "699139000msat",
+               "dust_limit_satoshis": 546,
+               "dust_limit_msat": "546000msat",
+               "max_htlc_value_in_flight_msat": 12446749275109551625,
+               "max_total_htlc_in_msat": "12446749275109551625msat",
+               "their_channel_reserve_satoshis": 6998,
+               "their_reserve_msat": "6998000msat",
+               "our_channel_reserve_satoshis": 6997,
+               "our_reserve_msat": "6997000msat",
+               "spendable_msatoshi": 688236000,
+               "spendable_msat": "688236000msat",
+               "htlc_minimum_msat": 0,
+               "minimum_htlc_in_msat": "0msat",
+               "their_to_self_delay": 144,
+               "our_to_self_delay": 144,
+               "max_accepted_htlcs": 483,
+               "status": [
+                  "CHANNELD_NORMAL:Reconnected, and reestablished.",
+                  "CHANNELD_NORMAL:Funding transaction locked. Channel announced."
+               ],
+               "in_payments_offered": 0,
+               "in_msatoshi_offered": 0,
+               "in_offered_msat": "0msat",
+               "in_payments_fulfilled": 0,
+               "in_msatoshi_fulfilled": 0,
+               "in_fulfilled_msat": "0msat",
+               "out_payments_offered": 2,
+               "out_msatoshi_offered": 13245566,
+               "out_offered_msat": "13245566msat",
+               "out_payments_fulfilled": 1,
+               "out_msatoshi_fulfilled": 11000,
+               "out_fulfilled_msat": "11000msat",
+               "htlcs": []
+            }
+         ]
+      },
+      {
+         "id": "0[REDACTED]9",
+         "connected": true,
+         "netaddr": [
+            "wp[REDACTED]d.onion:9735"
+         ],
+         "globalfeatures": "",
+         "localfeatures": "2281",
+         "features": "2281",
+         "channels": [
+            {
+               "state": "CHANNELD_NORMAL",
+               "scratch_txid": "8[REDACTED]f",
+               "owner": "channeld",
+               "short_channel_id": "6[REDACTED]3x0",
+               "direction": 1,
+               "channel_id": "9[REDACTED]3",
+               "funding_txid": "2[REDACTED]e",
+               "close_to_addr": "bc1[REDACTED]d",
+               "close_to": "0[REDACTED]f",
+               "private": false,
+               "funding_allocation_msat": {
+                  "0[REDACTED]9": 0,
+                  "0[REDACTED]a": 328682000
+               },
+               "funding_msat": {
+                  "0[REDACTED]9": "0msat",
+                  "0[REDACTED]a": "328682000msat"
+               },
+               "msatoshi_to_us": 328682000,
+               "to_us_msat": "328682000msat",
+               "msatoshi_to_us_min": 328682000,
+               "min_to_us_msat": "328682000msat",
+               "msatoshi_to_us_max": 328682000,
+               "max_to_us_msat": "328682000msat",
+               "msatoshi_total": 328682000,
+               "total_msat": "328682000msat",
+               "dust_limit_satoshis": 546,
+               "dust_limit_msat": "546000msat",
+               "max_htlc_value_in_flight_msat": 12446744073709551615,
+               "max_total_htlc_in_msat": "12446744073709551615msat",
+               "their_channel_reserve_satoshis": 7287,
+               "their_reserve_msat": "7287000msat",
+               "our_channel_reserve_satoshis": 7286,
+               "our_reserve_msat": "7286000msat",
+               "spendable_msatoshi": 727826000,
+               "spendable_msat": "727826000msat",
+               "htlc_minimum_msat": 0,
+               "minimum_htlc_in_msat": "0msat",
+               "their_to_self_delay": 144,
+               "our_to_self_delay": 144,
+               "max_accepted_htlcs": 483,
+               "status": [
+                  "CHANNELD_NORMAL:Sent reestablish, waiting for theirs"
+               ],
+               "in_payments_offered": 0,
+               "in_msatoshi_offered": 0,
+               "in_offered_msat": "0msat",
+               "in_payments_fulfilled": 0,
+               "in_msatoshi_fulfilled": 0,
+               "in_fulfilled_msat": "0msat",
+               "out_payments_offered": 20,
+               "out_msatoshi_offered": 3104386818,
+               "out_offered_msat": "3104386818msat",
+               "out_payments_fulfilled": 0,
+               "out_msatoshi_fulfilled": 0,
+               "out_fulfilled_msat": "0msat",
+               "htlcs": []
+            }
+         ]
+      }
+   ]
+}
+```
+
 ### Stamp a hash on the Bitcoin blockchain using OTS (called by application)
 
 Will stamp the supplied hash to the Bitcoin blockchain using OTS.  Cyphernode will curl the callback when the OTS stamping is complete.
