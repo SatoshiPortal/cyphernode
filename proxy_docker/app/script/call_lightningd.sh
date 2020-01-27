@@ -466,7 +466,7 @@ ln_listpeers() {
 
   local result
 
-  result=$(./lightning-cli ln_listpeers)
+  result=$(./lightning-cli listpeers)
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_listpeers] result=${result}"
