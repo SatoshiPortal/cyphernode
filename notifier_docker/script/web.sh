@@ -37,7 +37,7 @@ web() {
   fi
   trace "[web] torbypass=${torbypass}"
 
-  response=$(curl_it "${url}" "${body}", "${torbypass}")
+  response=$(curl_it "${url}" "${body}" "${torbypass}")
   returncode=$?
   trace_rc ${returncode}
 
