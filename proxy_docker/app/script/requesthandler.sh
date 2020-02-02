@@ -252,6 +252,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        getbalances)
+          # curl (GET) http://192.168.111.152:8080/getbalances
+
+          response=$(getbalances)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getbalancebyxpub)
           # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
 
