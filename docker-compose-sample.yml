@@ -32,7 +32,7 @@ services:
   ##########################
 
   proxy:
-    image: cyphernode/proxy:v0.3.0-rc.4-local
+    image: cyphernode/proxy:v0.3.0-rc.5-local
     command: $USER ./startproxy.sh
     environment:
       - "TRACING=1"
@@ -75,7 +75,7 @@ services:
   ##########################
 
   proxycron:
-    image: cyphernode/proxycron:v0.3.0-rc.4-local
+    image: cyphernode/proxycron:v0.3.0-rc.5-local
     environment:
       - "TX_CONF_URL=proxy:8888/executecallbacks"
       - "OTS_URL=proxy:8888/ots_backoffice"
@@ -106,7 +106,7 @@ services:
   ##########################
 
   notifier:
-    image: cyphernode/notifier:v0.3.0-rc.4-local
+    image: cyphernode/notifier:v0.3.0-rc.5-local
     command: $USER ./startnotifier.sh
     networks:
       - cyphernodenet
@@ -123,7 +123,7 @@ services:
   ##########################
 
   pycoin:
-    image: cyphernode/pycoin:v0.3.0-rc.4-local
+    image: cyphernode/pycoin:v0.3.0-rc.5-local
     command: $USER ./startpycoin.sh
     environment:
       - "TRACING=1"
@@ -142,7 +142,7 @@ services:
   ##########################
 
   otsclient:
-    image: cyphernode/otsclient:v0.3.0-rc.4-local
+    image: cyphernode/otsclient:v0.3.0-rc.5-local
     command: $USER /script/startotsclient.sh
     environment:
       - "TRACING=1"
@@ -168,7 +168,7 @@ services:
 
   gatekeeper:
     # HTTP authentication API gate
-    image: cyphernode/gatekeeper:v0.3.0-rc.4-local
+    image: cyphernode/gatekeeper:v0.3.0-rc.5-local
     command: $USER
     environment:
       - "TRACING=1"
