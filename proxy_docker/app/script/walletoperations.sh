@@ -12,12 +12,14 @@ spend() {
   trace "[spend] address=${address}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[spend] amount=${amount}"
+  local conf_target=$(echo "${request}" | jq ".conf_target" | awk '{ printf "%d", $0 }')
+  trace "[spend] conf_target=${conf_target}"
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
+  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,null,${conf_target}]}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
