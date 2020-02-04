@@ -520,14 +520,14 @@
       "title": "Expose bitcoin node",
       "default": false,
       "examples": [
-        false
+        true
       ]
     },
     "lightning_expose": {
       "$id": "#/properties/lightning_expose",
       "type": "boolean",
       "title": "Expose lightning node",
-      "default": false,
+      "default": true,
       "examples": [
         false
       ]
@@ -538,7 +538,7 @@
       "title": "Expose gatekeeper port",
       "default": false,
       "examples": [
-        false
+        true
       ]
     },
     "gatekeeper_datapath": {
