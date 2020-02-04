@@ -335,6 +335,44 @@ module.exports = {
       message: prefix()+'Custom path for your lightning node data?'+utils.getHelp('lightning_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1 },
+      type: 'list',
+      name: 'elements_datapath',
+      default: utils.getDefault( 'elements_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/elements",
+          value: utils.setupDir()+"/cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/elements",
+          value: utils.defaultDataDirBase()+"/cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/elements",
+          value: utils.defaultDataDirBase()+"/.cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/elements",
+          value: utils.defaultDataDirBase()+"/elements"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your elements node data?'+utils.getHelp('elements_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1 && props.elements_datapath === '_custom'},
+      type: 'input',
+      name: 'elements_datapath_custom',
+      default: utils.getDefault( 'elements_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your elements node data?'+utils.getHelp('elements_datapath_custom'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
       type: 'list',
       name: 'otsclient_datapath',

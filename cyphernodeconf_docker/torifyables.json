@@ -8,6 +8,10 @@
     "value": "tor_bitcoin"
   },
   {
+    "name": "Elements Node",
+    "value": "tor_elements"
+  },
+  {
     "name": "Lightning Network Node",
     "value": "tor_lightning"
   },
