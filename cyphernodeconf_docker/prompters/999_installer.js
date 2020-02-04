@@ -393,6 +393,13 @@ module.exports = {
       message: prefix()+'Expose lightning node outside of the docker network?'+utils.getHelp('lightning_expose'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1  },
+      type: 'confirm',
+      name: 'elements_expose',
+      default: utils.getDefault( 'elements_expose' ),
+      message: prefix()+'Expose elements node outside of the docker network?'+utils.getHelp('elements_expose'),
+    },
+    {
       when: installerDocker,
       type: 'list',
       name: 'docker_mode',
