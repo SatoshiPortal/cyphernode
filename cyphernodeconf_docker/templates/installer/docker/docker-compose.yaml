@@ -60,6 +60,7 @@ services:
     <% if ( features.indexOf('tor') !== -1 ) { %>
     depends_on:
       - tor
+      - bitcoin
     <% } %>
 #    deploy:  --lightning-dir=/.lightning
 #      placement:
@@ -104,6 +105,33 @@ services:
 #      placement:
 #        constraints: [node.hostname==dev]
   <% } %>
+
+  ##########################
+  # ELEMENTS               #
+  ##########################
+
+  elements:
+    image: cyphernode/elements:<%= elements_version %>
+    command: $USER /.elements/entrypoint.sh
+    volumes:
+      - "<%= elements_datapath %>:/.elements"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    networks:
+      - cyphernodenet
+    restart: always
+    <% if ( features.indexOf('tor') !== -1 ) { %>
+    depends_on:
+      - tor
+      - bitcoin
+    <% } %>
+#    deploy:
+#      placement:
+#        constraints: [node.hostname==dev]
 
   ##########################
   # PROXY                  #
