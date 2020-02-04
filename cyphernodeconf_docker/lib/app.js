@@ -575,6 +575,7 @@ module.exports = class App {
         networks: ['cyphernodenet'],
         docker: "cyphernode/elements:"+this.config.docker_versions['cyphernode/elements'],
         extra: {
+          expose: this.config.data.elements_expose,
           torified: this.torifyables.find(data => data.value === 'tor_elements').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_elements'),
           tor_hostname: this.sessionData.tor_elements_hostname
