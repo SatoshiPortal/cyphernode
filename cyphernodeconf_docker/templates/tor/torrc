@@ -14,7 +14,7 @@ HiddenServicePort 9735 lightning:9735
 <% if ( torifyables && torifyables.indexOf('tor_bitcoin') !== -1 && bitcoin_expose) { %>
 HiddenServiceDir /tor/bitcoin/hidden_service/
 HiddenServiceVersion 3
-HiddenServicePort 8333 bitcoin:8333
+HiddenServicePort <%= (net === 'regtest') ? '18444 bitcoin:18444' : ((net === 'testnet') ? '18333 bitcoin:18333' : '8333 bitcoin:8333') %>
 <% } %>
 
 SocksPort 0.0.0.0:9050
