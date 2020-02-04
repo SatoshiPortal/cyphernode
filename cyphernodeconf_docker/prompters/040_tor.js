@@ -40,6 +40,9 @@ module.exports = {
       },{
         name: "Lightning Network Node",
         value: "clearnet_lightning"
+      },{
+        name: "Elements Node",
+        value: "clearnet_elements"
       }]
     }];
   },

@@ -3,6 +3,7 @@ BITCOIN_INTERNAL=<%= (bitcoin_mode==="internal"?'true':'false') %>
 FEATURE_LIGHTNING=<%= (features.indexOf('lightning') != -1)?'true':'false' %>
 FEATURE_BATCHER=<%= (features.indexOf('batcher') != -1)?'true':'false' %>
 FEATURE_SPECTER=<%= (features.indexOf('specter') != -1)?'true':'false' %>
+FEATURE_ELEMENTS=<%= (features.indexOf('elements') != -1)?'true':'false' %>
 FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
@@ -19,6 +20,7 @@ TOR_ADDR_WATCH_WEBHOOKS=<%= (torifyables && torifyables.indexOf('tor_addrwatches
 TOR_TXID_WATCH_WEBHOOKS=<%= (torifyables && torifyables.indexOf('tor_txidwatcheswebhooks') !== -1)?'true':'false' %>
 TOR_TRAEFIK=<%= (torifyables && torifyables.indexOf('tor_traefik') !== -1)?'true':'false' %>
 TOR_BITCOIN=<%= (torifyables && torifyables.indexOf('tor_bitcoin') !== -1)?'true':'false' %>
+TOR_ELEMENTS=<%= (torifyables && torifyables.indexOf('tor_elements') !== -1)?'true':'false' %>
 TOR_LIGHTNING=<%= (torifyables && torifyables.indexOf('tor_lightning') !== -1)?'true':'false' %>
 <% } %>
 DOCKER_MODE=<%= docker_mode %>
@@ -35,3 +37,6 @@ OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } %>
 BITCOIN_NETWORK=<%= net %>
+<% if ( features.indexOf('elements') !== -1 ) { %>
+ELEMENTS_DATAPATH=<%= elements_datapath %>
+<% } %>
