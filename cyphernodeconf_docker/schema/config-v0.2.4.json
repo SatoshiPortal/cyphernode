@@ -549,6 +549,15 @@
         false
       ]
     },
+    "elements_expose": {
+      "$id": "#/properties/elements_expose",
+      "type": "boolean",
+      "title": "Expose elements node",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
     "gatekeeper_expose": {
       "$id": "#/properties/gatekeeper_expose",
       "type": "boolean",
