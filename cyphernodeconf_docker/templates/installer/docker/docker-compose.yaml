@@ -169,6 +169,16 @@ services:
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
+      <% if ( features.indexOf('elements') !== -1 ) { %>
+      - "SPENDING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18885' : '7041') %>/wallet"
+      - "SPENDING_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
+      - "SPENDING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "SPENDING_ELEMENTS_NODE_RPC_CFG=/tmp/spending_elementsnode_curlcfg.properties"
+      - "WATCHING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18885' : '7041') %>/wallet"
+      - "WATCHING_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
+      - "WATCHING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "WATCHING_ELEMENTS_NODE_RPC_CFG=/tmp/watching_elementsnode_curlcfg.properties"
+      <% } %>
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"

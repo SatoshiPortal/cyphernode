@@ -16,6 +16,7 @@
 . ./trace.sh
 . ./manage_missed_conf.sh
 . ./walletoperations.sh
+. ./liquidwalletoperations.sh
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
@@ -746,6 +747,14 @@ main() {
           # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
 
           response=$(serve_ots_info "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getnewaddress)
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
+
+          response=$(elements_getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
           ;;
