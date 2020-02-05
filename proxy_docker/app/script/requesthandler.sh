@@ -15,6 +15,7 @@
 . ./trace.sh
 . ./manage_missed_conf.sh
 . ./walletoperations.sh
+. ./liquidwalletoperations.sh
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
@@ -772,6 +773,14 @@ main() {
         *)
           response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
           returncode=1
+          ;;
+        elements_getnewaddress)
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
+
+          response=$(elements_getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
           ;;
       esac
       response=$(echo "${response}" | jq -Mc)
