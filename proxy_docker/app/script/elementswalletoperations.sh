@@ -412,3 +412,39 @@ elements_create_wallet() {
   return ${returncode}
 }
 
+elements_get_rawtransaction() {
+  trace "Entering elements_get_rawtransaction()..."
+
+  local txid=${1}
+  trace "[elements_get_rawtransaction] txid=${txid}"
+  local data="{\"method\":\"getrawtransaction\",\"params\":[\"${txid}\",true]}"
+  trace "[elements_get_rawtransaction] data=${data}"
+  send_to_elements_watcher_node "${data}"
+  return $?
+}
+
+elements_get_transaction() {
+  trace "Entering elements_get_transaction()..."
+
+  local txid=${1}
+  trace "[elements_get_transaction] txid=${txid}"
+  local to_elements_spender_node=${2}
+  trace "[elements_get_transaction] to_elements_spender_node=${to_elements_spender_node}"
+
+  local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
+  trace "[elements_get_transaction] data=${data}"
+  if [ -z "${to_elements_spender_node}" ]; then
+    send_to_elements_watcher_node "${data}"
+  else
+    send_to_elements_spender_node "${data}"
+  fi
+  return $?
+}
+
+elements_getwalletinfo() {
+  trace "Entering elements_getwalletinfo()..."
+
+  local data='{"method":"getwalletinfo"}'
+  send_to_elements_watcher_node "${data}" | jq ".result"
+  return $?
+}

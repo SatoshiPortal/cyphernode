@@ -790,6 +790,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        elements_getwalletinfo)
+          # curl (GET) 192.168.111.152:8080/elements_getwalletinfo
+
+          response=$(elements_getwalletinfo)
+          response_to_client "${response}" ${?}
+          break
+          ;;
       esac
       response=$(echo "${response}" | jq -Mc)
       response_to_client "${response}" ${returncode}
