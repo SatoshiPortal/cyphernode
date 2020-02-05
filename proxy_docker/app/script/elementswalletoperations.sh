@@ -4,31 +4,33 @@
 . ./sendtoelementsnode.sh
 
 elements_spend() {
-  trace "Entering spend()..."
+  trace "Entering elements_spend()..."
 
   local data
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
-  trace "[spend] address=${address}"
+  trace "[elements_spend] address=${address}"
+  local asset_id=$(echo "${request}" | jq -r ".assetId")
+  trace "[elements_spend] assetId=${asset_id}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
-  trace "[spend] amount=${amount}"
+  trace "[elements_spend] amount=${amount}"
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
+  response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",\"${asset_id}\"]}")
   local returncode=$?
   trace_rc ${returncode}
-  trace "[spend] response=${response}"
+  trace "[elements_spend] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
     local txid=$(echo "${response}" | jq -r ".result")
-    trace "[spend] txid=${txid}"
+    trace "[elements_spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction ${txid} "spender")
-    tx_raw_details=$(get_rawtransaction ${txid})
+    tx_details=$(elements_get_transaction ${txid} "spender")
+    tx_raw_details=$(elements_get_rawtransaction ${txid})
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
@@ -49,24 +51,24 @@ elements_spend() {
     event_message=$(echo "${request}" | jq -er ".eventMessage")
     if [ "$?" -ne "0" ]; then
       # event_message tag null, so there's no event_message
-      trace "[spend] event_message="
+      trace "[elements_spend] event_message="
       event_message=
     else
       # There's an event message, let's publish it!
 
-      trace "[spend] mosquitto_pub -h broker -t spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
+      trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":\"${asset_id}\",\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":\"${asset_id}\",\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
     ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx, assetid) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'), \"${asset_id}\")"
     trace_rc $?
-    id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
+    id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
     trace_rc $?
-    sql "INSERT OR IGNORE INTO recipient (address, amount, tx_id) VALUES (\"${address}\", ${amount}, ${id_inserted})"
+    sql "INSERT OR IGNORE INTO elements_recipient (address, amount, tx_id, assetid) VALUES (\"${address}\", ${amount}, ${id_inserted}, \"${asset_id}\")"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
@@ -79,7 +81,7 @@ elements_spend() {
     data="{\"message\":${message}}"
   fi
 
-  trace "[spend] responding=${data}"
+  trace "[elements_spend] responding=${data}"
   echo "${data}"
 
   return ${returncode}
@@ -265,7 +267,7 @@ elements_getnewaddress() {
   else
     data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${address_type}\"]}"
   fi
-  response=$(send_to_spender_node "${data}")
+  response=$(send_to_elements_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[elements_getnewaddress] response=${response}"

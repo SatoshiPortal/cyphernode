@@ -15,7 +15,7 @@
 . ./trace.sh
 . ./manage_missed_conf.sh
 . ./walletoperations.sh
-. ./liquidwalletoperations.sh
+. ./elementswalletoperations.sh
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
@@ -779,6 +779,14 @@ main() {
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
 
           response=$(elements_getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_spend)
+          # POST http://192.168.111.152:8080/elements_spend
+          # BODY {"address":"bcrt1q0k88aheqyj02uz5x38p4cgf7grfcc6hpacctgd","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+
+          response=$(elements_spend "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
