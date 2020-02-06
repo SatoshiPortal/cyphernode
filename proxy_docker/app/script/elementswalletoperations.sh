@@ -448,3 +448,14 @@ elements_getwalletinfo() {
   send_to_elements_watcher_node "${data}" | jq ".result"
   return $?
 }
+
+elements_validateaddress() {
+  trace "Entering elements_validateaddress()..."
+
+  local address=${1}
+  trace "[elements_validateaddress] address=${address}"
+  local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
+  trace "[elements_validateaddress] data=${data}"
+  send_to_elements_watcher_node "${data}"
+  return $?
+}
