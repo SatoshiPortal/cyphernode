@@ -1957,7 +1957,7 @@ components:
         vout:
           type: "integer"
         fee:
-          type: "fee"
+          type: "integer"
         confirmations:
           type: "integer"
         blockhash:
