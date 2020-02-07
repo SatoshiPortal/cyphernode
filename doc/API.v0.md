@@ -4,12 +4,12 @@
 
 ### Watch a Bitcoin Address (called by application)
 
-Inserts the address and callbacks in the DB and imports the address to the Watching wallet.
+Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
 
 ```http
 POST http://cyphernode:8888/watch
 with body...
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
 ```
 
 Proxy response:
@@ -26,7 +26,8 @@ Proxy response:
     "estimatesmartfee2blocks": "0.000010",
     "estimatesmartfee6blocks": "0.000010",
     "estimatesmartfee36blocks": "0.000010",
-    "estimatesmartfee144blocks": "0.000010"
+    "estimatesmartfee144blocks": "0.000010",
+    "eventMessage": "eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"
 }
 ```
 
@@ -66,7 +67,8 @@ Proxy response:
   "imported":"1",
   "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
   "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
-  "watching_since":"2018-09-06 21:14:03"}
+  "watching_since":"2018-09-06 21:14:03",
+  "eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
   ]
 }
 ```
@@ -590,7 +592,34 @@ Proxy response:
 }
 ```
 
+### Get spending wallet's information (balances, tx_count, etc.)
 
+Calls getwalletinfo RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/getwalletinfo
+```
+
+Proxy response:
+
+```json
+{
+  "walletname": "",
+  "walletversion": 169900,
+  "balance": 0.00000000,
+  "unconfirmed_balance": 0.00000000,
+  "immature_balance": 0.00000000,
+  "txcount": 2,
+  "keypoololdest": 1569447522,
+  "keypoolsize": 1000,
+  "keypoolsize_hd_internal": 1000,
+  "paytxfee": 0.00000000,
+  "hdseedid": "03ad161a6b4691a3331c01f9ed9fb542f0a57429",
+  "private_keys_enabled": true,
+  "avoid_reuse": false,
+  "scanning": false
+}
+```
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 
@@ -619,12 +648,14 @@ Proxy response:
 
 ### Spend coins from spending wallet (called by application)
 
-Calls sendtoaddress RPC on the spending wallet with supplied info.
+Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.
 
 ```http
 POST http://cyphernode:8888/spend
 with body...
 {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 ```
 
 Proxy response:
@@ -782,12 +813,14 @@ Proxy response:
 
 ### Create a Lightning Network invoice (called by application)
 
-Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds.
+Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds and optional.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
 
 ```http
 POST http://cyphernode:8888/ln_create_invoice
 with body...
-{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
+{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900,"callbackUrl":"https://thesite/lnwebhook/9d8sa98yd"}
+or
+{"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
 ```
 
 Proxy response:
@@ -802,7 +835,7 @@ Proxy response:
 
 ### Pay a Lightning Network invoice (called by application)
 
-Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.
+Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.  If the bolt11 invoice doesn't contain an amount, then the expected_msatoshi supplied here will be used as the paid amount.
 
 ```http
 POST http://cyphernode:8888/ln_pay

@@ -10,7 +10,7 @@ spend() {
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
   trace "[spend] address=${address}"
-  local amount=$(echo "${request}" | jq ".amount" | awk '{ printf "%.8f", $0 }')
+  local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[spend] amount=${amount}"
   local response
   local id_inserted
@@ -39,10 +39,30 @@ spend() {
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+    # Sometimes raw tx are too long to be passed as paramater, so let's write
+    # it to a temp file for it to be read by sqlite3 and then delete the file
+    echo "${tx_raw_details}" > rawtx-${txid}.blob
+
+    ########################################################################################################
+    # Let's publish the event if needed
+    local event_message
+    event_message=$(echo "${request}" | jq -er ".eventMessage")
+    if [ "$?" -ne "0" ]; then
+      # event_message tag null, so there's no event_message
+      trace "[spend] event_message="
+      event_message=
+    else
+      # There's an event message, let's publish it!
+
+      trace "[spend] mosquitto_pub -h broker -t spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
+      returncode=$?
+      trace_rc ${returncode}
+    fi
+    ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
@@ -51,6 +71,9 @@ spend() {
 
     data="{\"status\":\"accepted\""
     data="${data},\"hash\":\"${txid}\"}"
+
+    # Delete the temp file containing the raw tx (see above)
+    rm rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -100,6 +123,32 @@ bumpfee() {
   return ${returncode}
 }
 
+get_txns_spending() {
+  trace "Entering get_txns_spending()... with count: $1 , skip: $2"
+  local count="$1"
+  local skip="$2"
+  local response
+  local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
+  response=$(send_to_spender_node "${data}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[get_txns_spending] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local txns=$(echo ${response} | jq -rc ".result")
+    trace "[get_txns_spending] txns=${txns}"
+
+    data="{\"txns\":${txns}}"
+  else
+    trace "[get_txns_spending] Coudn't get txns!"
+    data=""
+  fi
+
+  trace "[get_txns_spending] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
 getbalance() {
   trace "Entering getbalance()..."
 
@@ -121,6 +170,32 @@ getbalance() {
   fi
 
   trace "[getbalance] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+getbalances() {
+  trace "Entering getbalances()..."
+
+  local response
+  local data='{"method":"getbalances"}'
+  response=$(send_to_spender_node "${data}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getbalances] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local balances=$(echo ${response} | jq ".result")
+    trace "[getbalances] balances=${balances}"
+
+    data="{\"balances\":${balances}}"
+  else
+    trace "[getbalances] Couldn't get balances!"
+    data=""
+  fi
+
+  trace "[getbalances] responding=${data}"
   echo "${data}"
 
   return ${returncode}
@@ -159,24 +234,22 @@ getbalancebyxpub() {
   local returncode
 
   # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
-  data="{\"method\":\"getaddressesbylabel\",\"params\":[${xpub}]}"
+  data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_watcher_wallet ${data} | jq "keys" | tr -d '\n ')
-
+  addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
-
-  data="{\"method\":\"listunspent\",\"params\":[0, 9999999, \"${addresses}\"]}"
+  data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.[].amount] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[getbalancebyxpub] balance=${balance}"
 
-  data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance}}"
+  data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance:-0}}"
 
   echo "${data}"
 
-  return ${returncode}
+  return "${returncode}"
 }
 
 getnewaddress() {
@@ -289,10 +362,12 @@ batchspend() {
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    local rawtx=$(echo "${tx_details}" | jq '.result.hex')
+    # Sometimes raw tx are too long to be passed as paramater, so let's write
+    # it to a temp file for it to be read by sqlite3 and then delete the file
+    echo "${tx_raw_details}" > rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${rawtx})"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
@@ -304,6 +379,9 @@ batchspend() {
 
     data="{\"status\":\"accepted\""
     data="${data},\"hash\":\"${txid}\"}"
+
+    # Delete the temp file containing the raw tx (see above)
+    rm rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -332,3 +410,9 @@ create_wallet() {
   return ${returncode}
 }
 
+getwalletinfo() {
+  trace "Entering getwalletinfo()..."
+
+  local data='{"method":"getwalletinfo"}'
+  send_to_spender_node "${data}" | jq ".result"
+  return $?

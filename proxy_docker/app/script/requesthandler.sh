@@ -89,6 +89,7 @@ main() {
         watch)
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
 
           response=$(watchrequest "${line}")
           response_to_client "${response}" ${?}
@@ -161,6 +162,18 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        get_txns_by_watchlabel)
+          # curl (GET) 192.168.111.152:8080/get_txns_by_watchlabel/<label>/<count>
+          response=$(get_txns_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        get_unused_addresses_by_watchlabel)
+          # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
+          response=$(get_unused_addresses_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         conf)
           # curl (GET) 192.168.111.152:8080/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
 
@@ -225,10 +238,24 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        get_txns_spending)
+          # curl (GET) http://192.168.111.152:8080/get_txns_spending/20/10
+
+          response=$(get_txns_spending $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getbalance)
           # curl (GET) http://192.168.111.152:8080/getbalance
 
           response=$(getbalance)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbalances)
+          # curl (GET) http://192.168.111.152:8080/getbalances
+
+          response=$(getbalances)
           response_to_client "${response}" ${?}
           break
           ;;
@@ -256,7 +283,7 @@ main() {
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 
           response=$(spend "${line}")
           response_to_client "${response}" ${?}
@@ -430,6 +457,14 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+
+        getwalletinfo)
+         # curl (GET) 192.168.111.152:8080/getwalletinfo
+
+         response=$(getwalletinfo)
+         response_to_client "${response}" ${?}
+         break
+         ;;
       esac
       break
     fi

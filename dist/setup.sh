@@ -437,12 +437,6 @@ install_docker() {
             esac
           done
         fi
-      elif [[ $cmpStatus == 'incompatible' ]]; then
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
-        echo "          [31mBlockchain data is not compatible, due to misconfigured nets.[0m"
-        echo "          [31mYour cyphernode installation is most likely broken.[0m"
-        echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m"
       else
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
@@ -698,9 +692,11 @@ sanity_checks_pre_install() {
 
 install_apps() {
   if [ ! -d "$current_path/apps" ]; then
+    local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
     local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "   [32mclone[0m $apps_repo into apps"
     docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
+    sudo_if_required chown -R $user $current_path/apps
   fi
 }
 

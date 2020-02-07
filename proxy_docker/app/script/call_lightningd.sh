@@ -20,6 +20,11 @@ ln_create_invoice() {
   trace "[ln_create_invoice] expiry=${expiry}"
   local callback_url=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[ln_create_invoice] callback_url=${callback_url}"
+  if [ "${callback_url}" != "null" ]; then
+    # If not null, let's add double-quotes so we don't need to add the double-quotes in the sql insert,
+    # so if it's null, it will insert the actual sql NULL value.
+    callback_url="\"${callback_url}\""
+  fi
 
   #/proxy $ ./lightning-cli invoice 10000 "t1" "t1d" 60
   #{
@@ -28,8 +33,13 @@ ln_create_invoice() {
   #  "bolt11": "lnbc100n1pwzllqgpp55a8xen9sdcntehwr93pkwnuu8nmtqx9yew0flalcxhx9nvy34crqdq9wsckgxqzpucqp2rzjqt04ll5ft3mcuy8hws4xcku2pnhma9r9mavtjtadawyrw5kgzp7g7zr745qq3mcqqyqqqqlgqqqqqzsqpcr85k33shzaxscpj29fadmjmfej6y2p380x9w4kxydqpxq87l6lshy69fry9q2yrtu037nt44x77uhzkdyn8043n5yj8tqgluvmcl69cquaxr68"
   #}
 
-  trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \"${description}\" ${expiry}"
-  result=$(./lightning-cli invoice ${msatoshi} "${label}" "${description}" ${expiry})
+  if [ "${msatoshi}" = "null" ]; then
+    trace "[ln_create_invoice] ./lightning-cli invoice \"any\" \"${label}\" \"${description}\" ${expiry}"
+    result=$(./lightning-cli invoice "any" "${label}" "${description}" ${expiry})
+  else
+    trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \"${description}\" ${expiry}"
+    result=$(./lightning-cli invoice ${msatoshi} "${label}" "${description}" ${expiry})
+  fi
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_create_invoice] result=${result}"
@@ -47,7 +57,11 @@ ln_create_invoice() {
     # Let's get the connect string if provided in configuration
     local connectstring=$(get_connection_string)
 
-    sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", \"${callback_url}\", \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
+    if [ "${msatoshi}" = "null" ]; then
+      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, \"${description}\", \"unpaid\")"
+    else
+      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
+    fi
     trace_rc $?
     id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
     trace_rc $?
@@ -58,9 +72,13 @@ ln_create_invoice() {
     if [ -n "${connectstring}" ]; then
       data="${data}\"connectstring\":\"${connectstring}\","
     fi
-    data="${data}\"callback_url\":\"${callback_url}\","
+    if [ "${callback_url}" != "null" ]; then
+      data="${data}\"callbackUrl\":${callback_url},"
+    fi
     data="${data}\"payment_hash\":\"${payment_hash}\","
-    data="${data}\"msatoshi\":${msatoshi},"
+    if [ "${msatoshi}" != "null" ]; then
+      data="${data}\"msatoshi\":${msatoshi},"
+    fi
     data="${data}\"status\":\"unpaid\","
     data="${data}\"description\":\"${description}\","
     data="${data}\"expires_at\":${expires_at}}"
@@ -306,21 +324,31 @@ ln_pay() {
     local invoice_description=$(echo "${result}" | jq ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
-    # The amount must match
-    if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ]; then
+    # The amount must match if not "any"
+    # If the amount is not in the invoice and not supplied as expected_msatoshi, then both will be null, that's ok!
+    # Same thing goes for the description.
+    if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
+      # If invoice_msatoshi is null, that means "any" was supplied, so the amounts don't have to match!
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
       returncode=1
-    elif [ "${expected_description}" != '""' ] && [ "${expected_description}" != "${invoice_description}" ]; then
-      # If expected description is empty, we accept any description on the invoice.  Amount is the important thing.
+    elif [ -n "${expected_description}" ] && [ "${expected_description}" != "null" ] && [ "${expected_description}" != "${invoice_description}" ]; then
+      # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
+      # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
       result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
       returncode=1
     else
-      # Amount and description is as expected, let's pay!
+      # Amount and description are as expected (or empty description), let's pay!
       trace "[ln_pay] Amount and description are as expected, let's try to pay!"
 
-      trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=15"
-      result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=15)
+      if [ "${invoice_msatoshi}" = "null" ]; then
+        # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
+        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15"
+        result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15)
+      else
+        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=15"
+        result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=15)
+      fi
       returncode=$?
       trace_rc ${returncode}
       trace "[ln_pay] result=${result}"

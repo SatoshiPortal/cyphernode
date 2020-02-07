@@ -23,6 +23,7 @@ CREATE TABLE watching (
   imported INTEGER DEFAULT FALSE,
   watching_by_pub32_id INTEGER REFERENCES watching_by_pub32,
   pub32_index INTEGER,
+  event_message TEXT,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
 
