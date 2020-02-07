@@ -592,7 +592,34 @@ Proxy response:
 }
 ```
 
+### Get spending wallet's information (balances, tx_count, etc.)
 
+Calls getwalletinfo RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/getwalletinfo
+```
+
+Proxy response:
+
+```json
+{
+  "walletname": "",
+  "walletversion": 169900,
+  "balance": 0.00000000,
+  "unconfirmed_balance": 0.00000000,
+  "immature_balance": 0.00000000,
+  "txcount": 2,
+  "keypoololdest": 1569447522,
+  "keypoolsize": 1000,
+  "keypoolsize_hd_internal": 1000,
+  "paytxfee": 0.00000000,
+  "hdseedid": "03ad161a6b4691a3331c01f9ed9fb542f0a57429",
+  "private_keys_enabled": true,
+  "avoid_reuse": false,
+  "scanning": false
+}
+```
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 

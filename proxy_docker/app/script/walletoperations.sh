@@ -126,7 +126,7 @@ bumpfee() {
 get_txns_spending() {
   trace "Entering get_txns_spending()... with count: $1 , skip: $2"
   local count="$1"
-  local skip="$2" 
+  local skip="$2"
   local response
   local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
   response=$(send_to_spender_node "${data}")
@@ -410,3 +410,9 @@ create_wallet() {
   return ${returncode}
 }
 
+getwalletinfo() {
+  trace "Entering getwalletinfo()..."
+
+  local data='{"method":"getwalletinfo"}'
+  send_to_spender_node "${data}" | jq ".result"
+  return $?

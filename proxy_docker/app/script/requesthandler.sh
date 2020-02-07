@@ -457,6 +457,14 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+
+        getwalletinfo)
+         # curl (GET) 192.168.111.152:8080/getwalletinfo
+
+         response=$(getwalletinfo)
+         response_to_client "${response}" ${?}
+         break
+         ;;
       esac
       break
     fi
