@@ -1,8 +1,9 @@
 #!/bin/sh
 
 . ${DB_PATH}/config.sh
-. ./walletutils.sh
 
+
+export NETWORK
 export PROXY_LISTENING_PORT
 export WATCHER_NODE_RPC_URL=$WATCHER_BTC_NODE_RPC_URL
 export SPENDER_NODE_RPC_URL=$SPENDER_BTC_NODE_RPC_URL
@@ -51,39 +52,14 @@ init_curlconfig() {
   _createCurlConfig ${SPENDER_BTC_NODE_RPC_CFG} ${SPENDER_BTC_NODE_RPC_USER}
 }
 
-init_psbt() {
-  # if we have psbt enabled and there is no psbt01 wallet existing
-  # we will need to call create_wallet to tell bitcoin core that we
-  # need a wallet without private keys to which we will import
-  # a watch only xpub using importmulti
-
-  # Try to create the psbt wallet when psbt is enabled
-
-  # will create a blank wallet with private keys disabled
-  if [ "$PSBT_WALLET_ACTIVE" == "true" ]; then
-    echo "checking psbt wallet"
-    local result=$(create_wallet "psbt01")
-    if [ "$?" -eq 0 ]; then
-      local error=$(echo $result | jq '.error')
-      if [ "$error" == "null" ]; then
-        echo -n 'INFO: '
-        echo $error | jq '.message'
-      fi
-    fi
-  else
-    echo "psbt feature is disabled"
-  fi
-
-
-}
-
 init() {
+  echo "[startproxy.sh] init"
   init_dbfile
   init_curlconfig
-  init_psbt
 }
 
 run() {
+  echo "[startproxy.sh] run"
   if [ "${FEATURE_LIGHTNING}" = "true" ]; then
     ./waitanyinvoice.sh &
   fi
@@ -93,3 +69,4 @@ run() {
 # startup
 init
 run
+
