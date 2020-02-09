@@ -77,6 +77,28 @@ get_blockchain_info() {
   return $?
 }
 
+psbt_rescanblockchain() {
+  trace "Entering rescanblockchain()..."
+
+  local start_block=${1}
+  trace "[rescanblockchain] start_block=${start_block}"
+  local end_block=${2}
+  trace "[rescanblockchain] end_block=${end_block}"
+
+  local rpcstring="{\"method\":\"rescanblockchain\",\"params\":[${start_block},${end_block}]}"
+  trace "[rescanblockchain] rpcstring=${rpcstring}"
+  send_to_psbt_wallet "${rpcstring}"
+  return $?
+}
+
+get_blockcount() {
+  trace "Entering get_blockcount()..."
+
+  local data='{"method":"getblockcount"}'
+  send_to_watcher_node "${data}" | jq ".result"
+  return $?
+}
+
 get_mempool_info() {
   trace "Entering get_mempool_info()..."
 
