@@ -57,3 +57,40 @@ importmulti_rpc() {
 
   return ${returncode}
 }
+
+
+importmulti_descriptor_rpc() {
+
+  # can be called multiple times for the same ranges and descriptors
+  trace "[Entering importmulti_descriptor_rpc()]"
+
+  local walletname=${1}
+  local label=${2}
+  local descriptor=${3}
+  local rStart=${4:-0}
+  local rEnd=${5:-$XPUB_DERIVATION_GAP}
+  local internal=${6:-false}
+
+  # always false unless true
+  if [ "$rescan" == "true" ]; then
+      rescan="false"
+  fi
+
+
+  local toimport="[{\"desc\":\"${descriptor}\",\"timestamp\":\"now\",\"range\":[${rStart},${rEnd}],\"watchonly\":true,\"label\":\"${label}\",\"keypool\":true,\"internal\":${internal}}]"
+
+  trace "[importmulti_descriptor_rpc] toimport=${toimport}"
+
+  local rpcstring="{\"method\":\"importmulti\",\"params\":[${toimport},{\"rescan\":false}]}"
+
+  echo "RPCSTR=${rpcstring}"
+
+  local result
+  result=$(send_to_psbt_wallet "${rpcstring}")
+  local returncode=$?
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
