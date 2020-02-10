@@ -93,6 +93,7 @@ module.exports = class App {
       bitcoin_version: process.env.BITCOIN_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
+      conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
       noWizard: !!options.noWizard,
       noSplashScreen: !!options.noSplashScreen,
