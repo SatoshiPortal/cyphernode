@@ -10,7 +10,7 @@ elements_spend() {
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
   trace "[elements_spend] address=${address}"
-  local asset_id=$(echo "${request}" | jq -r ".assetId")
+  local asset_id=$(echo "${request}" | jq ".assetId")
   trace "[elements_spend] assetId=${asset_id}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[elements_spend] amount=${amount}"
@@ -18,9 +18,15 @@ elements_spend() {
   local id_inserted
   local tx_details
   local tx_raw_details
+  local returncode
 
-  response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",\"${asset_id}\"]}")
-  local returncode=$?
+  if [ "${asset_id}" = "null" ]; then
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
+  else
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",${asset_id}]}")
+  fi
+
+  returncode=$?
   trace_rc ${returncode}
   trace "[elements_spend] response=${response}"
 
@@ -35,12 +41,12 @@ elements_spend() {
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
-    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.details[0].amount | fabs' | awk '{ printf "%.8f", $0 }')
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
-    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
+    local fees=$(echo "${tx_details}" | jq '.result.details[0].fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
     echo "${tx_raw_details}" > rawtx-${txid}.blob
@@ -56,19 +62,24 @@ elements_spend() {
     else
       # There's an event message, let's publish it!
 
-      trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":\"${asset_id}\",\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":\"${asset_id}\",\"eventMessage\":\"${event_message}\"}")
+      if [ "${asset_id}" = "null" ]; then
+        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
+        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
+      else
+        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":${asset_id},\"eventMessage\":\"${event_message}\"}\""
+        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":${asset_id},\"eventMessage\":\"${event_message}\"}")
+      fi
       returncode=$?
       trace_rc ${returncode}
     fi
     ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx, assetid) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'), \"${asset_id}\")"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx, assetid) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'), ${asset_id})"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
     trace_rc $?
-    sql "INSERT OR IGNORE INTO elements_recipient (address, amount, tx_id, assetid) VALUES (\"${address}\", ${amount}, ${id_inserted}, \"${asset_id}\")"
+    sql "INSERT OR IGNORE INTO elements_recipient (address, amount, tx_id) VALUES (\"${address}\", ${amount}, ${id_inserted})"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
@@ -445,7 +456,7 @@ elements_getwalletinfo() {
   trace "Entering elements_getwalletinfo()..."
 
   local data='{"method":"getwalletinfo"}'
-  send_to_elements_watcher_node "${data}" | jq ".result"
+  send_to_elements_spender_node "${data}" | jq ".result"
   return $?
 }
 
