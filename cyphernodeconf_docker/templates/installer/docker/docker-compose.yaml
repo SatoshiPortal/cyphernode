@@ -150,6 +150,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
     restart: always
