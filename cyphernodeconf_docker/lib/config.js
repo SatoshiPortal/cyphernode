@@ -225,7 +225,6 @@ module.exports = class Config {
       return;
     }
     this.data.schema_version = '0.2.3';
-    this.data.psbt_wallet_activve = false;
   }
 
 };
