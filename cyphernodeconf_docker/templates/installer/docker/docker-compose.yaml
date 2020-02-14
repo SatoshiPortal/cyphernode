@@ -136,6 +136,7 @@ services:
     <% } %>
     volumes:
       - "<%= proxy_datapath %>:/proxy/db"
+      - "<%= bitcoin_datapath %>:/.bitcoin"
       <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
       - "<%= lightning_datapath %>:/.lightning"
       <% } %>
