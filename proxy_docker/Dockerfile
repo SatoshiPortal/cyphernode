@@ -3,6 +3,7 @@ FROM cyphernode/alpine-glibc-base:v3.11.0_2.29-0
 ENV HOME /proxy
 
 RUN apk add --update --no-cache \
+    outils-md5 \
     bash \
     sqlite \
     jq \
