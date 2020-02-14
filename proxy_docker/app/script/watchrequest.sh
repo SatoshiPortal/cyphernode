@@ -5,6 +5,7 @@
 . ./sql.sh
 . ./sendtobitcoinnode.sh
 . ./bitcoin.sh
+. ./descriptor.sh
 
 watchrequest() {
   trace "Entering watchrequest()..."
@@ -115,15 +116,16 @@ watchpub32() {
   trace "[watchpub32] cb0conf_url=${cb0conf_url}"
   local cb1conf_url=${6}
   trace "[watchpub32] cb1conf_url=${cb1conf_url}"
-  # upto_n is used when extending the watching window
-  local upto_n=${7}
-  trace "[watchpub32] upto_n=${upto_n}"
-  local wallet_name=${8:-${WATCHER_BTC_NODE_XPUB_WALLET}}
+  local wallet_name=${7:-${WATCHER_BTC_NODE_XPUB_WALLET}}
   trace "[watchpub32] wallet_name=${wallet_name}"
-  local event_type=${9:-watchxpub}
+  local event_type=${8:-watchxpub}
   trace "[watchpub32] event_type=${event_type}"
-  local rescan=${10:-"false"}
+  local rescan=${9:-"false"}
   trace "[watchpub32] rescan=${rescan}"
+
+  # upto_n is used when extending the watching window
+  local upto_n=${10}
+  trace "[watchpub32] upto_n=${upto_n}"
 
   local id_inserted
   local result
@@ -286,12 +288,57 @@ extend_watchers() {
     # For example, if the last imported n is 155 and we just got a tx with pub32 index of 66,
     # we want to extend the watched addresses to 166 if our gap is 100 (default).
     trace "[extend_watchers] We have addresses to add to watchers!"
-
-    watchpub32 ${label} ${pub32} ${derivation_path} $((${last_imported_n} + 1)) "${callback0conf}" "${callback1conf}" ${upgrade_to_n} > /dev/null
+    watchpub32 ${label} ${pub32} ${derivation_path} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} ${WATCHER_BTC_NODE_XPUB_WALLET} watchxpub false ${upgrade_to_n} > /dev/null
     returncode=$?
     trace_rc ${returncode}
   else
     trace "[extend_watchers] Nothing to add!"
+  fi
+
+  return ${returncode}
+}
+
+extend_descriptor_watchers() {
+  trace "Entering extend_descriptor_watchers()..."
+
+  local watching_by_pub32_id=${1}
+  trace "[extend_descriptor_watchers] watching_by_pub32_id=${watching_by_pub32_id}"
+  local pub32_index=${2}
+  trace "[extend_descriptor_watchers] pub32_index=${pub32_index}"
+  local upgrade_to_n=$((${pub32_index} + ${XPUB_DERIVATION_GAP}))
+  trace "[extend_descriptor_watchers] upgrade_to_n=${upgrade_to_n}"
+
+  local last_imported_n
+  local row
+  row=$(sql "SELECT pub32, label, callback0conf, callback1conf, last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
+  returncode=$?
+  trace_rc ${returncode}
+
+  trace "[extend_descriptor_watchers] row=${row}"
+  local pub32=$(echo "${row}" | cut -d '|' -f1)
+  trace "[extend_descriptor_watchers] pub32=${pub32}"
+  local label=$(echo "${row}" | cut -d '|' -f2)
+  trace "[extend_descriptor_watchers] label=${label}"
+  local derivation_path=$(echo "${row}" | cut -d '|' -f3)
+  trace "[extend_descriptor_watchers] derivation_path=${derivation_path}"
+  local callback0conf=$(echo "${row}" | cut -d '|' -f4)
+  trace "[extend_descriptor_watchers] callback0conf=${callback0conf}"
+  local callback1conf=$(echo "${row}" | cut -d '|' -f5)
+  trace "[extend_descriptor_watchers] callback1conf=${callback1conf}"
+  local last_imported_n=$(echo "${row}" | cut -d '|' -f6)
+  trace "[extend_descriptor_watchers] last_imported_n=${last_imported_n}"
+
+  if [ "${last_imported_n}" -lt "${upgrade_to_n}" ]; then
+    # We want to keep our gap between last tx and last n watched...
+    # For example, if the last imported n is 155 and we just got a tx with pub32 index of 66,
+    # we want to extend the watched addresses to 166 if our gap is 100 (default).
+    trace "[extend_descriptor_watchers] We have addresses to add to watchers!"
+
+    watchpub32 ${label} ${pub32} ${derivation_path} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} ${WATCHER_BTC_NODE_XPUB_WALLET} watchxpub false ${upgrade_to_n} > /dev/null
+    returncode=$?
+    trace_rc ${returncode}
+  else
+    trace "[extend_descriptor_watchers] Nothing to add!"
   fi
 
   return ${returncode}
@@ -337,6 +384,298 @@ watchtxidrequest() {
   trace "[watchtxidrequest] responding=${data}"
 
   echo "${data}"
+
+  return ${returncode}
+}
+
+derive_addresses_for_descriptor() {
+  local descriptor=$1
+  local range_start=${2:-0}
+  local range_end=${3:-$((${range_start}+${XPUB_DERIVATION_GAP}))}
+
+  trace "Entering derive_addresses_for_descriptor()..."
+
+  trace "[derive_addresses_for_descriptor] descriptor=${descriptor}"
+  trace "[derive_addresses_for_descriptor] range_start=${range_start}"
+  trace "[derive_addresses_for_descriptor] range_end=${range_end}"
+
+  local rpcstring="{\"method\":\"deriveaddresses\",\"params\":[${descriptor},\"[${range_start},${range_end}]\""
+
+  trace "[derive_addresses_for_descriptor] rpcstring=${rpcstring}"
+
+  local result
+  result=$(send_to_psbt_wallet ${rpcstring} | jq '.[]')
+  local returncode=$?
+
+  return ${returncode}
+}
+
+watchdescriptor() {
+  trace "Entering watchdescriptor()..."
+
+  local returncode
+  local label=${1}
+  trace "[watchdescriptor] label=${label}"
+  local pub32=${2}
+  trace "[watchdescriptor] pub32=${pub32}"
+  local nstart=${3}
+  trace "[watchdescriptor] nstart=${nstart}"
+  local last_n=$((${nstart}+${XPUB_DERIVATION_GAP}))
+  trace "[watchdescriptor] last_n=${last_n}"
+  local cb0conf_url=${4}
+  trace "[watchdescriptor] cb0conf_url=${cb0conf_url}"
+  local cb1conf_url=${5}
+  trace "[watchdescriptor] cb1conf_url=${cb1conf_url}"
+  local wallet_name=${6:-psbt01}
+  trace "[watchdescriptor] wallet_name=${wallet_name}"
+  local event_type=${7:-watchdescriptor}
+  trace "[watchdescriptor] event_type=${event_type}"
+  local handlechange=${8:-false}
+  if [ ! "$handlechange" == "true" ]; then
+    handlechange="false"
+  fi
+  trace "[watchdescriptor] handlechange=${handlechange}"
+  local rescan=${9:-false}
+  if [ ! "$rescan" == "true" ]; then
+    rescan="false"
+  fi
+  trace "[watchdescriptor] rescan=${rescan}"
+  local rescan_block_start=${10}
+  trace "[watchdescriptor] rescan_block_start=${rescan_block_start}"
+  local rescan_block_end=${11}
+  trace "[watchdescriptor] rescan_block_end=${rescan_block_end}"
+
+
+  # upto_n is used when extending the watching window
+  local upto_n=${10}
+  trace "[watchdescriptor] upto_n=${upto_n}"
+
+  local id_inserted
+  local result
+  local error_msg
+  local data
+
+  # Derive with pycoin...
+  # {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+  if [ -n "${upto_n}" ]; then
+    # If upto_n provided, then we create from nstart to upto_n (instead of + GAP)
+    last_n=${upto_n}
+  fi
+
+  # compute fingerprint from pub32. we dont have the fingerprint information
+  # it should not matter. SHOULD... TODO: check if this really is ok
+
+  local fingerprint=$(fingerprint_from_pub32 $pub32)
+
+  # call getdescriptorinfo to get checksum of descriptor for the addresses
+  local descriptor
+  local descriptor_change
+  local error
+
+  descriptor=$(getdescriptorinfo_rpc "wpkh([${fingerprint}/84h/1h/0h]${pub32}/0/*)")
+  error=$( echo "$descriptor" | jq -r '.error' )
+  descriptor=$( echo "$descriptor" | jq -r '.result.descriptor' )
+
+  if [ "$error" != "null" ]; then
+    echo '{ "error": "\"'${error}'\"" }'
+    return 1
+  fi
+
+  trace "[watchdescriptor] descriptor=${descriptor}"
+
+  if [ "${handlechange}" == "true" ]; then
+    descriptor_change=$(getdescriptorinfo_rpc "wpkh([${fingerprint}/84h/1h/0h]${pub32}/1/*)")
+    error=$( echo "$descriptor_change" | jq -r '.error' )
+    descriptor_change=$( echo "$descriptor_change" | jq -r '.result.descriptor' )
+
+    if [ "$error" != "null" ]; then
+      echo '{ "error": "\"'${error}'\"" }'
+      return 1
+    fi
+    trace "[watchdescriptor] descriptor_change=${descriptor_change}"
+  fi
+
+
+  # usually we would import both descriptors at the same time, but its hard
+  # to pass arrays, so we do it one after the other.
+  if [ "${descriptor}" != "" ]; then
+    local result
+    result=$(importandwatchdescriptor ${label} ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
+    returncode=$?
+    trace "[watchdescriptor] result=${result}"
+    trace_rc ${returncode}
+    #  trace "[watchdescriptor] addresses=${addresses}"
+
+    if [ "${returncode}" -eq 1 ]; then
+      error_msg=${result}
+    fi
+  fi
+
+  if [ "${descriptor_change}" != "" ]; then
+    local result
+    result=$(importandwatchdescriptor "${label}_change" ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
+    returncode=$?
+    trace "[watchdescriptor] result=${result}"
+    trace_rc ${returncode}
+    #  trace "[watchdescriptor] addresses=${addresses}"
+
+    if [ "${returncode}" -eq 1 ]; then
+      error_msg=${result}
+    fi
+  fi
+
+  trace "[watchdescriptor] rescanning blockchain from=${rescan_block_start} to ${rescan_block_end} ${rescan}"
+  if [ "${rescan}" == "true" ]; then
+    psbt_rescanblockchain ${rescan_block_start} ${rescan_block_end}
+  fi
+
+  getbalances
+
+  if [ -z "${error_msg}" ]; then
+    data="{\"id\":\"${id_inserted}\",
+    \"event\":\"${event_type}\",
+    \"pub32\":\"${pub32}\",
+    \"label\":\"${label}\",
+    \"nstart\":\"${nstart}\",
+    \"unconfirmedCallbackURL\":\"${cb0conf_url}\",
+    \"confirmedCallbackURL\":\"${cb1conf_url}\"}"
+
+    returncode=0
+  else
+    data="{\"error\":\"${error_msg}\",
+    \"event\":\"${event_type}\",
+    \"pub32\":\"${pub32}\",
+    \"label\":\"${label}\",
+    \"nstart\":\"${nstart}\",
+    \"unconfirmedCallbackURL\":\"${cb0conf_url}\",
+    \"confirmedCallbackURL\":\"${cb1conf_url}\"}"
+
+    returncode=1
+  fi
+  trace "[watchdescriptor] responding=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}
+
+importandwatchdescriptor() {
+
+  trace "Entering importandwatchdescriptor()..."
+
+  local returncode
+  local result
+  local label=${1}
+  trace "[importandwatchdescriptor] label=${label}"
+  local descriptor=${2}
+  trace "[importandwatchdescriptor] pub32=${descriptor}"
+  local nstart=${3}
+  trace "[importandwatchdescriptor] nstart=${nstart}"
+  local last_n=$((${nstart}+${XPUB_DERIVATION_GAP}))
+  trace "[importandwatchdescriptor] last_n=${last_n}"
+  local cb0conf_url=${4}
+  trace "[importandwatchdescriptor] cb0conf_url=${cb0conf_url}"
+  local cb1conf_url=${5}
+  trace "[importandwatchdescriptor] cb1conf_url=${cb1conf_url}"
+  local wallet_name=${6:-psbt01}
+  trace "[importandwatchdescriptor] wallet_name=${wallet_name}"
+  # upto_n is used when extending the watching window
+  local upto_n=${7}
+  trace "[importandwatchdescriptor] upto_n=${upto_n}"
+
+  if [ -n "${upto_n}" ]; then
+    # If upto_n provided, then we create from nstart to upto_n (instead of + GAP)
+    last_n=${upto_n}
+  fi
+
+  result=$(importmulti_descriptor_rpc ${wallet_name} ${label} ${descriptor} ${nstart} ${last_n})
+  returncode=$?
+  trace "[importandwatchdescriptor] result=${result}"
+  trace_rc ${returncode}
+  #  trace "[importandwatchdescriptor] addresses=${addresses}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    insert_descriptor_watches ${label} ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${upto_n}
+  else
+    echo "Can't import descriptor range"
+  fi
+
+  return ${returncode}
+}
+
+insert_watches_for_descriptor() {
+  trace "Entering insert_watches_for_descriptor()..."
+
+  local addresses=${1}
+  local callback0conf=${2}
+  local callback1conf=${3}
+  local descriptor_id=${4}
+  local nstart=${5}
+  local inserted_values=""
+
+  local IFS=$'\n'
+  for address in ${addresses}
+  do
+    # (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)
+    if [ -n "${inserted_values}" ]; then
+      inserted_values="${inserted_values},"
+    fi
+    inserted_values="${inserted_values}(${address}, 1, \"${callback0conf}\", \"${callback1conf}\", 1"
+    if [ -n "${descriptor_id}" ]; then
+      inserted_values="${inserted_values}, ${descriptor_id}, ${nstart}"
+      nstart=$((${nstart} + 1))
+    fi
+    inserted_values="${inserted_values})"
+  done
+#  trace "[insert_watches] inserted_values=${inserted_values}"
+
+  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_descriptor_id, pub32_index) VALUES ${inserted_values}"
+  returncode=$?
+  trace_rc ${returncode}
+
+  return ${returncode}
+}
+
+extend_watchers_for_descriptor() {
+  trace "Entering extend_watchers()..."
+
+  local watching_by_descriptor_id=${1}
+  trace "[extend_watchers_for_descriptor] watching_by_pub32_id=${watching_by_descriptor_id}"
+  local pub32_index=${2}
+  trace "[extend_watchers_for_descriptor] pub32_index=${pub32_index}"
+  local upgrade_to_n=$((${pub32_index} + ${XPUB_DERIVATION_GAP}))
+  trace "[extend_watchers_for_descriptor] upgrade_to_n=${upgrade_to_n}"
+
+  local last_imported_n
+  local row
+  row=$(sql "SELECT descriptor, label, callback0conf, callback1conf, last_imported_n FROM watching_by_descriptor WHERE id=${watching_by_descriptor_id} AND watching")
+  returncode=$?
+  trace_rc ${returncode}
+
+  trace "[extend_watchers_for_descriptor] row=${row}"
+  local descriptor=$(echo "${row}" | cut -d '|' -f1)
+  trace "[extend_watchers_for_descriptor] descriptor=${descriptor}"
+  local label=$(echo "${row}" | cut -d '|' -f2)
+  trace "[extend_watchers_for_descriptor] derivation_path=${derivation_path}"
+  local callback0conf=$(echo "${row}" | cut -d '|' -f3)
+  trace "[extend_watchers_for_descriptor] callback0conf=${callback0conf}"
+  local callback1conf=$(echo "${row}" | cut -d '|' -f4)
+  trace "[extend_watchers_for_descriptor] callback1conf=${callback1conf}"
+  local last_imported_n=$(echo "${row}" | cut -d '|' -f5)
+  trace "[extend_watchers_for_descriptor] last_imported_n=${last_imported_n}"
+
+  if [ "${last_imported_n}" -lt "${upgrade_to_n}" ]; then
+    # We want to keep our gap between last tx and last n watched...
+    # For example, if the last imported n is 155 and we just got a tx with pub32 index of 66,
+    # we want to extend the watched addresses to 166 if our gap is 100 (default).
+    trace "[extend_watchers_for_descriptor] We have addresses to add to watchers!"
+
+    importandwatchdescriptor ${label} ${descriptor} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} "psbt01" ${upgrade_to_n} > /dev/null
+    returncode=$?
+    trace_rc ${returncode}
+  else
+    trace "[extend_watchers_for_descriptor] Nothing to add!"
+  fi
 
   return ${returncode}
 }

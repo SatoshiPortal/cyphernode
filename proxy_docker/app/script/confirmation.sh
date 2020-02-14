@@ -7,6 +7,7 @@
 . ./responsetoclient.sh
 . ./computefees.sh
 . ./blockchainrpc.sh
+. ./watchrequest.sh
 
 confirmation_request()
 {
@@ -57,7 +58,7 @@ confirmation() {
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index, event_message FROM watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, watching_by_pub32_id, watching_by_descriptor_id, pub32_index, event_message FROM watching WHERE address IN (${addresseswhere}) AND watching")
   if [ ${#rows} -eq 0 ]; then
     trace "[confirmation] No watched address in this tx!"
     return 0
@@ -168,19 +169,30 @@ confirmation() {
     ########################################################################################################
 
     ########################################################################################################
-    # Let's now grow the watch window in the case of a xpub watcher...
-    watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
-    if [ -n "${watching_by_pub32_id}" ]; then
-      trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
+    local watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
+    local watching_by_descriptor_id=$(echo "${row}" | cut -d '|' -f4)
+    local pub32_index=$(echo "${row}" | cut -d '|' -f5)
+    ########################################################################################################
 
-      pub32_index=$(echo "${row}" | cut -d '|' -f4)
+    ########################################################################################################
+    # Let's now grow the watch window in the case of a xpub watcher...
+    if [ -n "${watching_by_pub32_id}" ] && [ -n "${pub32_index}" ]; then
+      trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
       extend_watchers ${watching_by_pub32_id} ${pub32_index}
     fi
     ########################################################################################################
 
     ########################################################################################################
+    # Let's now grow the watch window in the case of a descriptor watcher...
+    if [ -n "${watching_by_descriptor_id}" ] && [ -n "${pub32_index}" ]; then
+      trace "[confirmation] Let's now grow the watch window in the case of a descriptor watcher"
+      extend_watchers ${watching_by_descriptor_id} ${pub32_index}
+    fi
+    ########################################################################################################
+
+    ########################################################################################################
     # Let's publish the event if needed
-    event_message=$(echo "${row}" | cut -d '|' -f5)
+    event_message=$(echo "${row}" | cut -d '|' -f6)
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 

@@ -19,6 +19,7 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./newblock.sh
+. ./psbt.sh
 
 main() {
   trace "Entering main()..."
@@ -454,6 +455,28 @@ main() {
           # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
 
           response=$(serve_ots_info "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        psbt_enable)
+          # POST http://192.168.111.152:8080/psbt_enable
+          # BODY {"pub32":"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r"}
+
+          # curl -v -d "{\"pub32\":\"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r\"}" localhost:8888/psbt_enable
+
+          response=$(psbt_enable_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        psbt_disable)
+          # ATTENTION: this will delete the wallet file as well,
+          # But this is safe, cause it's watch only
+          # POST http://192.168.111.152:8080/psbt_disable
+          # BODY {"pub32":"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r"}
+
+          # curl -v -d "{\"label\":\"psbt01\"}" localhost:8888/psbt_disable
+
+          response=$(psbt_disable_request "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

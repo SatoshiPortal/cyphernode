@@ -1,18 +1,28 @@
 #!/bin/sh
 
+# TODO: refactor! :-/
+
 . ./trace.sh
 . ./sql.sh
 . ./notify.sh
 
 do_callbacks() {
+  trace "Entering do_callbacks_pub32()..."
+
+  do_callbacks_pub32
+  do_callbacks_descriptor
+  do_callbacks_ln
+}
+
+do_callbacks_pub32() {
   (
   flock -x 200 || return 0
 
-  trace "Entering do_callbacks()..."
+  trace "Entering do_callbacks_pub32()..."
 
   # Let's fetch all the watching addresses still being watched but not called back
   local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
-  trace "[do_callbacks] callbacks0conf=${callbacks}"
+  trace "[do_callbacks_pub32] callbacks0conf=${callbacks}"
 
   local returncode
   local address
@@ -20,7 +30,7 @@ do_callbacks() {
   local IFS=$'\n'
   for row in ${callbacks}
   do
-    build_callback ${row}
+    build_callback_pub32 ${row}
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
@@ -31,11 +41,11 @@ do_callbacks() {
   done
 
   callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
-  trace "[do_callbacks] callbacks1conf=${callbacks}"
+  trace "[do_callbacks_pub32] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}
   do
-    build_callback ${row}
+    build_callback_pub32 ${row}
     returncode=$?
     if [ "${returncode}" -eq 0 ]; then
       address=$(echo "${row}" | cut -d '|' -f2)
@@ -44,8 +54,21 @@ do_callbacks() {
     fi
   done
 
+  ) 200>./.callbacks_pub32.lock
+}
+
+do_callbacks_ln() {
+  (
+  flock -x 200 || return 0
+
+  trace "Entering do_callbacks_ln()..."
+
+  local callbacks
+  local row
+  local IFS=$'\n'
+
   callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
-  trace "[do_callbacks LN] ln_callbacks=${callbacks}"
+  trace "[do_callbacks_ln] ln_callbacks=${callbacks}"
 
   for row in ${callbacks}
   do
@@ -53,8 +76,52 @@ do_callbacks() {
     trace_rc $?
   done
 
-  ) 200>./.callbacks.lock
+  ) 200>./.callbacks_ln.lock
 }
+
+do_callbacks_descriptor() {
+  (
+  flock -x 200 || return 0
+
+  trace "Entering do_callbacks_descriptor()..."
+
+  # Let's fetch all the watching addresses still being watched but not called back
+  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, descriptor, label, event_message FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_descriptor wdesc ON watching_by_descriptor_id = wdesc.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
+  trace "[do_callbacks_descriptor] callbacks0conf=${callbacks}"
+
+  local returncode
+  local address
+  local url
+  local IFS=$'\n'
+  for row in ${callbacks}
+  do
+    build_callback_descriptor ${row}
+    returncode=$?
+    trace_rc ${returncode}
+    if [ "${returncode}" -eq 0 ]; then
+      address=$(echo "${row}" | cut -d '|' -f2)
+      sql "UPDATE watching SET calledback0conf=1 WHERE address=\"${address}\""
+      trace_rc $?
+    fi
+  done
+
+  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, descriptor, label, event_message FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_descriptor wdesc ON watching_by_descriptor_id = wdesc.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
+  trace "[do_callbacks_descriptor] callbacks1conf=${callbacks}"
+
+  for row in ${callbacks}
+  do
+    build_callback_descriptor ${row}
+    returncode=$?
+    if [ "${returncode}" -eq 0 ]; then
+      address=$(echo "${row}" | cut -d '|' -f2)
+      sql "UPDATE watching SET calledback1conf=1, watching=0 WHERE address=\"${address}\""
+      trace_rc $?
+    fi
+  done
+
+  ) 200>./.callbacks_descriptor.lock
+}
+
 
 ln_manage_callback() {
   trace "Entering ln_manage_callback()..."
@@ -126,8 +193,8 @@ ln_manage_callback() {
   return ${returncode}
 }
 
-build_callback() {
-  trace "Entering build_callback()..."
+build_callback_pub32() {
+  trace "Entering build_callback_pub32()..."
 
   local row=$@
   local id
@@ -157,28 +224,28 @@ build_callback() {
   # w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message
 
   url=$(echo "${row}" | cut -d '|' -f1)
-  trace "[build_callback] url=${url}"
+  trace "[build_callback_pub32] url=${url}"
   if [ -z "${url}" ]; then
     # No callback url provided for that watch
-    trace "[build_callback] No callback url provided for that watch, skipping webhook call"
+    trace "[build_callback_pub32] No callback url provided for that watch, skipping webhook call"
     return
   fi
 
-  trace "[build_callback] row=${row}"
+  trace "[build_callback_pub32] row=${row}"
   id=$(echo "${row}" | cut -d '|' -f14)
-  trace "[build_callback] id=${id}"
+  trace "[build_callback_pub32] id=${id}"
   address=$(echo "${row}" | cut -d '|' -f2)
-  trace "[build_callback] address=${address}"
+  trace "[build_callback_pub32] address=${address}"
   txid=$(echo "${row}" | cut -d '|' -f3)
-  trace "[build_callback] txid=${txid}"
+  trace "[build_callback_pub32] txid=${txid}"
   vout_n=$(echo "${row}" | cut -d '|' -f4)
-  trace "[build_callback] vout_n=${vout_n}"
+  trace "[build_callback_pub32] vout_n=${vout_n}"
   sent_amount=$(echo "${row}" | cut -d '|' -f5 | awk '{ printf "%.8f", $0 }')
-  trace "[build_callback] sent_amount=${sent_amount}"
+  trace "[build_callback_pub32] sent_amount=${sent_amount}"
   confirmations=$(echo "${row}" | cut -d '|' -f6)
-  trace "[build_callback] confirmations=${confirmations}"
+  trace "[build_callback_pub32] confirmations=${confirmations}"
   ts_firstseen=$(echo "${row}" | cut -d '|' -f7)
-  trace "[build_callback] ts_firstseen=${ts_firstseen}"
+  trace "[build_callback_pub32] ts_firstseen=${ts_firstseen}"
 
   # If node in pruned mode, we can't calculate the fees and then we don't want
   # to send 0.00000000 as fees but empty string to distinguish.
@@ -186,32 +253,32 @@ build_callback() {
   if [ -n "${fee}" ]; then
     fee=$(echo "${fee}" | awk '{ printf "%.8f", $0 }')
   fi
-  trace "[build_callback] fee=${fee}"
+  trace "[build_callback_pub32] fee=${fee}"
   size=$(echo "${row}" | cut -d '|' -f9)
-  trace "[build_callback] size=${size}"
+  trace "[build_callback_pub32] size=${size}"
   vsize=$(echo "${row}" | cut -d '|' -f10)
-  trace "[build_callback] vsize=${vsize}"
+  trace "[build_callback_pub32] vsize=${vsize}"
   is_replaceable=$(echo "${row}" | cut -d '|' -f15)
-  trace "[build_callback] is_replaceable=${is_replaceable}"
+  trace "[build_callback_pub32] is_replaceable=${is_replaceable}"
   blockhash=$(echo "${row}" | cut -d '|' -f11)
-  trace "[build_callback] blockhash=${blockhash}"
+  trace "[build_callback_pub32] blockhash=${blockhash}"
   blockheight=$(echo "${row}" | cut -d '|' -f12)
-  trace "[build_callback] blockheight=${blockheight}"
+  trace "[build_callback_pub32] blockheight=${blockheight}"
   blocktime=$(echo "${row}" | cut -d '|' -f13)
-  trace "[build_callback] blocktime=${blocktime}"
+  trace "[build_callback_pub32] blocktime=${blocktime}"
 
   pub32_index=$(echo "${row}" | cut -d '|' -f16)
-  trace "[build_callback] pub32_index=${pub32_index}"
+  trace "[build_callback_pub32] pub32_index=${pub32_index}"
   if [ -n "${pub32_index}" ]; then
     pub32=$(echo "${row}" | cut -d '|' -f17)
-    trace "[build_callback] pub32=${pub32}"
+    trace "[build_callback_pub32] pub32=${pub32}"
     label=$(echo "${row}" | cut -d '|' -f18)
-    trace "[build_callback] label=${label}"
+    trace "[build_callback_pub32] label=${label}"
     derivation_path=$(echo "${row}" | cut -d '|' -f19)
-    trace "[build_callback] derivation_path=${derivation_path}"
+    trace "[build_callback_pub32] derivation_path=${derivation_path}"
   fi
   event_message=$(echo "${row}" | cut -d '|' -f20)
-  trace "[build_callback] event_message=${event_message}"
+  trace "[build_callback_pub32] event_message=${event_message}"
 
   data="{\"id\":\"${id}\","
   data="${data}\"address\":\"${address}\","
@@ -238,7 +305,121 @@ build_callback() {
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
   data="${data}\"eventMessage\":\"${event_message}\"}"
-  trace "[build_callback] data=${data}"
+  trace "[build_callback_pub32] data=${data}"
+
+  curl_callback "${url}" "${data}"
+  return $?
+}
+
+
+build_callback_descriptor() {
+  trace "Entering build_callback_pub32()..."
+
+  local row=$@
+  local id
+  local url
+  local data
+  local address
+  local txid
+  local vout_n
+  local sent_amount
+  local confirmations
+  local ts_firstseen
+  local fee
+  local size
+  local vsize
+  local blockhash
+  local blocktime
+  local blockheight
+
+  local pub32_index
+  local descriptor
+  local label
+
+  local event_message
+
+  # w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime,
+  # w.id, is_replaceable, pub32_index, descriptor, label, event_message
+
+  url=$(echo "${row}" | cut -d '|' -f1)
+  trace "[build_callback_descriptor] url=${url}"
+  if [ -z "${url}" ]; then
+    # No callback url provided for that watch
+    trace "[build_callback_descriptor] No callback url provided for that watch, skipping webhook call"
+    return
+  fi
+
+  trace "[build_callback_descriptor] row=${row}"
+  id=$(echo "${row}" | cut -d '|' -f14)
+  trace "[build_callback_descriptor] id=${id}"
+  address=$(echo "${row}" | cut -d '|' -f2)
+  trace "[build_callback_descriptor] address=${address}"
+  txid=$(echo "${row}" | cut -d '|' -f3)
+  trace "[build_callback_descriptor] txid=${txid}"
+  vout_n=$(echo "${row}" | cut -d '|' -f4)
+  trace "[build_callback_descriptor] vout_n=${vout_n}"
+  sent_amount=$(echo "${row}" | cut -d '|' -f5 | awk '{ printf "%.8f", $0 }')
+  trace "[build_callback_descriptor] sent_amount=${sent_amount}"
+  confirmations=$(echo "${row}" | cut -d '|' -f6)
+  trace "[build_callback_descriptor] confirmations=${confirmations}"
+  ts_firstseen=$(echo "${row}" | cut -d '|' -f7)
+  trace "[build_callback_descriptor] ts_firstseen=${ts_firstseen}"
+
+  # If node in pruned mode, we can't calculate the fees and then we don't want
+  # to send 0.00000000 as fees but empty string to distinguish.
+  fee=$(echo "${row}" | cut -d '|' -f8)
+  if [ -n "${fee}" ]; then
+    fee=$(echo "${fee}" | awk '{ printf "%.8f", $0 }')
+  fi
+  trace "[build_callback_descriptor] fee=${fee}"
+  size=$(echo "${row}" | cut -d '|' -f9)
+  trace "[build_callback_descriptor] size=${size}"
+  vsize=$(echo "${row}" | cut -d '|' -f10)
+  trace "[build_callback_descriptor] vsize=${vsize}"
+  is_replaceable=$(echo "${row}" | cut -d '|' -f15)
+  trace "[build_callback_descriptor] is_replaceable=${is_replaceable}"
+  blockhash=$(echo "${row}" | cut -d '|' -f11)
+  trace "[build_callback_descriptor] blockhash=${blockhash}"
+  blockheight=$(echo "${row}" | cut -d '|' -f12)
+  trace "[build_callback_descriptor] blockheight=${blockheight}"
+  blocktime=$(echo "${row}" | cut -d '|' -f13)
+  trace "[build_callback_descriptor] blocktime=${blocktime}"
+
+  pub32_index=$(echo "${row}" | cut -d '|' -f16)
+  trace "[build_callback_descriptor] pub32_index=${pub32_index}"
+  if [ -n "${pub32_index}" ]; then
+    descriptor=$(echo "${row}" | cut -d '|' -f17)
+    trace "[build_callback_descriptor] descriptor=${descriptor}"
+    label=$(echo "${row}" | cut -d '|' -f18)
+    trace "[build_callback_descriptor] label=${label}"
+  fi
+  event_message=$(echo "${row}" | cut -d '|' -f19)
+  trace "[build_callback_descriptor] event_message=${event_message}"
+
+  data="{\"id\":\"${id}\","
+  data="${data}\"address\":\"${address}\","
+  data="${data}\"hash\":\"${txid}\","
+  data="${data}\"vout_n\":${vout_n},"
+  data="${data}\"sent_amount\":${sent_amount},"
+  data="${data}\"confirmations\":${confirmations},"
+  data="${data}\"received\":\"$(date -Is -d @${ts_firstseen})\","
+  data="${data}\"size\":${size},"
+  data="${data}\"vsize\":${vsize},"
+  if [ -n "${fee}" ]; then
+    data="${data}\"fees\":${fee},"
+  fi
+  data="${data}\"is_replaceable\":${is_replaceable},"
+  if [ -n "${blocktime}" ]; then
+    data="${data}\"blockhash\":\"${blockhash}\","
+    data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
+    data="${data}\"blockheight\":${blockheight},"
+  fi
+  if [ -n "${pub32_index}" ]; then
+    data="${data}\"descriptor\":\"${descriptor}\","
+    data="${data}\"descriptor_label\":\"${label}\","
+  fi
+  data="${data}\"eventMessage\":\"${event_message}\"}"
+  trace "[build_callback_descriptor] data=${data}"
 
   curl_callback "${url}" "${data}"
   return $?
