@@ -2,35 +2,47 @@ FROM python:3.8.1-alpine
 
 WORKDIR /
 
+
+
 RUN \
   mkdir /static && \
   mkdir /data && \
   apk --no-cache add --update \
-    alpine-sdk \
+      bash \
+      libusb \
+      zlib \
+      openssl \
+      hidapi \
+      libffi\
+      udev \
+      eudev \
+      freetype \
+      su-exec \
+      libjpeg && \
+  apk --no-cache add --update --virtual .build-deps \
     git \
-    bash \
+    alpine-sdk \
     libusb-dev \
-    zlib \
     zlib-dev \
-    openssl \
     openssl-dev \
     hidapi-dev \
     libffi-dev \
-    udev \
     eudev-dev \
-    libjpeg \
-    jpeg-dev \
+    freetype-dev \
+    jpeg-dev && \
   #  libfreetype6-dev \
   #  liblcms2-dev \
   #  libtiff-dev \
   #  libraqm-dev \
   #  libimagequant-dev \
-    su-exec && \
     git clone --recursive https://github.com/Coldcard/ck-bunker.git && \
       cd ck-bunker && \
       pip install -r requirements.txt && \
-      pip install --editable .
+      pip install --editable . && \
+  apk del .build-deps
 
 ENV PATH=${PATH}:/ck-bunker
+
+WORKDIR /ck-bunker
 
 ENTRYPOINT ["su-exec"]
