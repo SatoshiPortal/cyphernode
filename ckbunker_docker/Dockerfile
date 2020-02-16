@@ -2,8 +2,6 @@ FROM python:3.8.1-alpine
 
 WORKDIR /
 
-
-
 RUN \
   mkdir /static && \
   mkdir /data && \
@@ -18,6 +16,7 @@ RUN \
       eudev \
       freetype \
       su-exec \
+      usbutils \
       libjpeg && \
   apk --no-cache add --update --virtual .build-deps \
     git \
@@ -39,6 +38,7 @@ RUN \
       cd ck-bunker && \
       pip install -r requirements.txt && \
       pip install --editable . && \
+      ln -s /sys/bus /dev/bus && \
   apk del .build-deps
 
 ENV PATH=${PATH}:/ck-bunker
