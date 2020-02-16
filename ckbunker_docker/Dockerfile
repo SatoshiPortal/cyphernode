@@ -7,6 +7,7 @@ RUN \
   mkdir /data && \
   apk --no-cache add --update \
       bash \
+      tor \
       libusb \
       zlib \
       openssl \
@@ -43,6 +44,7 @@ RUN \
 
 ENV PATH=${PATH}:/ck-bunker
 
+COPY entrypoint.sh /
 WORKDIR /ck-bunker
 
-ENTRYPOINT ["su-exec"]
+ENTRYPOINT ["/entrypoint.sh"]
