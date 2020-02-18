@@ -19,6 +19,15 @@ send_to_elements_watcher_node() {
   return ${returncode}
 }
 
+send_to_xpub_elements_watcher_wallet() {
+  trace "Entering send_to_xpub_elements_watcher_wallet()..."
+
+  send_to_elements_node ${WATCHING_ELEMENTS_NODE_RPC_URL}/${WATCHING_ELEMENTS_NODE_XPUB_WALLET} ${WATCHING_ELEMENTS_NODE_RPC_CFG} $@
+  local returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_to_elements_watcher_node_wallet() {
   trace "Entering send_to_elements_watcher_node_wallet()..."
   local walletname=$1
