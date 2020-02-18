@@ -99,11 +99,11 @@ elements_spend() {
 }
 
 elements_bumpfee() {
-  trace "Entering bumpfee()..."
+  trace "Entering elements_bumpfee()..."
 
   local request=${1}
   local txid=$(echo "${request}" | jq -r ".txid")
-  trace "[bumpfee] txid=${txid}"
+  trace "[elements_bumpfee] txid=${txid}"
 
   local confTarget
   local response
@@ -113,22 +113,22 @@ elements_bumpfee() {
   confTarget=$(echo "${request}" | jq -e ".confTarget")
   if [ "$?" -ne "0" ]; then
     # confTarget tag null, so there's no confTarget
-    trace "[bumpfee] confTarget="
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+    trace "[elements_bumpfee] confTarget="
+    response=$(send_to_elements_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
     returncode=$?
   else
-    trace "[bumpfee] confTarget=${confTarget}"
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    trace "[elements_bumpfee] confTarget=${confTarget}"
+    response=$(send_to_elements_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
     returncode=$?
   fi
 
   trace_rc ${returncode}
-  trace "[bumpfee] response=${response}"
+  trace "[elements_bumpfee] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    trace "[bumpfee] error!"
+    trace "[elements_bumpfee] error!"
   else
-    trace "[bumpfee] success!"
+    trace "[elements_bumpfee] success!"
   fi
 
   echo "${response}"
@@ -137,110 +137,111 @@ elements_bumpfee() {
 }
 
 elements_get_txns_spending() {
-  trace "Entering get_txns_spending()... with count: $1 , skip: $2"
+  trace "Entering elements_get_txns_spending()... with count: $1 , skip: $2"
   local count="$1"
   local skip="$2" 
   local response
   local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
-  response=$(send_to_spender_node "${data}")
+  response=$(send_to_elements_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
-  trace "[get_txns_spending] response=${response}"
+  trace "[elements_get_txns_spending] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
     local txns=$(echo ${response} | jq -rc ".result")
-    trace "[get_txns_spending] txns=${txns}"
+    trace "[elements_get_txns_spending] txns=${txns}"
 
     data="{\"txns\":${txns}}"
   else
-    trace "[get_txns_spending] Coudn't get txns!"
+    trace "[elements_get_txns_spending] Coudn't get txns!"
     data=""
   fi
 
-  trace "[get_txns_spending] responding=${data}"
+  trace "[elements_get_txns_spending] responding=${data}"
   echo "${data}"
 
   return ${returncode}
 }
+
 elements_getbalance() {
-  trace "Entering getbalance()..."
+  trace "Entering elements_getbalance()..."
 
   local response
   local data='{"method":"getbalance"}'
-  response=$(send_to_spender_node "${data}")
+  response=$(send_to_elements_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
-  trace "[getbalance] response=${response}"
+  trace "[elements_getbalance] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
     local balance=$(echo ${response} | jq ".result")
-    trace "[getbalance] balance=${balance}"
+    trace "[elements_getbalance] balance=${balance}"
 
     data="{\"balance\":${balance}}"
   else
-    trace "[getbalance] Coudn't get balance!"
+    trace "[elements_getbalance] Coudn't get balance!"
     data=""
   fi
 
-  trace "[getbalance] responding=${data}"
+  trace "[elements_getbalance] responding=${data}"
   echo "${data}"
 
   return ${returncode}
 }
 
 elements_getbalances() {
-  trace "Entering getbalances()..."
+  trace "Entering elements_getbalances()..."
 
   local response
   local data='{"method":"getbalances"}'
-  response=$(send_to_spender_node "${data}")
+  response=$(send_to_elements_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
-  trace "[getbalances] response=${response}"
+  trace "[elements_getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
     local balances=$(echo ${response} | jq ".result")
-    trace "[getbalances] balances=${balances}"
+    trace "[elements_getbalances] balances=${balances}"
 
     data="{\"balances\":${balances}}"
   else
-    trace "[getbalances] Couldn't get balances!"
+    trace "[elements_getbalances] Couldn't get balances!"
     data=""
   fi
 
-  trace "[getbalances] responding=${data}"
+  trace "[elements_getbalances] responding=${data}"
   echo "${data}"
 
   return ${returncode}
 }
 
 elements_getbalancebyxpublabel() {
-  trace "Entering getbalancebyxpublabel()..."
+  trace "Entering elements_getbalancebyxpublabel()..."
 
   local label=${1}
-  trace "[getbalancebyxpublabel] label=${label}"
+  trace "[elements_getbalancebyxpublabel] label=${label}"
   local xpub
 
-  xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label=\"${label}\"")
-  trace "[getbalancebyxpublabel] xpub=${xpub}"
+  xpub=$(sql "SELECT pub32 FROM elements_watching_by_pub32 WHERE label=\"${label}\"")
+  trace "[elements_getbalancebyxpublabel] xpub=${xpub}"
 
-  getbalancebyxpub ${xpub} "getbalancebyxpublabel"
+  elements_getbalancebyxpub ${xpub} "elements_getbalancebyxpublabel"
   returncode=$?
 
   return ${returncode}
 }
 
 elements_getbalancebyxpub() {
-  trace "Entering getbalancebyxpub()..."
+  trace "Entering elements_getbalancebyxpub()..."
 
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')" | jq "[.[].amount] | add"
 
   local xpub=${1}
-  trace "[getbalancebyxpub] xpub=${xpub}"
+  trace "[elements_getbalancebyxpub] xpub=${xpub}"
 
   # If called from getbalancebyxpublabel, set the correct event for response
-  local event=${2:-"getbalancebyxpub"}
-  trace "[getbalancebyxpub] event=${event}"
+  local event=${2:-"elements_getbalancebyxpub"}
+  trace "[elements_getbalancebyxpub] event=${event}"
   local addresses
   local balance
   local data
@@ -248,15 +249,15 @@ elements_getbalancebyxpub() {
 
   # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
-  trace "[getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
+  trace "[elements_getbalancebyxpub] data=${data}"
+  addresses=$(send_to_xpub_elements_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
   data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
-  trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
+  trace "[elements_getbalancebyxpub] data=${data}"
+  balance=$(send_to_xpub_elements_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
-  trace "[getbalancebyxpub] balance=${balance}"
+  trace "[elements_getbalancebyxpub] balance=${balance}"
 
   data="{\"event\":\"${event}\",\"xpub\":\"${xpub}\",\"balance\":${balance:-0}}"
 
@@ -300,14 +301,14 @@ elements_getnewaddress() {
 }
 
 elements_addtobatching() {
-  trace "Entering addtobatching()..."
+  trace "Entering elements_addtobatching()..."
 
   local address=${1}
-  trace "[addtobatching] address=${address}"
+  trace "[elements_addtobatching] address=${address}"
   local amount=${2}
-  trace "[addtobatching] amount=${amount}"
+  trace "[elements_addtobatching] amount=${amount}"
 
-  sql "INSERT OR IGNORE INTO recipient (address, amount) VALUES (\"${address}\", ${amount})"
+  sql "INSERT OR IGNORE INTO elements_recipient (address, amount) VALUES (\"${address}\", ${amount})"
   returncode=$?
   trace_rc ${returncode}
 
@@ -315,7 +316,7 @@ elements_addtobatching() {
 }
 
 elements_batchspend() {
-  trace "Entering batchspend()..."
+  trace "Entering elements_batchspend()..."
 
   local data
   local response
@@ -326,8 +327,8 @@ elements_batchspend() {
   local tx_raw_details
 
   # We will batch all the addresses in DB without a TXID
-  local batching=$(sql 'SELECT address, amount FROM recipient WHERE tx_id IS NULL')
-  trace "[batchspend] batching=${batching}"
+  local batching=$(sql 'SELECT address, amount FROM elements_recipient WHERE tx_id IS NULL')
+  trace "[elements_batchspend] batching=${batching}"
 
   local returncode
   local address
@@ -336,11 +337,11 @@ elements_batchspend() {
   local IFS=$'\n'
   for row in ${batching}
   do
-    trace "[batchspend] row=${row}"
+    trace "[elements_batchspend] row=${row}"
     address=$(echo "${row}" | cut -d '|' -f1)
-    trace "[batchspend] address=${address}"
+    trace "[elements_batchspend] address=${address}"
     amount=$(echo "${row}" | cut -d '|' -f2)
-    trace "[batchspend] amount=${amount}"
+    trace "[elements_batchspend] amount=${amount}"
 
     if ${notfirst}; then
       recipientswhere="${recipientswhere},"
@@ -353,18 +354,18 @@ elements_batchspend() {
     recipientsjson="${recipientsjson}\"${address}\":${amount}"
   done
 
-  response=$(send_to_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}]}")
+  response=$(send_to_elements_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}]}")
   returncode=$?
   trace_rc ${returncode}
-  trace "[batchspend] response=${response}"
+  trace "[elements_batchspend] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
     local txid=$(echo "${response}" | jq -r ".result")
-    trace "[batchspend] txid=${txid}"
+    trace "[elements_batchspend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction ${txid} "spender")
-    tx_raw_details=$(get_rawtransaction ${txid})
+    tx_details=$(elements_get_transaction ${txid} "spender")
+    tx_raw_details=$(elements_get_rawtransaction ${txid})
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
@@ -380,13 +381,13 @@ elements_batchspend() {
     echo "${tx_raw_details}" > rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
-      id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
-      trace "[batchspend] id_inserted: ${id_inserted}"
-      sql "UPDATE recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere})"
+      id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
+      trace "[elements_batchspend] id_inserted: ${id_inserted}"
+      sql "UPDATE elements_recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere})"
       trace_rc $?
     fi
 
@@ -400,22 +401,22 @@ elements_batchspend() {
     data="{\"message\":${message}}"
   fi
 
-  trace "[batchspend] responding=${data}"
+  trace "[elements_batchspend] responding=${data}"
   echo "${data}"
 
   return ${returncode}
 }
 
 elements_create_wallet() {
-  trace "[Entering create_wallet()]"
+  trace "[Entering elements_create_wallet()]"
 
   local walletname=${1}
 
   local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",true]}"
-  trace "[create_wallet] rpcstring=${rpcstring}"
+  trace "[elements_create_wallet] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_watcher_node ${rpcstring})
+  result=$(send_to_elements_watcher_node ${rpcstring})
   local returncode=$?
 
   echo "${result}"
@@ -423,50 +424,10 @@ elements_create_wallet() {
   return ${returncode}
 }
 
-elements_get_rawtransaction() {
-  trace "Entering elements_get_rawtransaction()..."
-
-  local txid=${1}
-  trace "[elements_get_rawtransaction] txid=${txid}"
-  local data="{\"method\":\"getrawtransaction\",\"params\":[\"${txid}\",true]}"
-  trace "[elements_get_rawtransaction] data=${data}"
-  send_to_elements_watcher_node "${data}"
-  return $?
-}
-
-elements_get_transaction() {
-  trace "Entering elements_get_transaction()..."
-
-  local txid=${1}
-  trace "[elements_get_transaction] txid=${txid}"
-  local to_elements_spender_node=${2}
-  trace "[elements_get_transaction] to_elements_spender_node=${to_elements_spender_node}"
-
-  local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
-  trace "[elements_get_transaction] data=${data}"
-  if [ -z "${to_elements_spender_node}" ]; then
-    send_to_elements_watcher_node "${data}"
-  else
-    send_to_elements_spender_node "${data}"
-  fi
-  return $?
-}
-
 elements_getwalletinfo() {
   trace "Entering elements_getwalletinfo()..."
 
   local data='{"method":"getwalletinfo"}'
   send_to_elements_spender_node "${data}" | jq ".result"
-  return $?
-}
-
-elements_validateaddress() {
-  trace "Entering elements_validateaddress()..."
-
-  local address=${1}
-  trace "[elements_validateaddress] address=${address}"
-  local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
-  trace "[elements_validateaddress] data=${data}"
-  send_to_elements_watcher_node "${data}"
   return $?
 }

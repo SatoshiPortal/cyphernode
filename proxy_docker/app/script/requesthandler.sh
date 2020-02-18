@@ -16,12 +16,19 @@
 . ./trace.sh
 . ./manage_missed_conf.sh
 . ./walletoperations.sh
-. ./elementswalletoperations.sh
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
 . ./newblock.sh
 . ./batching.sh
+. ./elements_callbacks_job.sh
+. ./elements_watchrequest.sh
+. ./elements_unwatchrequest.sh
+. ./elements_confirmation.sh
+. ./elements_blockchainrpc.sh
+. ./elements_manage_missed_conf.sh
+. ./elements_walletoperations.sh
+. ./elements_newblock.sh
 
 main() {
   trace "Entering main()..."
@@ -777,6 +784,36 @@ main() {
           # GET http://192.168.111.152:8080/elements_validateaddress/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
 
           response=$(elements_validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_watch)
+          # POST http://192.168.111.152:8080/elements_watch
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
+          # eventMessage={"bounceAddress":"Azpr3WH7nX2p3Q6vGk34wuCpyFifpxvTCxTRPgZPYfBnjW5NJ6DP2odKbaeHBdRCCyYMW3XtveciLSpe","nbConf":0}
+          response=$(elements_watchrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_unwatch)
+          # curl (GET) 192.168.111.152:8080/elements_unwatch/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+
+          response=$(elements_unwatchrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_conf)
+          # curl (GET) 192.168.111.152:8080/elements_conf/59e23a15fad777453819702ca432e7c01096c18314ccba90cf3436541f7f1f1a
+
+          response=$(elements_confirmation_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_newblock)
+          # curl (GET) 192.168.111.152:8080/elements_newblock/c7168456b69248e166a0a39ed61dbb19623de0d65789a20d5b39bc6b4371dfbb
+
+          response=$(elements_newblock "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
