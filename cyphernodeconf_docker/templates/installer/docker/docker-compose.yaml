@@ -75,7 +75,6 @@ services:
     <% } %>
     <% if( bitcoin_expose ) { %>
     ports:
-      - "<%= (net === 'regtest') ? '18443:18443' : ((net === 'testnet') ? '18332:18332' : '8332:8332') %>"
       - "<%= (net === 'regtest') ? '18444:18444' : ((net === 'testnet') ? '18333:18333' : '8333:8333') %>"
     <% } %>
     volumes:
