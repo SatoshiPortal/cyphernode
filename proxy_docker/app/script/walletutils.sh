@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 . ./trace.sh
 . ./sendtobitcoinnode.sh
 
@@ -56,6 +57,7 @@ create_wallet() {
   result=$(send_to_watcher_node ${rpcstring})
   local returncode=$?
 
+  trace "[create_wallet] result=${result}"
   echo "${result}"
 
   return ${returncode}
@@ -92,9 +94,13 @@ load_wallet() {
   fi
 
   local rpcstring="{\"method\":\"loadwallet\",\"params\":[\"${wallet_name}\"]}"
-  send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring}
+  local result
+  result=$(send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
   local returncode=$?
   trace_rc ${returncode}
+
+  trace "[load_wallet] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 
@@ -134,6 +140,7 @@ unload_wallet() {
   local returncode=$?
   trace_rc ${returncode}
   trace "[unload_wallet] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 
@@ -172,26 +179,26 @@ delete_wallet() {
   trace "Entering delete_wallet()..."
 
   local wallet_name=${1}
-  local create_backup=${2,-true}
-
-  #always create backup of wallet, unless turned off
-  if [ ${create_backup} != "false" ]; then
-    create_backup="true"
-  fi
-
-  if [ "${wallet_name}" == "" ]; then
-    trace "[delete_wallet] no wallet file"
-    return 1
-  fi
+  local create_backup=${2:-true}
 
   trace "[delete_wallet] wallet_name=${wallet_name}"
   trace "[delete_wallet] create_backup=${create_backup}"
 
+  #always create backup of wallet, unless turned off
+  if [[ ${create_backup} != "false" ]]; then
+    create_backup="true"
+  fi
+
+  if [[ "${wallet_name}" == "" ]]; then
+    trace "[delete_wallet] no wallet file"
+    return 1
+  fi
+
   local network_folder="testnet3"
 
-  if [ "${NETWORK}" == "mainnet" ]; then
+  if [[ "${NETWORK}" == "mainnet" ]]; then
     network_folder="mainnet"
-  elif [ "${NETWORK}" == "regtest" ]; then
+  elif [[ "${NETWORK}" == "regtest" ]]; then
     network_folder="regtest"
   fi
 
@@ -201,13 +208,13 @@ delete_wallet() {
   trace "[delete_wallet] wallet_dir=${wallet_dir}"
   trace "[delete_wallet] to_check=${to_check}"
 
-  if [ "${create_backup}" == "true" ]; then
+  if [[ "${create_backup}" == "true" ]]; then
     backup_wallet "${wallet_name}"
   fi
 
   for wallet_folder in ${to_check}; do
     trace "[delete_wallet] checking: ${wallet_folder}"
-    if [ -e "${wallet_dir}/${wallet_folder}" ]; then
+    if [[ -e "${wallet_dir}/${wallet_folder}" ]]; then
       trace "[delete_wallet] deleting: ${wallet_dir}/${wallet_folder}"
       # DANGEROUS!!!!
       rm -rf "${wallet_dir}/${wallet_folder}"
@@ -268,12 +275,14 @@ backup_wallet() {
   for wallet_folder in ${to_check}; do
     trace "[backup_wallet] checking: ${wallet_dir}/${wallet_folder}"
     if [ -e "${wallet_dir}/${wallet_folder}" ]; then
-      local target_backup_folder=$(dirname "${backup_dir}/${targetFile}-${backup_date}")
+      local target_backup_folder=$(dirname "${backup_dir}/${wallet_folder}-${backup_date}")
+      trace "[backup_wallet] target_backup_folder=${target_backup_folder}"
       if [ ! -d "${target_backup_folder}" ]; then
+        trace "[backup_wallet] creating: ${target_backup_folder}"
         mkdir -p "${target_backup_folder}"
       fi
-      trace "[backup_wallet] creating backup: ${wallet_dir}/${wallet_folder} -> ${backup_dir}/${targetFile}-${backupDate}"
-      cp -r "${wallet_dir}/${wallet_folder}" "${backup_dir}/${targetFile}-${backupDate}"
+      trace "[backup_wallet] creating backup: ${wallet_dir}/${wallet_folder} -> ${backup_dir}/${wallet_folder}-${backup_date}"
+      cp -r "${wallet_dir}/${wallet_folder}" "${backup_dir}/${wallet_folder}-${backup_date}"
     fi
   done
 }

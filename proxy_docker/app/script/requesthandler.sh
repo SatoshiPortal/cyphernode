@@ -1,8 +1,4 @@
 #!/bin/sh
-#
-#
-#
-#
 
 . ./sendtobitcoinnode.sh
 . ./callbacks_job.sh

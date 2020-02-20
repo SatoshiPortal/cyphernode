@@ -6,7 +6,6 @@
 
 . ./sendtobitcoinnode.sh
 . ./walletoperations.sh
-. ./watchrequest_ng.sh
 . ./walletutils.sh
 . ./blockchainrpc.sh
 . ./trace.sh
@@ -210,7 +209,7 @@ psbt_disable() {
   # if psbt wallet is loaded: unload psbt wallet
   unload_psbt_wallet
   # delete wallet file
-  delete_psbt_wallet_file
+  delete_psbt_wallet
 }
 
 load_psbt_wallet() {
