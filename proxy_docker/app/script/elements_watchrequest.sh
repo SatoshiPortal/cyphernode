@@ -11,6 +11,8 @@ elements_watchrequest() {
   local returncode
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
+  local unblinded_address
+  local assetid=$(echo "${request}" | jq ".assetId")
   local cb0conf_url=$(echo "${request}" | jq ".unconfirmedCallbackURL")
   local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL")
   local event_message=$(echo "${request}" | jq ".eventMessage")
@@ -18,7 +20,7 @@ elements_watchrequest() {
   local inserted
   local id_inserted
   local result
-  trace "[elements_watchrequest] Watch request on address (\"${address}\"), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
+  trace "[elements_watchrequest] Watch request on address (\"${address}\"), assetId (${assetid}), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
 
   result=$(elements_importaddress_rpc ${address})
   returncode=$?
@@ -29,7 +31,11 @@ elements_watchrequest() {
     imported=0
   fi
 
-  sql "INSERT OR REPLACE INTO elements_watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message})"
+  # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
+  unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+  trace "[elements_watchrequest] unblinded_address=${unblinded_address}"
+
+  sql "INSERT OR REPLACE INTO elements_watching (address, unblinded_address, watching, callback0conf, callback1conf, imported, event_message, watching_assetid) VALUES (\"${address}\", \"${unblinded_address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}, ${assetid})"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
@@ -45,6 +51,8 @@ elements_watchrequest() {
   \"imported\":\"${imported}\",
   \"inserted\":\"${inserted}\",
   \"address\":\"${address}\",
+  \"unblindedAddress\":\"${unblinded_address}\",
+  \"assetId\":${assetid},
   \"unconfirmedCallbackURL\":${cb0conf_url},
   \"confirmedCallbackURL\":${cb1conf_url},
   \"eventMessage\":${event_message}}"
@@ -138,7 +146,7 @@ elements_watchpub32() {
       if [ "${returncode}" -eq 0 ]; then
         if [ -n "${upto_n}" ]; then
           # Update existing row, we are extending the watching window
-          sql "UPDATE elements_watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=\"${pub32}\""
+          sql "UPDATE elements_watching_by_pub32 SET last_imported_n=${upto_n} WHERE pub32=\"${pub32}\""
         else
           # Insert in our DB...
           sql "INSERT OR REPLACE INTO elements_watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${last_n})"
@@ -204,15 +212,21 @@ elements_insert_watches() {
   local xpub_id=${4}
   local nstart=${5}
   local inserted_values=""
+  local address
+  local unblinded_address
 
   local IFS=$'\n'
   for address in ${addresses}
   do
+    # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
+    unblinded_address=$(elements_getaddressinfo ${address} true | jq ".result.unconfidential")
+    trace "[elements_insert_watches] unblinded_address=${unblinded_address}"
+
     # (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)
     if [ -n "${inserted_values}" ]; then
       inserted_values="${inserted_values},"
     fi
-    inserted_values="${inserted_values}(${address}, 1, ${callback0conf}, ${callback1conf}, 1"
+    inserted_values="${inserted_values}(${address}, ${unblinded_address}, 1, ${callback0conf}, ${callback1conf}, 1"
     if [ -n "${xpub_id}" ]; then
       inserted_values="${inserted_values}, ${xpub_id}, ${nstart}"
       nstart=$((${nstart} + 1))
@@ -221,7 +235,7 @@ elements_insert_watches() {
   done
 #  trace "[insert_watches] inserted_values=${inserted_values}"
 
-  sql "INSERT OR REPLACE INTO elements_watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
+  sql "INSERT OR REPLACE INTO elements_watching (address, unblinded_address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
   returncode=$?
   trace_rc ${returncode}
 

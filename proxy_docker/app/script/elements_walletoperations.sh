@@ -10,8 +10,8 @@ elements_spend() {
   local request=${1}
   local address=$(echo "${request}" | jq -r ".address")
   trace "[elements_spend] address=${address}"
-  local asset_id=$(echo "${request}" | jq ".assetId")
-  trace "[elements_spend] assetId=${asset_id}"
+  local assetid=$(echo "${request}" | jq ".assetId")
+  trace "[elements_spend] assetId=${assetid}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[elements_spend] amount=${amount}"
   local response
@@ -20,10 +20,10 @@ elements_spend() {
   local tx_raw_details
   local returncode
 
-  if [ "${asset_id}" = "null" ]; then
+  if [ "${assetid}" = "null" ]; then
     response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
   else
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",${asset_id}]}")
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",${assetid}]}")
   fi
 
   returncode=$?
@@ -49,7 +49,11 @@ elements_spend() {
     local fees=$(echo "${tx_details}" | jq '.result.details[0].fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > rawtx-${txid}.blob
+    echo "${tx_raw_details}" > spend-rawtx-${txid}.blob
+
+    # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
+    local unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+    trace "[elements_spend] unblinded_address=${unblinded_address}"
 
     ########################################################################################################
     # Let's publish the event if needed
@@ -62,12 +66,12 @@ elements_spend() {
     else
       # There's an event message, let's publish it!
 
-      if [ "${asset_id}" = "null" ]; then
-        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
-        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
+      if [ "${assetid}" = "null" ]; then
+        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
+        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
       else
-        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":${asset_id},\"eventMessage\":\"${event_message}\"}\""
-        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"amount\":${tx_amount},\"assetId\":${asset_id},\"eventMessage\":\"${event_message}\"}")
+        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":${assetid},\"eventMessage\":\"${event_message}\"}\""
+        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":${assetid},\"eventMessage\":\"${event_message}\"}")
       fi
       returncode=$?
       trace_rc ${returncode}
@@ -75,18 +79,18 @@ elements_spend() {
     ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx, assetid) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'), ${asset_id})"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('spend-rawtx-${txid}.blob'))"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
     trace_rc $?
-    sql "INSERT OR IGNORE INTO elements_recipient (address, amount, tx_id) VALUES (\"${address}\", ${amount}, ${id_inserted})"
+    sql "INSERT OR IGNORE INTO elements_recipient (address, unblinded_address, amount, tx_id, assetid) VALUES (\"${address}\", \"${unblinded_address}\", ${amount}, ${id_inserted}, ${assetid})"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
     data="${data},\"hash\":\"${txid}\"}"
 
     # Delete the temp file containing the raw tx (see above)
-    rm rawtx-${txid}.blob
+    rm spend-rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -307,8 +311,14 @@ elements_addtobatching() {
   trace "[elements_addtobatching] address=${address}"
   local amount=${2}
   trace "[elements_addtobatching] amount=${amount}"
+  local assetid=${3}
+  trace "[elements_addtobatching] assetid=${assetid}"
 
-  sql "INSERT OR IGNORE INTO elements_recipient (address, amount) VALUES (\"${address}\", ${amount})"
+  # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
+  local unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+  trace "[elements_addtobatching] unblinded_address=${unblinded_address}"
+
+  sql "INSERT OR IGNORE INTO elements_recipient (address, unblinded_address, amount, assetid) VALUES (\"${address}\", \"${unblinded_address}\", ${amount}, ${assetid})"
   returncode=$?
   trace_rc ${returncode}
 
@@ -321,18 +331,22 @@ elements_batchspend() {
   local data
   local response
   local recipientswhere
-  local recipientsjson
+  local unblindedrecipientswhere
+  local amountsjson
+  local assetidjson
   local id_inserted
   local tx_details
   local tx_raw_details
 
   # We will batch all the addresses in DB without a TXID
-  local batching=$(sql 'SELECT address, amount FROM elements_recipient WHERE tx_id IS NULL')
+  local batching=$(sql 'SELECT address, amount, assetid, unblinded_address FROM elements_recipient WHERE tx_id IS NULL')
   trace "[elements_batchspend] batching=${batching}"
 
   local returncode
   local address
+  local unblinded_address
   local amount
+  local assetid
   local notfirst=false
   local IFS=$'\n'
   for row in ${batching}
@@ -340,21 +354,29 @@ elements_batchspend() {
     trace "[elements_batchspend] row=${row}"
     address=$(echo "${row}" | cut -d '|' -f1)
     trace "[elements_batchspend] address=${address}"
+    unblinded_address=$(echo "${row}" | cut -d '|' -f4)
+    trace "[elements_batchspend] unblinded_address=${unblinded_address}"
     amount=$(echo "${row}" | cut -d '|' -f2)
     trace "[elements_batchspend] amount=${amount}"
+    assetid=$(echo "${row}" | cut -d '|' -f3)
+    trace "[elements_batchspend] assetid=${assetid}"
 
     if ${notfirst}; then
       recipientswhere="${recipientswhere},"
-      recipientsjson="${recipientsjson},"
+      unblindedrecipientswhere="${unblindedrecipientswhere},"
+      amountsjson="${amountsjson},"
+      assetidjson="${assetidjson},"
     else
       notfirst=true
     fi
 
     recipientswhere="${recipientswhere}\"${address}\""
-    recipientsjson="${recipientsjson}\"${address}\":${amount}"
+    unblindedrecipientswhere="${unblindedrecipientswhere}\"${unblinded_address}\""
+    amountsjson="${amountsjson}\"${address}\":${amount}"
+    assetidjson="${assetidjson}\"${address}\":${assetid}"
   done
 
-  response=$(send_to_elements_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}]}")
+  response=$(send_to_elements_spender_node "{\"method\":\"sendmany\",\"params\":{\"amounts\":{${amountsjson}},\"output_assets\":{${assetidjson}}}}")
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_batchspend] response=${response}"
@@ -378,16 +400,16 @@ elements_batchspend() {
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > rawtx-${txid}.blob
+    echo "${tx_raw_details}" > batchspend-rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('batchspend-rawtx-${txid}.blob'))"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
       id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
       trace "[elements_batchspend] id_inserted: ${id_inserted}"
-      sql "UPDATE elements_recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere})"
+      sql "UPDATE elements_recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere}) OR unblinded_address IN (${unblindedrecipientswhere})"
       trace_rc $?
     fi
 
@@ -395,7 +417,7 @@ elements_batchspend() {
     data="${data},\"hash\":\"${txid}\"}"
 
     # Delete the temp file containing the raw tx (see above)
-    rm rawtx-${txid}.blob
+    rm batchspend-rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
