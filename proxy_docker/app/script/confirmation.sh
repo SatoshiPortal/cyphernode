@@ -141,7 +141,7 @@ confirmation() {
   local watching_id
 
   # Let's see if we need to insert tx in the join table
-  tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=\"${tx}\"")
+  tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=${tx})
 
   for row in ${rows}
   do
