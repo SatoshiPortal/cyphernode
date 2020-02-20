@@ -36,9 +36,16 @@ elements_get_rawtransaction() {
 
   local txid=${1}
   trace "[elements_get_rawtransaction] txid=${txid}"
+  local to_elements_spender_node=${2}
+  trace "[elements_get_transaction] to_elements_spender_node=${to_elements_spender_node}"
+
   local data="{\"method\":\"getrawtransaction\",\"params\":[\"${txid}\",true]}"
   trace "[elements_get_rawtransaction] data=${data}"
-  send_to_elements_watcher_node "${data}"
+  if [ -z "${to_elements_spender_node}" ]; then
+    send_to_elements_watcher_node "${data}"
+  else
+    send_to_elements_spender_node "${data}"
+  fi
   return $?
 }
 
@@ -92,5 +99,23 @@ elements_validateaddress() {
   local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
   trace "[elements_validateaddress] data=${data}"
   send_to_elements_watcher_node "${data}"
+  return $?
+}
+
+elements_getaddressinfo() {
+  trace "Entering elements_get_addressinfo()..."
+
+  local address=${1}
+  trace "[elements_get_addressinfo] address=${address}"
+  local to_elements_spender_node=${2}
+  trace "[elements_get_addressinfo] to_elements_spender_node=${to_elements_spender_node}"
+
+  local data="{\"method\":\"getaddressinfo\",\"params\":[\"${address}\"]}"
+  trace "[elements_get_addressinfo] data=${data}"
+  if [ -z "${to_elements_spender_node}" ]; then
+    send_to_elements_watcher_node "${data}"
+  else
+    send_to_elements_spender_node "${data}"
+  fi
   return $?
 }
