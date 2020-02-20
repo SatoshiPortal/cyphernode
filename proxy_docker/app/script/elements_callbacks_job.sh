@@ -147,7 +147,7 @@ elements_build_callback() {
 
   data="{\"id\":\"${id}\","
   data="${data}\"address\":\"${address}\","
-  data="${data}\"unblinded_address\":\"${unblinded_address}\","
+  data="${data}\"unblindedAddress\":\"${unblinded_address}\","
   data="${data}\"watchingAssetId\":\"${watching_assetid}\","
   data="${data}\"assetId\":\"${assetid}\","
   data="${data}\"hash\":\"${txid}\","
