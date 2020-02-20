@@ -215,49 +215,32 @@ psbt_disable() {
 
 load_psbt_wallet() {
   trace "Entering load_psbt_wallet()..."
-  local rpcstring="{\"method\":\"loadwallet\",\"params\":[\"psbt01\"]}"
-  send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring}
+  local result
+  result=$(load_wallet "psbt01")
   local returncode=$?
   trace_rc ${returncode}
+  trace "[load_psbt_wallet] result=${result}"
   return ${returncode}
 }
 
 unload_psbt_wallet() {
   trace "Entering unload_psbt_wallet()..."
-  local rpcstring="{\"method\":\"unloadwallet\",\"params\":[\"psbt01\"]}"
   local result
-  result=$(send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
+  result=$(unload_wallet "psbt01")
   local returncode=$?
   trace_rc ${returncode}
   trace "[unload_psbt_wallet] result=${result}"
   return ${returncode}
 }
 
-delete_psbt_wallet_file() {
+delete_psbt_wallet() {
   trace "Entering delete_psbt_wallet()..."
-
-  local network_folder="testnet3"
-
-  if [ "${NETWORK}" == "mainnet" ]; then
-    network_folder="mainnet"
-  elif [ "${NETWORK}" == "regtest" ]; then
-    network_folder="regtest"
-  fi
-
-  local wallet_dir="/.bitcoin/${network_folder}"
-  local to_check="${wallet_dir}/psbt01 ${wallet_dir}/wallets/psbt01"
-
-  trace "[delete_psbt_wallet_file] wallet_dir=${wallet_dir}"
-  trace "[delete_psbt_wallet_file] to_check=${to_check}"
-
-  for walletFolder in ${to_check}; do
-    trace "[delete_psbt_wallet_file] checking: ${walletFolder}"
-    if [ -e "${walletFolder}" ]; then
-      trace "[delete_psbt_wallet_file] deleting: ${walletFolder}"
-      rm -rf "${walletFolder}"
-    fi
-  done
-
+  local result
+  result=$(delete_wallet "psbt01")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[delete_psbt_wallet] result=${result}"
+  return ${returncode}
 }
 
 delete_psbt_wallet_watches() {

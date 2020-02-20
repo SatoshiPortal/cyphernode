@@ -20,6 +20,7 @@
 . ./ots.sh
 . ./newblock.sh
 . ./psbt.sh
+. ./walletutils.sh
 
 main() {
   trace "Entering main()..."
@@ -455,6 +456,36 @@ main() {
           # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
 
           response=$(serve_ots_info "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        create_wallet)
+          # curl -v -d "{\"walletName\":\"psbt01\", \"disablePrivateKeys\":\"true\", \"blank\":\"true\"}" localhost:8888/v0/create_wallet
+          response=$(create_wallet_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        load_wallet)
+          # curl -v -d "{\"walletName\":\"psbt01\"}" localhost:8888/v0/load_wallet
+          response=$(load_wallet_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unload_wallet)
+          # curl -v -d "{\"walletName\":\"psbt01\"}" localhost:8888/v0/unload_wallet
+          response=$(unload_wallet_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        backup_wallet)
+          # curl -v -d "{\"walletName\":\"psbt01\"}" localhost:8888/v0/backup_wallet
+          response=$(backup_wallet_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        delete_wallet)
+          # curl -v -d "{\"walletName\":\"psbt01\", \"createBackup\":\"true\"}" localhost:8888/v0/delete_wallet
+          response=$(delete_wallet_request "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
