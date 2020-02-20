@@ -813,8 +813,8 @@ main() {
           ;;
         elements_watch)
           # POST http://192.168.111.152:8080/elements_watch
-          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
-          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
           # eventMessage={"bounceAddress":"Azpr3WH7nX2p3Q6vGk34wuCpyFifpxvTCxTRPgZPYfBnjW5NJ6DP2odKbaeHBdRCCyYMW3XtveciLSpe","nbConf":0}
           response=$(elements_watchrequest "${line}")
           response_to_client "${response}" ${?}

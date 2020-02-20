@@ -5,7 +5,6 @@
 . ./elements_callbacks_job.sh
 . ./sendtoelementsnode.sh
 . ./responsetoclient.sh
-. ./elements_computefees.sh
 . ./elements_blockchainrpc.sh
 
 elements_confirmation_request() {
@@ -29,7 +28,7 @@ elements_confirmation() {
   local returncode
   local txid=${1}
   local tx_details
-  tx_details="$(elements_get_transaction ${txid})"
+  tx_details="$(elements_get_transaction ${txid} true)"
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_confirmation] tx_details=${tx_details}"
@@ -56,7 +55,7 @@ elements_confirmation() {
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address, watching_by_pub32_id, pub32_index, event_message FROM elements_watching WHERE address IN (${addresseswhere}) AND watching")
+  local rows=$(sql "SELECT id, address, unblinded_address, watching_by_pub32_id, pub32_index, event_message, watching_assetid FROM elements_watching WHERE watching AND (address IN (${addresseswhere}) OR unblinded_address IN (${addresseswhere}))")
   if [ ${#rows} -eq 0 ]; then
     trace "[elements_confirmation] No watched address in this tx!"
     return 0
@@ -65,12 +64,12 @@ elements_confirmation() {
 
   local tx=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
   local id_inserted
-  local tx_raw_details=$(elements_get_rawtransaction ${txid})
+  local tx_raw_details=$(elements_get_rawtransaction ${txid} true)
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
-  echo "${tx_raw_details}" > rawtx-${txid}.blob
+  echo "${tx_raw_details}" > conf-rawtx-${txid}.blob
 
   if [ -z ${tx} ]; then
     # TX not found in our DB.
@@ -81,14 +80,15 @@ elements_confirmation() {
 
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
-    local tx_amount=$(echo "${tx_details}" | jq '.result.amount')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount.bitcoin | fabs')
 
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
 
-    local fees=$(elements_compute_fees "${txid}")
+    # The fees in elements are unblinded
+    local fees=$(echo "${tx_details}" | jq '.result.fee.bitcoin | fabs')
     trace "[elements_confirmation] fees=${fees}"
 
     # If we missed 0-conf...
@@ -102,7 +102,7 @@ elements_confirmation() {
       tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('conf-rawtx-${txid}.blob'))"
     trace_rc $?
 
     id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid='${txid}'")
@@ -125,31 +125,34 @@ elements_confirmation() {
         blockhash=${tx_blockhash},
         blockheight=${tx_blockheight},
         blocktime=${tx_blocktime},
-        raw_tx=readfile('rawtx-${txid}.blob')
+        raw_tx=readfile('conf-rawtx-${txid}.blob')
         WHERE txid=\"${txid}\""
       trace_rc $?
     fi
     id_inserted=${tx}
   fi
   # Delete the temp file containing the raw tx (see above)
-  rm rawtx-${txid}.blob
+  rm conf-rawtx-${txid}.blob
 
   ########################################################################################################
 
   local event_message
   local watching_id
+  local unblinded_address
 
   # Let's see if we need to insert tx in the join table
-  tx=$(sql "SELECT tx_id FROM elements_watching_tx WHERE tx_id=\"${tx}\"")
+  tx=$(sql "SELECT elements_tx_id FROM elements_watching_tx WHERE elements_tx_id=${id_inserted}")
 
   for row in ${rows}
   do
 
     address=$(echo "${row}" | cut -d '|' -f2)
-    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
+    unblinded_address=$(echo "${row}" | cut -d '|' -f3)
+    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
     # In the case of us spending to a watched address, the address appears twice in the details,
     # once on the spend side (negative amount) and once on the receiving side (positive amount)
-    tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+    tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .vout")
+    tx_vout_assetid=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .asset")
 
     ########################################################################################################
     # Let's now insert in the join table if not already done
@@ -159,7 +162,7 @@ elements_confirmation() {
       # If the tx is batched and pays multiple watched addresses, we have to insert
       # those additional addresses in watching_tx!
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      sql "INSERT OR IGNORE INTO elements_watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
+      sql "INSERT OR IGNORE INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, ${tx_vout_assetid})"
       trace_rc $?
     else
       trace "[elements_confirmation] For this tx, there's already watching_tx rows"
@@ -168,23 +171,24 @@ elements_confirmation() {
 
     ########################################################################################################
     # Let's now grow the watch window in the case of a xpub watcher...
-    watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f3)
+    watching_by_pub32_id=$(echo "${row}" | cut -d '|' -f4)
     if [ -n "${watching_by_pub32_id}" ]; then
       trace "[elements_confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
-      pub32_index=$(echo "${row}" | cut -d '|' -f4)
+      pub32_index=$(echo "${row}" | cut -d '|' -f5)
       elements_extend_watchers ${watching_by_pub32_id} ${pub32_index}
     fi
     ########################################################################################################
 
     ########################################################################################################
     # Let's publish the event if needed
-    event_message=$(echo "${row}" | cut -d '|' -f5)
+    event_message=$(echo "${row}" | cut -d '|' -f6)
+    watching_assetid=$(echo "${row}" | cut -d '|' -f7)
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[elements_confirmation] mosquitto_pub -h broker -t elements_tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      trace "[elements_confirmation] mosquitto_pub -h broker -t elements_tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":${tx_vout_assetid},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":${tx_vout_assetid},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
