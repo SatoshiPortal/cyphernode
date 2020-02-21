@@ -417,6 +417,25 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_listfunds)
+          # GET http://192.168.111.152:8080/ln_listfunds
+          response=$(ln_listfunds)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_getroute)
+          # GET http://192.168.111.152:8080/ln_getroute/<node_id>/<msatoshi>/<riskfactor>
+	  response=$(ln_getroute $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f5))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_withdraw)
+          # POST http://192.168.111.152:8080/ln_withdraw
+          # BODY {"destination":"segwitAddress","satoshi":"100000","feerate":0}
+          response=$(ln_withdraw "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","callbackUrl":"192.168.111.233:1111/callbackUrl"}
