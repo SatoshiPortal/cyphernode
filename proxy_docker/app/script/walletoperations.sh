@@ -73,7 +73,7 @@ spend() {
     data="${data},\"hash\":\"${txid}\"}"
 
     # Delete the temp file containing the raw tx (see above)
-    rm spendrawtx-${txid}.blob
+    rm spend-rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
