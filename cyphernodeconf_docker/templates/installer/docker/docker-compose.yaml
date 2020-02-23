@@ -22,7 +22,9 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -49,9 +51,12 @@ services:
       interval: 20s
       timeout: 10s
       retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     <% if ( features.indexOf('tor') !== -1 ) { %>
     depends_on:
       - tor
@@ -85,9 +90,12 @@ services:
       interval: 20s
       timeout: 10s
       retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     <% if ( features.indexOf('tor') !== -1 ) { %>
     depends_on:
       - tor
@@ -144,7 +152,9 @@ services:
       <% } %>
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -160,7 +170,9 @@ services:
       - "OTS_URL=proxy:8888/ots_backoffice"
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     depends_on:
       - proxy
 #    deploy:
@@ -176,7 +188,9 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -196,7 +210,9 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     depends_on:
       - broker
 #    deploy:
@@ -219,7 +235,9 @@ services:
     <% } %>
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -248,7 +266,9 @@ services:
     command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
 #    deploy:
 #      placement:
 #        constraints: [node.hostname==dev]
@@ -281,7 +301,9 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     depends_on:
       - proxy
 #    deploy:
@@ -304,7 +326,9 @@ services:
       - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet
+    <% if (docker_mode == 'compose') { %>
     restart: always
+    <% } %>
     depends_on:
       - gatekeeper
 #    deploy:
