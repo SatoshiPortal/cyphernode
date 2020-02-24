@@ -817,6 +817,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        elements_gettransaction)
+          # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
+
+          response=$(elements_get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
       esac
       break
     fi
