@@ -1,35 +1,31 @@
-FROM python:3.8.1-alpine
+FROM python:3.8-slim-buster
 
 WORKDIR /
 
 RUN \
   mkdir /static && \
   mkdir /data && \
-  apk --no-cache add --update \
+  apt-get update && apt-get install -y \
       bash \
       tor \
-      libusb \
-      zlib \
+      libusb-1.0-0 \
+      zlib1g \
       openssl \
-      hidapi \
-      libffi\
+      libhidapi-dev \
+      libffi6\
       udev \
-      eudev \
-      freetype \
-      su-exec \
+      libfreetype6 \
+      gosu \
       usbutils \
-      libjpeg && \
-  apk --no-cache add --update --virtual .build-deps \
-    git \
-    alpine-sdk \
-    libusb-dev \
-    zlib-dev \
-    openssl-dev \
-    hidapi-dev \
-    libffi-dev \
-    eudev-dev \
-    freetype-dev \
-    jpeg-dev && \
+      libjpeg-dev \
+      git \
+      libudev-dev \
+      build-essential \
+      libusb-1.0-0-dev \
+      zlib1g-dev \
+      libffi-dev \
+      libssl-dev \
+      libfreetype6-dev && \
   #  libfreetype6-dev \
   #  liblcms2-dev \
   #  libtiff-dev \
@@ -40,11 +36,25 @@ RUN \
       pip install -r requirements.txt && \
       pip install --editable . && \
       ln -s /sys/bus /dev/bus && \
-  apk del .build-deps
+  apt-get remove --purge -y \
+      git \
+      build-essential \
+      libudev-dev \
+      libusb-1.0-0-dev \
+      zlib1g-dev \
+      libffi-dev \
+      libssl-dev \
+      libfreetype6-dev && \
+      apt-get autoremove -y && \
+      rm -rf /var/lib/apt/lists/*
 
 ENV PATH=${PATH}:/ck-bunker
 
 COPY entrypoint.sh /
 WORKDIR /ck-bunker
+
+RUN echo "Log notice file /var/log/tor/notices.log" >> /etc/tor/torrc && \
+    echo "DataDirectory /var/lib/tor" >> /etc/tor/torrc && \
+    echo "ControlPort 9051" >> /etc/tor/torrc
 
 ENTRYPOINT ["/entrypoint.sh"]
