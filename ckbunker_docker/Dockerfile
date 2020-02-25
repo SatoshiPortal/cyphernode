@@ -35,7 +35,6 @@ RUN \
       cd ck-bunker && \
       pip install -r requirements.txt && \
       pip install --editable . && \
-      ln -s /sys/bus /dev/bus && \
   apt-get remove --purge -y \
       git \
       build-essential \
