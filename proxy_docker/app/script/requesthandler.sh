@@ -787,7 +787,7 @@ main() {
           ;;
         wasabi_getbalance)
           # args:
-          # - id: integer, optional
+          # - instanceId: integer, optional
           # - private: boolean, optional, default=false
           # returns the total balance of either
           # - all wasabi instances
@@ -796,11 +796,11 @@ main() {
           # the balance will only return the unspent outputs
           # which have an anon set of at least what is configured.
           # if id is defined, it will return the balance of
-          # the wasabi instance with id <id>, else it will
+          # the wasabi instance with id <instanceId>, else it will
           # return the balance of all instances
           #
           # POST http://192.168.111.152:8080/wasabi_getbalance
-          # BODY {"id":1,"private":true}
+          # BODY {"instanceId":1,"private":true}
           # BODY {"private":true}
           # Empty BODY: all instances, not private
 
@@ -810,13 +810,13 @@ main() {
           ;;
         wasabi_spend)
           # args:
-          # - id: integer, optional
+          # - instanceId: integer, optional
           # - private: boolean, optional, default=false
           # - address: string, required
           # - amount: number, required
           #
           # POST http://192.168.111.152:8080/wasabi_spend
-          # BODY {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+          # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
           # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
           response=$(wasabi_spend "${line}")
@@ -825,9 +825,9 @@ main() {
           ;;
         wasabi_get_transactions)
           # args:
-          # - id: integer, optional
+          # - instanceId: integer, optional
           # return all transactions of either one wasabi instance
-          # or all instances, depending on the id parameter
+          # or all instances, depending on the instanceId parameter
 
           # Using new gethistory -- TODO
           response=$(wasabi_gettransactions "${line}")
