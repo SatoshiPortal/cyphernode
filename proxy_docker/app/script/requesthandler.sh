@@ -541,13 +541,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        wasabi_get_transactions)
+        wasabi_gettransactions)
           # args:
           # - instanceId: integer, optional
           # return all transactions of either one wasabi instance
           # or all instances, depending on the instanceId parameter
 
-          # Using new gethistory -- TODO
+          # Using new gethistory
           response=$(wasabi_gettransactions "${line}")
           response_to_client "${response}" ${?}
           break
