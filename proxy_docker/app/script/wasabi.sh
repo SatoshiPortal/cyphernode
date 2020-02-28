@@ -511,17 +511,13 @@ wasabi_spend() {
   return ${returncode}
 }
 
-wasabi_get_transactions() {
-  trace "Entering wasabi_get_transactions()..."
-
-  # No rpc call. Needs to be implemented
+wasabi_gettransactions() {
+  trace "Entering wasabi_gettransactions()..."
 
   # args:
-  # - id: integer, optional
+  # - instanceId: integer, optional
   # return all transactions of either one wasabi instance
-  # or all instances, depending on the id parameter
-
-  # New RPC call: gethistory
+  # or all instances, depending on the instanceId parameter
 
   # curl -s --data-binary '{"jsonrpc":"2.0","id":"1","method":"gethistory"}' http:/127.0.0.1:18099
   # "jsonrpc": "2.0",
@@ -547,4 +543,48 @@ wasabi_get_transactions() {
   #     "label": "Coinbase",
   #     "tx": "6a2e99298dbbd201230a99e62ea584d7f63f62ad1de7166f24eb2e24867f6faf"
   #   },
+
+  local request=${1}
+  trace "[wasabi_gettransactions] request=${request}"
+
+  # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+  local instanceid
+  if [ "$(echo "${request}" | cut -d ' ' -f1)" = "GET" ]; then
+    instanceid="null"
+  else
+    instanceid=$(echo "${request}" | jq ".instanceId")
+  fi
+  trace "[wasabi_gettransactions] instanceid=${instanceid}"
+
+  local first=true
+  local result
+  local response
+  local minInstanceIndex=0
+  local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+
+  if [ "${instanceid}" != "null" ]; then
+    minInstanceIndex=$instanceid
+    maxInstanceIndex=$instanceid
+  fi
+
+  trace "[wasabi_gettransactions] minInstanceIndex=${minInstanceIndex}"
+  trace "[wasabi_gettransactions] maxInstanceIndex=${maxInstanceIndex}"
+
+  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
+  do
+    response=$(send_to_wasabi ${i} gethistory "[]" | jq -Mc ".result")
+
+    if $first; then
+      result="${response}"
+      first=false
+    else
+      result="${result},${response}"
+    fi
+  done
+
+  result=$(echo "[$result]" | jq -Mc "add")
+
+  echo "{\"instanceId\":${instanceid},\"transactions\":${result}}"
+
+  return 0
 }
