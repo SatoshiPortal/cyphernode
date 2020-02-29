@@ -399,14 +399,21 @@ derive_addresses_for_descriptor() {
   trace "[derive_addresses_for_descriptor] range_start=${range_start}"
   trace "[derive_addresses_for_descriptor] range_end=${range_end}"
 
-  local rpcstring="{\"method\":\"deriveaddresses\",\"params\":[${descriptor},\"[${range_start},${range_end}]\""
+  local rpcstring="{\"method\":\"deriveaddresses\",\"params\":[\"${descriptor}\",[${range_start},${range_end}]]}"
 
   trace "[derive_addresses_for_descriptor] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_psbt_wallet ${rpcstring} | jq '.[]')
+  result=$(send_to_psbt_wallet ${rpcstring})
   local returncode=$?
 
+  trace "[derive_addresses_for_descriptor] result=${result}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    result=$(echo "${result}" | jq '.result[]')
+  fi
+
+  echo "${result}"
   return ${returncode}
 }
 
@@ -447,7 +454,7 @@ watchdescriptor() {
 
 
   # upto_n is used when extending the watching window
-  local upto_n=${10}
+  local upto_n=${12}
   trace "[watchdescriptor] upto_n=${upto_n}"
 
   local id_inserted
@@ -513,7 +520,7 @@ watchdescriptor() {
 
   if [ "${descriptor_change}" != "" ]; then
     local result
-    result=$(importandwatchdescriptor "${label}_change" ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
+    result=$(importandwatchdescriptor "${label}_change" ${descriptor_change} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
     returncode=$?
     trace "[watchdescriptor] result=${result}"
     trace_rc ${returncode}
@@ -565,6 +572,7 @@ importandwatchdescriptor() {
 
   local returncode
   local result
+  local id_inserted
   local label=${1}
   trace "[importandwatchdescriptor] label=${label}"
   local descriptor=${2}
@@ -595,7 +603,32 @@ importandwatchdescriptor() {
   #  trace "[importandwatchdescriptor] addresses=${addresses}"
 
   if [ "${returncode}" -eq 0 ]; then
-    insert_descriptor_watches ${label} ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${upto_n}
+    # insert into watching_by_descriptor here, save id, derive addresses and call insert_watches_for_descriptor
+
+    if [ -n "${upto_n}" ]; then
+      # Update existing row, we are extending the watching window
+      sql "UPDATE watching_by_descriptor set last_imported_n=${upto_n} WHERE descriptor=\"${descriptor}\""
+    else
+      # Insert in our DB...
+      sql "INSERT OR REPLACE INTO watching_by_descriptor (descriptor, label, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${descriptor}\", \"${label}\", 1, \"${cb0conf_url}\", \"${cb1conf_url}\", ${last_n})"
+    fi
+    returncode=$?
+    trace_rc ${returncode}
+
+    if [ "${returncode}" -eq 0 ]; then
+      id_inserted=$(sql "SELECT id FROM watching_by_descriptor WHERE label='${label}'")
+      trace "[importandwatchdescriptor] id_inserted: ${id_inserted}"
+      addresses=$(derive_addresses_for_descriptor "${descriptor}" "${nstart}" "${last_n}")
+      returncode=$?
+      if [ "${returncode}" -eq 0 ]; then
+        insert_watches_for_descriptor "${addresses}" ${cb0conf_url} ${cb1conf_url} ${id_inserted} ${nstart}
+      else
+        echo "${addresses}"
+      fi
+    else
+      error_msg="Can't insert descriptor watcher in DB"
+    fi
+
   else
     echo "Can't import descriptor range"
   fi
@@ -609,25 +642,25 @@ insert_watches_for_descriptor() {
   local addresses=${1}
   local callback0conf=${2}
   local callback1conf=${3}
-  local descriptor_id=${4}
+  local watching_by_descriptor_id=${4}
   local nstart=${5}
   local inserted_values=""
 
   local IFS=$'\n'
   for address in ${addresses}
   do
-    # (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)
+    # (address, watching, callback0conf, callback1conf, imported, descriptor_id)
     if [ -n "${inserted_values}" ]; then
       inserted_values="${inserted_values},"
     fi
     inserted_values="${inserted_values}(${address}, 1, \"${callback0conf}\", \"${callback1conf}\", 1"
-    if [ -n "${descriptor_id}" ]; then
-      inserted_values="${inserted_values}, ${descriptor_id}, ${nstart}"
+    if [ -n "${watching_by_descriptor_id}" ]; then
+      inserted_values="${inserted_values}, ${watching_by_descriptor_id}, ${nstart}"
       nstart=$((${nstart} + 1))
     fi
     inserted_values="${inserted_values})"
   done
-#  trace "[insert_watches] inserted_values=${inserted_values}"
+  #trace "[insert_watches_for_descriptor] inserted_values=${inserted_values}"
 
   sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_descriptor_id, pub32_index) VALUES ${inserted_values}"
   returncode=$?
