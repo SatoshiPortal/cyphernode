@@ -51,43 +51,45 @@ psbt_disable_request() {
 }
 
 
-psbt_import_address_range() {
-  trace "Entering psbt_import_address_range()..."
+
+
+#     [
+#       {                              (json object)
+#         "txid": "hex",               (string, required) The transaction id
+#         "vout": n,                   (numeric, required) The output number
+#         "sequence": n,               (numeric, required) The sequence number
+#       },
+#       ...
+#     ]
+#     [
+#       {                              (json object)
+#         "address": amount,           (numeric or string, required) A key-value pair. The key (string) is the bitcoin address, the value (float or string) is the amount in BTC
+#       },
+
+
+psbt_begin_spend_request() {
+  trace "Entering psbt_begin_spend_request()..."
+}
+
+psbt_end_spend_request() {
+  trace "Entering psbt_end_spend_request()..."
+}
+
+psbt_listunspent() {
+  trace "Entering psbt_listunspent()..."
 
 }
 
 psbt_begin_spend() {
   trace "Entering psbt_begin_spend()..."
-
-  # walletcreatefundedpsbt
-  #
 }
 
 psbt_end_spend() {
   trace "Entering psbt_end_spend()..."
-
+  # <- upload psbt as file
+  # walletprocesspsbt
   # finalizepsbt
   # sendrawtransaction
-}
-
-psbt_addtobatching() {
-
-  trace "Entering psbt_addtobatching()..."
-  local address=${1}
-  trace "[psbt_addtobatching] address=${address}"
-  local amount=${2}
-  trace "[psbt_addtobatching] amount=${amount}"
-
-  addtobatching $address $amount "psbt01"
-
-  returncode=$?
-  trace_rc ${returncode}
-
-  return ${returncode}
-}
-
-psbt_batchspend() {
-  trace "Entering psbt_batchspend()..."
 }
 
 psbt_enable() {
@@ -107,6 +109,11 @@ psbt_enable() {
   fi
 
   local label=${2:-psbt01}
+  local rescan=${3}
+
+  if [ "${rescan}" != true ]; then
+    rescan=false
+  fi
 
   # will create a blank wallet with private keys disabled and import
   # receiving and change addresses
@@ -127,15 +134,14 @@ psbt_enable() {
         local rescan_block_end
         rescan_block_end=$(get_blockcount)
 
-        # should be around the time the first coldcard was sold
-        # testnet: block 1063000 (12/30/2016)
-        # mainnet: block 446000 (12/31/2016)
-        local rescan_block_start=1063000
-        local rescan=true
+        # should be around the time HD wallets were introduced by Bitcoin core
+        # testnet: block 154980 (12/30/2016)
+        # mainnet: block 278000 (1/1/2014)
+        local rescan_block_start=154980
 
         # if start is after end, dont rescan, cause blocks are being downloaded and
         # will see the information we want anyways
-        if [ $rescan_block_end -lt $rescan_block_start ]; then
+        if [ "${rescan}" == "true" ] && [ $rescan_block_end -lt $rescan_block_start ]; then
           rescan=false
         fi
         local result
@@ -160,17 +166,14 @@ psbt_enable() {
 psbt_disable_label() {
 
   trace "Entering psbt_disable_label()..."
+  local label=${1:-psbt01}
 
-  local returncode
-  local label=${1}
   trace "[psbt_disable_label] label=${label}"
 
-  if [ "$label" == "" ]; then
-    return 1
-  fi
+  local returncode=0
 
   descriptors=$(sql "SELECT descriptor FROM watching_by_descriptor WHERE label=\"${label}\"" )
-  returncode=$?
+  resultcode=$?
   trace_rc ${returncode}
 
   if [ "${returncode}" -eq 1 ]; then
@@ -184,32 +187,33 @@ psbt_disable_label() {
   local descriptor
   for descriptor in ${descriptors}; do
     delete_psbt_wallet_watches ${descriptor} deleteDescriptorWatch
+    returncode=$(($returncode + $?))
   done
+
+  if [[ "${returncode}" -gt 0 ]]; then
+    return 1
+  fi
 }
 
 psbt_disable() {
 
-  local label=${1:-psbt01}
-  local resultcode
+  local returncode=0
 
-  psbt_disable_label "${label}"
-  resultcode=$?
+  psbt_disable_label "psbt01"
+  returncode=$(($returncode + $?))
 
-  if [ ${resultcode} -eq 1 ]; then
-    return 1
-  fi
+  psbt_disable_label "psbt01_change"
+  returncode=$(($returncode + $?))
 
-  psbt_disable_label "${label}_change"
-  resultcode=$?
-
-  if [ ${resultcode} -eq 1 ]; then
-    return 1
-  fi
-
-  # if psbt wallet is loaded: unload psbt wallet
   unload_psbt_wallet
-  # delete wallet file
+  returncode=$(($returncode + $?))
+
   delete_psbt_wallet
+  returncode=$(($returncode + $?))
+
+  if [[ "${returncode}" -gt 0 ]]; then
+    return 1
+  fi
 }
 
 load_psbt_wallet() {
@@ -219,6 +223,7 @@ load_psbt_wallet() {
   local returncode=$?
   trace_rc ${returncode}
   trace "[load_psbt_wallet] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 
@@ -229,6 +234,7 @@ unload_psbt_wallet() {
   local returncode=$?
   trace_rc ${returncode}
   trace "[unload_psbt_wallet] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 
@@ -239,6 +245,7 @@ delete_psbt_wallet() {
   local returncode=$?
   trace_rc ${returncode}
   trace "[delete_psbt_wallet] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 
@@ -250,8 +257,6 @@ delete_psbt_wallet_watches() {
 
   trace "[delete_psbt_wallet_watches] descriptor=${descriptor}"
   trace "[delete_psbt_wallet_watches] eventtype=${event_type}"
-
-
 
   if [ "${descriptor}" == "" ]; then
     return 1;
