@@ -71,6 +71,13 @@ importmulti_descriptor_rpc() {
   local rEnd=${5:-$XPUB_DERIVATION_GAP}
   local internal=${6:-false}
 
+  trace "[importmulti_descriptor_rpc] walletname=${walletname}"
+  trace "[importmulti_descriptor_rpc] label=${label}"
+  trace "[importmulti_descriptor_rpc] descriptor=${descriptor}"
+  trace "[importmulti_descriptor_rpc] rStart=${rStart}"
+  trace "[importmulti_descriptor_rpc] rEnd=${rEnd}"
+  trace "[importmulti_descriptor_rpc] internal=${internal}"
+
   # always false unless true
   if [ "$rescan" == "true" ]; then
       rescan="false"
