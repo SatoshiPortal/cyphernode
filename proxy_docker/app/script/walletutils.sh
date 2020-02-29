@@ -54,7 +54,7 @@ create_wallet() {
   trace "[create_wallet] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_watcher_node ${rpcstring})
+  result=$(send_to_bitcoin_node ${WATCHER_NODE} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
   local returncode=$?
 
   trace "[create_wallet] result=${result}"
@@ -95,7 +95,7 @@ load_wallet() {
 
   local rpcstring="{\"method\":\"loadwallet\",\"params\":[\"${wallet_name}\"]}"
   local result
-  result=$(send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
+  result=$(send_to_bitcoin_node ${WATCHER_NODE} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
   local returncode=$?
   trace_rc ${returncode}
 
@@ -136,7 +136,7 @@ unload_wallet() {
 
   local rpcstring="{\"method\":\"unloadwallet\",\"params\":[\"${wallet_name}\"]}"
   local result
-  result=$(send_to_bitcoin_node ${WATCHER_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
+  result=$(send_to_bitcoin_node ${WATCHER_NODE} ${WATCHER_NODE_RPC_CFG} ${rpcstring})
   local returncode=$?
   trace_rc ${returncode}
   trace "[unload_wallet] result=${result}"
