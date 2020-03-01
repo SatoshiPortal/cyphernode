@@ -122,6 +122,14 @@ psbt_enable() {
   local rescan_block_end=${4:-0}
   local rescan_block_start=${5:-0}
 
+  trace "[psbt_enable] psbt_xpub=${psbt_xpub}"
+  trace "[psbt_enable] wallet_name=${wallet_name}"
+  trace "[psbt_enable] rescan=${rescan}"
+  trace "[psbt_enable] rescan_block_start=${rescan_block_start}"
+  trace "[psbt_enable] rescan_block_end=${rescan_block_end}"
+
+
+
   # will create a blank wallet with private keys disabled and import
   # receiving and change addresses
   trace "[psbt_enable] checking psbt wallet"
