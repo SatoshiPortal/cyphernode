@@ -224,27 +224,24 @@ psbt_disable_label() {
 
 psbt_disable() {
 
+  trace "Entering psbt_disable()..."
+  local label=${1:-psbt01}
+
   local returncode=0
+  local is_scanning
 
+  is_scanning=$(walletisscanning "psbt01" )
+  trace "[psbt_disable] is_scanning=${is_scanning}"
+
+  if [[ "${is_scanning}" == "true" ]]; then
+    psbt_abort_rescanblockchain
+    returncode=$(($returncode + $?))
+  fi
+
+  psbt_disable_label "psbt01"
+  psbt_disable_label "psbt01_change"
   unload_psbt_wallet
-  returncode=$(($returncode + $?))
-
-  # TODO: check how to cancel rescanblockchain
-
-  if [[ "${returncode}" -eq 0 ]]; then
-    psbt_disable_label "psbt01"
-    returncode=$(($returncode + $?))
-  fi
-
-  if [[ "${returncode}" -eq 0 ]]; then
-    psbt_disable_label "psbt01_change"
-    returncode=$(($returncode + $?))
-  fi
-
-  if [[ "${returncode}" -eq 0 ]]; then
-    delete_psbt_wallet
-    returncode=$(($returncode + $?))
-  fi
+  delete_psbt_wallet
 
   if [[ "${returncode}" -gt 0 ]]; then
     return 1

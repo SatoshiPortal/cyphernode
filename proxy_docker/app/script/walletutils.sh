@@ -292,3 +292,55 @@ fingerprint_from_pub32() {
   echo -n "$pub32" | md5 | cut -c1-8
   return $?
 }
+
+getwalletinfo() {
+  trace "Entering getwalletinfo()..."
+
+  local wallet_name=${1}
+
+  if [ "${wallet_name}" == "" ]; then
+    trace "[getwalletinfo] no wallet file"
+    return 1
+  fi
+
+  local rpcstring="{\"method\":\"getwalletinfo\"}"
+  local result
+  result=$(send_to_bitcoin_node "${WATCHER_NODE_RPC_URL}/${wallet_name}" ${WATCHER_NODE_RPC_CFG} ${rpcstring})
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getwalletinfo] result=${result}"
+  echo "${result}"
+  return ${returncode}
+
+}
+
+walletisscanning() {
+  trace "Entering walletisscanning()..."
+
+  local wallet_name=${1}
+
+  if [ "${wallet_name}" == "" ]; then
+    trace "[walletisscanning] no wallet file"
+    return 1
+  fi
+
+  local result
+  result=$(getwalletinfo "${wallet_name}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[walletisscanning] result=${result}"
+
+  if [ ${returncode} -eq 0 ]; then
+    local scanning=$(echo "${result}" | jq -r '.result.scanning.duration')
+    if [ "${scanning}" == "null" ]; then
+      echo false
+    else
+      echo true
+    fi
+    return 0
+  fi
+  echo "${result}"
+  return 1
+}
+
+

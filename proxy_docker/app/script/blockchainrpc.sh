@@ -91,6 +91,15 @@ psbt_rescanblockchain() {
   return $?
 }
 
+psbt_abort_rescanblockchain() {
+  trace "Entering psbt_abort_rescanblockchain()..."
+
+  local rpcstring="{\"method\":\"abortrescan\"}"
+  trace "[psbt_cancel_rescanblockchain] rpcstring=${rpcstring}"
+  send_to_psbt_wallet "${rpcstring}"
+  return $?
+}
+
 get_blockcount() {
   trace "Entering get_blockcount()..."
 
