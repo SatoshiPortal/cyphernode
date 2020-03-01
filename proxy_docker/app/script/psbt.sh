@@ -26,6 +26,18 @@ psbt_enable_request() {
   local rescan_block_start=$(echo "${request}" | jq -er ".rescan_block_start")
   local rescan_block_end=$(echo "${request}" | jq -er ".rescan_block_end")
 
+  if [ "${rescan}" != "true" ]; then
+    rescan=false
+  fi
+
+  if [ "${rescan_block_start}" == "null" ]; then
+    rescan_block_start=0
+  fi
+
+  if [ "${rescan_block_end}" == "null" ]; then
+    rescan_block_end=0
+  fi
+
   if [ "${label}" == "" ]; then
     label=psbt01
   fi
