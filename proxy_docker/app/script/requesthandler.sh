@@ -487,7 +487,7 @@ main() {
           ;;
         psbt_enable)
           # POST http://192.168.111.152:8080/psbt_enable
-          # BODY {"pub32":"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r"}
+          # BODY {"pub32":"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r", "rescan": "false", "rescan_block_start": 0, "rescan_block_end": 100 }
 
           # curl -v -d "{\"pub32\":\"tpubDC7jGaaSE66Pn4dgtbAAstde4bCyhSUs4r3P8WhMVvPByvcRrzrwqSvpF9Ghx83Z1LfVugGRrSBko5UEKELCz9HoMv5qKmGq3fqnnbS5E9r\"}" localhost:8888/psbt_enable
 

@@ -6,6 +6,7 @@
 . ./sendtobitcoinnode.sh
 . ./bitcoin.sh
 . ./descriptor.sh
+. ./blockchainrpc.sh
 
 watchrequest() {
   trace "Entering watchrequest()..."
@@ -531,12 +532,10 @@ watchdescriptor() {
     fi
   fi
 
-  trace "[watchdescriptor] rescanning blockchain from=${rescan_block_start} to ${rescan_block_end} ${rescan}"
   if [ "${rescan}" == "true" ]; then
+    trace "[watchdescriptor] rescanning blockchain from=${rescan_block_start} to ${rescan_block_end} ${rescan}"
     psbt_rescanblockchain ${rescan_block_start} ${rescan_block_end}
   fi
-
-  getbalances
 
   if [ -z "${error_msg}" ]; then
     data="{\"id\":\"${id_inserted}\",

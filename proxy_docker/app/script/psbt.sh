@@ -9,6 +9,7 @@
 . ./walletutils.sh
 . ./blockchainrpc.sh
 . ./trace.sh
+. ./watchrequest.sh
 
 # quick win. TODO: integrate into wallet operations
 # Refactor with multi wallet support
@@ -21,6 +22,9 @@ psbt_enable_request() {
   local request=${1}
   local pub32=$(echo "${request}" | jq -er ".pub32")
   local label=$(echo "${request}" | jq -er ".label")
+  local rescan=$(echo "${request}" | jq -er ".rescan")
+  local rescan_block_start=$(echo "${request}" | jq -er ".rescan_block_start")
+  local rescan_block_end=$(echo "${request}" | jq -er ".rescan_block_end")
 
   if [ "${label}" == "" ]; then
     label=psbt01
@@ -28,7 +32,7 @@ psbt_enable_request() {
 
   trace "[psbt_enable_request] pub32=${pub32}"
   local result
-  result=$(psbt_enable ${pub32})
+  result=$(psbt_enable ${pub32} "psbt01" "${rescan}" "${rescan_block_end}" "${rescan_block_start}")
   returncode=$?
   trace_rc ${returncode}
   echo ${result}
@@ -108,18 +112,21 @@ psbt_enable() {
     return 1;
   fi
 
-  local label=${2:-psbt01}
+  local wallet_name=${2:-psbt01}
   local rescan=${3}
 
   if [ "${rescan}" != true ]; then
     rescan=false
   fi
 
+  local rescan_block_end=${4:-0}
+  local rescan_block_start=${5:-0}
+
   # will create a blank wallet with private keys disabled and import
   # receiving and change addresses
   trace "[psbt_enable] checking psbt wallet"
   local result
-  result=$(create_wallet "psbt01")
+  result=$(create_wallet "${wallet_name}")
   returncode=$?
   if [ "$returncode" -eq 0 ]; then
     local errorcode=$(echo $result | jq -r '.error.code')
@@ -129,15 +136,22 @@ psbt_enable() {
       trace $error | jq '.message'
     elif [ "$errorcode" == "null" ]; then
       local name=$( echo $result | jq -r '.result.name' )
-      if [ "$name" == "psbt01" ]; then
+      if [ "${name}" == "${wallet_name}" ]; then
         trace "[psbt_enable] Importing xpub ($psbt_xpub) into psbt wallet"
-        local rescan_block_end
-        rescan_block_end=$(get_blockcount)
-
         # should be around the time HD wallets were introduced by Bitcoin core
-        # testnet: block 154980 (12/30/2016)
+        # testnet: block 154980 (1/1/2014)
         # mainnet: block 278000 (1/1/2014)
-        local rescan_block_start=154980
+        if [ "${rescan_block_start}" -eq 0 ]; then
+          if [ "${NETWORK}" == "mainnet" ]; then
+            rescan_block_start=278000
+          elif [ "${NETWORK}" == "testnet" ]; then
+            rescan_block_start=154980
+          fi
+        fi
+
+        if [ "${rescan_block_end}" -eq 0 ]; then
+          rescan_block_end=$(get_blockcount)
+        fi
 
         # if start is after end, dont rescan, cause blocks are being downloaded and
         # will see the information we want anyways
@@ -145,7 +159,8 @@ psbt_enable() {
           rescan=false
         fi
         local result
-        result=$(watchdescriptor ${label} ${psbt_xpub} 0 callback0conf callback1conf psbt01 watchdescriptor true ${rescan} ${rescan_block_start} ${rescan_block_end})
+        result=$(watchdescriptor ${wallet_name} ${psbt_xpub} 0 callback0conf callback1conf psbt01 watchdescriptor true ${rescan} ${rescan_block_start} ${rescan_block_end})
+        returncode=$((returncode+$?))
       else
         trace "[psbt_enable] Unexpected result from createwallet."
         return 1;
@@ -159,7 +174,11 @@ psbt_enable() {
     return 1;
   fi
 
-  #return label here
+  echo $result
+
+  if [ $returncode -gt 0 ]; then
+    return 1
+  fi
 
 }
 
@@ -199,17 +218,25 @@ psbt_disable() {
 
   local returncode=0
 
-  psbt_disable_label "psbt01"
-  returncode=$(($returncode + $?))
-
-  psbt_disable_label "psbt01_change"
-  returncode=$(($returncode + $?))
-
   unload_psbt_wallet
   returncode=$(($returncode + $?))
 
-  delete_psbt_wallet
-  returncode=$(($returncode + $?))
+  # TODO: check how to cancel rescanblockchain
+
+  if [[ "${returncode}" -eq 0 ]]; then
+    psbt_disable_label "psbt01"
+    returncode=$(($returncode + $?))
+  fi
+
+  if [[ "${returncode}" -eq 0 ]]; then
+    psbt_disable_label "psbt01_change"
+    returncode=$(($returncode + $?))
+  fi
+
+  if [[ "${returncode}" -eq 0 ]]; then
+    delete_psbt_wallet
+    returncode=$(($returncode + $?))
+  fi
 
   if [[ "${returncode}" -gt 0 ]]; then
     return 1
