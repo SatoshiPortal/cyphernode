@@ -88,7 +88,7 @@ elements_confirmation() {
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
 
     # The fees in elements are unblinded
-    local fees=$(echo "${tx_details}" | jq '.result.fee.bitcoin | fabs')
+    local fees=$(echo "${tx_raw_details}" | jq '.result.vout[] | select(.scriptPubKey.type == "fee") | .value' | awk '{ printf "%.8f", $0 }')
     trace "[elements_confirmation] fees=${fees}"
 
     # If we missed 0-conf...
