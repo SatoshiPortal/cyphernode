@@ -482,6 +482,16 @@ ln_listfunds() {
   echo "${result}"
   return ${returncode}
 }
+ln_listpays() {
+  trace "Entering ln_listpays()..."
+  local result
+  result=$(./lightning-cli listpays)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_listpays] result=${result}"
+  echo "${result}"
+  return ${returncode}
+}
 ln_getroute() {
   trace "Entering ln_getroute()..."
   # Defaults used from c-lightning documentation
