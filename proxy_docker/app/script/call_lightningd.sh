@@ -327,7 +327,7 @@ ln_pay() {
     # The amount must match if not "any"
     # If the amount is not in the invoice and not supplied as expected_msatoshi, then both will be null, that's ok!
     # Same thing goes for the description.
-    if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
+    if [ -n "${expected_msatoshi}" ] && [ "${expected_msatoshi}" != "null" ]  &&  [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
       # If invoice_msatoshi is null, that means "any" was supplied, so the amounts don't have to match!
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
       returncode=1
