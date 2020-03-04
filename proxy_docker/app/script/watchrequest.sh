@@ -326,7 +326,7 @@ watchtxidrequest() {
   \"event\":\"watchtxid\",
   \"inserted\":\"${inserted}\",
   \"txid\":\"${txid}\",
-  \"confirmedCallbackURL\":${cb1conf_url,
+  \"confirmedCallbackURL\":${cb1conf_url},
   \"xconfCallbackURL\":${cbxconf_url},
   \"nbxconf\":${nbxconf}}"
   trace "[watchtxidrequest] responding=${data}"
