@@ -439,12 +439,12 @@ watchdescriptor() {
   local event_type=${7:-watchdescriptor}
   trace "[watchdescriptor] event_type=${event_type}"
   local handlechange=${8:-false}
-  if [ ! "$handlechange" == "true" ]; then
+  if [ "$handlechange" != "true" ]; then
     handlechange="false"
   fi
   trace "[watchdescriptor] handlechange=${handlechange}"
   local rescan=${9:-false}
-  if [ ! "$rescan" == "true" ]; then
+  if [ "$rescan" != "true" ]; then
     rescan="false"
   fi
   trace "[watchdescriptor] rescan=${rescan}"
@@ -508,7 +508,7 @@ watchdescriptor() {
   # to pass arrays, so we do it one after the other.
   if [ "${descriptor}" != "" ]; then
     local result
-    result=$(importandwatchdescriptor ${label} ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
+    result=$(importandwatchdescriptor ${label} ${descriptor} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} true false ${upto_n})
     returncode=$?
     trace "[watchdescriptor] result=${result}"
     trace_rc ${returncode}
@@ -521,7 +521,7 @@ watchdescriptor() {
 
   if [ "${descriptor_change}" != "" ]; then
     local result
-    result=$(importandwatchdescriptor "${label}_change" ${descriptor_change} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} ${upto_n})
+    result=$(importandwatchdescriptor "${label}_change" ${descriptor_change} ${nstart} ${cb0conf_url} ${cb1conf_url} ${wallet_name} true true ${upto_n})
     returncode=$?
     trace "[watchdescriptor] result=${result}"
     trace_rc ${returncode}
@@ -586,8 +586,12 @@ importandwatchdescriptor() {
   trace "[importandwatchdescriptor] cb1conf_url=${cb1conf_url}"
   local wallet_name=${6:-psbt01}
   trace "[importandwatchdescriptor] wallet_name=${wallet_name}"
+  local keypool=${7:-true}
+  trace "[importandwatchdescriptor] keypool=${keypool}"
+  local internal=${8:-false}
+  trace "[importandwatchdescriptor] internal=${internal}"
   # upto_n is used when extending the watching window
-  local upto_n=${7}
+  local upto_n=${9}
   trace "[importandwatchdescriptor] upto_n=${upto_n}"
 
   if [ -n "${upto_n}" ]; then
@@ -595,7 +599,7 @@ importandwatchdescriptor() {
     last_n=${upto_n}
   fi
 
-  result=$(importmulti_descriptor_rpc ${wallet_name} ${label} ${descriptor} ${nstart} ${last_n})
+  result=$(importmulti_descriptor_rpc ${wallet_name} ${label} ${descriptor} ${nstart} ${last_n} ${keypool} ${internal})
   returncode=$?
   trace "[importandwatchdescriptor] result=${result}"
   trace_rc ${returncode}
@@ -678,6 +682,9 @@ extend_watchers_for_descriptor() {
   local upgrade_to_n=$((${pub32_index} + ${XPUB_DERIVATION_GAP}))
   trace "[extend_watchers_for_descriptor] upgrade_to_n=${upgrade_to_n}"
 
+  local keypool=${3:-true}
+  local internal=${4:-false}
+
   local last_imported_n
   local row
   row=$(sql "SELECT descriptor, label, callback0conf, callback1conf, last_imported_n FROM watching_by_descriptor WHERE id=${watching_by_descriptor_id} AND watching")
@@ -702,7 +709,7 @@ extend_watchers_for_descriptor() {
     # we want to extend the watched addresses to 166 if our gap is 100 (default).
     trace "[extend_watchers_for_descriptor] We have addresses to add to watchers!"
 
-    importandwatchdescriptor ${label} ${descriptor} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} "psbt01" ${upgrade_to_n} > /dev/null
+    importandwatchdescriptor ${label} ${descriptor} $((${last_imported_n} + 1)) ${callback0conf} ${callback1conf} "psbt01" "${keypool}" "${internal}" "${upgrade_to_n}" > /dev/null
     returncode=$?
     trace_rc ${returncode}
   else

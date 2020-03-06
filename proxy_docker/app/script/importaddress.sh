@@ -26,7 +26,7 @@ importmulti_rpc() {
   local rescan=${4}
 
   # always false unless true
-  if [ "$rescan" == "true" ]; then
+  if [ "$rescan" != "true" ]; then
       rescan="false"
   fi
 
@@ -69,7 +69,8 @@ importmulti_descriptor_rpc() {
   local descriptor=${3}
   local rStart=${4:-0}
   local rEnd=${5:-$XPUB_DERIVATION_GAP}
-  local internal=${6:-false}
+  local keypool=${6:-true}
+  local internal=${7:-false}
 
   trace "[importmulti_descriptor_rpc] walletname=${walletname}"
   trace "[importmulti_descriptor_rpc] label=${label}"
@@ -77,14 +78,23 @@ importmulti_descriptor_rpc() {
   trace "[importmulti_descriptor_rpc] rStart=${rStart}"
   trace "[importmulti_descriptor_rpc] rEnd=${rEnd}"
   trace "[importmulti_descriptor_rpc] internal=${internal}"
+  trace "[importmulti_descriptor_rpc] keypool=${keypool}"
 
   # always false unless true
-  if [ "$rescan" == "true" ]; then
+  if [ "$rescan" != "true" ]; then
       rescan="false"
   fi
 
+  local toimport
+  if [ "$internal" != "true" ]; then
+    toimport="[{\"desc\":\"${descriptor}\",\"timestamp\":\"now\",\"range\":[${rStart},${rEnd}],\"watchonly\":true,\"label\":\"${label}\",\"keypool\":${keypool},\"internal\":false}]"
+  else
+    toimport="[{\"desc\":\"${descriptor}\",\"timestamp\":\"now\",\"range\":[${rStart},${rEnd}],\"watchonly\":true,\"keypool\":${keypool},\"internal\":true}]"
+  fi
 
-  local toimport="[{\"desc\":\"${descriptor}\",\"timestamp\":\"now\",\"range\":[${rStart},${rEnd}],\"watchonly\":true,\"label\":\"${label}\",\"keypool\":true,\"internal\":${internal}}]"
+  if [ "$keypool" != "false" ]; then
+    rescan="true"
+  fi
 
   trace "[importmulti_descriptor_rpc] toimport=${toimport}"
 

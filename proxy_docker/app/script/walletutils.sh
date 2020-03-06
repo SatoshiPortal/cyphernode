@@ -40,14 +40,14 @@ create_wallet() {
 
   local walletname=${1}
   local disableprivatekeys=${2:-true}
-  local blank=${3:-true}
+  local blank=${3:-false}
 
   if [ "$disableprivatekeys" != "false" ]; then
       disableprivatekeys="true"
   fi
 
-  if [ "$blank" != "false" ]; then
-      blank="true"
+  if [ "$blank" != "true" ]; then
+      blank="false"
   fi
 
   local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",${disableprivatekeys},${blank}]}"

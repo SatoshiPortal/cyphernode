@@ -23,8 +23,8 @@ psbt_enable_request() {
   local pub32=$(echo "${request}" | jq -er ".pub32")
   local label=$(echo "${request}" | jq -er ".label")
   local rescan=$(echo "${request}" | jq -er ".rescan")
-  local rescan_block_start=$(echo "${request}" | jq -er ".rescan_block_start")
-  local rescan_block_end=$(echo "${request}" | jq -er ".rescan_block_end")
+  local rescan_block_start=$(echo "${request}" | jq -er ".rescanBlockStart")
+  local rescan_block_end=$(echo "${request}" | jq -er ".rescanBlockEnd")
 
   if [ "${rescan}" != "true" ]; then
     rescan=false
@@ -42,9 +42,16 @@ psbt_enable_request() {
     label=psbt01
   fi
 
+  trace "[psbt_enable_request] request=${request}"
   trace "[psbt_enable_request] pub32=${pub32}"
+  trace "[psbt_enable_request] label=${label}"
+  trace "[psbt_enable_request] rescan=${rescan}"
+  trace "[psbt_enable_request] rescan_block_start=${rescan_block_start}"
+  trace "[psbt_enable_request] rescan_block_end=${rescan_block_end}"
+
+
   local result
-  result=$(psbt_enable ${pub32} "psbt01" "${rescan}" "${rescan_block_end}" "${rescan_block_start}")
+  result=$(psbt_enable ${pub32} "psbt01" "${rescan}" "${rescan_block_start}" "${rescan_block_end}")
   returncode=$?
   trace_rc ${returncode}
   echo ${result}
@@ -131,8 +138,8 @@ psbt_enable() {
     rescan=false
   fi
 
-  local rescan_block_end=${4:-0}
-  local rescan_block_start=${5:-0}
+  local rescan_block_start=${4:-0}
+  local rescan_block_end=${5:-0}
 
   trace "[psbt_enable] psbt_xpub=${psbt_xpub}"
   trace "[psbt_enable] wallet_name=${wallet_name}"
