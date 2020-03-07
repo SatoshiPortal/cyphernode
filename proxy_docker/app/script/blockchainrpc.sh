@@ -122,3 +122,14 @@ get_blockhash() {
   send_to_watcher_node "${data}" | jq ".result"
   return $?
 }
+
+sendrawtransaction() {
+  trace "Entering sendrawtransaction()..."
+  local rawtxhex=${1}
+  local result
+  trace "[sendrawtransaction] rawtxhex=${rawtxhex}"
+  result=send_to_spender_node "{\"method\":\"sendrawtransaction\",\"params\":[\"${rawtxhex}\"]}"
+  trace "[sendrawtransaction] result=${result}"
+  echo "$result"
+  return $?
+}

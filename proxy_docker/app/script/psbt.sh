@@ -92,27 +92,160 @@ psbt_disable_request() {
 
 psbt_begin_spend_request() {
   trace "Entering psbt_begin_spend_request()..."
+  local data
+  local request=${1}
+  local address=$(echo "${request}" | jq -r ".address")
+  trace "[psbt_begin_spend_request] address=${address}"
+  local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
+  trace "[psbt_begin_spend_request] amount=${amount}"
+  local result
+  local returncode
+  local error
+  result=$(psbt_begin_spend ${address} ${amount})
+  returncode=$?
+  trace "[psbt_begin_spend_request] result=${result}"
+
+  error=$( echo "${result}" | jq -r '.error' )
+  trace "[psbt_begin_spend_request] error=${error}"
+
+  if [[ "${error}" != "null" ]]; then
+    return 1
+  fi
+
+  local psbtBase64=$( echo "${result}" | jq -r '.result.psbt' )
+  trace "[psbt_begin_spend_request] psbtBase64=${psbtBase64}"
+
+  local fee=$( echo "${result}" | jq -r '.result.fee' )
+  trace "[psbt_begin_spend_request] fee=${fee}"
+
+  local changepos=$( echo "${result}" | jq -r '.result.changepos' )
+  trace "[psbt_begin_spend_request] changepos=${changepos}"
+
+  result=$(processpsbt ${psbtBase64} false ALL true)
+  trace "[psbt_begin_spend_request] result=${result}"
+
+  error=$( echo "${result}" | jq -r '.error' )
+  trace "[psbt_begin_spend_request] error=${error}"
+
+  if [[ "${error}" != "null" ]]; then
+    return 1
+  fi
+
+  local psbtBase64=$( echo "${result}" | jq -r '.result.psbt' )
+  trace "[psbt_begin_spend_request] psbtBase64=${psbtBase64}"
+
+  local complete=$( echo "${result}" | jq -r '.result.complete' )
+  trace "[psbt_begin_spend_request] complete=${complete}"
+
+  echo "{\"psbt\":\"${psbtBase64}\",\"fee\":${fee},\"changepos\":${changepos},\"complete\":${complete}}"
+
+  return ${returncode}
+
 }
 
 psbt_end_spend_request() {
   trace "Entering psbt_end_spend_request()..."
+  local data
+  local request=${1}
+  local psbtBase64=$(echo "${request}" | jq -r ".psbt")
+  trace "[psbt_begin_spend_request] psbtBase64=${psbtBase64}"
+  local result
+  local returncode
+  local error
+
+  result=$(psbt_end_spend)
+  returncode=$?
+
+  trace "[psbt_begin_spend_request] result=${result}"
+
+  echo "$result"
+  return $returncode
+}
+
+psbt_listunspent_request() {
+  trace "Entering psbt_listunspent_request()..."
 }
 
 psbt_listunspent() {
   trace "Entering psbt_listunspent()..."
-
 }
 
 psbt_begin_spend() {
   trace "Entering psbt_begin_spend()..."
+
+  local address=${1}
+  trace "[psbt_begin_spend] address=${address}"
+  local amount=${2}
+  trace "[psbt_begin_spend] amount=${amount}"
+  local response
+  local returncode
+
+#walletcreatefundedpsbt '[]' '[{"tb1qceytj4vfrg22cy7mp5mnfps4ffgseas29mddjp":0.00005}]' 0 '{"includeWatching": true }'
+  response=$(send_to_psbt_wallet "{\"method\":\"walletcreatefundedpsbt\",\"params\":[[],[{\"${address}\":${amount}}],0,{\"includeWatching\": true }]}")
+  returncode=$?
+  trace "[psbt_begin_spend] responding=${response}"
+  echo "${response}"
+
+  return ${returncode}
 }
 
 psbt_end_spend() {
   trace "Entering psbt_end_spend()..."
-  # <- upload psbt as file
-  # walletprocesspsbt
-  # finalizepsbt
-  # sendrawtransaction
+
+  local psbtBase64=${1}
+  trace "[psbt_begin_spend] address=${address}"
+  local result
+  local returncode
+  local error
+
+  result=$(processpsbt ${psbtBase64})
+  trace "[psbt_end_spend] result=${result}"
+
+  error=$( echo "${result}" | jq -r '.error' )
+  trace "[psbt_end_spend] error=${error}"
+
+  if [[ "${error}" != "null" ]]; then
+    return 1
+  fi
+
+  local complete=$(echo "$result" | jq -r '.complete')
+
+  if [ "${complete}" == "true" ]; then
+    # finalizepsbt
+
+    result=$(finalizepsbt ${psbtBase64})
+    trace "[psbt_end_spend] result=${result}"
+
+    error=$( echo "${result}" | jq -r '.error' )
+    trace "[psbt_end_spend] error=${error}"
+
+    if [[ "${error}" != "null" ]]; then
+      return 1
+    fi
+
+    complete=$(echo "$result" | jq -r '.complete')
+    hex=$(echo "$result" | jq -r '.hex')
+
+    trace "[psbt_end_spend] complete=${complete}"
+    trace "[psbt_end_spend] hex=${hex}"
+
+    # sendrawtransaction
+    result=$(sendrawtransaction ${hex})
+    trace "[psbt_end_spend] result=${result}"
+
+    error=$( echo "${result}" | jq -r '.error' )
+    trace "[psbt_end_spend] error=${error}"
+
+    if [[ "${error}" != "null" ]]; then
+      return 1
+    fi
+
+  else
+    # return incomplete psbt
+    echo "${result}"
+    return
+  fi
+
 }
 
 psbt_enable() {
@@ -340,4 +473,43 @@ delete_psbt_wallet_watches() {
   trace "[unwatchdescriptorrequest] responding=${data}"
 
   echo ${data}
+}
+
+processpsbt() {
+  trace "Entering processpsbt()..."
+  local psbtBase64=${1}
+  local sign=${2:-true}
+  local sighashtype=${3:-ALL}
+  local bip32derivs=${4:-false}
+
+  if [ "${sign}" != "false" ]; then
+    sign=true
+  fi
+
+  if [ "${bip32derivs}" != "true" ]; then
+    bip32derivs=false
+  fi
+
+  trace "[processpsbt] psbtBase64=${psbtBase64}"
+  local response
+  local returncode
+  response=$(send_to_psbt_wallet "{\"method\":\"walletprocesspsbt\",\"params\":[\"${psbtBase64}\",${sign},\"${sighashtype}\",${bip32derivs}]}")
+  returncode=$?
+  trace "[processpsbt] responding=${response}"
+  echo "${response}"
+  return ${returncode}
+}
+
+finalizepsbt() {
+  trace "Entering finalizepsbt()..."
+  local psbtBase64=${1}
+  trace "[finalizepsbt] psbtBase64=${psbtBase64}"
+  local response
+  local returncode
+  response=$(send_to_psbt_wallet "{\"method\":\"finalizepsbt\",\"params\":[\"${psbtBase64}\"]}")
+  returncode=$?
+  trace "[finalizepsbt] responding=${response}"
+  echo "${response}"
+  return ${returncode}
+  # result contains hex, complete
 }
