@@ -508,14 +508,19 @@ main() {
           break
           ;;
         psbt_begin_spend)
-          # ATTENTION: this will delete the wallet file as well,
-          # But this is safe, cause it's watch only
-          # POST http://192.168.111.152:8080/psbt_begin_spend
           # BODY {"address":"tb1qceytj4vfrg22cy7mp5mnfps4ffgseas29mddjp", "amount":0.000005 }
 
           # curl -v -d "{\"address\":\"tb1qceytj4vfrg22cy7mp5mnfps4ffgseas29mddjp\", \"amount\":0.000005 }" localhost:8888/v0/psbt_begin_spend
 
           response=$(psbt_begin_spend_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        psbt_end_spend)
+          # BODY {"psbt":"<some psbt base64>"}
+
+          # curl -v -d "{\"psbt\":\"<some psbt base64>\"}" localhost:8888/v0/psbt_end_spend
+          response=$(psbt_end_spend_request "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

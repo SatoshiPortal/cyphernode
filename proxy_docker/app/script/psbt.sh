@@ -160,15 +160,15 @@ psbt_end_spend_request() {
   local data
   local request=${1}
   local psbtBase64=$(echo "${request}" | jq -r ".psbt")
-  trace "[psbt_begin_spend_request] psbtBase64=${psbtBase64}"
+  trace "[psbt_end_spend_request] psbtBase64=${psbtBase64}"
   local result
   local returncode
   local error
 
-  result=$(psbt_end_spend)
+  result=$(psbt_end_spend ${psbtBase64})
   returncode=$?
 
-  trace "[psbt_begin_spend_request] result=${result}"
+  trace "[psbt_end_spend_request] result=${result}"
 
   echo "$result"
   return $returncode
@@ -220,7 +220,7 @@ psbt_end_spend() {
     return 1
   fi
 
-  local complete=$(echo "$result" | jq -r '.complete')
+  local complete=$(echo "$result" | jq -r '.result.complete')
 
   if [ "${complete}" == "true" ]; then
     # finalizepsbt
@@ -235,8 +235,8 @@ psbt_end_spend() {
       return 1
     fi
 
-    complete=$(echo "$result" | jq -r '.complete')
-    hex=$(echo "$result" | jq -r '.hex')
+    complete=$(echo "$result" | jq -r '.result.complete')
+    hex=$(echo "$result" | jq -r '.result.hex')
 
     trace "[psbt_end_spend] complete=${complete}"
     trace "[psbt_end_spend] hex=${hex}"

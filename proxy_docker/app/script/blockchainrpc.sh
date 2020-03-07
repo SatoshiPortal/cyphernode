@@ -128,7 +128,7 @@ sendrawtransaction() {
   local rawtxhex=${1}
   local result
   trace "[sendrawtransaction] rawtxhex=${rawtxhex}"
-  result=send_to_spender_node "{\"method\":\"sendrawtransaction\",\"params\":[\"${rawtxhex}\"]}"
+  result=$(send_to_spender_node "{\"method\":\"sendrawtransaction\",\"params\":[\"${rawtxhex}\"]}")
   trace "[sendrawtransaction] result=${result}"
   echo "$result"
   return $?
