@@ -20,11 +20,22 @@ psbt_enable_request() {
   trace "Entering psbt_enable_request()..."
   local returncode
   local request=${1}
+  local fingerprint=$(echo "${request}" | jq -er ".fingerprint")
   local pub32=$(echo "${request}" | jq -er ".pub32")
   local label=$(echo "${request}" | jq -er ".label")
   local rescan=$(echo "${request}" | jq -er ".rescan")
   local rescan_block_start=$(echo "${request}" | jq -er ".rescanBlockStart")
   local rescan_block_end=$(echo "${request}" | jq -er ".rescanBlockEnd")
+
+  if [ "${fingerprint}" == "" ]; then
+    echo '{"error":"no fingerprint"}'
+    return 1
+  fi
+
+  if [ "${pub32}" == "" ]; then
+    echo '{"error":"no xpub"}'
+    return 1
+  fi
 
   if [ "${rescan}" != "true" ]; then
     rescan=false
@@ -43,6 +54,7 @@ psbt_enable_request() {
   fi
 
   trace "[psbt_enable_request] request=${request}"
+  trace "[psbt_enable_request] fingerprint=${fingerprint}"
   trace "[psbt_enable_request] pub32=${pub32}"
   trace "[psbt_enable_request] label=${label}"
   trace "[psbt_enable_request] rescan=${rescan}"
@@ -51,7 +63,7 @@ psbt_enable_request() {
 
 
   local result
-  result=$(psbt_enable ${pub32} "psbt01" "${rescan}" "${rescan_block_start}" "${rescan_block_end}")
+  result=$(psbt_enable ${fingerprint} ${pub32} "psbt01" "${rescan}" "${rescan_block_start}" "${rescan_block_end}")
   returncode=$?
   trace_rc ${returncode}
   echo ${result}
@@ -256,24 +268,25 @@ psbt_enable() {
 
   trace "Entering psbt_enable()..."
 
-
-  local psbt_xpub=$1
+  local fingerprint=$1
+  local psbt_xpub=$2
 
   if [ "$psbt_xpub" == "" ]; then
     trace "[psbt_enable] no xpub to import."
     return 1;
   fi
 
-  local wallet_name=${2:-psbt01}
-  local rescan=${3}
+  local wallet_name=${3:-psbt01}
+  local rescan=${4}
 
   if [ "${rescan}" != true ]; then
     rescan=false
   fi
 
-  local rescan_block_start=${4:-0}
-  local rescan_block_end=${5:-0}
+  local rescan_block_start=${5:-0}
+  local rescan_block_end=${6:-0}
 
+  trace "[psbt_enable] fingerprint=${fingerprint}"
   trace "[psbt_enable] psbt_xpub=${psbt_xpub}"
   trace "[psbt_enable] wallet_name=${wallet_name}"
   trace "[psbt_enable] rescan=${rescan}"
@@ -319,7 +332,7 @@ psbt_enable() {
           rescan=false
         fi
         local result
-        result=$(watchdescriptor ${wallet_name} ${psbt_xpub} 0 callback0conf callback1conf psbt01 watchdescriptor true ${rescan} ${rescan_block_start} ${rescan_block_end})
+        result=$(watchdescriptor ${wallet_name} ${fingerprint} ${psbt_xpub} 0 callback0conf callback1conf psbt01 watchdescriptor true ${rescan} ${rescan_block_start} ${rescan_block_end})
         returncode=$((returncode+$?))
       else
         trace "[psbt_enable] Unexpected result from createwallet."

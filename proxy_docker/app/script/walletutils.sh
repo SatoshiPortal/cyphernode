@@ -287,12 +287,6 @@ backup_wallet() {
   done
 }
 
-fingerprint_from_pub32() {
-  local pub32=$1
-  echo -n "$pub32" | md5 | cut -c1-8
-  return $?
-}
-
 getwalletinfo() {
   trace "Entering getwalletinfo()..."
 

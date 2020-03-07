@@ -424,38 +424,40 @@ watchdescriptor() {
   local returncode
   local label=${1}
   trace "[watchdescriptor] label=${label}"
-  local pub32=${2}
+  local fingerprint=${2}
+  trace "[watchdescriptor] fingerprint=${fingerprint}"
+  local pub32=${3}
   trace "[watchdescriptor] pub32=${pub32}"
-  local nstart=${3}
+  local nstart=${4}
   trace "[watchdescriptor] nstart=${nstart}"
   local last_n=$((${nstart}+${XPUB_DERIVATION_GAP}))
   trace "[watchdescriptor] last_n=${last_n}"
-  local cb0conf_url=${4}
+  local cb0conf_url=${5}
   trace "[watchdescriptor] cb0conf_url=${cb0conf_url}"
-  local cb1conf_url=${5}
+  local cb1conf_url=${6}
   trace "[watchdescriptor] cb1conf_url=${cb1conf_url}"
-  local wallet_name=${6:-psbt01}
+  local wallet_name=${7:-psbt01}
   trace "[watchdescriptor] wallet_name=${wallet_name}"
-  local event_type=${7:-watchdescriptor}
+  local event_type=${8:-watchdescriptor}
   trace "[watchdescriptor] event_type=${event_type}"
-  local handlechange=${8:-false}
+  local handlechange=${9:-false}
   if [ "$handlechange" != "true" ]; then
     handlechange="false"
   fi
   trace "[watchdescriptor] handlechange=${handlechange}"
-  local rescan=${9:-false}
+  local rescan=${10:-false}
   if [ "$rescan" != "true" ]; then
     rescan="false"
   fi
   trace "[watchdescriptor] rescan=${rescan}"
-  local rescan_block_start=${10}
+  local rescan_block_start=${11}
   trace "[watchdescriptor] rescan_block_start=${rescan_block_start}"
-  local rescan_block_end=${11}
+  local rescan_block_end=${12}
   trace "[watchdescriptor] rescan_block_end=${rescan_block_end}"
 
 
   # upto_n is used when extending the watching window
-  local upto_n=${12}
+  local upto_n=${13}
   trace "[watchdescriptor] upto_n=${upto_n}"
 
   local id_inserted
@@ -469,11 +471,6 @@ watchdescriptor() {
     # If upto_n provided, then we create from nstart to upto_n (instead of + GAP)
     last_n=${upto_n}
   fi
-
-  # compute fingerprint from pub32. we dont have the fingerprint information
-  # it should not matter. SHOULD... TODO: check if this really is ok
-
-  local fingerprint=$(fingerprint_from_pub32 $pub32)
 
   # call getdescriptorinfo to get checksum of descriptor for the addresses
   local descriptor
