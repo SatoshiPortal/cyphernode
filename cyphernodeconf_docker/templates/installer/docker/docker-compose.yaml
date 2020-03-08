@@ -362,7 +362,8 @@ services:
     entrypoint: sh -c 'sleep 25 ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 20 ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
     volumes:
       - "<%= wasabi_datapath %>/backend:/root/.walletwasabi/backend"
-      - container_monitor:/container_monitor
+      - container_monitor:/container_monitor:ro
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
     <% if (docker_mode == 'compose') { %>
@@ -381,7 +382,8 @@ services:
     entrypoint: sh -c 'sleep <%= (index+1) * 20 + 11 %> ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep <%= index * 20 + 10 %> ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
     volumes:
       - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
-      - container_monitor:/container_monitor
+      - container_monitor:/container_monitor:ro
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
     <% if (docker_mode == 'compose') { %>
