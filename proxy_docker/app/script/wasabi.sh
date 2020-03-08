@@ -3,11 +3,11 @@
 #
 # USEFUL
 #
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -sd "{\"id\":$i,\"private\":false}" localhost:8888/wasabi_getbalance); done'
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -sd "{\"instanceId\":$i,\"private\":false}" localhost:8888/wasabi_getbalance); done'
 #
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"getnewaddress\",\"params\":[\"a\"]}" http://wasabi_$i:18099/); done'
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"getnewaddress\",\"params\":[\"a\"]}" http://wasabi_$i:18099/); done'
 #
-# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 4`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"listunspentcoins\",\"params\":[]}" http://wasabi_$i:18099/); done'
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"listunspentcoins\",\"params\":[]}" http://wasabi_$i:18099/); done'
 #
 # docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm
 # while true; do docker exec -it `docker ps -q -f name=bitcoin` bitcoin-cli -rpcwallet=wasabi_backend.dat generatetoaddress 1 bcrt1qh6wf7mm67dyve2t7jwmpt5xv7h360feaxxa8cm; sleep 120; done
@@ -70,7 +70,7 @@ wasabi_newaddr() {
 
   # wasabi rpc: getnewaddress
   # optional args:
-  # - {"label":"Pay #12 for 2018"}
+  # - {"instanceId":0,"label":"Pay #12 for 2018"}
 
   # queries random instance for a new bech32 address
   # returns {"jsonrpc":"2.0","result":{"address":"tb1qpgpe7mdhdpgz6894vl5a2rhvhukwjc35h99rqc","keyPath":"84'/0'/0'/0/24","label":"blah","publicKey":"024eaa964530e5a72059951cdab8d22c5df7543536b011a8bab85bc1f6089654d9","p2wpkh":"00140a039f6db768502d1cb567e9d50eecbf2ce96234"},"id":"12"}
@@ -101,8 +101,16 @@ wasabi_newaddr() {
     label='"unknown"'
   fi
   trace "[wasabi_newaddr] label=${label}"
+  local instanceid
+  instanceid=$(echo "${request}" | jq -e ".instanceId")
+  if [ "$?" -ne "0" ] || [ "${instanceid}" -ge "${WASABI_INSTANCE_COUNT}" ] || [ "${instanceid}" -lt "0" ]; then
+    # instanceId tag null, so there's no instanceId
+    trace "[wasabi_newaddr] instanceId not supplied or out of range, choosing a random one..."
+    instanceid=$(random_wasabi_index)
+  fi
+  trace "[wasabi_newaddr] instanceid=${instanceid}"
 
-  response=$(send_to_wasabi $(random_wasabi_index) getnewaddress "[${label}]")
+  response=$(send_to_wasabi ${instanceid} getnewaddress "[${label}]")
   returncode=$?
   trace_rc ${returncode}
 
