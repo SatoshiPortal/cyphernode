@@ -22,6 +22,28 @@ elements_watchrequest() {
   local result
   trace "[elements_watchrequest] Watch request on address (\"${address}\"), assetId (${assetid}), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
 
+  local isvalid
+  isvalid=$(elements_validateaddress "${address}" | jq ".result.isvalid")
+  if [ "${isvalid}" != "true" ]; then
+    result="{
+      \"result\":null,
+      \"error\":{
+      \"code\":-5,
+      \"message\":\"Invalid address\",
+      \"data\":{
+      \"event\":\"watch\",
+      \"address\":\"${address}\",
+      \"assetId\":${assetid},
+      \"unconfirmedCallbackURL\":${cb0conf_url},
+      \"confirmedCallbackURL\":${cb1conf_url},
+      \"eventMessage\":${event_message}}}}"
+    trace "[elements_watchrequest] Invalid address"
+
+    echo "${result}"
+
+    return 1
+  fi
+
   result=$(elements_importaddress_rpc ${address})
   returncode=$?
   trace_rc ${returncode}
