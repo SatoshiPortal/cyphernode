@@ -21,6 +21,28 @@ watchrequest() {
   local result
   trace "[watchrequest] Watch request on address (\"${address}\"), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
 
+  local isvalid
+  isvalid=$(validateaddress "${address}" | jq ".result.isvalid")
+  if [ "${isvalid}" != "true" ]; then
+    result="{
+      \"result\":null,
+      \"error\":{
+      \"code\":-5,
+      \"message\":\"Invalid address\",
+      \"data\":{
+      \"event\":\"watch\",
+      \"address\":\"${address}\",
+      \"unconfirmedCallbackURL\":${cb0conf_url},
+      \"confirmedCallbackURL\":${cb1conf_url},
+      \"eventMessage\":${event_message}}}}"
+    trace "[watchrequest] Invalid address"
+    trace "[watchrequest] responding=${result}"
+
+    echo "${result}"
+
+    return 1
+  fi
+
   result=$(importaddress_rpc ${address})
   returncode=$?
   trace_rc ${returncode}
@@ -54,7 +76,7 @@ watchrequest() {
   fees144blocks=$(getestimatesmartfee 144)
   trace_rc $?
 
-  local data="{\"id\":\"${id_inserted}\",
+  result="{\"id\":\"${id_inserted}\",
   \"event\":\"watch\",
   \"imported\":\"${imported}\",
   \"inserted\":\"${inserted}\",
@@ -66,9 +88,9 @@ watchrequest() {
   \"estimatesmartfee36blocks\":\"${fees36blocks}\",
   \"estimatesmartfee144blocks\":\"${fees144blocks}\",
   \"eventMessage\":${event_message}}"
-  trace "[watchrequest] responding=${data}"
+  trace "[watchrequest] responding=${result}"
 
-  echo "${data}"
+  echo "${result}"
 
   return ${returncode}
 }
