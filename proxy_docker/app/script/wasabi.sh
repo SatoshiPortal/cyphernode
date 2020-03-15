@@ -4,6 +4,7 @@
 # USEFUL
 #
 # docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -sd "{\"instanceId\":$i,\"private\":false}" localhost:8888/wasabi_getbalance); done'
+# docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -sd "{\"instanceId\":$i}" localhost:8888/wasabi_getnewaddress); done'
 #
 # docker exec -it `docker ps -q -f "name=cyphernode_proxy\."` sh -c 'for i in `seq 0 1`; do echo $i: $(curl -s -u "wasabi:CHANGEME" -d "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"method\":\"getnewaddress\",\"params\":[\"a\"]}" http://wasabi_$i:18099/); done'
 #
@@ -51,7 +52,7 @@ send_to_wasabi() {
   trace "[send_to_wasabi] response=${response}"
 
   echo "${response}"
-  return $?
+  return ${returncode}
 }
 
 # random_wasabi_index
@@ -121,116 +122,64 @@ wasabi_newaddr() {
 
   echo "${response}"
 
-  return $?
+  return ${returncode}
 }
 
-# wasabi_get_balance <request>
-# request: JSON object with "id" and/or "private" properties: {"id":1,"private":true}
-# id: wasabi instance id, optional.  If not supplied, will add every instance balances
-# private: boolean, returns mixed balance only (anonymitySet > threshold) or not.  Default false.
-# returns balance in sats: {"balance":872634}
-wasabi_get_balance() {
-  trace "Entering wasabi_get_balance()..."
+# returns balance in sats: {"0":{"private":4100000,"total":12215179},"1":{"private":3600000,"total":20917754},"all":{"private":7700000,"total":33132933}}
+wasabi_getbalances() {
+  trace "Entering wasabi_getbalances()..."
 
-  # args:
-  # - id: integer, optional
-  # - private: boolean, optional, default=false
-  # returns the total balance of either
-  # - all wasabi instances
-  # - a single instance, when provide with an id
-  # takes a 'private' flag. if 'private' flag is set
-  # the balance will only return the unspent outputs
-  # which have an anon set of at least what is configured.
-  # if id is defined, it will return the balance of
-  # the wasabi instance with id <id>, else it will
-  # return the balance of all instances
-
-  # {"id":1,"private":true}
-  # {"private":true}
-  # {}
-
-  # Tests:
-  # /proxy # curl -s -d "" proxy:8888/wasabi_getbalance | jq ".balance" ; echo $(($(curl -s -d "{\"id\":\"0\"}" proxy:8888/wasabi_getbalance | jq ".balance")+$(curl -s -d "{\"id\":\"1\"}" proxy:8888/wasabi_getbalance | jq ".balance")))
-  # 200650200
-  # 200650200
-  # /proxy # curl -s -d "{\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance" ; echo $(($(curl -s -d "{\"id\":\"0\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")+$(curl -s -d "{\"id\":\"1\",\"private\":true}" proxy:8888/wasabi_getbalance | jq ".balance")))
-  # 180653937
-  # 180653937
-
-  # {"jsonrpc":"2.0","result":[{"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},{"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/144","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}],"id":"0"}
-  #
-  # from
-  #
-  # {"jsonrpc":"2.0","result":
-  # [
-  # {"txid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f","index":1,"amount":1780644,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/736","address":"tb1qepkmlaannyaz2mad6eh6cm55waw4namah9499f"},
-  # {"txid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806","index":0,"amount":1999460,"anonymitySet":3,"confirmed":true,"label":"ZeroLink Mixed Coin","keyPath":"84'/0'/0'/1/44","address":"tb1qd0v6mswa4ldnr6l5kqsdaxww9lgf274kcydm4l"}
-  # ],
-  # "id":"0"}
-  #
-  # to
-  #
-  # [{"transactionid":"59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f", "index":1},{"transactionid":"e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806", "index":0}]
-  #
-  # jq -Mac ".result[] | select(.anonymitySet > 25) | [.txid, .index, .amount]"
-  #
-  # ["59356db335c19b2a7f55abd8e42bde10a171f5950ad65db83d7b7f0a2b28e42f",1,1780644]
-  # ["e6d8f0183d74fdee988c3072c9eb8c2263655de9fa38037f06e45adfedfdb806",0,1999460]
-  #
-  #
-  # echo '[{"a":1,"b":"aa"},{"a":5,"b":"bb"},{"a":6,"b":"cc"},{"a":3,"b":"dd"},{"a":9,"b":"ee"}]'
-  #
-
-
-
-  #curl -u "wasabi:CHANGEME" -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "payments":[{"sendto": "bcrt1q4vemf397tyuwdktqzhneux8r8v9dg65ydzgvla", "amount": 15000, "label": "test transaction", "subtractFee": true},{"sendto": "bcrt1q5jr80cyx62hhq5mhu8wa64jcamxytnr0lskm4g", "amount": 25000, "label": "test transaction", "subtractFee": true}], "coins":[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}], "feeTarget":2 }}' http://wasabi_2:18099/
-
-  #[{"transactionId":"117d79003bf2cab39d19181d366c481edb681c0cf326b7d06711755bb5e6db27","index":1}]
-
-  local request=${1}
-  trace "[wasabi_get_balance] request=${request}"
-
-  # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
-  local instanceid
-  local private
-  if [ "$(echo "${request}" | cut -d ' ' -f1)" = "GET" ]; then
-    instanceid="null"
-    private="null"
-  else
-    instanceid=$(echo "${request}" | jq ".instanceId")
-    private=$(echo "${request}" | jq ".private")
-  fi
-  trace "[wasabi_get_balance] instanceid=${instanceid}"
-  trace "[wasabi_get_balance] private=${private}"
-
+  local returncode
   local response
   local balance=0
+  local priv_bal=0
+  local total=0
+  local priv_total=0
+  local balances
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  if [ "${instanceid}" != "null" ]; then
-    minInstanceIndex=$instanceid
-    maxInstanceIndex=$instanceid
-  fi
-
-  trace "[wasabi_get_balance] minInstanceIndex=${minInstanceIndex}"
-  trace "[wasabi_get_balance] maxInstanceIndex=${maxInstanceIndex}"
+  trace "[wasabi_getbalances] WASABI_MIXUNTIL=${WASABI_MIXUNTIL}"
 
   for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
   do
     # wasabi rpc: listunspentcoins
     response=$(send_to_wasabi ${i} listunspentcoins "[]")
+    returncode=$?
+    trace_rc ${returncode}
 
-    if [ "${private}" = "true" ]; then
-      trace "[wasabi_get_balance] WASABI_MIXUNTIL=${WASABI_MIXUNTIL}"
-      balance=$((${balance}+$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${WASABI_MIXUNTIL}) | .amount) | add")))
-    else
-      balance=$((${balance}+$(echo "${response}" | jq ".result | map(.amount) | add")))
+    if [ "${returncode}" -ne "0" ]; then
+      return ${returncode}
     fi
-    trace "[wasabi_get_balance] balance=${balance}"
+
+    priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${WASABI_MIXUNTIL}) | .amount) | add")
+    balance=$(echo "${response}" | jq ".result | map(.amount) | add")
+
+    if [ "${priv_bal}" = "null" ]; then
+      priv_bal=0
+    fi
+    trace "[wasabi_getbalances] priv_bal ${i}=${priv_bal}"
+
+    priv_total=$((${priv_total}+${priv_bal}))
+    trace "[wasabi_getbalances] priv_total=${priv_total}"
+
+    if [ "${balance}" = "null" ]; then
+      balance=0
+    fi
+    trace "[wasabi_getbalances] balance ${i}=${balance}"
+
+    total=$((${total}+${balance}))
+    trace "[wasabi_getbalances] total=${total}"
+
+    if [ -z "${balances}" ]; then
+      balances="\"${i}\":{\"private\":${priv_bal},\"total\":${balance}}"
+    else
+      balances="${balances},\"${i}\":{\"private\":${priv_bal},\"total\":${balance}}"
+    fi
+    trace "[wasabi_getbalances] balances=${balances}"
   done
 
-  echo "{\"balance\":${balance},\"instanceId\":${instanceid},\"private\":${private}}"
+  echo "{${balances},\"all\":{\"private\":${priv_total},\"total\":${total}}}"
 
   return 0
 }
@@ -274,6 +223,9 @@ wasabi_batchprivatetospender() {
       response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"password\":\"\"}")
       returncode=$?
       trace_rc ${returncode}
+      if [ "${returncode}" -ne "0" ]; then
+        return ${returncode}
+      fi
     else
       trace "[wasabi_batchprivatetospender] NO mixed coins to spend!"
     fi
@@ -337,6 +289,11 @@ build_utxo_to_spend() {
   local amounts
 
   response=$(send_to_wasabi ${instanceid} listunspentcoins "[]")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne "0" ]; then
+    return ${returncode}
+  fi
 
   # We only want mixed coins with correct minimum anonymitySet and we'll spend only the confirmed one to avoid problems.
   utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index}")
@@ -510,6 +467,9 @@ wasabi_spend() {
     response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2,\"password\":\"\"}")
     returncode=$?
     trace_rc ${returncode}
+    if [ "${returncode}" -ne "0" ]; then
+      return ${returncode}
+    fi
   else
     response="{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"Not enough funds\"}"
   fi
@@ -580,7 +540,13 @@ wasabi_gettransactions() {
 
   for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
   do
-    response=$(send_to_wasabi ${i} gethistory "[]" | jq -Mc ".result")
+    response=$(send_to_wasabi ${i} gethistory "[]")
+    returncode=$?
+    trace_rc ${returncode}
+    if [ "${returncode}" -ne "0" ]; then
+      return ${returncode}
+    fi
+    response=$(echo "${response}" | jq -Mc ".result")
 
     if $first; then
       result="${response}"
