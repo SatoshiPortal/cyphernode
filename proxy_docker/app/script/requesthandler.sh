@@ -503,26 +503,10 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        wasabi_getbalance)
-          # args:
-          # - instanceId: integer, optional
-          # - private: boolean, optional, default=false
-          # returns the total balance of either
-          # - all wasabi instances
-          # - a single instance, when provide with an id
-          # takes a 'private' flag. if 'private' flag is set
-          # the balance will only return the unspent outputs
-          # which have an anon set of at least what is configured.
-          # if id is defined, it will return the balance of
-          # the wasabi instance with id <instanceId>, else it will
-          # return the balance of all instances
-          #
-          # POST http://192.168.111.152:8080/wasabi_getbalance
-          # BODY {"instanceId":1,"private":true}
-          # BODY {"private":true}
-          # Empty BODY: all instances, not private
+        wasabi_getbalances)
+          # GET http://192.168.111.152:8080/wasabi_getbalances
 
-          response=$(wasabi_get_balance "${line}")
+          response=$(wasabi_getbalances "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
