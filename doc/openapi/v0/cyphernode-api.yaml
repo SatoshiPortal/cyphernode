@@ -1093,6 +1093,8 @@ paths:
                 eventMessage:
                   description: "Will be part of the published message on spend"
                   type: "string"
+                confTarget:
+                  type: "number"
       responses:
         '200':
           description: "operation successful"

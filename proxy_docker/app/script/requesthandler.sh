@@ -283,7 +283,7 @@ main() {
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6}
 
           response=$(spend "${line}")
           response_to_client "${response}" ${?}
