@@ -72,7 +72,7 @@ spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\"}"
+    data="${data},\"hash\":\"${txid}\",\"details\":{\"firstseen\":${tx_ts_firstseen},\"amount\":${amount},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}"
 
     # Delete the temp file containing the raw tx (see above)
     rm spend-rawtx-${txid}.blob

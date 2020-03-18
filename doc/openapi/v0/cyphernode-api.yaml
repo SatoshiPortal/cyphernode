@@ -1110,6 +1110,8 @@ paths:
                     type: "string"
                   hash:
                     $ref: '#/components/schemas/TypeHashString'
+                  details:
+                    type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '405':

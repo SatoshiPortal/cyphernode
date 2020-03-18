@@ -656,7 +656,16 @@ Proxy response:
 ```json
 {
   "status": "accepted",
-  "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"
+  "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "details":
+  {
+    "firstseen": 1584568841,
+    "amount": 0.00233,
+    "size": 222,
+    "vsize": 141,
+    "replaceable": 0,
+    "fee": 0.00000141
+  }
 }
 ```
 
