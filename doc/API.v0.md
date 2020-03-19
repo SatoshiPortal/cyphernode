@@ -659,8 +659,9 @@ Proxy response:
   "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
   "details":
   {
-    "firstseen": 1584568841,
+    "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
     "amount": 0.00233,
+    "firstseen": 1584568841,
     "size": 222,
     "vsize": 141,
     "replaceable": 0,
