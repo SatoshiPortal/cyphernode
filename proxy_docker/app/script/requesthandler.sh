@@ -67,7 +67,8 @@ main() {
     if [ ${step} -eq 1 ]; then
       trace "[main] step=${step}"
       if [ "${http_method}" = "POST" ]; then
-        read -n ${content_length} line
+        read -rd '' -n ${content_length} line
+        line=$(echo "${line}" | jq -c)
         trace "[main] line=${line}"
       fi
       case "${cmd}" in

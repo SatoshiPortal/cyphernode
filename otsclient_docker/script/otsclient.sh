@@ -21,11 +21,11 @@ stamp() {
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[stamp] ${proxychains} ots-cli.js stamp -c \"https://ots.testnet.kexkey.com\" -d ${hash}"
-    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -c 'https://ots.testnet.kexkey.com' -d ${hash} 2>&1")
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -c 'https://ots.testnet.kexkey.com' -d ${hash} 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
     trace "[stamp] ${proxychains} ots-cli.js stamp -d ${hash}"
-    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -d ${hash} 2>&1")
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -d ${hash} 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -71,11 +71,11 @@ upgrade() {
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[upgrade] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
-    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist upgrade -c 'https://testnet.calendar.kexkey.com/' ${hash}.ots 2>&1")
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist upgrade -c 'https://testnet.calendar.kexkey.com/' ${hash}.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
     trace "[upgrade] ${proxychains} ots-cli.js upgrade ${hash}.ots"
-    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js upgrade ${hash}.ots 2>&1")
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js upgrade ${hash}.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -129,11 +129,11 @@ verify() {
 
   if [ "${TESTNET}" -eq "1" ]; then
     trace "[verify] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1")
+    result=$(sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
     trace "[verify] ${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(sh -c "${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1")
+    result=$(sh -c "${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}
