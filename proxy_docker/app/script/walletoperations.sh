@@ -14,12 +14,17 @@ spend() {
   trace "[spend] amount=${amount}"
   local conf_target=$(echo "${request}" | jq ".confTarget")
   trace "[spend] confTarget=${conf_target}"
+  local replaceable=$(echo "${request}" | jq ".replaceable")
+  trace "[spend] replaceable=${replaceable}"
+  local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
+  trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",null,null,${conf_target}]}")
+  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -72,7 +77,7 @@ spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}"
+    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
 
     # Delete the temp file containing the raw tx (see above)
     rm spend-rawtx-${txid}.blob
