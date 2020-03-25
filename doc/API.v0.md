@@ -648,7 +648,7 @@ POST http://cyphernode:8888/spend
 with body...
 {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 or
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
 ```
 
 Proxy response:
@@ -664,8 +664,9 @@ Proxy response:
     "firstseen": 1584568841,
     "size": 222,
     "vsize": 141,
-    "replaceable": 0,
-    "fee": 0.00000141
+    "replaceable": true,
+    "fee": 0.00000141,
+    "subtractfeefromamount": false
   }
 }
 ```

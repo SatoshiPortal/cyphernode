@@ -1095,6 +1095,10 @@ paths:
                   type: "string"
                 confTarget:
                   type: "number"
+                replaceable:
+                  type: "boolean"
+                subtractfeefromamount:
+                  type: "boolean"
       responses:
         '200':
           description: "operation successful"
