@@ -14,6 +14,12 @@ elements_spend() {
   trace "[elements_spend] assetId=${assetid}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[elements_spend] amount=${amount}"
+  local conf_target=$(echo "${request}" | jq ".confTarget")
+  trace "[spend] confTarget=${conf_target}"
+  local replaceable=$(echo "${request}" | jq ".replaceable")
+  trace "[spend] replaceable=${replaceable}"
+  local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
+  trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
   local response
   local id_inserted
   local tx_details
@@ -21,9 +27,9 @@ elements_spend() {
   local returncode
 
   if [ "${assetid}" = "null" ]; then
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
   else
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",false,false,1,\"UNSET\",${assetid}]}")
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",${assetid}]}")
   fi
 
   returncode=$?
@@ -87,7 +93,7 @@ elements_spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"assetId\":${assetid},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}"
+    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"assetId\":${assetid},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
 
     # Delete the temp file containing the raw tx (see above)
     rm spend-rawtx-${txid}.blob
