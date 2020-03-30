@@ -33,7 +33,7 @@ web() {
   # jq -e will have a return code of 1 if the supplied tag is null.
   if [ "$?" -ne "0" ]; then
     # torbypass tag null
-    torbypass=false
+    torbypass=true
   fi
   trace "[web] torbypass=${torbypass}"
 
