@@ -6,7 +6,7 @@ notify_web() {
   trace "Entering notify_web()..."
 
   local url=${1}
-  local torbypass=${3}
+  local tor=${3}
 
   # Let's encode the body to base64 so we won't have to escape the special chars...
   local body=$(echo "${2}" | base64 | tr -d '\n')
@@ -17,8 +17,8 @@ notify_web() {
   local curl_code
   local msg
 
-  if [ -n "${torbypass}" ]; then
-    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\",\"torbypass\":${torbypass}}"
+  if [ -n "${tor}" ]; then
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\",\"tor\":${tor}}"
   else
     msg="{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}"
   fi
