@@ -67,7 +67,7 @@ arch_docker=${x86_docker}
 
 v1="v0"
 v2="v0.3"
-v3="v0.3.1"
+v3="v0.3.2"
 
 echo "\nBuilding Cyphernode Core containers\n"
 echo "arch_docker=$arch_docker\n"
