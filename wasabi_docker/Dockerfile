@@ -3,11 +3,12 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
-WORKDIR /WalletWasabi
+# Version v1.1.11 = c4e330245bc1cfada1f9a68ea53ead2bda175362
+RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi \
+ && cd WalletWasabi \
+ && git checkout c4e330245bc1cfada1f9a68ea53ead2bda175362
 
-# Version v1.1.10.3
-RUN git checkout d018d8278356a57049c9114ed61c82bc9ebb7268
+WORKDIR /WalletWasabi
 
 COPY WalletGenerator /WalletGenerator
 
@@ -35,6 +36,7 @@ RUN apk add --no-cache --update \
     expect \
     tor \
     icu \
+    curl \
  && mkdir -p ${APPDATA}/Wallets/
 
 COPY --from=builder /app /app
