@@ -515,6 +515,10 @@ ln_withdraw() {
   local destination=$(echo "${request}" | jq -r ".destination")
   local satoshi=$(echo "${request}" | jq -r ".satoshi")
   local feerate=$(echo "${request}" | jq -r ".feerate")
+  local all=$(echo "${request}" | jq -r ".all")
+  if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
+      satoshi="all"
+  fi
   result=$(./lightning-cli withdraw ${destination} ${satoshi} ${feerate}) 
   returncode=$?
   trace_rc ${returncode}
