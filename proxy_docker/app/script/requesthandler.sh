@@ -435,7 +435,7 @@ main() {
           ;;
         ln_withdraw)
           # POST http://192.168.111.152:8080/ln_withdraw
-          # BODY {"destination":"segwitAddress","satoshi":"100000","feerate":0}
+          # BODY {"destination":"segwitAddress","satoshi":"100000","feerate":0,all: false}
           response=$(ln_withdraw "${line}")
           response_to_client "${response}" ${?}
           break
