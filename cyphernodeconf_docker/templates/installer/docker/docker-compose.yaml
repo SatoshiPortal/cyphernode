@@ -123,8 +123,10 @@ services:
       - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
       - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
+      <% if ( features.indexOf('wasabi') !== -1 ) { %>
       - "WASABI_RPC_USER=<%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %>"
       - "WASABI_RPC_CFG=/tmp/wasabi_curlcfg.properties"
+      <% } %>
       - "PROXY_LISTENING_PORT=8888"
       - "DB_PATH=/proxy/db"
       - "DB_FILE=/proxy/db/proxydb"

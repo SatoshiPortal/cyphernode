@@ -22,10 +22,10 @@ newblock() {
   trace_rc ${returncode}
 
   do_callbacks_txid
-#  if [ "$(( $(od -An -N2 < /dev/urandom) % 5 ))" = "0" ]; then
+  if [ "$(( $(od -An -N2 < /dev/urandom) % 10 ))" = "0" ]; then
     trace "[newBlock] Let's try to spend mixed coins!"
     wasabi_batchprivatetospender
-#  else
-#    trace "[newblock] We won't try to spend mixed coins now, relax."
-#  fi
+  else
+    trace "[newblock] We won't try to spend mixed coins now, relax."
+  fi
 }
