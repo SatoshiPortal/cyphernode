@@ -171,6 +171,7 @@ checklnnode() {
   return 0
 }
 
+<% if ( features.indexOf('wasabi') !== -1 ) { %>
 <% for ( let index=0; index<wasabi_instance_count; index++ ) { %>
 checkwasabi_<%= index %>() {
   echo -en "\r\n\e[1;36mTesting Wasabi #<%= index %>... " > /dev/console
@@ -183,6 +184,7 @@ checkwasabi_<%= index %>() {
 
   return 0
 }
+<% } %>
 <% } %>
 
 checkservice() {
