@@ -1722,6 +1722,150 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_listfunds:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Get funds in Ln wallet"
+      description: "Calls listfunds from lightningd.  Returns list of funds in outputs and channels. Please check c-lightinig documentation for schema of outputs and channels"
+      operationId: "lightningListFunds"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items: 
+                  type: object
+                  properties:
+                    outputs:
+                      type: "array"
+                      items:
+                        type: object
+                    channels:
+                      type: "array"
+                      items:
+                        type: object
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ls_listpays:
+    get:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Gets list of payments made"
+      description: "Calls listpays from lightningd.  Returns list of payments made. Please refer to c-lighting documentation for payload of pays."
+      operationId: "lightningListPays"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pays:
+                    type: "array"
+                    items: 
+                      type: object
+
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_getroute/{nodeId}/{amount}/{riskFactor}:
+    get:
+      parameters:
+        - in: "path"
+          name: "nodeId"
+          description: "Ln nodeId to find route to. Can be 66 character nodeId or nodeId with address and port"
+          required: true
+          schema:
+            type: "string"
+        - in: "path"
+          name: "amount"
+          description: "Amount in MSAT needed to pass through the route"
+          required: true
+          schema:
+            type: "number"
+        - in: "path"
+          name: "riskFactor"
+          description: "Randomization/Fee combination to use when finding route. Refer to c-lighthing docs for more details"
+          required: false
+          schema:
+            type: "string"        
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Gets a viable payment route to nodeId for amount (satoshi)"
+      description: "Calls getroute from lightningd.  Returns an array of nodes presenting a possible route to nodeId based on the amount and risk factor supplied. Please refer to c-lighitings documentation for more details on riskfactor and returned payload schema"
+      operationId: "lightningGetRoute"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  route:
+                    type: "array"
+                    items: 
+                      type: object
+
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /ln_withdraw:
+    post:
+      tags:
+        - "lightning"
+        - "optional features"
+      summary: "Withdraw funds from c-lightning wallet to an address of choice."
+      description: "Withdraw outputs from c-lightning wallet to a destination of choice with confirmation targeting fees. Can either supply `saotshi` in SATS (integer), BTC (8 point decimal) or set `all` to true to withdraw all outputs. Please refer to c-lightining documentation on returned payload"
+      operationId: "LnWithdraw"
+      requestBody:
+        description: "Destination address, amounts and fees for withdraw"
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/LnWithdrawSatoshiAmountPayload'
+                - $ref: '#/components/schemas/LnWithdrawAllPayload'
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /ots_stamp:
     post:
       tags:
@@ -1991,7 +2135,7 @@ components:
         vout:
           type: "integer"
         fee:
-          type: "fee"
+          type: "number"
         confirmations:
           type: "integer"
         blockhash:
@@ -2344,6 +2488,40 @@ components:
       description: Not found
     ApiResponseInvalidInput:
       description: Invalid Input
+    LnWithdrawSatoshiAmountPayload:
+      type: "object"
+      properties:
+        destination:
+          type: string
+        satoshi:
+          type: number
+        feerate:
+          type: string
+          enum: 
+            - urgent
+            - normal
+            - slow
+      required:
+        - destination
+        - satoshi
+    LnWithdrawAllPayload:
+      type: "object"
+      properties:
+        destination:
+          type: string
+        all:
+          type: boolean
+          enum: 
+            - true
+        feerate:
+          type: string
+          enum: 
+            - urgent
+            - normal
+            - slow
+      required:
+        - destination
+        - all
   securitySchemes:
     BearerAuth:
       type: http
