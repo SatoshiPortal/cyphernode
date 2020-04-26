@@ -525,6 +525,17 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        wasabi_getunspentcoins)
+          # args:
+          # - instanceId: integer, optional
+          # return all unspent coins of either one wasabi instance
+          # or all instances, depending on the instanceId parameter
+
+          # Using new listunspentcoins
+          response=$(wasabi_getunspentcoins "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         wasabi_gettransactions)
           # args:
           # - instanceId: integer, optional
