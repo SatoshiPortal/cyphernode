@@ -562,3 +562,62 @@ wasabi_gettransactions() {
 
   return 0
 }
+wasabi_getunspentcoins() {
+  trace "Entering wasabi_getunspentcoins()..."
+
+  # args:
+  # - instanceId: integer, optional
+  # return all transactions of either one wasabi instance
+  # or all instances, depending on the instanceId parameter
+
+  # curl -s --data-binary '{"jsonrpc":"2.0","id":"1","method":"listunspentcoins"}' http:/127.0.0.1:18099
+  local request=${1}
+  trace "[wasabi_getunspentcoins] request=${request}"
+
+  # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+  local instanceid
+  if [ "$(echo "${request}" | cut -d ' ' -f1)" = "GET" ]; then
+    instanceid="null"
+  else
+    instanceid=$(echo "${request}" | jq ".instanceId")
+  fi
+  trace "[wasabi_getunspentcoins] instanceid=${instanceid}"
+
+  local first=true
+  local result
+  local response
+  local minInstanceIndex=0
+  local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+
+  if [ "${instanceid}" != "null" ]; then
+    minInstanceIndex=$instanceid
+    maxInstanceIndex=$instanceid
+  fi
+
+  trace "[wasabi_getunspentcoins] minInstanceIndex=${minInstanceIndex}"
+  trace "[wasabi_getunspentcoins] maxInstanceIndex=${maxInstanceIndex}"
+
+  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
+  do
+    response=$(send_to_wasabi ${i} listunspentcoins "[]")
+    returncode=$?
+    trace_rc ${returncode}
+    if [ "${returncode}" -ne "0" ]; then
+      return ${returncode}
+    fi
+    response=$(echo "${response}" | jq -Mc ".result")
+
+    if $first; then
+      result="${response}"
+      first=false
+    else
+      result="${result},${response}"
+    fi
+  done
+
+  result=$(echo "[$result]" | jq -Mc "add")
+
+  echo "{\"instanceId\":${instanceid},\"unspentcoins\":${result}}"
+
+  return 0
+}
