@@ -340,7 +340,7 @@ build_utxo_to_spend() {
 }
 
 # wasabi_spend <requesthandler_request_string>
-# requesthandler_request_string: JSON object with "id", "private", "amount" and "address" properties: {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+# requesthandler_request_string: JSON object with "id", "private", "amount" and "address" properties: {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", minanonset: 20 }
 # id: optional.  Will use first instance with enough funds, if not supplied.
 # returns wasabi rpc response as is
 wasabi_spend() {
@@ -353,6 +353,7 @@ wasabi_spend() {
   # - private: boolean, optional, default=false
   # - address: string, required
   # - amount: number, required
+  # - minanonset: number, optional, default=WASABI_MIXUNTIL
 
   # If no instance id supplied, will find the first with enough funds
   # There must be enough funds on at least one instance
@@ -416,6 +417,14 @@ wasabi_spend() {
   local private
   private=$(echo "${request}" | jq ".private")
   trace "[wasabi_spend] private=${private}"
+  
+  local minanonset
+  minanonset=$(echo "${request}" | jq ".minanonset")
+  # check minnonset provided and is valid number > 1 , otherwise fallback to config
+  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" < 1 ]]; then
+    minanonset=$WASABI_MIXUNTIL	
+  fi
+  trace "[wasabi_spend] minanonset=${minanonset}"
 
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
@@ -455,7 +464,7 @@ wasabi_spend() {
   if [ "${balance}" -ge "${spendingAmount}" ]; then
     if [ "${private}" = "true" ]; then
       trace "[wasabi_spend] Spending only private coins"
-      utxostring=$(build_utxo_to_spend ${spendingAmount} ${WASABI_MIXUNTIL} ${instanceid})
+      utxostring=$(build_utxo_to_spend ${spendingAmount} ${minanonset} ${instanceid})
     else
       trace "[wasabi_spend] Spending private and non-private coins"
       utxostring=$(build_utxo_to_spend ${spendingAmount} 0 ${instanceid})
