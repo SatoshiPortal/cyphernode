@@ -220,7 +220,7 @@ wasabi_batchprivatetospender() {
     #  trace "[wasabi_batchprivatetospender] balance=${balance}"
 
       # Call spend
-      response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"password\":\"\"}")
+      response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"batchprivatetospender-auto-send\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"password\":\"\"}")
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -ne "0" ]; then
