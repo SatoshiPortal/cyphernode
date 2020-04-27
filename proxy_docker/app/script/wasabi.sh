@@ -422,7 +422,7 @@ wasabi_spend() {
   local label
   label=$(echo "${request}" | jq -r ".label")
   # check if label provided
-  if [[ -z "${label}"  ]]; then
+  if [[ -z "${label}"  ]] || [[ "${label}" = "null" ]]; then
     label="tx"
   fi
   trace "[wasabi_spend] label=${label}"
