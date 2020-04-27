@@ -504,9 +504,9 @@ main() {
           break
           ;;
         wasabi_getbalances)
-          # GET http://192.168.111.152:8080/wasabi_getbalances
-
-          response=$(wasabi_getbalances "${line}")
+          # GET http://192.168.111.152:8080/wasabi_getbalances/{anonset}
+          # GET http://192.168.111.152:8080/wasabi_getbalances/87
+          response=$(wasabi_getbalances $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
           ;;
@@ -516,9 +516,11 @@ main() {
           # - private: boolean, optional, default=false
           # - address: string, required
           # - amount: number, required
+          # - minanonset: number, optional
+          # - label: number, string
           #
           # POST http://192.168.111.152:8080/wasabi_spend
-          # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+          # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90}
           # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
           response=$(wasabi_spend "${line}")
