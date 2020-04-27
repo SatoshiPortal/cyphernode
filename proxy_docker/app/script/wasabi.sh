@@ -138,8 +138,9 @@ wasabi_getbalances() {
   local balances
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+  local minanonset="${1-$WASABI_MIXUNTIL}"
 
-  trace "[wasabi_getbalances] WASABI_MIXUNTIL=${WASABI_MIXUNTIL}"
+  trace "[wasabi_getbalances] WASABI_MIXUNTIL=${minanonset}"
 
   for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
   do
@@ -152,7 +153,7 @@ wasabi_getbalances() {
       return ${returncode}
     fi
 
-    priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${WASABI_MIXUNTIL}) | .amount) | add")
+    priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${minanonset}) | .amount) | add")
     balance=$(echo "${response}" | jq ".result | map(.amount) | add")
 
     if [ "${priv_bal}" = "null" ]; then
@@ -402,7 +403,7 @@ wasabi_spend() {
   trace "[wasabi_spend] spendingAmount=${spendingAmount}"
 
   local address
-  address=$(echo "${request}" | jq ".address")
+  address=$(echo "${request}" | jq -r ".address")
   if [ "${address}" = "null" ]; then
     # address tag null but required
     trace "[wasabi_spend] address is required"
@@ -417,11 +418,19 @@ wasabi_spend() {
   local private
   private=$(echo "${request}" | jq ".private")
   trace "[wasabi_spend] private=${private}"
-  
+
+  local label
+  label=$(echo "${request}" | jq -r ".label")
+  # check if label provided
+  if [[ -z "${label}"  ]]; then
+    label="tx"
+  fi
+  trace "[wasabi_spend] label=${label}"
+
   local minanonset
   minanonset=$(echo "${request}" | jq ".minanonset")
   # check minnonset provided and is valid number > 1 , otherwise fallback to config
-  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" < 1 ]]; then
+  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" -lt 1 ]]; then
     minanonset=$WASABI_MIXUNTIL	
   fi
   trace "[wasabi_spend] minanonset=${minanonset}"
@@ -429,7 +438,7 @@ wasabi_spend() {
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  if [ "${spendingAmount}" != "null" ]; then
+  if [ "${instanceid}" != "null" ]; then
     minInstanceIndex=$instanceid
     maxInstanceIndex=$instanceid
   fi
@@ -437,31 +446,31 @@ wasabi_spend() {
   trace "[wasabi_spend] minInstanceIndex=${minInstanceIndex}"
   trace "[wasabi_spend] maxInstanceIndex=${maxInstanceIndex}"
 
-  local balance
-  local i
-  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
-  do
-    # {"id":1,"private":true}
-    balance=$(wasabi_get_balance "{\"instanceId\":$i,\"private\":${private}}")
-    returncode=$?
-    trace_rc ${returncode}
-
-    if [ "${returncode}" -eq "0" ]; then
-      trace "[wasabi_spend] balance=${balance}"
-      balance=$(echo "${balance}" | jq ".balance")
-      trace "[wasabi_spend] balance=${balance}"
-      if [ "${balance}" -ge "${spendingAmount}" ]; then
-        instanceid=$i
-        trace "[wasabi_spend] spendingAmount=${spendingAmount}"
-        break
-      fi
-    fi
-  done
-
+  balances=$(wasabi_getbalances "${minanonset}")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne "0" ]; then
+     return "${returncode}"
+  fi
+  trace "[wasabi_spend] balances=${balances}"
+  # .value.total or .value.private is needed ?
+  local balance_type
+  case "$private" in
+	   "true") balance_type="private" ;;
+	   *) balance_type="total" ;;
+  esac
+  trace "[wasabi_spend] spendingAmount=${spendingAmount} from balance type ${balance_type}"
+  # search balances for first entry with balance type (total, or private) >= spending amount that's withing instance bounds
+  instanceid=$(echo "$balances" | jq -r --arg btype "${balance_type}" --arg amount "${spendingAmount}" --arg min "${minInstanceIndex}" --arg max "${maxInstanceIndex}"  '
+  [
+    to_entries | .[] | select(
+       .value[$btype] >= ($amount | tonumber) and .key >= ($min | tostring)  and .key <= ($max | tostring)
+    )
+  ] | .[0].key')
   trace "[wasabi_spend] Using instance ${instanceid}"
 
   local utxostring
-  if [ "${balance}" -ge "${spendingAmount}" ]; then
+  if [ ! -z "${instanceid}" ] && [ "${instanceid}" != "null" ]; then
     if [ "${private}" = "true" ]; then
       trace "[wasabi_spend] Spending only private coins"
       utxostring=$(build_utxo_to_spend ${spendingAmount} ${minanonset} ${instanceid})
@@ -473,7 +482,7 @@ wasabi_spend() {
     utxostring="[$(echo "${utxostring}" | cut -d '[' -f2)"
 
     # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
-    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"tx\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2,\"password\":\"\"}")
+    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"${label}\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2,\"password\":\"\"}")
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -ne "0" ]; then
