@@ -1764,7 +1764,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-  /ls_listpays:
+  /ln_listpays:
     get:
       tags:
         - "lightning"
@@ -1847,7 +1847,7 @@ paths:
         - "lightning"
         - "optional features"
       summary: "Withdraw funds from c-lightning wallet to an address of choice."
-      description: "Withdraw outputs from c-lightning wallet to a destination of choice with confirmation targeting fees. Can either supply `saotshi` in SATS (integer), BTC (8 point decimal) or set `all` to true to withdraw all outputs. Please refer to c-lightining documentation on returned payload"
+      description: "Withdraw outputs from c-lightning wallet to a destination of choice with confirmation targeting fees. Can either supply `satoshi` in SATS (integer), BTC (8 point decimal) or set `all` to true to withdraw all outputs. Please refer to c-lightining documentation on returned payload"
       operationId: "LnWithdraw"
       requestBody:
         description: "Destination address, amounts and fees for withdraw"
