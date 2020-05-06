@@ -132,9 +132,13 @@ wasabi_getbalances() {
   local returncode
   local response
   local balance=0
+  local rcvd_0conf=0
+  local mixing=0
   local priv_bal=0
   local total=0
   local priv_total=0
+  local rcvd_0conf_total=0
+  local mixing_total=0
   local balances
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
@@ -153,9 +157,25 @@ wasabi_getbalances() {
       return ${returncode}
     fi
 
-    priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${minanonset}) | .amount) | add")
-    balance=$(echo "${response}" | jq ".result | map(.amount) | add")
+    rcvd_0conf=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == false) | .amount) | add")
+    if [ "${rcvd_0conf}" = "null" ]; then
+      rcvd_0conf=0
+    fi
+    trace "[wasabi_getbalances] rcvd_0conf ${i}=${rcvd_0conf}"
 
+    rcvd_0conf_total=$((${rcvd_0conf_total}+${rcvd_0conf}))
+    trace "[wasabi_getbalances] rcvd_0conf_total=${rcvd_0conf_total}"
+
+    mixing=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == true or .anonymitySet > 1 and .anonymitySet < ${minanonset}) | .amount) | add")
+    if [ "${mixing}" = "null" ]; then
+      mixing=0
+    fi
+    trace "[wasabi_getbalances] mixing ${i}=${mixing}"
+
+    mixing_total=$((${mixing_total}+${mixing}))
+    trace "[wasabi_getbalances] mixing_total=${mixing_total}"
+
+    priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${minanonset}) | .amount) | add")
     if [ "${priv_bal}" = "null" ]; then
       priv_bal=0
     fi
@@ -164,6 +184,7 @@ wasabi_getbalances() {
     priv_total=$((${priv_total}+${priv_bal}))
     trace "[wasabi_getbalances] priv_total=${priv_total}"
 
+    balance=$(echo "${response}" | jq ".result | map(.amount) | add")
     if [ "${balance}" = "null" ]; then
       balance=0
     fi
@@ -173,14 +194,16 @@ wasabi_getbalances() {
     trace "[wasabi_getbalances] total=${total}"
 
     if [ -z "${balances}" ]; then
-      balances="\"${i}\":{\"private\":${priv_bal},\"total\":${balance}}"
+      balances="\"${i}\":{\"recvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
     else
-      balances="${balances},\"${i}\":{\"private\":${priv_bal},\"total\":${balance}}"
+      balances="${balances},\"${i}\":{\"recvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
     fi
     trace "[wasabi_getbalances] balances=${balances}"
   done
 
-  echo "{${balances},\"all\":{\"private\":${priv_total},\"total\":${total}}}"
+  balances="{${balances},\"all\":{\"recvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+  trace "[wasabi_getbalances] balances=${balances}"
+  echo "${balances}"
 
   return 0
 }
