@@ -194,14 +194,14 @@ wasabi_getbalances() {
     trace "[wasabi_getbalances] total=${total}"
 
     if [ -z "${balances}" ]; then
-      balances="\"${i}\":{\"recvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
+      balances="\"${i}\":{\"rcvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
     else
-      balances="${balances},\"${i}\":{\"recvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
+      balances="${balances},\"${i}\":{\"rcvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
     fi
     trace "[wasabi_getbalances] balances=${balances}"
   done
 
-  balances="{${balances},\"all\":{\"recvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+  balances="{${balances},\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
   trace "[wasabi_getbalances] balances=${balances}"
   echo "${balances}"
 
