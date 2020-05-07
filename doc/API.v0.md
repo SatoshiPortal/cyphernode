@@ -1173,7 +1173,6 @@ Proxy response:
 ```
 
 ### Get list of funds in unused outputs and channels from c-lightning
-
 Calls listfunds from lightningd. Returns the list of unused outputs and funds in open channels
 
 ```http
@@ -1190,31 +1189,31 @@ Proxy response:
       "output": 0,                                                                                         
       "value": 9551,
       "amount_msat": "9551000msat",
-      "address": "tb1qq0q9ass8cufr3y8cs9zqjslpt55tparj9kqze0",
+      "address": "tb1qq0....j9kqze0",
       "status": "confirmed",
       "blockheight": 1715749
     },
-    {...}                                               
+    {}                                               
   ],
   "channels": [
   {
-      "peer_id": "03f60f7369dd4dcff6a13d401b159e0bfc6aca34f05a93a8a897b75c7940a55bb9",
+      "peer_id": "03f60f736....34f05a93a8a897b75c7940a55bb9",
       "connected": true,
       "state": "CHANNELD_NORMAL",
-      "short_channel_id": "1667122x240x0",
+      "short_channel_id": "166...x0",
       "channel_sat": 100000,
       "our_amount_msat": "100000000msat",
       "channel_total_sat": 100000,
       "amount_msat": "100000000msat",
-      "funding_txid": "53cf8cd87fc0250954887afe84758b9ffd512f0c623083100c41c2e2b17887b3",
+      "funding_txid": "53cf8cd...0c41c2e2b17887b3",
       "funding_output": 0
     },
-    {...}
+    {}
 ]          
 ```
 ### Get the list of payments made by our node
-
-Calls listpays from lightningd.  Returns history of paid invoices
+Calls listpays from lightningd.
+Returns history of paid invoices
 
 ```http
 GET http://cyphernode:8888/ln_listpays
@@ -1227,22 +1226,23 @@ Proxy response:
   "pays":
   [
    {
-    "bolt11": "lntb10n1p0xjw9q....tlt0dfszcrlkv26swnt85pkwumkfmgaal8sa2awj2adajuzy82e0v6x8cqpzr2t8a",
+    "bolt11": "lntb10n1p0xjw9q....rlkv26swnt85pkwumkfmgaal8sa2awj2adajuzy82e0v6x8cqpzr2t8a",
     "status": "complete",
     "preimage": "1127e1fdb....54cc180e3d7",
     "amount_sent_msat": "1000msat"
-   },                                                                                                                          {...}
-   ]
+   },
+   {}
+  ]
 }
 ```
 
 ### Get an array of nodes that represent a possible route from our node to a given node for a given msatoshi payment amount
 
-Calls getroute from lightningd. Returns the list of unused outputs and funds in open channels
+Calls getroute from lightningd. Returns an array representing hops of nodes to get to the destination node from our node
 
 ```http
 GET http://cyphernode:8888/ln_getroute/<node_id>/<msatoshi>/<?riskfactor>
-GET http://cyphernode:8888/ln_getroute/0308dbd05278e5802dd36436a41b226824283526eb14a08d334cbbc878243b243c@ln.sifir.io/10000
+GET http://cyphernode:8888/ln_getroute/0308dbd05278e5802dd36436a41b226824283526eb14a08d334cbbc878243b243c/10000
 GET http://cyphernode:8888/ln_getroute/0308dbd05278e5802dd36436a41b226824283526eb14a08d334cbbc878243b243c@ln.sifir.io/10000/.2
 ```
 Proxy response:
@@ -1251,8 +1251,8 @@ Proxy response:
 { 
 "route": [
   {
-    "id": "03d5e17a3c213fe490e1b0c389f8cfcfcea08a29717d50a9f453735e0ab2a7c003",
-    "channel": "1669002x86x0",
+    "id": "03d5e17a3c2....a7c003",
+    "channel": "166....0",
     "direction": 0,
     "msatoshi": 21000,
     "amount_msat": "21000msat",
@@ -1260,8 +1260,8 @@ Proxy response:
     "style": "tlv"
   },
   {
-    "id": "038863cf8ab91046230f561cd5b386cbff8309fa02e3f0c3ed161a3aeb64a643b9",
-    "channel": "1666593x247x1",
+    "id": "038863cf8ab910....3b9",
+    "channel": "1666....x1",
     "direction": 1,
     "msatoshi": 21000,
     "amount_msat": "21000msat",
@@ -1269,8 +1269,8 @@ Proxy response:
     "style": "tlv"
   },
   {
-    "id": "03b4e78b999c4ff29508c5889f51852d9d5f04eae1e829e54010d26b49628b953f",
-    "channel": "1607984x3x1",
+    "id": "03b4e78b999c4ff....3f",
+    "channel": "160....1",
     "direction": 0,
     "msatoshi": 20000,
     "amount_msat": "20000msat",
@@ -1283,15 +1283,18 @@ Proxy response:
 
 ### Withdraw funds (outputs) from Lightning to an address of choice
 
-Calls withdraw from lightningd with address and payment parameters supplied. Returns the transaction as confirmation
-Feerate can be any of: 'normal', 'urgent', 'slow', defaults to 'normal'
-satoshi: can be either a 8 decimal digit representing the amount in BTC or an integer to represent the amount to withdraw in SATOSHI
-all: defaults to false but if set as 'true' will withdraw all funds in the lightning wallet.
+Calls withdraw on lightningd with address and payment parameters supplied.
+Withdraws funds to a destination address and Returns the transaction as confirmation.
+`feerate` can be any of: `normal`, `urgent`, `slow`, defaults to `normal`
+`satoshi` can be either a 8 decimal digit representing the amount in BTC or an integer to represent the amount to withdraw in SATOSHI
+`all`  defaults to `false` but if set as `true` will withdraw *all funds* in the lightning wallet.
+
 ```http
 POST http://192.168.111.152:8080/ln_withdraw
 BODY {"destination":"bc1.....xxx","satoshi":"100000","feerate":"normal","all": false}
 ```
 Proxy response:
+
 ```json
 {
   "tx":"0200000.......f3635e68d4e4fee800000000",
