@@ -157,7 +157,7 @@ wasabi_getbalances() {
       return ${returncode}
     fi
 
-    rcvd_0conf=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == false) | .amount) | add")
+    rcvd_0conf=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == false and .label != \"\") | .amount) | add")
     if [ "${rcvd_0conf}" = "null" ]; then
       rcvd_0conf=0
     fi
