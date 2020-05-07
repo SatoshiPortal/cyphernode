@@ -1285,9 +1285,9 @@ Proxy response:
 
 Calls withdraw on lightningd with address and payment parameters supplied.
 Withdraws funds to a destination address and Returns the transaction as confirmation.
-`feerate` can be any of: `normal`, `urgent`, `slow`, defaults to `normal`
-`satoshi` can be either a 8 decimal digit representing the amount in BTC or an integer to represent the amount to withdraw in SATOSHI
-`all`  defaults to `false` but if set as `true` will withdraw *all funds* in the lightning wallet.
+- `feerate` can be any of: `normal`, `urgent`, `slow`, defaults to `normal`
+- `satoshi` can be either a 8 decimal digit representing the amount in BTC or an integer to represent the amount to withdraw in SATOSHI
+- `all`  defaults to `false` but if set as `true` will withdraw *all funds* in the lightning wallet.
 
 ```http
 POST http://192.168.111.152:8080/ln_withdraw
