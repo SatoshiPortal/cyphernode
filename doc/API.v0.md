@@ -1209,8 +1209,10 @@ Proxy response:
       "funding_output": 0
     },
     {}
-]          
+  ]          
+}
 ```
+
 ### Get the list of payments made by our node
 Calls listpays from lightningd.
 Returns history of paid invoices
