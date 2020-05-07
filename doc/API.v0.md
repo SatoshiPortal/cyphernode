@@ -1179,33 +1179,34 @@ Calls listfunds from lightningd. Returns the list of unused outputs and funds in
 ```http
 GET http://cyphernode:8888/ln_listfunds
 ```
+
 Proxy response:
 
 ```json
 {
-   outputs: [                                                                                             
+   "outputs": [                                                                                             
     {                                               
-      "txid": 'd3a536efaa70671xxxxxxxxx8f349a3c326b79',
+      "txid": "d3a536efaa70671xxxxxxxxx8f349a3c326b79",
       "output": 0,                                                                                         
       "value": 9551,
-      "amount_msat": '9551000msat',
-      "address": 'tb1qq0q9ass8cufr3y8cs9zqjslpt55tparj9kqze0',
-      "status": 'confirmed',
+      "amount_msat": "9551000msat",
+      "address": "tb1qq0q9ass8cufr3y8cs9zqjslpt55tparj9kqze0",
+      "status": "confirmed",
       "blockheight": 1715749
     },
     {...}                                               
   ],
-  channels: [
+  "channels": [
   {
-      "peer_id": '03f60f7369dd4dcff6a13d401b159e0bfc6aca34f05a93a8a897b75c7940a55bb9',
+      "peer_id": "03f60f7369dd4dcff6a13d401b159e0bfc6aca34f05a93a8a897b75c7940a55bb9",
       "connected": true,
-      "state": 'CHANNELD_NORMAL',
-      "short_channel_id": '1667122x240x0',
+      "state": "CHANNELD_NORMAL",
+      "short_channel_id": "1667122x240x0",
       "channel_sat": 100000,
-      "our_amount_msat": '100000000msat',
+      "our_amount_msat": "100000000msat",
       "channel_total_sat": 100000,
-      "amount_msat": '100000000msat',
-      "funding_txid": '53cf8cd87fc0250954887afe84758b9ffd512f0c623083100c41c2e2b17887b3',
+      "amount_msat": "100000000msat",
+      "funding_txid": "53cf8cd87fc0250954887afe84758b9ffd512f0c623083100c41c2e2b17887b3",
       "funding_output": 0
     },
     {...}
@@ -1288,7 +1289,7 @@ satoshi: can be either a 8 decimal digit representing the amount in BTC or an in
 all: defaults to false but if set as 'true' will withdraw all funds in the lightning wallet.
 ```http
 POST http://192.168.111.152:8080/ln_withdraw
-BODY {"destination":"bc1.....xxx","satoshi":"100000","feerate":"normal",all: false}
+BODY {"destination":"bc1.....xxx","satoshi":"100000","feerate":"normal","all": false}
 ```
 Proxy response:
 ```json
