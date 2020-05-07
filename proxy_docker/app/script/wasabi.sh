@@ -320,11 +320,11 @@ build_utxo_to_spend() {
   fi
 
   # We only want mixed coins with correct minimum anonymitySet and we'll spend only the confirmed one to avoid problems.
-  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index}")
+  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index,amount}")
   trace "[build_utxo_to_spend] utxos=${utxos}"
 
   # We'll use this amount list to increase up to the amount to spend in the following loop.
-  amounts=$(echo "${response}" | jq -Mac '.result[].amount')
+  amounts=$(echo "${utxos}" | jq -Mac '.amount')
 
   local txid
   local index
