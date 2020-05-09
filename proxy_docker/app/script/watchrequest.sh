@@ -52,7 +52,7 @@ watchrequest() {
     imported=0
   fi
 
-  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message})"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT DO UPDATE SET watching=1, callback0conf=${cb0conf_url}, calledback0conf=0, callback1conf=${cb1conf_url}, calledback1conf=0, event_message=${event_message}"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
@@ -181,7 +181,7 @@ watchpub32() {
           sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=\"${pub32}\""
         else
           # Insert in our DB...
-          sql "INSERT OR REPLACE INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${last_n})"
+          sql "INSERT INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${last_n}) ON CONFLICT DO UPDATE SET watching=1, callback0conf=${cb0conf_url}, callback1conf=${cb1conf_url}"
         fi
         returncode=$?
         trace_rc ${returncode}
@@ -261,7 +261,7 @@ insert_watches() {
   done
 #  trace "[insert_watches] inserted_values=${inserted_values}"
 
-  sql "INSERT OR REPLACE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
+  sql "INSERT OR IGNORE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
   returncode=$?
   trace_rc ${returncode}
 
