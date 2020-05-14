@@ -157,6 +157,8 @@ wasabi_getbalances() {
       return ${returncode}
     fi
 
+    # When calling wasabi_getnewaddress, there's always a label ("unknown" when not specified) so we assume when a UTXO has
+    # a label, has an anonset of 1 and is unconfirmed, it is an unconfirmed deposit waiting to be confirmed to be part of a mix.
     rcvd_0conf=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == false and .label != \"\") | .amount) | add")
     if [ "${rcvd_0conf}" = "null" ]; then
       rcvd_0conf=0
@@ -166,7 +168,9 @@ wasabi_getbalances() {
     rcvd_0conf_total=$((${rcvd_0conf_total}+${rcvd_0conf}))
     trace "[wasabi_getbalances] rcvd_0conf_total=${rcvd_0conf_total}"
 
-    mixing=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == true or .anonymitySet > 1 and .anonymitySet < ${minanonset}) | .amount) | add")
+    # When calling wasabi_getnewaddress, there's always a label ("unknown" when not specified) so we assume when a UTXO has
+    # no label with an anonset less than MIXUNTIL, or is confirmed with an anonset of 1, it is ready to be part of a mix.
+    mixing=$(echo "${response}" | jq ".result | map(select(.anonymitySet == 1 and .confirmed == true or .label == \"\" and .anonymitySet < ${minanonset}) | .amount) | add")
     if [ "${mixing}" = "null" ]; then
       mixing=0
     fi
@@ -175,6 +179,7 @@ wasabi_getbalances() {
     mixing_total=$((${mixing_total}+${mixing}))
     trace "[wasabi_getbalances] mixing_total=${mixing_total}"
 
+    # As soon as a UTXO has an anonset of MIXUNTIL, it is considered private.
     priv_bal=$(echo "${response}" | jq ".result | map(select(.anonymitySet >= ${minanonset}) | .amount) | add")
     if [ "${priv_bal}" = "null" ]; then
       priv_bal=0
@@ -319,8 +324,8 @@ build_utxo_to_spend() {
     return ${returncode}
   fi
 
-  # We only want mixed coins with correct minimum anonymitySet and we'll spend only the confirmed one to avoid problems.
-  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset} and .confirmed) | {\"transactionId\": .txid,index,amount}")
+  # We only want mixed coins with correct minimum anonymitySet.
+  utxos=$(echo "${response}" | jq -Mac ".result[] | select(.anonymitySet >= ${anonset}) | {\"transactionId\": .txid,index,amount}")
   trace "[build_utxo_to_spend] utxos=${utxos}"
 
   # We'll use this amount list to increase up to the amount to spend in the following loop.

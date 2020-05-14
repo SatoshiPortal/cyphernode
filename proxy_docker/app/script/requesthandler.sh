@@ -831,6 +831,14 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        wasabi_spendprivate)
+          # GET http://192.168.111.152:8080/wasabi_spendprivate
+          # Useful to manually trigger an auto-spend
+
+          response=$(wasabi_batchprivatetospender)
+          response_to_client "${response}" ${?}
+          break
+          ;;
       esac
       response=$(echo "${response}" | jq -Mc)
       response_to_client "${response}" ${returncode}
