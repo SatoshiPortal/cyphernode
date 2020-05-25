@@ -252,7 +252,28 @@ wasabi_batchprivatetospender() {
   local toaddress
   local utxo_to_spend
   local balance
+  
+  # Check auto spend setting from cyphernode_props table
+  # null -> disable autospend
+  # 'spender' -> send mixed coins to spending wallet
+  # '*' -> if value is a label for one of our watching wallets, send to that --> Mix and auto send to your Trezor/Ledger :)
+  local wasabi_autospend=$(sql "SELECT value FROM cyphernode_props WHERE property LIKE 'wasabi_batchprivatetospender_walletlabel'")
+  trace "[wasabi_batchprivatetospender] spend to wallet setting: ${wasabi_autospend}"
+  # Null wasabi autospending setting means it's disabled
+  if [ "${wasabi_autospend}" -eq "null" ]; then
+     trace "[wasabi_batchprivatetospender] spend to wallet disabled: ${wasabi_autospend}"
+     return
+  else 
+  # Otherwise it's 'spender' to send it to the spending wallet or a label for one of our watching wallets
+     # FIXME this jq statment
+     matching_wallet="$(getactivewatches) | jq '. | select(.=='${wasabi_autospend}' or . =='spender')"
+     if [ "${matching_wallet}" -eq "null" ]; then
+         trace "[wasabi_batchprivatetospender] could not determine spending target wallet from settings, aborting"
+         return;
+     fi
+  fi
 
+  local address_index=1
   for instanceid in `seq 0 $((WASABI_INSTANCE_COUNT-1))`
   do
     # Get list of UTXO with anonymityset > configured threshold
@@ -264,8 +285,11 @@ wasabi_batchprivatetospender() {
 
     if [ "${amount}" -gt "0" ]; then
       trace "[wasabi_batchprivatetospender] We have mixed coins ready to consume!"
-
-      toaddress=$(getnewaddress | jq ".address")
+      # Get an address from the correct wallet
+      case "$wasabi_autospend" in
+	      "spender") toaddress="$(getnewaddress | jq '.address')" ;;
+	      *) toaddress="$(get_unused_addresses_by_watchlabel ${wasabi_autospend} | jq .label_unused_addresses[$((address_index++))].address)" ;;
+      esac
       trace "[wasabi_batchprivatetospender] toaddress=${toaddress}"
 
       utxo_to_spend="[$(echo "${utxo_to_spend}" | cut -d '[' -f2)"
