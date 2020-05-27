@@ -1,6 +1,6 @@
 FROM alpine:3.10.2
 
-ARG TOR_VER=0.4.1.6
+ARG TOR_VER=0.4.3.5
 ARG TORGZ=https://dist.torproject.org/tor-$TOR_VER.tar.gz
 
 RUN apk --no-cache add --update \
