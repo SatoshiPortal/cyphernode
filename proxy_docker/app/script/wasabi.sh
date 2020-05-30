@@ -247,38 +247,48 @@ wasabi_batchprivatetospender() {
   local returncode
   local instanceid=0
   local amount=0
-
-  # Get spender newaddress
   local toaddress
   local utxo_to_spend
   local balance
-  
+  local matching_wallet 
+  local address_index=1
+  local minanonset
   # Check auto spend setting from cyphernode_props table
-  # null -> disable autospend
-  # 'spender' -> send mixed coins to spending wallet
+  # '_disabled' -> disable autospend
+  # '_spender' -> send mixed coins to spending wallet
   # '*' -> if value is a label for one of our watching wallets, send to that --> Mix and auto send to your Trezor/Ledger :)
-  local wasabi_autospend=$(sql "SELECT value FROM cyphernode_props WHERE property LIKE 'wasabi_batchprivatetospender_walletlabel'")
-  trace "[wasabi_batchprivatetospender] spend to wallet setting: ${wasabi_autospend}"
-  # Null wasabi autospending setting means it's disabled
-  if [ "${wasabi_autospend}" -eq "null" ]; then
-     trace "[wasabi_batchprivatetospender] spend to wallet disabled: ${wasabi_autospend}"
-     return
-  else 
-  # Otherwise it's 'spender' to send it to the spending wallet or a label for one of our watching wallets
-     # FIXME this jq statment
-     matching_wallet="$(getactivewatches) | jq '. | select(.=='${wasabi_autospend}' or . =='spender')"
-     if [ "${matching_wallet}" -eq "null" ]; then
-         trace "[wasabi_batchprivatetospender] could not determine spending target wallet from settings, aborting"
-         return;
+  local wasabi_autospend_cfg=$(sql "SELECT value FROM cyphernode_props WHERE property LIKE 'wasabi_batchprivatetospender_cfg'")
+  trace "[wasabi_batchprivatetospender] spend to wallet setting: ${wasabi_autospend_cfg}"
+  # Maitain backward compatiblty by falling back on default behavoir if the config is not set in props table
+  if [ -n "${wasabi_autospend_cfg}" ]; then
+     # if cfg exists in prop and set to "_disbaled" wasabi autospending setting means it's disabled
+     if [ "${wasabi_autospend_cfg}" = "_disabled" ]; then
+        trace "[wasabi_batchprivatetospender] batch private send is disabled: ${wasabi_autospend_cfg}"
+        return
+     else 
+        # Otherwise it's '_spender' to send it to the spending wallet or a label for one of our watching wallets
+        [ "${wasabi_autospend_cfg}" = "_spender" ] && matching_wallet="_spender" || matching_wallet=$(getactivexpubwatches | jq --arg target "${wasabi_autospend_cfg}"  '.watches | .[] | select(.label==$target) | .label')
+        if [ -z "${matching_wallet}" ] || [ "${matching_wallet}" = "null" ]; then
+            trace "[wasabi_batchprivatetospender] could not determine spending target wallet from settings, aborting"
+            return;
+        fi
      fi
+  else
+     trace "[wasabi_batchprivatetospender] autospend cfg not detected, falling back to defaults"
+     matching_wallet="_spender"
   fi
 
-  local address_index=1
+  # allow for a dynamic mixuntil config too :)
+  local wasabi_autospend_minanonset=$(sql "SELECT value FROM cyphernode_props WHERE property LIKE 'wasabi_batchprivatetospender_minanonset'")
+  [ -n "${wasabi_autospend_minanonset}" ] && minanonset="${wasabi_autospend_minanonset}" || minanonset="${WASABI_MIXUNTIL}"
+
+  trace "[wasabi_batchprivatetospender] spending to wallet ${matching_wallet} using minanonset ${minanonset}"
+
   for instanceid in `seq 0 $((WASABI_INSTANCE_COUNT-1))`
   do
     # Get list of UTXO with anonymityset > configured threshold
     # build_utxo_to_spend <spendingAmount> <anonset> <instanceid>
-    utxo_to_spend=$(build_utxo_to_spend 0 ${WASABI_MIXUNTIL} ${instanceid})
+    utxo_to_spend=$(build_utxo_to_spend 0 ${minanonset} ${instanceid})
     # Amount is prefixed to utxostring, let's consider it
     amount=$(echo "${utxo_to_spend}" | cut -d '[' -f1)
     trace "[wasabi_batchprivatetospender] amount=${amount}"
@@ -286,11 +296,11 @@ wasabi_batchprivatetospender() {
     if [ "${amount}" -gt "0" ]; then
       trace "[wasabi_batchprivatetospender] We have mixed coins ready to consume!"
       # Get an address from the correct wallet
-      case "$wasabi_autospend" in
-	      "spender") toaddress="$(getnewaddress | jq '.address')" ;;
-	      *) toaddress="$(get_unused_addresses_by_watchlabel ${wasabi_autospend} | jq .label_unused_addresses[$((address_index++))].address)" ;;
+      case "$wasabi_autospend_cfg" in
+	      "_spender") toaddress="$(getnewaddress | jq '.address')" ;;
+	      *) toaddress=$(get_unused_addresses_by_watchlabel "${wasabi_autospend_cfg}" | jq --arg index "$((address_index++))" '.label_unused_addresses | .[($index| tonumber)].address') ;;
       esac
-      trace "[wasabi_batchprivatetospender] toaddress=${toaddress}"
+      trace "[wasabi_batchprivatetospender] toaddress=${toaddress} address_index=${address_index}"
 
       utxo_to_spend="[$(echo "${utxo_to_spend}" | cut -d '[' -f2)"
       trace "[wasabi_batchprivatetospender] utxo_to_spend=${utxo_to_spend}"

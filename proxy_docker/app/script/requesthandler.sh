@@ -21,6 +21,7 @@
 . ./ots.sh
 . ./newblock.sh
 . ./wasabi.sh
+. ./cyphernode_props.sh
 
 main() {
   trace "Entering main()..."
@@ -555,6 +556,21 @@ main() {
 
           response=$(wasabi_batchprivatetospender)
           response_to_client "${response}" ${?}
+          break
+          ;;
+        config_props)
+          # GET http://192.168.111.152:8080/config_props
+          # Get currently saved configs from propstable
+          if [ "$http_method" = "GET" ]; then		
+	        response=$(cyphernode_props_get_props)
+        	response_to_client "${response}" ${?}
+          # POST http://192.168.111.152:8080/config_props
+	  # body {"id": null | "property_id", "property": "how_big", "value": "6.15" }
+	  # Will updset (Insert or update) property with value,  depending if id already exists 
+	  elif [ "$http_method" = "POST" ] || [ "$http_method" = "PUT" ]; then
+	        response=$(cyphernode_props_upsert_prop "${line}")
+        	response_to_client "${response}" ${?}
+	  fi
           break
           ;;
       esac
