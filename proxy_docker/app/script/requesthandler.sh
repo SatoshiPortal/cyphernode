@@ -544,9 +544,16 @@ main() {
           # - instanceId: integer, optional
           # return all transactions of either one wasabi instance
           # or all instances, depending on the instanceId parameter
+	  # - txnFilterInternal = true, optional , will only return transcations having a label (label != '')
 
-          # Using new gethistory
-          response=$(wasabi_gettransactions "${line}")
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          local instanceid
+	  local filter_internal
+          if [ "$http_method" = "POST" ]; then
+            instanceid=$(echo "${line}" | jq ".instanceId")
+            filter_internal=$(echo "${line}" | jq ".txnFilterInternal")
+          fi
+          response=$(wasabi_gettransactions "$instanceId" "$filter_internal")
           response_to_client "${response}" ${?}
           break
           ;;

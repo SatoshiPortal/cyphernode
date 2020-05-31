@@ -591,6 +591,9 @@ wasabi_gettransactions() {
   # - instanceId: integer, optional
   # return all transactions of either one wasabi instance
   # or all instances, depending on the instanceId parameter
+  # - filter: "true", optional
+  # wasbabi produces alot of internal txns that can quickly explode the json payload's size
+  # so if filter_no_label is provided, we only return txns that have a label (non internal)
 
   # curl -s --data-binary '{"jsonrpc":"2.0","id":"1","method":"gethistory"}' http:/127.0.0.1:18099
   # "jsonrpc": "2.0",
@@ -617,17 +620,9 @@ wasabi_gettransactions() {
   #     "tx": "6a2e99298dbbd201230a99e62ea584d7f63f62ad1de7166f24eb2e24867f6faf"
   #   },
 
-  local request=${1}
-  trace "[wasabi_gettransactions] request=${request}"
-
-  # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
-  local instanceid
-  if [ "$(echo "${request}" | cut -d ' ' -f1)" = "GET" ]; then
-    instanceid="null"
-  else
-    instanceid=$(echo "${request}" | jq ".instanceId")
-  fi
-  trace "[wasabi_gettransactions] instanceid=${instanceid}"
+  local instanceid=${1}
+  local filter_no_label=${2}
+  trace "[wasabi_gettransactions] instanceId=${instanceid}, filter_no_label=${filter_no_label}"
 
   local first=true
   local result
@@ -635,9 +630,12 @@ wasabi_gettransactions() {
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  if [ "${instanceid}" != "null" ]; then
+  # check instance id is an integer or null it
+  if [[ "${instanceid}" =~ ^[0-9]+$ ]]; then
     minInstanceIndex=$instanceid
     maxInstanceIndex=$instanceid
+  else
+    instanceid="null"
   fi
 
   trace "[wasabi_gettransactions] minInstanceIndex=${minInstanceIndex}"
@@ -651,8 +649,10 @@ wasabi_gettransactions() {
     if [ "${returncode}" -ne "0" ]; then
       return ${returncode}
     fi
-    response=$(echo "${response}" | jq -Mc ".result")
-
+    response=$(echo "${response}" | jq -Mc '.result')
+    if [ $filter_no_label = "true" ]; then
+        response=$(echo "${response}" | jq -rc 'map(select(.label != ""))')
+    fi
     if $first; then
       result="${response}"
       first=false
