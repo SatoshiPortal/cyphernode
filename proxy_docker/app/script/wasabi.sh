@@ -306,6 +306,8 @@ wasabi_batchprivatetospender() {
       trace "[wasabi_batchprivatetospender] utxo_to_spend=${utxo_to_spend}"
     #  balance=$(wasabi_get_balance "{\"id\":${instanceid},\"private\":true}")
     #  trace "[wasabi_batchprivatetospender] balance=${balance}"
+      dequeue_resp=$(send_to_wasabi ${instanceid} dequeue "{ \"coins\": ${utxo_to_spend} }")
+      trace "[wasabi_batchprivatetospender] dequeue utxo_to_spend_resp ${dequeue_resp}"
 
       # Call spend
       response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":${toaddress},\"amount\":${amount},\"label\":\"batchprivatetospender-auto-send\",\"subtractFee\":true}],\"coins\":${utxo_to_spend},\"feeTarget\":2,\"password\":\"\"}")
@@ -567,6 +569,8 @@ wasabi_spend() {
     fi
     # Amount is prefixed to utxostring, let's remove it
     utxostring="[$(echo "${utxostring}" | cut -d '[' -f2)"
+    dequeue_resp=$(send_to_wasabi ${instanceid} dequeue "{ \"coins\": ${utxostring} }")
+    trace "[wasabi_spend] dequeue utxos response ${dequeue_resp}"
 
     # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
     response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"${label}\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2,\"password\":\"\"}")
