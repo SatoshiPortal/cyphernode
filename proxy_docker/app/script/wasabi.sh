@@ -63,6 +63,20 @@ random_wasabi_index() {
   echo $(( $(od -An -N2 < /dev/urandom) % ${WASABI_INSTANCE_COUNT} ))
 }
 
+# smallest_balance_wasabi_index
+# returns instance where balance is the smallest between 0 and WASABI_INSTANCE_COUNT
+smallest_balance_wasabi_index() {
+  trace "Entering smallest_balance_wasabi_index()..."
+
+  balances=$(wasabi_getbalances)
+  trace "[smallest_balance_wasabi_index] balances=${balances}"
+
+  instanceid=$(echo "$balances" | jq -r "to_entries | min_by(.value.total) | .key")
+  trace "[smallest_balance_wasabi_index] Using instance ${instanceid}"
+
+  echo ${instanceid}
+}
+
 # wasabi_newaddr [requesthandler_request_string]
 # requesthandler_request_string: JSON object with a "label" property: {"label":"Pay #12 for 2018"}
 # returns wasabi rpc response as is
@@ -107,7 +121,7 @@ wasabi_newaddr() {
   if [ "$?" -ne "0" ] || [ "${instanceid}" -ge "${WASABI_INSTANCE_COUNT}" ] || [ "${instanceid}" -lt "0" ]; then
     # instanceId tag null, so there's no instanceId
     trace "[wasabi_newaddr] instanceId not supplied or out of range, choosing a random one..."
-    instanceid=$(random_wasabi_index)
+    instanceid=$(smallest_balance_wasabi_index)
   fi
   trace "[wasabi_newaddr] instanceid=${instanceid}"
 
@@ -153,8 +167,15 @@ wasabi_getbalances() {
     returncode=$?
     trace_rc ${returncode}
 
-    if [ "${returncode}" -ne "0" ]; then
-      return ${returncode}
+    echo "${response}" | jq -e ".error" > /dev/null
+    returncode=$((${returncode} + $?))
+    trace_rc ${returncode}
+
+    # "jq -e" returns 1 when error tag is null!
+    if [ "${returncode}" -ne "1" ]; then
+      # If this instance fails, skip it and ignore it
+      trace "[wasabi_getbalances] Instance $i is down or in error, skipping..."
+      continue
     fi
 
     # When calling wasabi_getnewaddress, there's always a label ("unknown" when not specified) so we assume when a UTXO has
@@ -206,7 +227,11 @@ wasabi_getbalances() {
     trace "[wasabi_getbalances] balances=${balances}"
   done
 
-  balances="{${balances},\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+  if [ -z "${balances}" ]; then
+    balances="{\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+  else
+    balances="{${balances},\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+  fi
   trace "[wasabi_getbalances] balances=${balances}"
   echo "${balances}"
 
