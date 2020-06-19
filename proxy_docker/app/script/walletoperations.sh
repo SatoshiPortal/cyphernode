@@ -44,7 +44,7 @@ spend() {
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
-    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -77,7 +77,7 @@ spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
+    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
 
     # Delete the temp file containing the raw tx (see above)
     rm spend-rawtx-${txid}-$$.blob
@@ -156,6 +156,7 @@ get_txns_spending() {
 
   return ${returncode}
 }
+
 getbalance() {
   trace "Entering getbalance()..."
 
@@ -293,113 +294,6 @@ getnewaddress() {
   return ${returncode}
 }
 
-addtobatching() {
-  trace "Entering addtobatching()..."
-
-  local address=${1}
-  trace "[addtobatching] address=${address}"
-  local amount=${2}
-  trace "[addtobatching] amount=${amount}"
-
-  sql "INSERT OR IGNORE INTO recipient (address, amount) VALUES (\"${address}\", ${amount})"
-  returncode=$?
-  trace_rc ${returncode}
-
-  return ${returncode}
-}
-
-batchspend() {
-  trace "Entering batchspend()..."
-
-  local data
-  local response
-  local recipientswhere
-  local recipientsjson
-  local id_inserted
-  local tx_details
-  local tx_raw_details
-
-  # We will batch all the addresses in DB without a TXID
-  local batching=$(sql 'SELECT address, amount FROM recipient WHERE tx_id IS NULL')
-  trace "[batchspend] batching=${batching}"
-
-  local returncode
-  local address
-  local amount
-  local notfirst=false
-  local IFS=$'\n'
-  for row in ${batching}
-  do
-    trace "[batchspend] row=${row}"
-    address=$(echo "${row}" | cut -d '|' -f1)
-    trace "[batchspend] address=${address}"
-    amount=$(echo "${row}" | cut -d '|' -f2)
-    trace "[batchspend] amount=${amount}"
-
-    if ${notfirst}; then
-      recipientswhere="${recipientswhere},"
-      recipientsjson="${recipientsjson},"
-    else
-      notfirst=true
-    fi
-
-    recipientswhere="${recipientswhere}\"${address}\""
-    recipientsjson="${recipientsjson}\"${address}\":${amount}"
-  done
-
-  response=$(send_to_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}]}")
-  returncode=$?
-  trace_rc ${returncode}
-  trace "[batchspend] response=${response}"
-
-  if [ "${returncode}" -eq 0 ]; then
-    local txid=$(echo "${response}" | jq -r ".result")
-    trace "[batchspend] txid=${txid}"
-
-    # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction ${txid} "spender")
-    tx_raw_details=$(get_rawtransaction ${txid})
-
-    # Amounts and fees are negative when spending so we absolute those fields
-    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
-    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
-    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
-    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
-    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
-    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
-    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
-    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    # Sometimes raw tx are too long to be passed as paramater, so let's write
-    # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > batchspend-rawtx-${txid}-$$.blob
-
-    # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('batchspend-rawtx-${txid}-$$.blob'))"
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq 0 ]; then
-      id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
-      trace "[batchspend] id_inserted: ${id_inserted}"
-      sql "UPDATE recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere})"
-      trace_rc $?
-    fi
-
-    data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\"}"
-
-    # Delete the temp file containing the raw tx (see above)
-    rm batchspend-rawtx-${txid}-$$.blob
-  else
-    local message=$(echo "${response}" | jq -e ".error.message")
-    data="{\"message\":${message}}"
-  fi
-
-  trace "[batchspend] responding=${data}"
-  echo "${data}"
-
-  return ${returncode}
-}
-
 create_wallet() {
   trace "[Entering create_wallet()]"
 
@@ -416,4 +310,3 @@ create_wallet() {
 
   return ${returncode}
 }
-

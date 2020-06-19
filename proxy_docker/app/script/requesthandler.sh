@@ -20,6 +20,7 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./newblock.sh
+. ./batching.sh
 
 main() {
   trace "Entering main()..."
@@ -300,18 +301,223 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        createbatch)
+          # POST http://192.168.111.152:8080/createbatch
+          #
+          # args:
+          # - batchLabel, optional, id can be used to reference the batch
+          # - confTarget, optional, overriden by batchspend's confTarget, default Bitcoin Core conf_target will be used if not supplied
+          # NOTYET - feeRate, sat/vB, optional, overrides confTarget if supplied, overriden by batchspend's feeRate, default Bitcoin Core fee policy will be used if not supplied
+          #
+          # response:
+          # - batchId, the batch id
+          #
+          # BODY {"batchLabel":"lowfees","confTarget":32}
+          # NOTYET BODY {"batchLabel":"highfees","feeRate":231.8}
+
+          response=$(createbatch "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        updatebatch)
+          # POST http://192.168.111.152:8080/updatebatch
+          #
+          # args:
+          # - batchId, optional, batch id to update, will update default batch if not supplied
+          # - batchLabel, optional, id can be used to reference the batch, will update default batch if not supplied, if id is present then change the label with supplied text
+          # - confTarget, optional, new confirmation target for the batch
+          # NOTYET - feeRate, sat/vB, optional, new feerate for the batch
+          #
+          # response:
+          # - batchId, the batch id
+          # - batchLabel, the batch label
+          # - confTarget, the batch default confirmation target
+          # NOTYET - feeRate, the batch default feerate
+          #
+          # BODY {"batchId":5,"confTarget":12}
+          # NOTYET BODY {"batchLabel":"highfees","feeRate":400}
+          # NOTYET BODY {"batchId":3,"label":"ultrahighfees","feeRate":800}
+          # BODY {"batchLabel":"fast","confTarget":2}
+
+          response=$(updatebatch "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         addtobatch)
           # POST http://192.168.111.152:8080/addtobatch
+          #
+          # args:
+          # - address, required, desination address
+          # - amount, required, amount to send to the destination address
+          # - outputLabel, optional, if you want to reference this output
+          # - batchId, optional, the id of the batch to which the output will be added, default batch if not supplied, overrides batchLabel
+          # - batchLabel, optional, the label of the batch to which the output will be added, default batch if not supplied
+          # - webhookUrl, optional, the webhook to call when the batch is broadcast
+          #
+          # response:
+          # - outputId, the id of the added output
+          # - nbOutputs, the number of outputs currently in the batch
+          # - oldest, the timestamp of the oldest output in the batch
+          # - pendingTotal, the current sum of the batch's output amounts
+          #
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
 
-          response=$(addtobatching $(echo "${line}" | jq -r ".address") $(echo "${line}" | jq ".amount"))
+          response=$(addtobatch "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        removefrombatch)
+          # POST http://192.168.111.152:8080/removefrombatch
+          #
+          # args:
+          # - outputId, required, id of the output to remove
+          #
+          # response:
+          # - outputId, the id of the removed output if found
+          # - nbOutputs, the number of outputs currently in the batch
+          # - oldest, the timestamp of the oldest output in the batch
+          # - pendingTotal, the current sum of the batch's output amounts
+          #
+          # BODY {"outputId":72}
+
+          response=$(removefrombatch "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
         batchspend)
-          # GET http://192.168.111.152:8080/batchspend
+          # POST http://192.168.111.152:8080/batchspend
+          #
+          # args:
+          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
+          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
+          # - confTarget, optional, overrides default value of createbatch, default to value of createbatch, default Bitcoin Core conf_target will be used if not supplied
+          # NOTYET - feeRate, optional, overrides confTarget if supplied, overrides default value of createbatch, default to value of createbatch, default Bitcoin Core value will be used if not supplied
+          #
+          # response:
+          # - txid, the transaction txid
+          # - hash, the transaction hash
+          # - nbOutputs, the number of outputs spent in the batch
+          # - oldest, the timestamp of the oldest output in the spent batch
+          # - total, the sum of the spent batch's output amounts
+          # - tx details: size, vsize, replaceable, fee
+          # - outputs
+          #
+          # {"result":{
+          #    "batchId":34,
+          #    "batchLabel":"Special batch for a special client",
+          #    "confTarget":6,
+          #    "nbOutputs":83,
+          #    "oldest":123123,
+          #    "total":10.86990143,
+          #    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "details":{
+          #      "firstseen":123123,
+          #      "size":424,
+          #      "vsize":371,
+          #      "replaceable":yes,
+          #      "fee":0.00004112
+          #    },
+          #    "outputs":{
+          #      "1abc":0.12,
+          #      "3abc":0.66,
+          #      "bc1abc":2.848,
+          #      ...
+          #    }
+          #  }
+          # },"error":null}
+          #
+          # BODY {}
+          # BODY {"batchId":34,"confTarget":12}
+          # NOTYET BODY {"batchLabel":"highfees","feeRate":233.7}
+          # BODY {"batchId":411,"confTarget":6}
 
           response=$(batchspend "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbatch)
+          # POST (GET) http://192.168.111.152:8080/getbatch
+          #
+          # args:
+          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
+          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
+          #
+          # response:
+          # {"result":{"batchId":1,"batchLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},"error":null}
+          #
+          # BODY {}
+          # BODY {"batchId":34}
+
+          response=$(getbatch "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbatchdetails)
+          # POST (GET) http://192.168.111.152:8080/getbatchdetails
+          #
+          # args:
+          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
+          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
+          # - txid, optional, if you want the details of an executed batch, supply the batch txid, will return current pending batch
+          #     if not supplied
+          #
+          # response:
+          # {"result":{
+          #    "batchId":34,
+          #    "batchLabel":"Special batch for a special client",
+          #    "confTarget":6,
+          #    "nbOutputs":83,
+          #    "oldest":123123,
+          #    "total":10.86990143,
+          #    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "details":{
+          #      "firstseen":123123,
+          #      "size":424,
+          #      "vsize":371,
+          #      "replaceable":yes,
+          #      "fee":0.00004112
+          #    },
+          #    "outputs":[
+          #      "1abc":0.12,
+          #      "3abc":0.66,
+          #      "bc1abc":2.848,
+          #      ...
+          #    ]
+          #  }
+          # },"error":null}
+          #
+          # BODY {}
+          # BODY {"batchId":34}
+
+          response=$(getbatchdetails "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        listbatches)
+          # curl (GET) http://192.168.111.152:8080/listbatches
+          #
+          # response:
+          # {"result":[
+          #   {"batchId":1,"batchLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},
+          #   {"batchId":2,"batchLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"pendingTotal":0.49827387},
+          #   {"batchId":3,"batchLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"pendingTotal":4.16843782}
+          #  ],
+          #  "error":null}
+
+          response=$(listbatches)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        bitcoin_estimatesmartfee)
+          # POST http://192.168.111.152:8080/bitcoin_estimatesmartfee
+          # BODY {"confTarget":2}
+
+          response=$(bitcoin_estimatesmartfee $(echo "${line}" | jq -r ".confTarget"))
           response_to_client "${response}" ${?}
           break
           ;;

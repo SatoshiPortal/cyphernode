@@ -64,9 +64,24 @@ CREATE TABLE recipient (
   address TEXT,
   amount REAL,
   tx_id INTEGER REFERENCES tx,
-  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP,
+  webhook_url TEXT,
+  calledback INTEGER DEFAULT FALSE,
+  calledback_ts INTEGER,
+  batch_id INTEGER REFERENCES batch,
+  label TEXT,
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
+CREATE INDEX idx_recipient_label ON recipient (label);
+
+CREATE TABLE batch (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT UNIQUE,
+  conf_target INTEGER,
+  feerate REAL,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO batch (id, label, conf_target, feerate) VALUES (1, "default", 6, NULL);
 
 CREATE TABLE watching_by_txid (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -103,3 +103,14 @@ validateaddress() {
   send_to_watcher_node "${data}"
   return $?
 }
+
+bitcoin_estimatesmartfee() {
+  trace "Entering bitcoin_estimatesmartfee()..."
+
+  local conf_target=${1}
+  trace "[bitcoin_estimatesmartfee] conf_target=${conf_target}"
+  local data="{\"method\":\"estimatesmartfee\",\"params\":[\"${conf_target}\"]}"
+  trace "[bitcoin_estimatesmartfee] data=${data}"
+  send_to_watcher_node "${data}"
+  return $?
+}

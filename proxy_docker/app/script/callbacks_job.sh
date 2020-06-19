@@ -45,7 +45,7 @@ do_callbacks() {
   done
 
   callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
-  trace "[do_callbacks LN] ln_callbacks=${callbacks}"
+  trace "[do_callbacks] ln_callbacks=${callbacks}"
 
   for row in ${callbacks}
   do
