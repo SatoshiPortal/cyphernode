@@ -1430,6 +1430,135 @@ Proxy response:
 }
 ```
 
+### Wasabi get a new address
+Queries random instance for a new bech32 address
+
+```http
+POST http://192.168.111.152:8080/wasabi_getnewaddress
+BODY {"label":"Pay #12 for 2018"}
+BODY {}
+```
+Empty BODY: Label will be "unknown"
+```json
+
+{
+  "address": "tb1q....xytp",
+  "keyPath": "84'/0'/0'/0/158",
+  "label": "[\"Sifir.io deposit\"]"
+}
+```
+
+### Wasabi Get instance balances
+
+```http
+GET http://192.168.111.152:8080/wasabi_getbalances/
+GET http://192.168.111.152:8080/wasabi_getbalances/87
+```
+ If anonset is provided, will return balances for UTXO's with anonset as their minimum Anonimity level.
+
+```json
+{
+  "0": { rcvd0conf: 0, mixing: 10862, private: 90193, total: 101055 },
+  "all": { rcvd0conf: 0, mixing: 10862, private: 90193, total: 101055 }
+}
+
+```
+### Wasabi spend
+
+Spend unused coins from Wasabi wallet
+```http
+POST http://192.168.111.152:8080/wasabi_spend
+BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90}
+BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+```
+- instanceId: integer, optional
+- private: boolean, optional, default=false
+- address: string, required
+- amount: number, required
+- minanonset: number, optional
+- label: number, string       
+
+```json
+
+
+```
+### Wasabi get unspent coins
+
+Return all unspent coins of either one wasabi instance or all instances, depending on the instanceId parameter
+
+```http
+GET http://192.168.111.152:8080/wasabi_getunspentcoins/{instanceId}
+```
+args:
+ - instanceId: integer, optional
+
+```json
+{                                                                                                        
+  instanceId: null,
+  unspentcoins: [{	                                                                                                    
+      "txid": "80e48f1.....022118d8",
+      "index": 0,     
+      "amount": 17701,   
+      "anonymitySet": 50,
+      "confirmed": true,
+      "label": '',                   
+      "keyPath": "84'/0'/0'/1/21443",                                                                      
+      "address": "tb1qe....p49z"
+}]
+}
+```
+
+### Wasabi get transactions
+
+```http
+POST http://192.168.111.152:8080/wasabi_gettransactions/
+BODY {"instanceId":1,"txnFilterInternal":true}
+```
+
+args:
+ - instanceId: integer, optional:  return all transactions of either one wasabi instance or all instances, depending on the instanceId parameter
+- txnFilterInternal = true, optional , will only return transcations having a label (label != '')
+
+```json
+{                                                                                                                                                                                                                  
+  "instanceId": null,                                                                                                                                                                                                
+  "transactions": [                                                                                                                                                                                                  
+    {                                                                                                                                                                                                              
+      "datetime": "2020-04-23T18:10:36+00:00",                                                                                                                                                                       
+      "height": 1721643,                                                                                                                                                                                             
+      "amount": 340000,                                                                                                                                                                                              
+      "label": "mytest",                                                                                                                                                                                             
+      "tx": "220850ec4d8a8daf6ebe9e74f4ab29ffca3392ff03a081c4915a83cb56b9e0e5"                                                                                                                                     
+    }]
+    
+}
+
+```
+
+### Wasabi trigger a spendprivate event
+Useful to manually trigger an auto-spend
+```http
+GET http://192.168.111.152:8080/wasabi_spendprivate
+```
+
+### Get, Insert or Update Cyphernode config props
+Get currently saved configs from propstable
+```
+GET http://192.168.111.152:8080/config_props
+```
+
+```json
+[
+ { "id": 0; "property": "_cyphernode_prop"; "value": "awesome"; "inserted_ts": 1593184586 }
+]
+```
+Insert or Update a Cyphernode prop property          
+```
+POST http://192.168.111.152:8080/config_props
+BODY { "property": "my_app_config" , "value" : "number go up"}
+```
+Get currently saved configs from propstable
+
 ### Get the OTS file of the supplied hash
 
 Returns the binary OTS file of the supplied hash.  If stamp is complete, will return a complete OTS file, or an incomplete OTS file otherwise.
