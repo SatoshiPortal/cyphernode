@@ -505,6 +505,8 @@ main() {
           break
           ;;
         wasabi_getbalances)
+          # Get wasabi instance balances 
+          # If anonset is provided, will return balances for UTXO's with anonset as their minimum Anonimity level.
           # GET http://192.168.111.152:8080/wasabi_getbalances/{anonset}
           # GET http://192.168.111.152:8080/wasabi_getbalances/87
           response=$(wasabi_getbalances $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
@@ -533,8 +535,9 @@ main() {
           # - instanceId: integer, optional
           # return all unspent coins of either one wasabi instance
           # or all instances, depending on the instanceId parameter
+          # POST http://192.168.111.152:8080/wasabi_getunspentcoins
+          # BODY {"instanceId":1}
 
-          # Using new listunspentcoins
           response=$(wasabi_getunspentcoins "${line}")
           response_to_client "${response}" ${?}
           break
