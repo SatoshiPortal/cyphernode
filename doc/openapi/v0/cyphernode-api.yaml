@@ -1811,7 +1811,7 @@ paths:
         - in: "path"
           name: "riskFactor"
           description: "Randomization/Fee combination to use when finding route. Refer to c-lighthing docs for more details"
-          required: false
+          required: true
           schema:
             type: "string"        
       tags:
@@ -1874,6 +1874,303 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /wasabi_getnewaddress:
+    post:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Get a new labeled address from Wasabi wallet"
+      description: "Gets a new labeled address from the Wasabi wallet"
+      operationId: "WasabiNewAddress"
+      requestBody:
+        description: "JSON object with the label for the address"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "label"
+              properties:
+                label:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  address::
+                    type: "string"
+                  keyPath:
+                    type: "string"
+                  label:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'                
+  /wasabi_getbalances/{minanonset}:
+    get:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Get Balances"
+      description: "Get Wasabi balances based on minimum anonset"
+      operationId: "WasabiGetBalances"
+      parameters:
+        - in: "path"
+          name: "minanonset"
+          description: "The minimum anonset level for UTXO's to factor into balance calculation"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /wasabi_spend:
+    post:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Spend mixed coins"
+      description: "Spend mixed coins with a certain anonimity level"
+      operationId: "WasabiSpend"
+      requestBody:
+        description: "JSON object with spend parameters"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "address"
+                - "amount"
+              properties:
+                  instanceId:
+                    type: "number"
+                  private::
+                    type: "boolean"
+                  address:
+                    type: "string"
+                  amount:
+                    type: "number"
+                  minanonset:
+                    type: "number"
+                  label:
+                    type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  message:
+                    type: "string"
+                  result:
+                    type: "object"
+                    properties:
+                      txid:
+                        type: "string"
+                      tx: 
+                        type: "string"
+                  event:
+                    type: "string"
+                    
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable' 
+  /wasabi_getunspentcoins/{instanceid}:
+    get:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Returns unspent coins"
+      description: "Return all unspent coins of either one wasabi instance or all instances, depending on the instanceId parameter"
+      operationId: "WasabiGetUnspentcoins"
+      parameters:
+        - in: "path"
+          name: "instanceid"
+          description: "The instance id to return unspentcoins for"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  instanceId:
+                    type: "number"
+                  unspentcoins:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable' 
+  /wasabi_gettransactions/:
+    post:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Returns transctions"
+      description: "Return all transactions of either one wasabi instance or all instances, depending on the instanceId parameter, txnFilterInternal = true, optional , will only return transcations having a label (label != '')"
+      operationId: "WasabiGetTransactions"
+      requestBody:
+        description: "JSON object with spend parameters"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                  instanceId:
+                    type: "number"
+                  txnFilterInternal:
+                    type: "boolean"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  instanceId:
+                    type: "number"
+                  transactions:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable' 
+  /wasabi_spendprivate/:
+    get:
+      tags:
+        - "wasabi"
+        - "optional features"
+      summary: "Force an auto spend operation"
+      description: "Useful to manually trigger an auto-spend"
+      operationId: "WasabiSpendPrivate"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable' 
+  /config_props:
+    get:
+      tags:
+        - "config"
+        - "core features"
+      summary: "Get Cyphernode config props stored in DB"
+      description: "Gets config props from Cyphernode's DB"
+      operationId: "CnGetConfigProps"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      type: "number"
+                    property:
+                      type: "string"
+                    value:
+                      type: "number"
+                    inserted_ts:
+                      type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+    post:
+      tags:
+        - "config"
+        - "core features"
+      summary: "Upsert a new config props into Cyphernode's DB"
+      description: "Insert a new config prop into Cyphernode's DB, if the 'property' already exists then it will be updated with the new 'value' "
+      operationId: "CnSetConfigProp"
+      requestBody:
+        description: "JSON object with spend parameters"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                property:
+                  type: "string"
+                value:
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable' 
   /ots_stamp:
     post:
       tags:
