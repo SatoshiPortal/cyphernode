@@ -1639,7 +1639,7 @@ GET http://192.168.111.152:8080/config_props
 
 ```json
 [
- { "id": 0, "property": "_cyphernode_prop"; "value": "awesome"; "inserted_ts": 1593184586 }
+ { "id": 0, "property": "_cyphernode_prop": "value": "awesome": "inserted_ts": 1593184586 }
 ]
 ```
 Insert or Update a Cyphernode prop property
