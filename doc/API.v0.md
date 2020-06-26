@@ -1458,8 +1458,8 @@ GET http://192.168.111.152:8080/wasabi_getbalances/87
 
 ```json
 {
-  "0": { rcvd0conf: 0, mixing: 10862, private: 90193, total: 101055 },
-  "all": { rcvd0conf: 0, mixing: 10862, private: 90193, total: 101055 }
+  "0": { "rcvd0conf": 0, "mixing": 10862, "private": 90193, "total": 101055 },
+  "all": { "rcvd0conf": 0, "mixing": 10862, "private": 90193, "total": 101055 }
 }
 
 ```
@@ -1476,11 +1476,17 @@ BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 - address: string, required
 - amount: number, required
 - minanonset: number, optional
-- label: number, string       
+- label: number, optional
 
 ```json
-
-
+{
+  "message": "success",
+  "result": {
+    "txid": "",
+     "tx": ""
+   },
+  "event": ""
+}
 ```
 ### Wasabi get unspent coins
 
@@ -1494,14 +1500,14 @@ args:
 
 ```json
 {                                                                                                        
-  instanceId: null,
-  unspentcoins: [{	                                                                                                    
+  "instanceId": null,
+  "unspentcoins": [{	                                                                                                    
       "txid": "80e48f1.....022118d8",
       "index": 0,     
       "amount": 17701,   
       "anonymitySet": 50,
       "confirmed": true,
-      "label": '',                   
+      "label": "",                   
       "keyPath": "84'/0'/0'/1/21443",                                                                      
       "address": "tb1qe....p49z"
 }]
@@ -1549,10 +1555,10 @@ GET http://192.168.111.152:8080/config_props
 
 ```json
 [
- { "id": 0; "property": "_cyphernode_prop"; "value": "awesome"; "inserted_ts": 1593184586 }
+ { "id": 0, "property": "_cyphernode_prop"; "value": "awesome"; "inserted_ts": 1593184586 }
 ]
 ```
-Insert or Update a Cyphernode prop property          
+Insert or Update a Cyphernode prop property
 ```
 POST http://192.168.111.152:8080/config_props
 BODY { "property": "my_app_config" , "value" : "number go up"}
