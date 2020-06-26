@@ -520,7 +520,7 @@ main() {
           # - address: string, required
           # - amount: number, required
           # - minanonset: number, optional
-          # - label: number, string
+          # - label: number, optional
           #
           # POST http://192.168.111.152:8080/wasabi_spend
           # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90}
@@ -535,8 +535,7 @@ main() {
           # - instanceId: integer, optional
           # return all unspent coins of either one wasabi instance
           # or all instances, depending on the instanceId parameter
-          # POST http://192.168.111.152:8080/wasabi_getunspentcoins
-          # BODY {"instanceId":1}
+          # GET http://192.168.111.152:8080/wasabi_getunspentcoins/{instanceId}
 
           response=$(wasabi_getunspentcoins "${line}")
           response_to_client "${response}" ${?}
