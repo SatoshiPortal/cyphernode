@@ -8,7 +8,7 @@ Combined with the Cypherapps framework, Cyphernode provides all advanced feature
 - Protect user privacy: 100% anonymous, no data leaks to 3rd parties
 
 Cyphernode is has been used in production by www.bullbitcoin.com and www.bylls.com for every transaction in and out since June 2018.
-Cyphernode was createad by created by @francispouliot @kexkey with financing and support by www.bullbitcoin.com and www.bylls.com.
+Cyphernode was createad by created by @FrancisPouliot @Kexkey with financing and support by www.bullbitcoin.com and www.bylls.com.
 
 # Bitcoin Wallet Management
 
