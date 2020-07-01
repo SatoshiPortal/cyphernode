@@ -2,10 +2,10 @@ Cyphernode is a Bitcoin microservices API server architecture, Bitcoin wallet ma
 
 Combined with the Cypherapps framework, Cyphernode provides all advanced features and utilities necessary to build and deploy entreprise-grade applications such as Bitcoin exchanges, Bitcoin payment processors and Bitcoin wallets.
 
--> Designed for Bitcoin builders: app devs, project managers, founders, R&D, prototypers, etc.
--> Use your own full nodes exclusively: Bitcoin, Lightning and Liquid network
--> Hold your own keys without compromise: hot wallets and cold store both supported
--> Protect user privacy: 100% anonymous, no data leaks to 3rd parties
+-Designed for Bitcoin builders: app devs, project managers, founders, R&D, prototypers, etc.
+-Use your own full nodes exclusively: Bitcoin, Lightning and Liquid network
+-Hold your own keys without compromise: hot wallets and cold store both supported
+-Protect user privacy: 100% anonymous, no data leaks to 3rd parties
 
 Cyphernode is has been used in production by www.bullbitcoin.com and www.bylls.com for every transaction in and out since June 2018.
 Cyphernode was createad by created by @francispouliot @kexkey with financing and support by www.bullbitcoin.com and www.bylls.com.
