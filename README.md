@@ -1,18 +1,112 @@
-# cyphernode
+# Cyphernode
 
-Modular Bitcoin full-node microservices API server architecture and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
+Cyphernode is a Bitcoin microservices API server architecture, Bitcoin wallet management software and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
 
-# What is cyphernode?
+Combined with the Cypherapps framework, Cyphernode provides all advanced features and utilities necessary to build and deploy entreprise-grade applications such as Bitcoin exchanges, Bitcoin payment processors and Bitcoin wallets.
 
-Cyphernode is a Free open-source alternative to hosted services and commercial Bitcoin APIs such as Blockchain.info, Bitpay, Coinbase, BlockCypher, Bitgo, etc. You can use it to build Bitcoin services and applications using your own Bitcoin and Lightning Network full nodes. It is a substitute for the Bitcore and Insight software projects.
+-> Designed for Bitcoin builders: app devs, project managers, founders, R&D, prototypers, etc.
+-> Use your own full nodes exclusively: Bitcoin, Lightning and Liquid network
+-> Hold your own keys without compromise: hot wallets and cold store both supported
+-> Protect user privacy: 100% anonymous, no data leaks to 3rd parties
 
-It implements a self-hosted API which allows you to spawn and call your encrypted overlay network of dockerized Bitcoin and crypto software projects (virtual machines). The Docker containers used in this project are hosted at www.bitcoindockers.com.
+Cyphernode is has been used in production by www.bullbitcoin.com and www.bylls.com for every transaction in and out since June 2018.
+Cyphernode was createad by created by @francispouliot @kexkey with financing and support by www.bullbitcoin.com and www.bylls.com.
 
-It aims to offer all advanced features and utilities necessary to operate entreprise-grade Bitcoin services.  It includes a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
+# Bitcoin Wallet Management: sending and receiving payments via API
 
-It is currently in production by Bylls.com, Canada's first and largest Bitcoin payment processor, as well as Bitcoin Outlet, a fixed-rate Bitcoin exchange service alternative to Coinbase which allows Canadians to purchase bitcoins sent directly to their own Bitcoin wallet.
+Cyphernode allows its users to create and use Bitcoin Wallets via API, but it is not itself a Bitcoin wallet: it is Bitcoin wallet management tool that controls other Bitcoin Wallets. These wallets are used generally for two purposes: receiving Bitcoin payments and sending Bitcoin payments.
 
-The project is in **heavy development** - we are currently looking for reviews, new features, user feedback and contributors to our roadmap.
+A fully-loaded cyphernode instance would have the following wallets:
+
+- Bitcoin Core spender*: default hot wallet to send Bitcoin payments
+- Bitcoin Core watcher*: monitoring addresses, transactions and blocks (notifications, balance tracking)
+- Bitcoin Core PSBT: watch-only wallet for remote signing (e.g. ColdCard) 
+- C-Lightning: receive and send Lightning Network payments
+- Wasabi Wallet: mix bitcoins with coinjoin (also receive and send Bitcoin payments)
+- Liquid (Elements): receive and send L-BTC and any Liquid assets
+
+Generally speaking, **watcher** wallets are used for receiving payments and will not contain private keys and **spender** wallets are used for sending payments and will containt private keys (except for PSBT wallets).
+
+## Receiving payment notifications and tracking wallet balances
+
+Cyphernode was built originally as an alternative to Bitcoin block explorer APIs. It offers the same features as the most advances commercial APIs but with far greater reliability, flexbility, privacy and more advanced features.
+
+Receiving Bitcoin payments involves the following crucial steps:
+
+1. Generating a new Bitcoin addresses for each payment
+2. Monitoring Bitcoin addresses for transactions (notifications)
+3. Monitoring transactions for confirmations (notifications)
+4. Updating payment requests after notifications
+5. Logging and displaying transaction details
+
+In reality, there is only need for one **watcher** wallet in the cyphernode stack. It is simply a watch-only Bitcoin Core wallet (or Elemenets wallet) used to monitor Bitcoin addresses and transactions by detecting unconfirmed transactions and querying the Bitcoin blockchain. It is the functional equivalent of a "block explorer" or "balance tracker". A watcher wallet is accessible by users with "watcher" priviledges. 
+
+A **spender** wallet 
+
+The wallet API delegates the tasks of creating, signing and boradcasting transactions to various existing Bitcoin wallet software managed by the Cyphernode stack. 
+
+- Bitcoin Core
+- C-Lightning
+- Wasabi Wallet
+- Liquid network (Elements)
+
+These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be able to perform these actions. 
+
+framework makes a disctinction between two main wallet functions:
+- Spender
+- Watcher
+
+The job of spending wallets is unsprisingly to send outbound payments
+
+## Send Bitcoin payments via wallet API
+
+### Making Bitcoin transactions with Bitcoin Core
+ 
+-> Call the spend endpoint to send Bitcoin payments
+-> You can set confirmation target separately for each transaction 
+
+`POST http://cyphernode:8888/spend
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}`
+
+-> Create and process PSBT files to sign remotely
+-> "Bump fee" on RBF transactions
+-> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
+-> Use `getbalances` and `getnewaddress` on the spender wallet to monitor refill the hot wallet
+
+### Making Lightning Network transactions with C-Lightning
+
+-> Make sure you have C-Lightning installed
+-> blabla
+-> blabla
+
+### Wasabi Wallet 
+
+-> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
+-> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
+
+### PSBT offline signing
+
+-> Create a new wallet using `create_wallet` endpoint
+-> Load wallet using `load_wallet` endpoint
+-> Make this wallet a PSBT wallet by calling the `psbt_enable` endpoint and adding the xpub of the wallet you want to use (e.g. from ColdCard)
+-> This will import addresses into the newly craeted wallet, so you will probably want to enable the rescan option and specify a certain blockheight
+
+### Liquid Wallet
+
+-> You can send any Liquid asset using the `elements_spend` endpoint
+-> You must always specify which asset you are sending by supplying the `assetId`. There is no default asset to avoid accidentally sending L-BTC to someone by accident because you did not specify the asset. The L-BTC assetId is `6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d`
+-> Use the `elements_watchtxidrequest` request after receiving the transactionId from `elements_spend` to get noficiations about transaction confirmations
+
+## Receive payments, track balances and get notifications
+
+-> Watch a Bitcoin address and get notified to callback URL via Webhook
+
+-> External wallet (xpub) tracker
+
+## Receiving Bitcoin payments
+
+Cyphernode allows you to create
+
 
 ![image](doc/CN-Arch.jpg)
 
