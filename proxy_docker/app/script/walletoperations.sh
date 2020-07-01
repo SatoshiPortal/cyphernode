@@ -12,12 +12,19 @@ spend() {
   trace "[spend] address=${address}"
   local amount=$(echo "${request}" | jq -r ".amount" | awk '{ printf "%.8f", $0 }')
   trace "[spend] amount=${amount}"
+  local conf_target=$(echo "${request}" | jq ".confTarget")
+  trace "[spend] confTarget=${conf_target}"
+  local replaceable=$(echo "${request}" | jq ".replaceable")
+  trace "[spend] replaceable=${replaceable}"
+  local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
+  trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount}]}")
+  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -41,7 +48,7 @@ spend() {
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > rawtx-${txid}.blob
+    echo "${tx_raw_details}" > spend-rawtx-${txid}.blob
 
     ########################################################################################################
     # Let's publish the event if needed
@@ -62,7 +69,7 @@ spend() {
     ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('spend-rawtx-${txid}.blob'))"
     trace_rc $?
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
@@ -70,10 +77,10 @@ spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\"}"
+    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
 
     # Delete the temp file containing the raw tx (see above)
-    rm rawtx-${txid}.blob
+    rm spend-rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -364,10 +371,10 @@ batchspend() {
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > rawtx-${txid}.blob
+    echo "${tx_raw_details}" > batchspend-rawtx-${txid}.blob
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('rawtx-${txid}.blob'))"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('batchspend-rawtx-${txid}.blob'))"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
@@ -381,7 +388,7 @@ batchspend() {
     data="${data},\"hash\":\"${txid}\"}"
 
     # Delete the temp file containing the raw tx (see above)
-    rm rawtx-${txid}.blob
+    rm batchspend-rawtx-${txid}.blob
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"

@@ -36,7 +36,7 @@ manage_missed_conf() {
 
   trace "[Entering manage_missed_conf()]"
 
-  local watches=$(sql 'SELECT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0)')
+  local watches=$(sql 'SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0)')
   trace "[manage_missed_conf] watches=${watches}"
   if [ ${#watches} -eq 0 ]; then
     trace "[manage_missed_conf] Nothing missed!"

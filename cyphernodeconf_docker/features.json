@@ -1,5 +1,9 @@
 [
   {
+    "name": "Tor Hidden Service/Gateway",
+    "value": "tor"
+  },
+  {
     "name": "Lightning node",
     "value": "lightning"
   },

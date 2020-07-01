@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -185,6 +185,9 @@ configure() {
              -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
              -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
+             -e TRAEFIK_VERSION=$TRAEFIK_VERSION \
+             -e MOSQUITTO_VERSION=$MOSQUITTO_VERSION \
+             -e TOR_VERSION=$TOR_VERSION \
              -e PROXY_VERSION=$PROXY_VERSION \
              -e NOTIFIER_VERSION=$NOTIFIER_VERSION \
              -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
@@ -192,6 +195,7 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e CONF_VERSION=$CONF_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
              --network none \
@@ -397,6 +401,56 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
+  if [[ $FEATURE_TOR == true ]]; then
+    if [ ! -d $TOR_DATAPATH ]; then
+      step "   [32mcreate[0m $TOR_DATAPATH"
+      sudo_if_required mkdir -p $TOR_DATAPATH
+      sudo_if_required chmod 700 $TOR_DATAPATH
+      next
+    fi
+    if [[ $TOR_TRAEFIK == true ]]; then
+      if [ ! -d $TOR_DATAPATH/traefik ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/traefik"
+        sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
+        next
+      fi
+    fi
+    if [[ $TOR_LIGHTNING == true ]]; then
+      if [ ! -d $TOR_DATAPATH/lightning ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/lightning"
+        sudo_if_required mkdir -p $TOR_DATAPATH/lightning/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/lightning/hidden_service
+        next
+      fi
+    fi
+    if [[ $TOR_BITCOIN == true ]]; then
+      if [ ! -d $TOR_DATAPATH/bitcoin ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/bitcoin"
+        sudo_if_required mkdir -p $TOR_DATAPATH/bitcoin/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/bitcoin/hidden_service
+        next
+      fi
+    fi
+
+    copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hostname $TOR_DATAPATH/traefik/hidden_service/hostname 1 $SUDO_REQUIRED
+
+    if [[ $TOR_LIGHTNING == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hostname $TOR_DATAPATH/lightning/hidden_service/hostname 1 $SUDO_REQUIRED
+    fi
+    if [[ $TOR_BITCOIN == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1 $SUDO_REQUIRED
+    fi
+  fi
+
+
   if [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
     sudo_if_required mkdir -p $PROXY_DATAPATH
@@ -454,13 +508,20 @@ install_docker() {
           dockerfile="Dockerfile-alpine"
         fi
 
-        if [ ! -d $LIGHTNING_DATAPATH ]; then
+        if [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
           step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          sudo_if_required mkdir -p $LIGHTNING_DATAPATH
+          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
           next
         fi
 
         copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1 $SUDO_REQUIRED
+
+        if [[ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]]; then
+          step "     [32mmake[0m entrypoint.sh executable"
+          sudo_if_required chmod +x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh
+          next
+        fi
 
     fi
   fi
@@ -567,7 +628,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -671,7 +732,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -716,18 +777,21 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.2.4"
-SETUP_VERSION="v0.2.4"
-CONF_VERSION="v0.2.4"
-GATEKEEPER_VERSION="v0.2.4"
-PROXY_VERSION="v0.2.4"
-NOTIFIER_VERSION="v0.2.4"
-PROXYCRON_VERSION="v0.2.4"
-OTSCLIENT_VERSION="v0.2.4"
-PYCOIN_VERSION="v0.2.4"
-CYPHERAPPS_VERSION="v0.2.2"
-BITCOIN_VERSION="v0.18.0"
-LIGHTNING_VERSION="v0.7.1"
+# CYPHERNODE VERSION "v0.4.0"
+SETUP_VERSION="v0.4.0"
+CONF_VERSION="v0.4.0"
+GATEKEEPER_VERSION="v0.4.0"
+TOR_VERSION="v0.4.0"
+PROXY_VERSION="v0.4.0"
+NOTIFIER_VERSION="v0.4.0"
+PROXYCRON_VERSION="v0.4.0"
+OTSCLIENT_VERSION="v0.4.0"
+PYCOIN_VERSION="v0.4.0"
+CYPHERAPPS_VERSION="v0.3.0"
+BITCOIN_VERSION="v0.19.1"
+LIGHTNING_VERSION="v0.8.2"
+TRAEFIK_VERSION="v1.7.9-alpine"
+MOSQUITTO_VERSION="1.6"
 
 SETUP_DIR=$(dirname $(realpath $0))
 
@@ -780,6 +844,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     CONF_VERSION="$CONF_VERSION-local"
     GATEKEEPER_VERSION="$GATEKEEPER_VERSION-local"
+    TOR_VERSION="$TOR_VERSION-local"
     PROXY_VERSION="$PROXY_VERSION-local"
     NOTIFIER_VERSION="$NOTIFIER_VERSION-local"
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
@@ -797,7 +862,6 @@ if [[ $CONFIGURE == 1 ]]; then
   sanity_checks_pre_config
   configure $RECREATE
 fi
-
 
 if [[ -f "$cyphernodeconf_filepath/installer/config.sh" ]]; then
   . "$cyphernodeconf_filepath/installer/config.sh"

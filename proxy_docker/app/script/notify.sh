@@ -6,6 +6,7 @@ notify_web() {
   trace "Entering notify_web()..."
 
   local url=${1}
+  local tor=${3}
 
   # Let's encode the body to base64 so we won't have to escape the special chars...
   local body=$(echo "${2}" | base64 | tr -d '\n')
@@ -14,10 +15,17 @@ notify_web() {
   local response
   local http_code
   local curl_code
+  local msg
+
+  if [ -n "${tor}" ]; then
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\",\"tor\":${tor}}"
+  else
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}"
+  fi
 
   # We use the pid as the response-topic, so there's no conflict in responses.
-  trace "[notify_web] mosquitto_rr -h broker -W 21 -t notifier -e \"response/$$\" -m \"{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}\""
-  response=$(mosquitto_rr -h broker -W 21 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"${url}\",\"body\":\"${body}\"}")
+  trace "[notify_web] mosquitto_rr -h broker -W 21 -t notifier -e \"response/$$\" -m \"${msg}\""
+  response=$(mosquitto_rr -h broker -W 21 -t notifier -e "response/$$" -m ${msg})
   returncode=$?
   trace_rc ${returncode}
 

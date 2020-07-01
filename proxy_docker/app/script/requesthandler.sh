@@ -4,6 +4,7 @@
 #
 #
 
+. ./db/config.sh
 . ./sendtobitcoinnode.sh
 . ./callbacks_job.sh
 . ./watchrequest.sh
@@ -67,7 +68,8 @@ main() {
     if [ ${step} -eq 1 ]; then
       trace "[main] step=${step}"
       if [ "${http_method}" = "POST" ]; then
-        read -n ${content_length} line
+        read -rd '' -n ${content_length} line
+        line=$(echo "${line}" | jq -c)
         trace "[main] line=${line}"
       fi
       case "${cmd}" in
@@ -79,7 +81,7 @@ main() {
         installation_info)
           # GET http://192.168.111.152:8080/info
           if [ -f "$DB_PATH/info.json" ]; then
-            response=$( cat "$DB_PATH/info.json" )
+            response=$(cat "$DB_PATH/info.json")
           else
             response='{ "error": "missing installation data" }'
           fi
@@ -283,7 +285,7 @@ main() {
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
 
           response=$(spend "${line}")
           response_to_client "${response}" ${?}
@@ -405,6 +407,38 @@ main() {
           # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
 
           response=$(ln_decodebolt11 $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_listpeers)
+          # GET http://192.168.111.152:8080/ln_listpeers
+
+          response=$(ln_listpeers)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_listfunds)
+          # GET http://192.168.111.152:8080/ln_listfunds
+          response=$(ln_listfunds)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_listpays)
+          # GET http://192.168.111.152:8080/ln_listpays
+          response=$(ln_listpays)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_getroute)
+          # GET http://192.168.111.152:8080/ln_getroute/<node_id>/<msatoshi>/<riskfactor>
+          response=$(ln_getroute $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f5))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        ln_withdraw)
+          # POST http://192.168.111.152:8080/ln_withdraw
+          # BODY {"destination":"segwitAddress","satoshi":"100000","feerate":0,all: false}
+          response=$(ln_withdraw "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

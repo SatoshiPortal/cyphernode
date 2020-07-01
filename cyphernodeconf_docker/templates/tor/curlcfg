@@ -1,0 +1,3 @@
+<% if ( features.indexOf('tor') !== -1 ) { %>
+socks5-hostname=tor:9050
+<% } %>

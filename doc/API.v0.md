@@ -592,7 +592,27 @@ Proxy response:
 }
 ```
 
+### Get spending wallet's extended balances (called by application)
 
+Calls getbalances RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/getbalances
+```
+
+Proxy response:
+
+```json
+{
+  "balances": {
+    "mine": {
+      "trusted": 1.29979716,
+      "untrusted_pending": 0,
+      "immature": 0
+    }
+  }
+}
+```
 
 ### Get a new Bitcoin address from spending wallet (called by application)
 
@@ -628,7 +648,7 @@ POST http://cyphernode:8888/spend
 with body...
 {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
 or
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
 ```
 
 Proxy response:
@@ -636,7 +656,18 @@ Proxy response:
 ```json
 {
   "status": "accepted",
-  "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"
+  "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "details":
+  {
+    "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+    "amount": 0.00233,
+    "firstseen": 1584568841,
+    "size": 222,
+    "vsize": 141,
+    "replaceable": true,
+    "fee": 0.00000141,
+    "subtractfeefromamount": false
+  }
 }
 ```
 
@@ -981,6 +1012,297 @@ Proxy response:
 }
 ```
 
+### Get the list of peers, with channels, from Lightning Network node (called by application)
+
+Calls listpeers from lightningd.  Returns the list of peers and the channels opened with them, even for currently offline peers.
+
+```http
+GET http://cyphernode:8888/ln_listpeers
+```
+
+Proxy response:
+
+```json
+{
+   "peers": [
+      {
+         "id": "0[REDACTED]e",
+         "connected": true,
+         "netaddr": [
+            "181.[REDACTED].228:9735"
+         ],
+         "globalfeatures": "",
+         "localfeatures": "81",
+         "features": "81",
+         "channels": [
+            {
+               "state": "CHANNELD_NORMAL",
+               "scratch_txid": "3[REDACTED]e",
+               "owner": "channeld",
+               "short_channel_id": "6[REDACTED]6x0",
+               "direction": 0,
+               "channel_id": "7[REDACTED]c",
+               "funding_txid": "0[REDACTED]f",
+               "close_to_addr": "bc1[REDACTED]f",
+               "close_to": "0[REDACTED]6",
+               "private": false,
+               "funding_allocation_msat": {
+                  "0[REDACTED]e": 0,
+                  "0[REDACTED]a": 699139000
+               },
+               "funding_msat": {
+                  "0[REDACTED]e": "0msat",
+                  "0[REDACTED]a": "699139000msat"
+               },
+               "msatoshi_to_us": 699128000,
+               "to_us_msat": "699128000msat",
+               "msatoshi_to_us_min": 699128000,
+               "min_to_us_msat": "699128000msat",
+               "msatoshi_to_us_max": 699139000,
+               "max_to_us_msat": "699139000msat",
+               "msatoshi_total": 699139000,
+               "total_msat": "699139000msat",
+               "dust_limit_satoshis": 546,
+               "dust_limit_msat": "546000msat",
+               "max_htlc_value_in_flight_msat": 12446749275109551625,
+               "max_total_htlc_in_msat": "12446749275109551625msat",
+               "their_channel_reserve_satoshis": 6998,
+               "their_reserve_msat": "6998000msat",
+               "our_channel_reserve_satoshis": 6997,
+               "our_reserve_msat": "6997000msat",
+               "spendable_msatoshi": 688236000,
+               "spendable_msat": "688236000msat",
+               "htlc_minimum_msat": 0,
+               "minimum_htlc_in_msat": "0msat",
+               "their_to_self_delay": 144,
+               "our_to_self_delay": 144,
+               "max_accepted_htlcs": 483,
+               "status": [
+                  "CHANNELD_NORMAL:Reconnected, and reestablished.",
+                  "CHANNELD_NORMAL:Funding transaction locked. Channel announced."
+               ],
+               "in_payments_offered": 0,
+               "in_msatoshi_offered": 0,
+               "in_offered_msat": "0msat",
+               "in_payments_fulfilled": 0,
+               "in_msatoshi_fulfilled": 0,
+               "in_fulfilled_msat": "0msat",
+               "out_payments_offered": 2,
+               "out_msatoshi_offered": 13245566,
+               "out_offered_msat": "13245566msat",
+               "out_payments_fulfilled": 1,
+               "out_msatoshi_fulfilled": 11000,
+               "out_fulfilled_msat": "11000msat",
+               "htlcs": []
+            }
+         ]
+      },
+      {
+         "id": "0[REDACTED]9",
+         "connected": true,
+         "netaddr": [
+            "wp[REDACTED]d.onion:9735"
+         ],
+         "globalfeatures": "",
+         "localfeatures": "2281",
+         "features": "2281",
+         "channels": [
+            {
+               "state": "CHANNELD_NORMAL",
+               "scratch_txid": "8[REDACTED]f",
+               "owner": "channeld",
+               "short_channel_id": "6[REDACTED]3x0",
+               "direction": 1,
+               "channel_id": "9[REDACTED]3",
+               "funding_txid": "2[REDACTED]e",
+               "close_to_addr": "bc1[REDACTED]d",
+               "close_to": "0[REDACTED]f",
+               "private": false,
+               "funding_allocation_msat": {
+                  "0[REDACTED]9": 0,
+                  "0[REDACTED]a": 328682000
+               },
+               "funding_msat": {
+                  "0[REDACTED]9": "0msat",
+                  "0[REDACTED]a": "328682000msat"
+               },
+               "msatoshi_to_us": 328682000,
+               "to_us_msat": "328682000msat",
+               "msatoshi_to_us_min": 328682000,
+               "min_to_us_msat": "328682000msat",
+               "msatoshi_to_us_max": 328682000,
+               "max_to_us_msat": "328682000msat",
+               "msatoshi_total": 328682000,
+               "total_msat": "328682000msat",
+               "dust_limit_satoshis": 546,
+               "dust_limit_msat": "546000msat",
+               "max_htlc_value_in_flight_msat": 12446744073709551615,
+               "max_total_htlc_in_msat": "12446744073709551615msat",
+               "their_channel_reserve_satoshis": 7287,
+               "their_reserve_msat": "7287000msat",
+               "our_channel_reserve_satoshis": 7286,
+               "our_reserve_msat": "7286000msat",
+               "spendable_msatoshi": 727826000,
+               "spendable_msat": "727826000msat",
+               "htlc_minimum_msat": 0,
+               "minimum_htlc_in_msat": "0msat",
+               "their_to_self_delay": 144,
+               "our_to_self_delay": 144,
+               "max_accepted_htlcs": 483,
+               "status": [
+                  "CHANNELD_NORMAL:Sent reestablish, waiting for theirs"
+               ],
+               "in_payments_offered": 0,
+               "in_msatoshi_offered": 0,
+               "in_offered_msat": "0msat",
+               "in_payments_fulfilled": 0,
+               "in_msatoshi_fulfilled": 0,
+               "in_fulfilled_msat": "0msat",
+               "out_payments_offered": 20,
+               "out_msatoshi_offered": 3104386818,
+               "out_offered_msat": "3104386818msat",
+               "out_payments_fulfilled": 0,
+               "out_msatoshi_fulfilled": 0,
+               "out_fulfilled_msat": "0msat",
+               "htlcs": []
+            }
+         ]
+      }
+   ]
+}
+```
+
+### Get list of funds in unused outputs and channels from c-lightning
+Calls listfunds from lightningd. Returns the list of unused outputs and funds in open channels
+
+```http
+GET http://cyphernode:8888/ln_listfunds
+```
+
+Proxy response:
+
+```json
+{
+   "outputs": [                                                                                             
+    {                                               
+      "txid": "d3a536efaa70671xxxxxxxxx8f349a3c326b79",
+      "output": 0,                                                                                         
+      "value": 9551,
+      "amount_msat": "9551000msat",
+      "address": "tb1qq0....j9kqze0",
+      "status": "confirmed",
+      "blockheight": 1715749
+    },
+    {}                                               
+  ],
+  "channels": [
+  {
+      "peer_id": "03f60f736....34f05a93a8a897b75c7940a55bb9",
+      "connected": true,
+      "state": "CHANNELD_NORMAL",
+      "short_channel_id": "166...x0",
+      "channel_sat": 100000,
+      "our_amount_msat": "100000000msat",
+      "channel_total_sat": 100000,
+      "amount_msat": "100000000msat",
+      "funding_txid": "53cf8cd...0c41c2e2b17887b3",
+      "funding_output": 0
+    },
+    {}
+  ]          
+}
+```
+
+### Get the list of payments made by our node
+Calls listpays from lightningd.
+Returns history of paid invoices
+
+```http
+GET http://cyphernode:8888/ln_listpays
+```
+
+Proxy response:
+
+```json
+{
+  "pays":
+  [
+   {
+    "bolt11": "lntb10n1p0xjw9q....rlkv26swnt85pkwumkfmgaal8sa2awj2adajuzy82e0v6x8cqpzr2t8a",
+    "status": "complete",
+    "preimage": "1127e1fdb....54cc180e3d7",
+    "amount_sent_msat": "1000msat"
+   },
+   {}
+  ]
+}
+```
+
+### Get an array of nodes that represent a possible route from our node to a given node for a given msatoshi payment amount
+
+Calls getroute from lightningd. Returns an array representing hops of nodes to get to the destination node from our node
+
+```http
+GET http://cyphernode:8888/ln_getroute/<node_id>/<msatoshi>/<?riskfactor>
+GET http://cyphernode:8888/ln_getroute/0308dbd05278e5802dd36436a41b226824283526eb14a08d334cbbc878243b243c/10000
+GET http://cyphernode:8888/ln_getroute/0308dbd05278e5802dd36436a41b226824283526eb14a08d334cbbc878243b243c@ln.sifir.io/10000/.2
+```
+Proxy response:
+
+```json
+{ 
+"route": [
+  {
+    "id": "03d5e17a3c2....a7c003",
+    "channel": "166....0",
+    "direction": 0,
+    "msatoshi": 21000,
+    "amount_msat": "21000msat",
+    "delay": 64,
+    "style": "tlv"
+  },
+  {
+    "id": "038863cf8ab910....3b9",
+    "channel": "1666....x1",
+    "direction": 1,
+    "msatoshi": 21000,
+    "amount_msat": "21000msat",
+    "delay": 49,
+    "style": "tlv"
+  },
+  {
+    "id": "03b4e78b999c4ff....3f",
+    "channel": "160....1",
+    "direction": 0,
+    "msatoshi": 20000,
+    "amount_msat": "20000msat",
+    "delay": 9,
+    "style": "tlv"
+  }
+]
+}
+```
+
+### Withdraw funds (outputs) from Lightning to an address of choice
+
+Calls withdraw on lightningd with address and payment parameters supplied.
+Withdraws funds to a destination address and Returns the transaction as confirmation.
+- `feerate` can be any of: `normal`, `urgent`, `slow`, defaults to `normal`
+- `satoshi` can be either a 8 decimal digit representing the amount in BTC or an integer to represent the amount to withdraw in SATOSHI
+- `all`  defaults to `false` but if set as `true` will withdraw *all funds* in the lightning wallet.
+
+```http
+POST http://192.168.111.152:8080/ln_withdraw
+BODY {"destination":"bc1.....xxx","satoshi":"100000","feerate":"normal","all": false}
+```
+Proxy response:
+
+```json
+{
+  "tx":"0200000.......f3635e68d4e4fee800000000",
+  "txid": "6b38....b0c3b"
+}
+```
 ### Stamp a hash on the Bitcoin blockchain using OTS (called by application)
 
 Will stamp the supplied hash to the Bitcoin blockchain using OTS.  Cyphernode will curl the callback when the OTS stamping is complete.

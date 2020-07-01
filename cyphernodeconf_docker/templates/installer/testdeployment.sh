@@ -14,6 +14,8 @@ test_apps() {
   local APP_START_SCRIPT_PATH
   local APP_ID
   local returncode=0
+  local TRAEFIK_HTTP_PORT=<%= traefik_http_port %>
+  local TRAEFIK_HTTPS_PORT=<%= traefik_https_port %>
 
   for i in $current_path/apps/*
   do
@@ -49,22 +51,14 @@ fi
 export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
-export ARCH=$(uname -m)
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
-arch=$(uname -m)
-case "${arch}" in arm*)
-  printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
-  sleep 60
-;;
-esac
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
--v cyphernode_bitcoin_monitor:/bitcoin_monitor:ro \
---network cyphernodenet eclipse-mosquitto:1.6.2 /testfeatures.sh
+-v cyphernode_container_monitor:/container_monitor:ro \
+--network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then
   . $current_path/exitStatus.sh
@@ -84,5 +78,14 @@ fi
 
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
-printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
+printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + ':' + traefik_https_port + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
+<% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1 ) { %>
+printf "\033[0;92mYou can also use Tor Browser and navigate to your onion address:\r\n\r\n"
+printf "\033[0;95mhttps://${TOR_TRAEFIK_HOSTNAME}:<%= traefik_https_port %>/welcome\033[0m\r\n\r\n"
+
+printf "\033[0;92mTor Browser on mobile?  We got you:\r\n\r\n\033[0m"
+docker run --rm -it cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
+printf "\r\n"
+
+<% } %>
 printf "\033[0;92mUse 'admin' as the username with the configuration password you selected at the beginning of the configuration process.\r\n\r\n\033[0m"

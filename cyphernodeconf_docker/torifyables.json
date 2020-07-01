@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Traefik web proxy",
+    "value": "tor_traefik"
+  },
+  {
+    "name": "Bitcoin Node",
+    "value": "tor_bitcoin"
+  },
+  {
+    "name": "Lightning Network Node",
+    "value": "tor_lightning"
+  },
+  {
+    "name": "OTS stamp, upgrade and verify",
+    "value": "tor_otsoperations"
+  },
+  {
+    "name": "OTS Callbacks (webhooks)",
+    "value": "tor_otswebhooks"
+  },
+  {
+    "name": "Address Watches Callbacks (webhooks)",
+    "value": "tor_addrwatcheswebhooks"
+  },
+  {
+    "name": "TXID Watches Callbacks (webhooks)",
+    "value": "tor_txidwatcheswebhooks"
+  }
+]

@@ -13,14 +13,19 @@ stamp() {
   local result
   local returncode
   local data
+  local proxychains=""
+
+  if [ -n "${TOR_HOST}" ]; then
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
+  fi
 
   if [ "${TESTNET}" -eq "1" ]; then
-    trace "[stamp] ots-cli.js stamp -c \"https://ots.testnet.kexkey.com\" -d ${hash}"
-    result=$(cd /otsfiles && ots-cli.js stamp -c "https://ots.testnet.kexkey.com" -d ${hash} 2>&1)
+    trace "[stamp] ${proxychains} ots-cli.js stamp -c \"https://ots.testnet.kexkey.com\" -d ${hash}"
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -c 'https://ots.testnet.kexkey.com' -d ${hash} 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
-    trace "[stamp] ots-cli.js stamp -d ${hash}"
-    result=$(cd /otsfiles && ots-cli.js stamp -d ${hash} 2>&1)
+    trace "[stamp] ${proxychains} ots-cli.js stamp -d ${hash}"
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js stamp -d ${hash} 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -58,14 +63,19 @@ upgrade() {
 
   local result
   local returncode
+  local proxychains=""
+
+  if [ -n "${TOR_HOST}" ]; then
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
+  fi
 
   if [ "${TESTNET}" -eq "1" ]; then
-    trace "[upgrade] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
-    result=$(cd /otsfiles && ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist upgrade -c "https://testnet.calendar.kexkey.com/" ${hash}.ots 2>&1)
+    trace "[upgrade] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist upgrade -c \"https://testnet.calendar.kexkey.com/\" ${hash}.ots"
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist upgrade -c 'https://testnet.calendar.kexkey.com/' ${hash}.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
-    trace "[upgrade] ots-cli.js upgrade ${hash}.ots"
-    result=$(cd /otsfiles && ots-cli.js upgrade ${hash}.ots 2>&1)
+    trace "[upgrade] ${proxychains} ots-cli.js upgrade ${hash}.ots"
+    result=$(cd /otsfiles && sh -c "${proxychains} ots-cli.js upgrade ${hash}.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}
@@ -107,18 +117,23 @@ verify() {
   local returncode
   local message
   local data
+  local proxychains=""
+
+  if [ -n "${TOR_HOST}" ]; then
+    proxychains="PROXYCHAINS_ONE_PROXY='socks5 `getent hosts ${TOR_HOST} | awk '{ print $1 }'` ${TOR_PORT}' proxychains4"
+  fi
 
   # Let's create the OTS file locally from the base64
   trace "[verify] Creating /otsfiles/otsfile-$$.ots"
   echo "${base64otsfile}" | base64 -d > /otsfiles/otsfile-$$.ots
 
   if [ "${TESTNET}" -eq "1" ]; then
-    trace "[verify] ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(ots-cli.js -l "https://testnet.calendar.kexkey.com/" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    trace "[verify] ${proxychains} ots-cli.js -l \"https://testnet.calendar.kexkey.com/\" --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots"
+    result=$(sh -c "${proxychains} ots-cli.js -l 'https://testnet.calendar.kexkey.com/' --no-default-whitelist verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   else
-    trace "[verify] ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
-    result=$(ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1)
+    trace "[verify] ${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots"
+    result=$(sh -c "${proxychains} ots-cli.js verify -d ${hash} /otsfiles/otsfile-$$.ots 2>&1 | sed '/^\[proxychains\].*$/d'")
     returncode=$?
   fi
   trace_rc ${returncode}

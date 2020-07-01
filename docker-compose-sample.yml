@@ -8,14 +8,14 @@ services:
   ##########################
 
   bitcoin:
-    image: cyphernode/bitcoin:v0.18.0
+    image: cyphernode/bitcoin:v0.19.1
     command: $USER bitcoind
 
     volumes:
       - "~/btcdata:/.bitcoin"
-      - bitcoin_monitor:/bitcoin_monitor
+      - container_monitor:/container_monitor
     healthcheck:
-      test: bitcoin-cli echo && touch /bitcoin_monitor/up || rm -f /bitcoin_monitor/up
+      test: bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready
       interval: 10s
       timeout: 5s
       retries: 1
@@ -32,7 +32,7 @@ services:
   ##########################
 
   proxy:
-    image: cyphernode/proxy:v0.2.4-local
+    image: cyphernode/proxy:v0.4.0-local
     command: $USER ./startproxy.sh
     environment:
       - "TRACING=1"
@@ -75,7 +75,7 @@ services:
   ##########################
 
   proxycron:
-    image: cyphernode/proxycron:v0.2.4-local
+    image: cyphernode/proxycron:v0.4.0-local
     environment:
       - "TX_CONF_URL=proxy:8888/executecallbacks"
       - "OTS_URL=proxy:8888/ots_backoffice"
@@ -106,7 +106,7 @@ services:
   ##########################
 
   notifier:
-    image: cyphernode/notifier:v0.2.4-local
+    image: cyphernode/notifier:v0.4.0-local
     command: $USER ./startnotifier.sh
     networks:
       - cyphernodenet
@@ -123,7 +123,7 @@ services:
   ##########################
 
   pycoin:
-    image: cyphernode/pycoin:v0.2.4-local
+    image: cyphernode/pycoin:v0.4.0-local
     command: $USER ./startpycoin.sh
     environment:
       - "TRACING=1"
@@ -142,7 +142,7 @@ services:
   ##########################
 
   otsclient:
-    image: cyphernode/otsclient:v0.2.4-local
+    image: cyphernode/otsclient:v0.4.0-local
     command: $USER /script/startotsclient.sh
     environment:
       - "TRACING=1"
@@ -168,7 +168,7 @@ services:
 
   gatekeeper:
     # HTTP authentication API gate
-    image: cyphernode/gatekeeper:v0.2.4-local
+    image: cyphernode/gatekeeper:v0.4.0-local
     command: $USER
     environment:
       - "TRACING=1"
@@ -225,8 +225,8 @@ services:
   ##########################
 
   lightning:
-    image: cyphernode/clightning:v0.7.1
-    command: $USER sh -c 'while [ ! -f "/bitcoin_monitor/up" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
+    image: cyphernode/clightning:v0.8.2
+    command: $USER sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
 
     ports:
       - "9735:9735"
@@ -234,7 +234,7 @@ services:
     volumes:
       - "~/cn-dev/dist/cyphernode/lightning:/.lightning"
       - "~/btcdata/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
-      - bitcoin_monitor:/bitcoin_monitor:ro
+      - container_monitor:/container_monitor:ro
     networks:
       - cyphernodenet
     restart: always
@@ -246,7 +246,7 @@ services:
 
 
 volumes:
-  bitcoin_monitor:
+  container_monitor:
 
 networks:
   cyphernodenet:

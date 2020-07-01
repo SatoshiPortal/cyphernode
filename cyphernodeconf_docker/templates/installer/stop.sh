@@ -28,6 +28,7 @@ stop_apps() {
         export SHARED_HTPASSWD_PATH
         export GATEKEEPER_DATAPATH
         export GATEKEEPER_PORT
+        export TOR_DATAPATH
         export LIGHTNING_DATAPATH
         export BITCOIN_DATAPATH
         export APP_SCRIPT_PATH
@@ -48,12 +49,10 @@ stop_apps() {
 . ./.cyphernodeconf/installer/config.sh
 stop_apps
 
-<% if (docker_mode == 'swarm') { %>
 export USER=$(id -u):$(id -g)
-export ARCH=$(uname -m)
+
+<% if (docker_mode == 'swarm') { %>
 docker stack rm cyphernode
 <% } else if(docker_mode == 'compose') { %>
-export USER=$(id -u):$(id -g)
-export ARCH=$(uname -m)
 docker-compose -f $current_path/docker-compose.yaml down
 <% } %>

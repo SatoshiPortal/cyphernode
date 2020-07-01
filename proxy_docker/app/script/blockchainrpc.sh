@@ -84,10 +84,22 @@ get_mempool_info() {
   send_to_watcher_node "${data}" | jq ".result"
   return $?
 }
+
 get_blockhash() {
   trace "Entering get_blockhash()..."
   local blockheight=${1}
   local data="{\"method\":\"getblockhash\",\"params\":[${blockheight}]}"
   send_to_watcher_node "${data}" | jq ".result"
+  return $?
+}
+
+validateaddress() {
+  trace "Entering validateaddress()..."
+
+  local address=${1}
+  trace "[validateaddress] address=${address}"
+  local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
+  trace "[validateaddress] data=${data}"
+  send_to_watcher_node "${data}"
   return $?
 }

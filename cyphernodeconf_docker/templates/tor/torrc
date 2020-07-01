@@ -1,0 +1,21 @@
+<% if ( torifyables && torifyables.indexOf('tor_traefik') !== -1 ) { %>
+HiddenServiceDir /tor/traefik/hidden_service/
+HiddenServiceVersion 3
+HiddenServicePort <%= traefik_http_port %> traefik:<%= traefik_http_port %>
+HiddenServicePort <%= traefik_https_port %> traefik:<%= traefik_https_port %>
+<% } %>
+
+<% if ( torifyables && torifyables.indexOf('tor_lightning') !== -1 && lightning_expose ) { %>
+HiddenServiceDir /tor/lightning/hidden_service/
+HiddenServiceVersion 3
+HiddenServicePort 9735 lightning:9735
+<% } %>
+
+<% if ( torifyables && torifyables.indexOf('tor_bitcoin') !== -1 && bitcoin_expose) { %>
+HiddenServiceDir /tor/bitcoin/hidden_service/
+HiddenServiceVersion 3
+HiddenServicePort <%= (net === 'regtest') ? '18444 bitcoin:18444' : ((net === 'testnet') ? '18333 bitcoin:18333' : '8333 bitcoin:8333') %>
+<% } %>
+
+SocksPort 0.0.0.0:9050
+ExitPolicy reject *:* # no exits allowed

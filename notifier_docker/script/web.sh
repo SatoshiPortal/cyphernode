@@ -8,6 +8,7 @@ web() {
   local msg=${1}
   local url
   local body
+  local tor
   local returncode
   local response
   local result
@@ -28,7 +29,15 @@ web() {
     trace "[web] no body, GET request"
   fi
 
-  response=$(curl_it "${url}" "${body}")
+  tor=$(echo ${msg} | jq -e ".tor")
+  # jq -e will have a return code of 1 if the supplied tag is null.
+  if [ "$?" -ne "0" ]; then
+    # tor tag null
+    tor=false
+  fi
+  trace "[web] tor=${tor}"
+
+  response=$(curl_it "${url}" "${body}" "${tor}")
   returncode=$?
   trace_rc ${returncode}
 
@@ -42,17 +51,25 @@ curl_it() {
 
   local url=$(echo "${1}" | tr -d '"')
   local data=${2}
+  local tor=${3}
   local returncode
   local response
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
 
+  if [ "${tor}" = "true" ] && [ -n "${TOR_HOST}" ]; then
+    # If we want to use tor and the tor host config exists
+    tor="--socks5-hostname ${TOR_HOST}:${TOR_PORT}"
+  else
+    tor=""
+  fi
+
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
+    trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
-    trace "[curl_it] curl -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
-    rc=$(curl -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
+    trace "[curl_it] curl ${tor} -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
+    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
     returncode=$?
   fi
   trace "[curl_it] HTTP return code=${rc}"

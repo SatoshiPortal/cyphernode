@@ -16,8 +16,8 @@ newblock() {
   local blockheight
   blockheight=$(echo ${blockinfo} | jq -r ".result.height")
 
-  trace "[newblock] mosquitto_pub -h broker -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":\"${blockheight}\"}\""
-  response=$(mosquitto_pub -h broker -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":\"${blockheight}\"}")
+  trace "[newblock] mosquitto_pub -h broker -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+  response=$(mosquitto_pub -h broker -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}")
   returncode=$?
   trace_rc ${returncode}
 

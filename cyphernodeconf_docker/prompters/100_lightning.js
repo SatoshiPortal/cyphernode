@@ -17,7 +17,7 @@ const featureCondition = function(props) {
 
 const templates = {
   'lnd': [ path.join('lnd','lnd.conf') ],
-  'c-lightning': [ path.join('c-lightning','config') ]
+  'c-lightning': [ path.join('c-lightning','config'), path.join('c-lightning','entrypoint.sh') ]
 };
 
 module.exports = {
@@ -53,14 +53,17 @@ module.exports = {
       default: utils.getDefault( 'lightning_announce' ),
       message: prefix()+'Do you want to announce your lightning node?'+utils.getHelp('lightning_announce'),
     },
+    /*
+      Next question is asked when lightning_annouce is YES and (not Tor or (Tor and LN clearnet)).
+    */
     {
-      when: (props) => { return featureCondition(props) && props.lightning_announce },
+      when: (props) => { return featureCondition(props) && props.lightning_announce && (props.features.indexOf('tor') === -1 || props.features.indexOf('tor') !== -1 && ((!props.torifyables || props.torifyables.indexOf('tor_lightning') === -1) || (props.clearnet && props.clearnet.indexOf('clearnet_lightning') !== -1))) },
       type: 'input',
       name: 'lightning_external_ip',
       default: utils.getDefault( 'lightning_external_ip' ),
       filter: utils.trimFilter,
       validate: utils.ipOrFQDNValidator,
-      message: prefix()+'What external ip does your lightning node have?'+utils.getHelp('lightning_external_ip'),
+      message: prefix()+'What external IP does your lightning node have?'+utils.getHelp('lightning_external_ip'),
     },
     {
       when: featureCondition,

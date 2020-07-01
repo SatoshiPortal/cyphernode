@@ -327,7 +327,7 @@ ln_pay() {
     # The amount must match if not "any"
     # If the amount is not in the invoice and not supplied as expected_msatoshi, then both will be null, that's ok!
     # Same thing goes for the description.
-    if [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
+    if [ -n "${expected_msatoshi}" ] && [ "${expected_msatoshi}" != "null" ]  &&  [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
       # If invoice_msatoshi is null, that means "any" was supplied, so the amounts don't have to match!
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
       returncode=1
@@ -458,6 +458,72 @@ ln_newaddr() {
 
   echo "${result}"
 
+  return ${returncode}
+}
+
+ln_listpeers() {
+  trace "Entering ln_listpeers()..."
+  local id=${1}
+  local result
+  result=$(./lightning-cli listpeers ${id})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_listpeers] result=${result}"
+  echo "${result}"
+  return ${returncode}
+}
+ln_listfunds() {
+  trace "Entering ln_listpeers()..."
+  local result
+  result=$(./lightning-cli listfunds)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_listfunds] result=${result}"
+  echo "${result}"
+  return ${returncode}
+}
+ln_listpays() {
+  trace "Entering ln_listpays()..."
+  local result
+  result=$(./lightning-cli listpays)
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_listpays] result=${result}"
+  echo "${result}"
+  return ${returncode}
+}
+ln_getroute() {
+  trace "Entering ln_getroute()..."
+  # Defaults used from c-lightning documentation
+  local result 
+  local id=${1}
+  local msatoshi=${2}
+  local riskfactor=${3}
+  result=$(./lightning-cli getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor}) 
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_getroute] result=${result}"
+  echo "${result}"
+  return ${returncode}
+}
+
+ln_withdraw() {
+  trace "Entering ln_withdraw()..."
+  # Defaults used from c-lightning documentation
+  local result 
+  local request=${1}
+  local destination=$(echo "${request}" | jq -r ".destination")
+  local satoshi=$(echo "${request}" | jq -r ".satoshi")
+  local feerate=$(echo "${request}" | jq -r ".feerate")
+  local all=$(echo "${request}" | jq -r ".all")
+  if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
+      satoshi="all"
+  fi
+  result=$(./lightning-cli withdraw ${destination} ${satoshi} ${feerate}) 
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_withdraw] result=${result}"
+  echo "${result}"
   return ${returncode}
 }
 

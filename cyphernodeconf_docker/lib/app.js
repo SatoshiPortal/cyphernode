@@ -14,6 +14,7 @@ const ejsRenderFileAsync = promisify( ejs.renderFile ).bind( ejs );
 const html2ansi = require('./html2ansi.js');
 const name = require('./name.js');
 const Archive = require('./archive.js');
+const TorGen = require('./torgen.js');
 const ApiKey = require('./apikey.js');
 const Cert = require('./cert.js');
 const htpasswd = require( './htpasswd.js');
@@ -22,6 +23,7 @@ const SplashScreen = require( './splashScreen.js' );
 const ansi = require( './ansi.js' );
 
 const features = require('../features.json');
+const torifyables = require('../torifyables.json');
 
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
@@ -56,6 +58,7 @@ module.exports = class App {
 
   constructor() {
     this.features = features;
+    this.torifyables = torifyables;
 
     if( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
       fs.unlinkSync(path.join('/data', destinationDirName, 'exitStatus.sh'));
@@ -79,14 +82,18 @@ module.exports = class App {
       setupDir: process.env.SETUP_DIR || path.join( process.env.HOME, 'cyphernode' ),
       default_username: process.env.DEFAULT_USER || '',
       gatekeeper_version: process.env.GATEKEEPER_VERSION,
+      tor_version: process.env.TOR_VERSION,
       gatekeeper_cns: process.env.DEFAULT_CERT_HOSTNAME,
       proxy_version: process.env.PROXY_VERSION,
       proxycron_version: process.env.PROXYCRON_VERSION,
       pycoin_version: process.env.PYCOIN_VERSION,
+      traefik_version: process.env.TRAEFIK_VERSION,
+      mosquitto_version: process.env.MOSQUITTO_VERSION,
       otsclient_version: process.env.OTSCLIENT_VERSION,
       bitcoin_version: process.env.BITCOIN_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
+      conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
       noWizard: !!options.noWizard,
       noSplashScreen: !!options.noSplashScreen,
@@ -137,14 +144,15 @@ module.exports = class App {
       docker_versions: {
         'cyphernode/bitcoin': this.sessionData.bitcoin_version,
         'cyphernode/gatekeeper': this.sessionData.gatekeeper_version,
+        'cyphernode/tor': this.sessionData.tor_version,
         'cyphernode/proxy': this.sessionData.proxy_version,
         'cyphernode/proxycron': this.sessionData.proxycron_version,
         'cyphernode/pycoin': this.sessionData.pycoin_version,
         'cyphernode/otsclient': this.sessionData.otsclient_version,
+        'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
-        'traefik': 'v1.7.9-alpine',
-        'eclipse-mosquitto': '1.6'
+        'eclipse-mosquitto': this.sessionData.mosquitto_version
       }
     } );
 
@@ -222,6 +230,9 @@ module.exports = class App {
       feature.checked = this.isChecked( 'features', feature.value );
     }
 
+    for( let torifyable of this.torifyables ) {
+      torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
+    }
   }
 
   async startWizard() {
@@ -263,6 +274,21 @@ module.exports = class App {
   }
 
   async processProps() {
+
+    // Tor...
+    if( this.isChecked( 'features', 'tor' ) ) {
+      const torgen = new TorGen();
+
+      if (this.isChecked('torifyables', 'tor_traefik')) {
+        this.sessionData.tor_traefik_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/traefik/hidden_service' ) ));
+      }
+      if (this.isChecked('torifyables', 'tor_lightning')) {
+        this.sessionData.tor_lightning_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/lightning/hidden_service' ) ));
+      }
+      if (this.isChecked('torifyables', 'tor_bitcoin')) {
+        this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
+      }
+    }
 
     // creates keys if they don't exist or we say so.
     if( this.config.data.gatekeeper_recreatekeys ||
@@ -334,6 +360,7 @@ module.exports = class App {
     const pathProps = [
       'gatekeeper_datapath',
       'traefik_datapath',
+      'tor_datapath',
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',
@@ -394,6 +421,10 @@ module.exports = class App {
       feature.checked = this.isChecked( 'features', feature.value );
     }
 
+    for( let torifyable of this.torifyables ) {
+      torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
+    }
+
     const cert = new Cert();
     const gatekeeper_cns = cert.cns( this.config.data.gatekeeper_cns );
 
@@ -408,7 +439,10 @@ module.exports = class App {
           prune: this.config.data.bitcoin_prune,
           prune_size: this.config.data.bitcoin_prune_size,
           expose: this.config.data.bitcoin_expose,
-          uacomment: this.config.data.bitcoin_uacomment
+          uacomment: this.config.data.bitcoin_uacomment,
+          torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_bitcoin'),
+          tor_hostname: this.sessionData.tor_bitcoin_hostname
         }
       },
       {
@@ -427,7 +461,12 @@ module.exports = class App {
         label: 'proxy',
         host: 'proxy',
         networks: ['cyphernodenet'],
-        docker: 'cyphernode/proxy:'+this.config.docker_versions['cyphernode/proxy']
+        docker: 'cyphernode/proxy:'+this.config.docker_versions['cyphernode/proxy'],
+        extra: {
+          torified_addr_watch_webhooks: this.torifyables.find(data => data.value === 'tor_addrwatcheswebhooks').checked,
+          torified_txid_watch_webhooks: this.torifyables.find(data => data.value === 'tor_txidwatcheswebhooks').checked,
+          torified_ots_watch_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
+        }
       },
       {
         name: 'Proxy cron',
@@ -456,6 +495,16 @@ module.exports = class App {
         host: 'broker',
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
+      },
+      {
+        name: 'Traefik',
+        label: 'traefik',
+        host: 'traefik',
+        networks: ['cyphernodeappsnet'],
+        docker: 'traefik:'+this.config.docker_versions['traefik'],
+        extra: {
+          tor_hostname: this.sessionData.tor_traefik_hostname,
+        }
       }
 
     ];
@@ -463,17 +512,35 @@ module.exports = class App {
     const optional_features = [];
 
     const optional_features_data = {
+      tor: {
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
+        extra: {
+          traefik_hostname: this.sessionData.tor_traefik_hostname,
+          lightning_hostname: this.sessionData.tor_lightning_hostname,
+          bitcoin_hostname: this.sessionData.tor_bitcoin_hostname,
+        }
+      },
       otsclient: {
-        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient']
+        networks: ['cyphernodenet'],
+        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient'],
+        extra: {
+          torified: this.torifyables.find(data => data.value === 'tor_otsoperations').checked,
+          torified_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
+        }
       },
       lightning: {
+        networks: ['cyphernodenet'],
         docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
         extra: {
           nodename: this.config.data.lightning_nodename,
           nodecolor: this.config.data.lightning_nodecolor,
           expose: this.config.data.lightning_expose,
           external_ip: this.config.data.lightning_external_ip,
-          implementation: this.config.data.lightning_implementation
+          implementation: this.config.data.lightning_implementation,
+          torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
+          tor_hostname: this.sessionData.tor_lightning_hostname
         }
       }
     }
@@ -484,7 +551,7 @@ module.exports = class App {
         name: feature.name,
         label: feature.value,
         host: feature.value,
-        networks: ['cyphernodenet'],
+        networks: optional_features_data[feature.value].networks,
         docker: optional_features_data[feature.value].docker
       };
 
@@ -624,6 +691,10 @@ module.exports = class App {
 
   featureChoices() {
     return this.features;
+  }
+
+  torifyableChoices() {
+    return this.torifyables;
   }
 
   setupDir() {
