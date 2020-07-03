@@ -301,45 +301,45 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
-        createbatch)
-          # POST http://192.168.111.152:8080/createbatch
+        createbatcher)
+          # POST http://192.168.111.152:8080/createbatcher
           #
           # args:
-          # - batchLabel, optional, id can be used to reference the batch
+          # - batcherLabel, optional, id can be used to reference the batcher
           # - confTarget, optional, overriden by batchspend's confTarget, default Bitcoin Core conf_target will be used if not supplied
           # NOTYET - feeRate, sat/vB, optional, overrides confTarget if supplied, overriden by batchspend's feeRate, default Bitcoin Core fee policy will be used if not supplied
           #
           # response:
-          # - batchId, the batch id
+          # - batcherId, the batcher id
           #
-          # BODY {"batchLabel":"lowfees","confTarget":32}
-          # NOTYET BODY {"batchLabel":"highfees","feeRate":231.8}
+          # BODY {"batcherLabel":"lowfees","confTarget":32}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":231.8}
 
-          response=$(createbatch "${line}")
+          response=$(createbatcher "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
-        updatebatch)
-          # POST http://192.168.111.152:8080/updatebatch
+        updatebatcher)
+          # POST http://192.168.111.152:8080/updatebatcher
           #
           # args:
-          # - batchId, optional, batch id to update, will update default batch if not supplied
-          # - batchLabel, optional, id can be used to reference the batch, will update default batch if not supplied, if id is present then change the label with supplied text
-          # - confTarget, optional, new confirmation target for the batch
-          # NOTYET - feeRate, sat/vB, optional, new feerate for the batch
+          # - batcherId, optional, batcher id to update, will update default batcher if not supplied
+          # - batcherLabel, optional, id can be used to reference the batcher, will update default batcher if not supplied, if id is present then change the label with supplied text
+          # - confTarget, optional, new confirmation target for the batcher
+          # NOTYET - feeRate, sat/vB, optional, new feerate for the batcher
           #
           # response:
-          # - batchId, the batch id
-          # - batchLabel, the batch label
-          # - confTarget, the batch default confirmation target
-          # NOTYET - feeRate, the batch default feerate
+          # - batcherId, the batcher id
+          # - batcherLabel, the batcher label
+          # - confTarget, the batcher default confirmation target
+          # NOTYET - feeRate, the batcher default feerate
           #
-          # BODY {"batchId":5,"confTarget":12}
-          # NOTYET BODY {"batchLabel":"highfees","feeRate":400}
-          # NOTYET BODY {"batchId":3,"label":"ultrahighfees","feeRate":800}
-          # BODY {"batchLabel":"fast","confTarget":2}
+          # BODY {"batcherId":5,"confTarget":12}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":400}
+          # NOTYET BODY {"batcherId":3,"label":"ultrahighfees","feeRate":800}
+          # BODY {"batcherLabel":"fast","confTarget":2}
 
-          response=$(updatebatch "${line}")
+          response=$(updatebatcher "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -350,8 +350,8 @@ main() {
           # - address, required, desination address
           # - amount, required, amount to send to the destination address
           # - outputLabel, optional, if you want to reference this output
-          # - batchId, optional, the id of the batch to which the output will be added, default batch if not supplied, overrides batchLabel
-          # - batchLabel, optional, the label of the batch to which the output will be added, default batch if not supplied
+          # - batcherId, optional, the id of the batcher to which the output will be added, default batcher if not supplied, overrides batcherLabel
+          # - batcherLabel, optional, the label of the batcher to which the output will be added, default batcher if not supplied
           # - webhookUrl, optional, the webhook to call when the batch is broadcast
           #
           # response:
@@ -361,9 +361,9 @@ main() {
           # - pendingTotal, the current sum of the batch's output amounts
           #
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
-          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batchId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
 
           response=$(addtobatch "${line}")
           response_to_client "${response}" ${?}
@@ -391,10 +391,10 @@ main() {
           # POST http://192.168.111.152:8080/batchspend
           #
           # args:
-          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
-          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
-          # - confTarget, optional, overrides default value of createbatch, default to value of createbatch, default Bitcoin Core conf_target will be used if not supplied
-          # NOTYET - feeRate, optional, overrides confTarget if supplied, overrides default value of createbatch, default to value of createbatch, default Bitcoin Core value will be used if not supplied
+          # - batcherId, optional, id of the batcher to execute, overrides batcherLabel, default batcher will be spent if not supplied
+          # - batcherLabel, optional, label of the batcher to execute, default batcher will be executed if not supplied
+          # - confTarget, optional, overrides default value of createbatcher, default to value of createbatcher, default Bitcoin Core conf_target will be used if not supplied
+          # NOTYET - feeRate, optional, overrides confTarget if supplied, overrides default value of createbatcher, default to value of createbatcher, default Bitcoin Core value will be used if not supplied
           #
           # response:
           # - txid, the transaction txid
@@ -406,8 +406,8 @@ main() {
           # - outputs
           #
           # {"result":{
-          #    "batchId":34,
-          #    "batchLabel":"Special batch for a special client",
+          #    "batcherId":34,
+          #    "batcherLabel":"Special batcher for a special client",
           #    "confTarget":6,
           #    "nbOutputs":83,
           #    "oldest":123123,
@@ -431,28 +431,28 @@ main() {
           # },"error":null}
           #
           # BODY {}
-          # BODY {"batchId":34,"confTarget":12}
-          # NOTYET BODY {"batchLabel":"highfees","feeRate":233.7}
-          # BODY {"batchId":411,"confTarget":6}
+          # BODY {"batcherId":34,"confTarget":12}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":233.7}
+          # BODY {"batcherId":411,"confTarget":6}
 
           response=$(batchspend "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
-        getbatch)
-          # POST (GET) http://192.168.111.152:8080/getbatch
+        getbatcher)
+          # POST (GET) http://192.168.111.152:8080/getbatcher
           #
           # args:
-          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
-          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
+          # - batcherId, optional, id of the batcher, overrides batcherLabel, default batcher will be used if not supplied
+          # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
           #
           # response:
-          # {"result":{"batchId":1,"batchLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},"error":null}
+          # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},"error":null}
           #
           # BODY {}
-          # BODY {"batchId":34}
+          # BODY {"batcherId":34}
 
-          response=$(getbatch "${line}")
+          response=$(getbatcher "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -460,15 +460,15 @@ main() {
           # POST (GET) http://192.168.111.152:8080/getbatchdetails
           #
           # args:
-          # - batchId, optional, id of the batch to spend, overrides batchLabel, default batch will be spent if not supplied
-          # - batchLabel, optional, label of the batch to spend, default batch will be spent if not supplied
+          # - batcherId, optional, id of the batcher, overrides batcherLabel, default batcher will be spent if not supplied
+          # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
           # - txid, optional, if you want the details of an executed batch, supply the batch txid, will return current pending batch
           #     if not supplied
           #
           # response:
           # {"result":{
-          #    "batchId":34,
-          #    "batchLabel":"Special batch for a special client",
+          #    "batcherId":34,
+          #    "batcherLabel":"Special batcher for a special client",
           #    "confTarget":6,
           #    "nbOutputs":83,
           #    "oldest":123123,
@@ -492,24 +492,24 @@ main() {
           # },"error":null}
           #
           # BODY {}
-          # BODY {"batchId":34}
+          # BODY {"batcherId":34}
 
           response=$(getbatchdetails "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
-        listbatches)
-          # curl (GET) http://192.168.111.152:8080/listbatches
+        listbatchers)
+          # curl (GET) http://192.168.111.152:8080/listbatchers
           #
           # response:
           # {"result":[
-          #   {"batchId":1,"batchLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},
-          #   {"batchId":2,"batchLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"pendingTotal":0.49827387},
-          #   {"batchId":3,"batchLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"pendingTotal":4.16843782}
+          #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},
+          #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"pendingTotal":0.49827387},
+          #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"pendingTotal":4.16843782}
           #  ],
           #  "error":null}
 
-          response=$(listbatches)
+          response=$(listbatchers)
           response_to_client "${response}" ${?}
           break
           ;;

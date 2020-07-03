@@ -43,7 +43,7 @@ spend() {
     local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
-    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
+    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
     # Sometimes raw tx are too long to be passed as paramater, so let's write
