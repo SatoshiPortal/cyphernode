@@ -25,6 +25,8 @@ A fully-loaded cyphernode instance would have the following wallets:
 
 Generally speaking, **watcher** wallets are used for receiving payments and will not contain private keys and **spender** wallets are used for sending payments and will containt private keys (except for PSBT wallets).
 
+In reality, there is only need for one **watcher** wallet in the cyphernode stack. It is simply a watch-only Bitcoin Core wallet (or Elemenets wallet) used to monitor Bitcoin addresses and transactions by detecting unconfirmed transactions and querying the Bitcoin blockchain. It is the functional equivalent of a "block explorer" or "balance tracker". A watcher wallet is accessible by users with "watcher" priviledges. 
+
 ## Receiving payment notifications and tracking wallet balances
 
 Cyphernode was built originally as an alternative to Bitcoin block explorer APIs. It offers the same features as the most advances commercial APIs but with far greater reliability, flexbility, privacy and more advanced features.
@@ -39,13 +41,19 @@ Receiving Bitcoin payments involves the following crucial steps:
 
 ### Generating Bitcoin addresses
 
-In Cyphernode, there are 6 ways to generate receiving addresses. The methods can be found in the proxy here below:
+In Cyphernode, there are 6 ways to generate receiving addresses. The methods can be found in the proxy here below.
+
+**Note: in the next sections, we cover what to do with Bitcoin adresses after you've generated them**
+
 - [Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/walletoperations.sh)
 - [Elements Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/elements_walletoperations.sh)
 - [Bitcoin Derivation Utilities](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/bitcoin.sh)
 - [Manual or automated address import](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/importaddress.sh)
 - [Wasabi Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/wasabi.sh)
 - [Lightning Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/call_lightningd.sh)
+
+Note: always make sure you have access to the keys of the addresses you are generating, or if they are watch only, make sure you know where they are going.
+
 1. [Dynamically derived from an XPUB (or ZPUB or YPUB)](https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1253)
 `action_deriveindex=spender
 action_derivepubpath=spender`
@@ -62,11 +70,138 @@ These addresses will be native segwit (bech32) only.
 `action_ln_create_invoice=watcher`
 5. [Getting an L-BTC address from Liquid (Elements)](https://github.com/SatoshiPortal/cyphernode/blob/56c3230bf2c99f0fbee3e71f66b364c811059ca1/proxy_docker/app/script/elements_walletoperations.sh#L6) spender
 `action_elements_spend=spender`
+`elements_getnweaddress`
 By default these will be confidential addresses, legacy segwit (not belch32) because native segwit (blech32) is not compatible with Green by Blockstream.
-6. [TO-DO] Manually import addresses, or use the importmulti function
+6. [Manually import addresses, or use the importmulti function](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/importaddress.sh)
 
+### Watching Bitcoin addresses
 
-In reality, there is only need for one **watcher** wallet in the cyphernode stack. It is simply a watch-only Bitcoin Core wallet (or Elemenets wallet) used to monitor Bitcoin addresses and transactions by detecting unconfirmed transactions and querying the Bitcoin blockchain. It is the functional equivalent of a "block explorer" or "balance tracker". A watcher wallet is accessible by users with "watcher" priviledges. 
+The term "watching" in Cyphernode lingo means a function that will monitor Bitcoin address and send notifications either internally via the broker/notifier system or via api with webhook notifications at specified callback URLs.
+
+There are two principal ways to watch Bitcoin addresses:
+1. Watch each address individually: the addresses will be imported into the Bitcoin Core watcher wallet, notifications will be sent when they are involved in Bitcoin transactions. This is best if you are creating invoices, or watching deposit addresses for an account.
+2. Watch XPUBs, YPUBs and ZPUBs: we will derive multiple addresses (batches of 1000) and import them all into Bitcoin Core, notifications will be sent when any of the adresses being watched are involved in Bitcoin transactions. In addition, this allows you to query the entire balance of the addresses in an XPUB. This would be for tracking all movements in and out of a wallet and logging these changes with balances, for example.
+
+There is no real limit to how many addresses can be watched.
+
+**Note: the difference between using addresses individually or watching an XPUB is you can specify different callback URLs for notifications and unique labels for individual watching, as well as event messages, which lets you know where the transactions are coming from and what is suppsed to happen next. When using the watch XPUB, you are monitoring for transactions and you will know which addresses are involved, but you will not be able to specific a different callback URL for each address.**
+
+When watching a Bitcoin address, you can configure these additional options:
+- Event Message: eventmesssage added to address Watches can be used as "triggers" for automate functions. An example of this is a Cypherapp feature developped by Bull Bitcoin called **The Bouncer** which will watch a Bitcoin address send the same received amount of Bitcoins or L-BTC to a Bitcoin address specified via the Event Message.
+- Confirmations: you can chose when to be notified in number of confirmations (e.g. 0-conf, 1-conf, 6-conf, 100-conf, etc.)
+
+**NOTE: XPUB labelling system (interal address tracker)**
+
+Because we will be importanting many different addresses from many different xpubs into the same Bitcoin Core wallet (the watcher) we need a way to track which addresses belong to which XPUB, which Bitcoin Core watcher will not know.
+
+The system we use by default is to put the XPUB itself as the label when importing addresses using the XPUB watcher feature. So we can tell which addresses were from which xpubs simply because the xpub is in the internal Bitcoin Core address label for all addresses. For this reason, we have some watching functions which are based on labels, and we can decide to watch addresses only of a certain label and send them collectively to one callback URLs (or grouping).
+
+**Example code for a payment processor**
+
+1. Getting a new address
+
+```{
+    "type": "cyphernode-address-created",
+    "address": {
+        "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+        "keyPath": "84'/0'/0'/0/22",
+        "label": "[\"order 22\"]",
+    }
+}
+```
+```
+{
+    "type": "cyphernode-address-created",
+    "address": {
+        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa"
+    }
+}
+```
+2. WebHook created for address `2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa`
+
+```{
+    "type": "cypnernode-hook-created",
+    "field": "invoince_address",
+    "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
+    "is_error": false,
+    "error": null,
+    "result": {
+        "id": "614",
+        "event": "watch",
+        "imported": "1",
+        "inserted": "1",
+        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
+        "unconfirmedCallbackURL": "`your_callback_url_1`"
+        "confirmedCallbackURL": "`your_callback_url_2`",
+        "estimatesmartfee2blocks": "0.00001000",
+        "estimatesmartfee6blocks": "0.00001000",
+        "estimatesmartfee36blocks": "0.00001000",
+        "estimatesmartfee144blocks": "0.00001000",
+        "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+    }
+}
+```
+
+3. Receive information for unconfirmed-tx event`
+```{
+    "_id": "YuJ5oLsRx73EzCKpt",
+    "created_at": "2020-05-19T23:21:43.430Z",
+    "opts": {
+        "query": {
+            "event": "unconfirmed-tx",
+            "order_id": "asj109e2u1so"
+        },
+        "body": {
+            "id": "615",
+            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
+            "vout_n": 0,
+            "sent_amount": 0.00161244,
+            "confirmations": 0,
+            "received": "2018-03-19T13:29:33+0000",
+            "size": 518,
+            "vsize": 276,
+            "fees": 0.00000276,
+            "is_replaceable": 0,
+            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+        },
+        "confirmations": 0
+    }
+}
+```
+```
+{
+    "_id": "YuJ5oLsRx73EzCKpt",
+    "created_at": "2020-05-19T23:29:21.334Z",
+    "opts": {
+        "query": {
+            "event": "confirmed-tx",
+            "order_id": "asj109e2u1so",
+        },
+        "body": {
+            "id": "615",
+            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
+            "vout_n": 0,
+            "vout_n": 0,
+            "sent_amount": 0.00161244,
+            "confirmations": 2,
+            "received": "2018-03-19T13:32:13+0000",
+            "size": 518,
+            "vsize": 276,
+            "fees": 0.00000276,
+            "is_replaceable": 0,
+            "blockhash": "0000000000000e5c7c34a643b4a43dfdcf907236ee615a32e00c565e482d4ba9",
+            "blocktime": "2020-05-19T23:28:26+0000",
+            "blockheight": 1745836,
+            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+        },
+        "confirmations": 2
+}
+```
+## Watching transactions
+
+The Watch Transaction feature will provide notitifications about a supplied txid, usually triggered by blocks. This is used internally in various processes, but it is also a neat feautre to watch transactions you are sending outbound to be notified with detailed information when the transaction confirms. You can also put a watch on inbound transactions to trigger specific event notifications.
 
 A **spender** wallet 
 
