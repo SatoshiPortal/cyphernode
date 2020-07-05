@@ -186,7 +186,7 @@ There are two principal ways to watch Bitcoin addresses:
 
 There is no real limit to how many addresses can be watched.
 
-#### API ENDPOINT: Watch a Bitcoin Address (called by application)
+#### API DOC: "watch"
 
 Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
 
@@ -221,13 +221,11 @@ When watching a Bitcoin address, you can configure these additional options:
 - Event Message: eventmesssage added to address Watches can be used as "triggers" for automate functions. An example of this is a Cypherapp feature developped by Bull Bitcoin called **The Bouncer** which will watch a Bitcoin address send the same received amount of Bitcoins or L-BTC to a Bitcoin address specified via the Event Message.
 - Confirmations: you can chose when to be notified in number of confirmations (e.g. 0-conf, 1-conf, 6-conf, 100-conf, etc.)
 
-**NOTE: XPUB labelling system (interal address tracker)**
-
 Because we will be importanting many different addresses from many different xpubs into the same Bitcoin Core wallet (the watcher) we need a way to track which addresses belong to which XPUB, which Bitcoin Core watcher will not know.
 
 The system we use by default is to put the XPUB itself as the label when importing addresses using the XPUB watcher feature. So we can tell which addresses were from which xpubs simply because the xpub is in the internal Bitcoin Core address label for all addresses. For this reason, we have some watching functions which are based on labels, and we can decide to watch addresses only of a certain label and send them collectively to one callback URLs (or grouping).
 
-#### API ENDPOINT: Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by application)
+#### API DOC: "watchxpub"
 
 Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
 
@@ -258,6 +256,69 @@ The Watch Transaction feature will provide notitifications about a supplied txid
 
 It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
 
+#### API DOC: "watchtxid"
+
+```http
+POST http://cyphernode:8888/watchtxid
+with body...
+{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}
+```
+
+Proxy response:
+
+```json
+{
+  "id":"5",
+  "event":"watchtxid",
+  "inserted":"1",
+  "txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387",
+  "confirmedCallbackURL":"192.168.111.233:1111/callback1conf",
+  "xconfCallbackURL":"192.168.111.233:1111/callbackXconf",
+  "nbxconf":6
+}
+```
+
+### Getting paid with Lightning
+
+#### API DOC: "ln_create_invoice"
+
+Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds and optional.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
+
+```http
+POST http://cyphernode:8888/ln_create_invoice
+with body...
+{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900,"callbackUrl":"https://thesite/lnwebhook/9d8sa98yd"}
+or
+{"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
+```
+
+Proxy response:
+
+```json
+{
+  "payment_hash": "fd27edf261d4b089c3478dece4f2c92c8c68db7be3999e89d452d39c083ad00f",
+  "expires_at": 1536593926,
+  "bolt11": "lntb100n1pdedryzpp5l5n7munp6jcgns683hkwfukf9jxx3kmmuwveazw52tfeczp66q8sdqagfukcmrnyphhyer9wgszxvfsxc6rjxqzuycqp2ak5feh7x7wkkt76uc5ptzcv90jhzhs5swzefv9344hnv74c25dvsstx7l24y46sx5tnkenu480pe06wtly2h5lrj63vszzgrxt4grkcqcltquj"
+}
+```
+
+#### API DOC: "ln_newaddr"
+
+Get a new Bitcoin address from the Lightning Network node (to fund it) (called by application)
+
+Returns a Bitcoin bech32 address to fund your LN wallet.
+
+```http
+GET http://cyphernode:8888/ln_newaddr
+```
+
+Proxy response:
+
+```json
+{
+  "address": "tb1q9n8jfwe9qvlgczfxa5n4pe7haarqflzerqfhk9"
+}
+```
 
 ## Sending Bitcoin payments via the Cyphernode wallet API
 
@@ -271,7 +332,6 @@ The wallet API delegates the tasks of creating, signing and boradcasting transac
 - Liquid network (Elements)
 
 These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be 
-
 
 ### Making Bitcoin transactions with Bitcoin Core
 
@@ -335,26 +395,234 @@ Proxy response:
 -> Create and process PSBT files to sign remotely
 -> "Bump fee" on RBF transactions
 -> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
--> Use `getbalances` and `getnewaddress` on the spender wallet to monitor refill the hot wallet
 
+#### API DOC: "getbalances"
 
-4. Send many
-5. Bump 
-6. List transactions
-7. Create raw transactions
-8. Create and fund PSBT transactions
+Calls getbalances RPC on the spending wallet.
 
+```http
+GET http://cyphernode:8888/getbalances
+```
+
+Proxy response:
+
+```json
+{
+  "balances": {
+    "mine": {
+      "trusted": 1.29979716,
+      "untrusted_pending": 0,
+      "immature": 0
+    }
+  }
+}
+```
 
 ### Making Lightning Network transactions with C-Lightning
 
--> Make sure you have C-Lightning installed
--> blabla
--> blabla
+- TO DO
+- TO DO
+- TO DO
 
-### Wasabi Wallet 
+#### API DOC: "ln_pay"
+
+Pay a Lightning Network invoice (called by application)
+
+Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.  If the bolt11 invoice doesn't contain an amount, then the expected_msatoshi supplied here will be used as the paid amount.
+
+```http
+POST http://cyphernode:8888/ln_pay
+with body...
+{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3","expected_msatoshi":10000,"expected_description":"Bitcoin Outlet order #7082"}
+```
+
+Proxy response:
+
+```json
+{
+  "id": 9,
+  "payment_hash": "85b8e69733202e126620e7745be9e23a6b544b758145d86848f3e513e6e1ca42",
+  "destination": "03whatever",
+  "msatoshi": 50000000,
+  "msatoshi_sent": 10000,
+  "created_at": 1537025047,
+  "status": "complete",
+  "payment_preimage": "fececdc787a007a721a1945b70cb022149cc2ee4268964c99ba37a877bded664",
+  "description": "Bitcoin Outlet order #7082",
+  "getroute_tries": 1,
+  "sendpay_tries": 1,
+  "route": [
+    {
+      "id": "03whatever",
+      "channel": "1413467:78:0",
+      "msatoshi": 10000,
+      "delay": 10
+    }
+  ],
+  "failures": [
+  ]
+}
+
+```
+
+
+
+#### API DOC: "ln_connectfund" (custom feature to connect to a LN node and fund a channel with it)
+
+First, it will connect your LN node to the supplied LN node.  Then, it will fund a channel of the provided amount between you two.  Cyphernode will call the supplied callback URL when the channel is ready to be used.
+
+```http
+POST http://cyphernode:8888/ln_connectfund
+with body...
+{"peer":"nodeId@ip:port","msatoshi":"100000","callbackUrl":"https://callbackUrl/?channelReady=f3y2c3cvm4uzg2gq"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": "success",
+  "txid": "85b8e69733202e126620e7745be9e23a6b544b758145d86848f3e513e6e1ca42",
+  "channel_id": "a459352219deb8e1b6bdc4a3515888569adad8a3023f8b57edeb0bc4d1f77b74"
+}
+```
+
+```json
+{
+  "result": "failed",
+  "message": "Failed at watching txid"
+}
+```
+
+
+## Wasabi Wallet 
 
 -> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
 -> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
+
+### Receiving payments with wasabi wallet
+
+#### API DOC: "wasabi_getnewaddress"
+
+Queries random instance for a new bech32 address
+
+```http
+POST http://192.168.111.152:8080/wasabi_getnewaddress
+BODY {"label":"Pay #12 for 2018"}
+BODY {}
+```
+Empty BODY: Label will be "unknown"
+```json
+
+{
+  "address": "tb1q....xytp",
+  "keyPath": "84'/0'/0'/0/158",
+  "label": "[\"Sifir.io deposit\"]"
+}
+```
+
+#### API DOC: "wasabi_getbalances"
+
+Will get the balances of all instances if not specified, or of a specified instance.
+
+Step 1: the coins will be listed in the balance as `rcvd0conf` (received, o-conf) when they are coming from an **external** wallet
+Step 2: they are then listed in the `mixing` balance, which means they are being mixed right now, or ready to be mixed whenever
+Step 3: once they reach the specified anonomity set (mix until setting) they are counted as private, and they are schedule to be spent out if the auto-spent config is on 
+
+```http
+GET http://192.168.111.152:8080/wasabi_getbalances/
+GET http://192.168.111.152:8080/wasabi_getbalances/87
+```
+ If anonset is provided, will return balances for UTXO's with anonset as their minimum Anonimity level.
+
+```json
+{
+  "0": { "rcvd0conf": 0, "mixing": 10862, "private": 90193, "total": 101055 },
+  "all": { "rcvd0conf": 0, "mixing": 10862, "private": 90193, "total": 101055 }
+}
+
+```
+
+
+
+#### API DOC: "wasabi_spend"
+
+Spend unused coins from Wasabi wallet
+```http
+POST http://192.168.111.152:8080/wasabi_spend
+BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90}
+BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+```
+- instanceId: integer, optional
+- private: boolean, optional, default=false
+- address: string, required
+- amount: number, required
+- minanonset: number, optional
+- label: number, optional
+
+```json
+{
+  "message": "success",
+  "result": {
+    "txid": "",
+     "tx": ""
+   },
+  "event": ""
+}
+```
+
+#### API DOC: "wasabi_getunspentcoins"
+
+Return all unspent coins of either one wasabi instance or all instances, depending on the instanceId parameter
+
+```http
+GET http://192.168.111.152:8080/wasabi_getunspentcoins/{instanceId}
+```
+args:
+ - instanceId: integer, optional
+
+```json
+{                                                                                                        
+  "instanceId": null,
+  "unspentcoins": [{	                                                                                                    
+      "txid": "80e48f1.....022118d8",
+      "index": 0,     
+      "amount": 17701,   
+      "anonymitySet": 50,
+      "confirmed": true,
+      "label": "",                   
+      "keyPath": "84'/0'/0'/1/21443",                                                                      
+      "address": "tb1qe....p49z"
+}]
+}
+```
+
+#### API DOC: "wasabi_gettransactions"
+
+```http
+POST http://192.168.111.152:8080/wasabi_gettransactions/
+BODY {"instanceId":1,"txnFilterInternal":true}
+```
+
+args:
+ - instanceId: integer, optional:  return all transactions of either one wasabi instance or all instances, depending on the instanceId parameter
+- txnFilterInternal = true, optional , will only return transcations having a label (label != '')
+
+```json
+{                                                                                                                                                                                                                  
+  "instanceId": null,                                                                                                                                                                                                
+  "transactions": [                                                                                                                                                                                                  
+    {                                                                                                                                                                                                              
+      "datetime": "2020-04-23T18:10:36+00:00",                                                                                                                                                                       
+      "height": 1721643,                                                                                                                                                                                             
+      "amount": 340000,                                                                                                                                                                                              
+      "label": "mytest",                                                                                                                                                                                             
+      "tx": "220850ec4d8a8daf6ebe9e74f4ab29ffca3392ff03a081c4915a83cb56b9e0e5"                                                                                                                                     
+    }]
+    
+}
+
+```
 
 ### PSBT offline signing
 
