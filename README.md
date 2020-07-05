@@ -7,10 +7,110 @@ Combined with the Cypherapps framework, Cyphernode provides all advanced feature
 - Hold your own keys without compromise: hot wallets and cold store both supported
 - Protect user privacy: 100% anonymous, no data leaks to 3rd parties
 
-Cyphernode is has been used in production by www.bullbitcoin.com and www.bylls.com for every transaction in and out since June 2018.
-Cyphernode was createad by created by @FrancisPouliot @Kexkey with financing and support by www.bullbitcoin.com and www.bylls.com.
+# About this project
 
-# Bitcoin Wallet Management
+* Created by Francis Pouliot and Kexkey
+* Financed and maintained by BullBitcoin.com and Bylls.com
+* Project maintainer: @kexkey
+* Contributors: @\_\_escapee\_\_ @sifirapps @Gus
+
+Cyphernode has been used in production by Bull Bitcoin and Bylls since June 2018 for all of its Bitcoin transactions (hundrends of thousands) in and out. We haven't had any major problem other than some downtime, or loss of coins. 
+
+Changes are marged into the master branch if, and only if, they have been thouroughly tested in production by Bull Bitcoin and Bylls for at least a few weeks. Often, some of the experimental feature branches are run for months before they are merged into dev, from where they are merged into master.
+
+Use at your own risk. We operated on a skin-in-the-game basis: what's good for the other users of the software project is good for us.
+
+### Who is this for?
+
+Cyphernode was designed for the following purposes:
+
+- Build a Bitcoin payment processing application or Bitcoin exchange
+- Build a Bitcoin wallet UI, Bitcoin dashboard UI, balance tracker, etc.
+- Integrate Bitcoin withdrawal and deposit mechanisms in your app
+- Build an entreprise hot wallet with multiple balances and user access
+- Transaction batching, fee optimization
+- Any app or service that requires your to send bitcoin, receive bitcoin, or track bitcoin transactions or balances
+- Advanced features like automated conjoin transactions, multiple transaction hops 
+- Liquid Network Bitcoin wallet management, payment processing, transaction notifications, asset issuance, etc.
+
+## When calling a cyphernode endpoint, you are either
+
+
+The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
+
+- making a delegated request (call) to the functions of the P2P network nodes part of your overlay network (e.g. calling Bitcoin RPC)
+- directly using scripts and functions with your data, parameters and configs (e.g. derive segwit addresses from Master Public Key, interacting with C-Lightning command line to create and pay a Bolt11 invoice, stamp and verify a file using OpenTimestamps, etc.)
+- executing one of the custom script (function) which will make multiple requests to multiple docker containers based on the desired outcome (e.g. add transctions to a batch, sign and broadcast according to your custom schedule).
+- changing the configurations and parameters of the underlying sofware or the request dispatcher (e.g. choose derivation path, decide which docker containers you will be using).
+- deploying and activating components like the cron container which schedules certain tasks/calls
+- create webhooks with active watch so that your app receives notifications via asynchronous callback
+- sending eventmessages to the cyphernode pub/sub system to trigger other events
+- making requests to a cypherapp within the cyphernode network, either from the outside via the API or from other apps within the network
+
+# Cyphernode Architecture
+Cyphernode is an assembly of Docker containers being called by a request dispatcher.
+
+The request dispatcher (requesthandler.sh) is the HTTP entry point.
+The request dispatcher is stateful: it keeps some data to be more effective on next calls.
+The request dispatcher is where Cyphernode scales with new features: add your switch, dispatch requests to your stuff.
+We are trying to construct each container so that it can be used separately, as a standalone reusable component.
+
+Center element: proxy_docker
+The proxy_docker is the container receiving and dispatching calls from clients. When adding a feature to Cyphernode, it is the first part to be modified to integrate the new feature.
+
+proxy_docker/app/script/requesthandler.sh
+You will find in there the switch statement used to dispatch the requests. Just add a case block with your command, using other cases as examples for POST or GET requests.
+
+proxy_docker/app/config
+You will find there config files. config.properties should be used to centralize configs. spender and watcher properties are used to obfuscate credentials on curl calls.
+
+proxy_docker/app/data
+watching.sql contains the data model. Called "watching" because in the beginning of the project, it was only used for watching addresses. Now could be used to index the blockchain (build an explorer) and add more features.
+
+cron_docker
+If you have jobs to be scheduled, use this container. Just add an executable and add it to the crontab.
+
+Currently used to make sure callbacks have been called for missed transactions.
+
+## What are cypherapps?
+
+Cypherapps are regular software applications that are dockerized and deployed to communicate in a secure way with the rest of the cyphernode stack, and particularly with the broker/notifier and proxy to either get notifications or control the wallets. 
+
+You can communicate with the cypherapps from your other apps through the API. You can essentially use the cypherapp framework to deploy any backend app, or front-end app, that needs to communicate with some Bitcoin components (like wallets or explorers). 
+
+When building cypherapps, you can think of it as "if this than that" between regular apps and cyphernode Bitcoin components (like wallets), or Bitcoin software between each other, create event message and triggers and/or send data from one to the other, create another database on top, make use of the cron jobs, some things can trigger Bitcoin wallets to send payments, or some Bitcoin payments may trigger other things in another sofware. You can even use PGP and OpenTimestamps to make your own "private blockchain" of signed data.
+
+You can also add any docker components yourself, like Electrum or Esplora, if you want to leverage them. You can use the C-Lightning plugin architecture in conjunction with the cypherapps architecture.
+
+The advantage of using cypherapps to deploy your apps is that you can leverage all the web API infrastructure of cyphernode, and you can benefit from high levels of security. 
+
+Example of existing and planned cypherapps:
+- Non-custodial trading bot that manages deposits and withdrawals to and from an entreprise wallet
+- Bitcoin timestamping and PGP signature API that manages files and status on top of cyphernode
+- Batcher: create a batching sechedule based on time or amount thresholds, add and remove outputs from a batch of transactions, spend a batch of transactions with webhook notification to multiple callback URLs (one for each output added to the batch), manage multiple batches
+- Bouncer: generate and watch deposit address of multiple different payment types (Bitcoin, Lightning, Liquid) and when payments are detected, automatically send the same amount (with our without "fees") to a specified Bitcoin, Lighthing or Liquid address. This is basically a forwarding address that can convert between 3 different payment networks 
+- Bitcoin Wallet user interface that is a cypherapp front-end 
+- Bitcoin Price Cypherapp: an app that aggregates Bitcoin price data and exposes it via API for external use or to be used by the other cypherapps. For example, this can be used for accounting purposes by other apps, or to trigger certain events when the Bitcoin price moves, or when Bitcoin balances reach a certain thershold in USD or CAD, etc.
+- Bitcoin invoicer manager: create invoice with Bitcoin addresses of various types, linked to Price Cypherapp, that monitors them for transactions and sends back notifications of payment (overpaid, underpaid, value) and that manage the price locking mechanisms in conjunction with Bitcoin network data (e.g. unconfirmed transaction detected). 
+- A tool to bump RBF transactions automatically based on certain triggers, or try a CPFP transaction, or double-spend a transaction when the are stuck because of network fee spikes
+- Liquidity Manager: an app that watches the balances of multiple wallets and will move them from one place to another based on amount thresholds in BTC or any other currency with the Bitcoin Price feed. This can be used for example to make sure that a hot wallet always has enough funds to cover future operations.
+- Conjoin managers: apps that will manage all the automation and database for more complex coinjoin operations
+- Existing projects like Spark Wallet, Specter-Dashboard, BTC-RPC-EXPLORER and other node user interface or middleware projects can be added as cypherapps
+
+## Documentation
+
+* Read the API docs here: 
+  * API v0 (Current): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
+  * API v1 (RESTful): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v1.md 
+* Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
+* Step-by-step manual install (deprecated): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
+
+Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases).
+
+* For a full-node and all modules: 400 GB of storage and 2GB of RAM minimum
+* When adding other modules like Lightning, Coinjoin, other cypherapps, etc. you will need to increase requirements
+
+# Cyphernode Bitcoin Wallet Management
 
 Cyphernode allows its users to create and use Bitcoin Wallets via API, but it is not itself a Bitcoin wallet: it is Bitcoin wallet management tool that controls other Bitcoin Wallets. These wallets are used generally for two purposes: receiving Bitcoin payments and sending Bitcoin payments.
 
@@ -199,9 +299,13 @@ The system we use by default is to put the XPUB itself as the label when importi
         "confirmations": 2
 }
 ```
-## Watching transactions
+### Watching transactions
 
 The Watch Transaction feature will provide notitifications about a supplied txid, usually triggered by blocks. This is used internally in various processes, but it is also a neat feautre to watch transactions you are sending outbound to be notified with detailed information when the transaction confirms. You can also put a watch on inbound transactions to trigger specific event notifications.
+
+It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
+
+## Sending Bitcoin payments via the Cyphernode wallet API
 
 A **spender** wallet 
 
@@ -220,7 +324,7 @@ framework makes a disctinction between two main wallet functions:
 
 The job of spending wallets is unsprisingly to send outbound payments
 
-## Send Bitcoin payments via wallet API
+
 
 ### Making Bitcoin transactions with Bitcoin Core
  
@@ -272,118 +376,9 @@ Cyphernode allows you to create
 
 ![image](doc/CN-Arch.jpg)
 
-# Low requirements, efficient use of resources
 
-Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases).
 
-* For a full-node and all modules:
-  * 350 GB of storage, 2GB of RAM.
-* Hardware wallets (ColdCard, Trezor) for key generation and signing (using PSBT BIP174), as well as for connecting to self-hosted web user interfaces.
 
-# Cyphernode Architecture
-Cyphernode is an assembly of Docker containers being called by a request dispatcher.
-
-The request dispatcher (requesthandler.sh) is the HTTP entry point.
-The request dispatcher is stateful: it keeps some data to be more effective on next calls.
-The request dispatcher is where Cyphernode scales with new features: add your switch, dispatch requests to your stuff.
-We are trying to construct each container so that it can be used separately, as a standalone reusable component.
-
-Important to us:
-
-Be as optimized as possible, using Alpine when possible and having the smallest Docker image size possible
-Reuse existing software: built-in shell commands, well-established pieces of software, etc.
-Use open-source software
-Don't reinvent the wheel
-Expose the less possible surface
-Center element: proxy_docker
-The proxy_docker is the container receiving and dispatching calls from clients. When adding a feature to Cyphernode, it is the first part to be modified to integrate the new feature.
-
-proxy_docker/app/script/requesthandler.sh
-You will find in there the switch statement used to dispatch the requests. Just add a case block with your command, using other cases as examples for POST or GET requests.
-
-proxy_docker/app/config
-You will find there config files. config.properties should be used to centralize configs. spender and watcher properties are used to obfuscate credentials on curl calls.
-
-proxy_docker/app/data
-watching.sql contains the data model. Called "watching" because in the beginning of the project, it was only used for watching addresses. Now could be used to index the blockchain (build an explorer) and add more features.
-
-cron_docker
-If you have jobs to be scheduled, use this container. Just add an executable and add it to the crontab.
-
-Currently used to make sure callbacks have been called for missed transactions.
-
-# About this project
-
-* Created and maintained by www.satoshiportal.com
-* Dedicated full-time developer @kexkey
-* Project manager @FrancisPouliot
-* Contributor: @\_\_escapee\_\_
-* Disclaimer: as of release on Sept. 23 2018 the project is still it its early stages (Alpha) and many of the features have yet to be implemented. The core architecture and basic wallet operations and blockchain query functions are fully functional.
-
-# How to use cyphernode?
-
-The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
-
-## Documentation
-
-* Read the API docs here: 
-  * API v0 (Current): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
-  * API v1 (RESTful): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v1.md 
-* Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
-* Step-by-step manual install (deprecated): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
-
-## When calling a cyphernode endpoint, you are either
-
-- making a delegated request (call) to the functions of the P2P network nodes part of your overlay network (e.g. calling Bitcoin RPC)
-- directly using scripts and functions with your data, parameters and configs (e.g. derive segwit addresses from Master Public Key, interacting with C-Lightning command line to create and pay a Bolt11 invoice, stamp and verify a file using OpenTimestamps, etc.)
-- executing one of the custom script (function) which will make multiple requests to multiple docker containers based on the desired outcome (e.g. add transctions to a batch, sign and broadcast according to your custom schedule).
-- changing the configurations and parameters of the underlying sofware or the request dispatcher (e.g. choose derivation path, decide which docker containers you will be using).
-- deploying and activating components like the cron container which schedules certain tasks/calls.
-- create webhooks with active watch so that your app receives notifications via asynchronous callback
-
-## Make a custom backend for your app by adding your own modules and functions
-
-- Make your own cyphernode by adding any compatible docker container (e.g. Bitcoin-js, electrum personal server, block explorer index)
-- Creating custom scripts based on the features of the docerkized software
-- Create and add web-interface applications to your docker swarm.
- Your own web wallet (remote control with GUI over your nodes), graphana stats dashboard, reporting, notifications.
-
-# Roadmap/TODO
-
-## Utilities and API endpoints
-
-1. Add opentimestamps endpoints to stamp data, verify, upgrade, get information of OTS files
-2. Lightning network callbacks for payment notifications
-3. Address identification and validation scripts
-- Be able to detect if a given data is a Bitcoin address, P2SH address, Bech32 address, Bolt11 invoice
-- Validate according to the type
-4. Add blockchain indexer to enable bitcoin block explorer features
-5. Add Electrum Personal Server and Electrum Server dockers
-- By default, Electrum Personal Server is added to the container network
-6.Create endpoints for all delegated tasks
-- Add all Bitcoin RPC endpoints
-7. Add PGP library docker and endpoints for various signatures
-- Cleartext signatures
-8. Add "deriveandwatch" script which derives a set of addresses and sends payment notifications
-- custom gap limit with 100 as default
-9. Add PayNyms library and endpoint
-10. Create launch scripts.
-
-## Related tools
-
-1. Open-source (white-label) web interface (self-hosted as part of the default Docker network)
-- Allow users to connect using Trezor
-- Send PSBT files to ColdCard wallet for remote signing
-- Change Bitcoin and C-Lighning configs.
-- Manually call all API endpoints (with parameters) in web-interface to empower non-technical users to perform advanced functions
-- Complete web-interface over Bitcoin Core RPC
-- View transactions, balances, etc.
-- suggestions welcome!
-2. Lunanode launcher web app
-
-## Security Roadmap
-
-You can find it here: https://github.com/SatoshiPortal/cyphernode/issues/13#issue-364164006
 
 # Example use-case for cyphernode
 
