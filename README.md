@@ -47,6 +47,8 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 - sending eventmessages to the cyphernode pub/sub system to trigger other events
 - making requests to a cypherapp within the cyphernode network, either from the outside via the API or from other apps within the network
 
+![image](doc/CN-Arch.jpg)
+
 # Cyphernode Architecture
 Cyphernode is an assembly of Docker containers being called by a request dispatcher.
 
@@ -84,7 +86,7 @@ You can also add any docker components yourself, like Electrum or Esplora, if yo
 
 The advantage of using cypherapps to deploy your apps is that you can leverage all the web API infrastructure of cyphernode, and you can benefit from high levels of security. 
 
-Example of existing and planned cypherapps:
+**Example of existing and planned cypherapps:**
 - Non-custodial trading bot that manages deposits and withdrawals to and from an entreprise wallet
 - Bitcoin timestamping and PGP signature API that manages files and status on top of cyphernode
 - Batcher: create a batching sechedule based on time or amount thresholds, add and remove outputs from a batch of transactions, spend a batch of transactions with webhook notification to multiple callback URLs (one for each output added to the batch), manage multiple batches
@@ -184,6 +186,35 @@ There are two principal ways to watch Bitcoin addresses:
 
 There is no real limit to how many addresses can be watched.
 
+#### API ENDPOINT: Watch a Bitcoin Address (called by application)
+
+Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
+
+```http
+POST http://cyphernode:8888/watch
+with body...
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
+```
+
+Proxy response:
+
+```json
+{
+  "id": "291",
+    "event": "watch",
+    "imported": "1",
+    "inserted": "1",
+    "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+    "unconfirmedCallbackURL": "192.168.133.233:1111/callback0conf",
+    "confirmedCallbackURL": "192.168.133.233:1111/callback1conf",
+    "estimatesmartfee2blocks": "0.000010",
+    "estimatesmartfee6blocks": "0.000010",
+    "estimatesmartfee36blocks": "0.000010",
+    "estimatesmartfee144blocks": "0.000010",
+    "eventMessage": "eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"
+}
+```
+
 **Note: the difference between using addresses individually or watching an XPUB is you can specify different callback URLs for notifications and unique labels for individual watching, as well as event messages, which lets you know where the transactions are coming from and what is suppsed to happen next. When using the watch XPUB, you are monitoring for transactions and you will know which addresses are involved, but you will not be able to specific a different callback URL for each address.**
 
 When watching a Bitcoin address, you can configure these additional options:
@@ -195,6 +226,160 @@ When watching a Bitcoin address, you can configure these additional options:
 Because we will be importanting many different addresses from many different xpubs into the same Bitcoin Core wallet (the watcher) we need a way to track which addresses belong to which XPUB, which Bitcoin Core watcher will not know.
 
 The system we use by default is to put the XPUB itself as the label when importing addresses using the XPUB watcher feature. So we can tell which addresses were from which xpubs simply because the xpub is in the internal Bitcoin Core address label for all addresses. For this reason, we have some watching functions which are based on labels, and we can decide to watch addresses only of a certain label and send them collectively to one callback URLs (or grouping).
+
+#### API ENDPOINT: Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by application)
+
+Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
+
+```http
+POST http://cyphernode:8888/watchxpub
+with body...
+{"label":"4421","pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq","path":"0/1/n","nstart":109,"unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+```
+
+Proxy response:
+
+```json
+{
+  "id":"5",
+  "event":"watchxpub",
+  "pub32":"upub57Wa4MvRPNyAhxr578mQUdPr6MHwpg3Su875hj8K75AeUVZLXtFeiP52BrhNqDg93gjALU1MMh5UPRiiQPrwiTiuBBBRHzeyBMgrbwkmmkq",
+  "label":"2219",
+  "path":"0/1/n",
+  "nstart":"109",
+  "unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf",
+  "confirmedCallbackURL":"192.168.111.233:1111/callback1conf"
+}
+```
+
+### Watching transactions
+
+The Watch Transaction feature will provide notitifications about a supplied txid, usually triggered by blocks. This is used internally in various processes, but it is also a neat feautre to watch transactions you are sending outbound to be notified with detailed information when the transaction confirms. You can also put a watch on inbound transactions to trigger specific event notifications.
+
+It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
+
+
+## Sending Bitcoin payments via the Cyphernode wallet API
+
+A **spender** wallet 
+
+The wallet API delegates the tasks of creating, signing and boradcasting transactions to various existing Bitcoin wallet software managed by the Cyphernode stack. 
+
+- Bitcoin Core
+- C-Lightning
+- Wasabi Wallet
+- Liquid network (Elements)
+
+These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be 
+
+
+### Making Bitcoin transactions with Bitcoin Core
+
+#### Get a new address from the spender to fund your wallet
+
+This will call getnewaddress RPC on the spending wallet.  Used to refill the spending wallet from cold wallet (ie Trezor).  Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
+
+```http
+GET http://cyphernode:8888/getnewaddress
+GET http://cyphernode:8888/getnewaddress/bech32
+GET http://cyphernode:8888/getnewaddress/legacy
+GET http://cyphernode:8888/getnewaddress/p2sh-segwit
+```
+
+Proxy response:
+
+```json
+{
+  "address":"2NEC972DZpRM7SfuJUG9rYEix2P9A8qsNKF"
+}
+```
+
+```json
+{
+  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj"
+}
+```
+ 
+#### Call the spend endpoint to send Bitcoin payments
+
+Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.
+
+```http
+POST http://cyphernode:8888/spend
+with body...
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
+```
+
+Proxy response:
+
+```json
+{
+  "status": "accepted",
+  "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+  "details":
+  {
+    "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+    "amount": 0.00233,
+    "firstseen": 1584568841,
+    "size": 222,
+    "vsize": 141,
+    "replaceable": true,
+    "fee": 0.00000141,
+    "subtractfeefromamount": false
+  }
+}
+```
+
+-> Create and process PSBT files to sign remotely
+-> "Bump fee" on RBF transactions
+-> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
+-> Use `getbalances` and `getnewaddress` on the spender wallet to monitor refill the hot wallet
+
+
+4. Send many
+5. Bump 
+6. List transactions
+7. Create raw transactions
+8. Create and fund PSBT transactions
+
+
+### Making Lightning Network transactions with C-Lightning
+
+-> Make sure you have C-Lightning installed
+-> blabla
+-> blabla
+
+### Wasabi Wallet 
+
+-> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
+-> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
+
+### PSBT offline signing
+
+-> Create a new wallet using `create_wallet` endpoint
+-> Load wallet using `load_wallet` endpoint
+-> Make this wallet a PSBT wallet by calling the `psbt_enable` endpoint and adding the xpub of the wallet you want to use (e.g. from ColdCard)
+-> This will import addresses into the newly craeted wallet, so you will probably want to enable the rescan option and specify a certain blockheight
+
+### Liquid Wallet
+
+-> You can send any Liquid asset using the `elements_spend` endpoint
+-> You must always specify which asset you are sending by supplying the `assetId`. There is no default asset to avoid accidentally sending L-BTC to someone by accident because you did not specify the asset. The L-BTC assetId is `6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d`
+-> Use the `elements_watchtxidrequest` request after receiving the transactionId from `elements_spend` to get noficiations about transaction confirmations
+
+## Receive payments, track balances and get notifications
+
+-> Watch a Bitcoin address and get notified to callback URL via Webhook
+
+-> External wallet (xpub) tracker
+
+## Receiving Bitcoin payments
+
+Cyphernode allows you to create
+
+
 
 **Example code for a payment processor**
 
@@ -233,10 +418,7 @@ The system we use by default is to put the XPUB itself as the label when importi
         "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
         "unconfirmedCallbackURL": "`your_callback_url_1`"
         "confirmedCallbackURL": "`your_callback_url_2`",
-        "estimatesmartfee2blocks": "0.00001000",
         "estimatesmartfee6blocks": "0.00001000",
-        "estimatesmartfee36blocks": "0.00001000",
-        "estimatesmartfee144blocks": "0.00001000",
         "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
     }
 }
@@ -299,92 +481,6 @@ The system we use by default is to put the XPUB itself as the label when importi
         "confirmations": 2
 }
 ```
-### Watching transactions
-
-The Watch Transaction feature will provide notitifications about a supplied txid, usually triggered by blocks. This is used internally in various processes, but it is also a neat feautre to watch transactions you are sending outbound to be notified with detailed information when the transaction confirms. You can also put a watch on inbound transactions to trigger specific event notifications.
-
-It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
-
-## Sending Bitcoin payments via the Cyphernode wallet API
-
-A **spender** wallet 
-
-The wallet API delegates the tasks of creating, signing and boradcasting transactions to various existing Bitcoin wallet software managed by the Cyphernode stack. 
-
-- Bitcoin Core
-- C-Lightning
-- Wasabi Wallet
-- Liquid network (Elements)
-
-These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be able to perform these actions. 
-
-framework makes a disctinction between two main wallet functions:
-- Spender
-- Watcher
-
-The job of spending wallets is unsprisingly to send outbound payments
-
-
-
-### Making Bitcoin transactions with Bitcoin Core
- 
--> Call the spend endpoint to send Bitcoin payments
--> You can set confirmation target separately for each transaction 
-
-`POST http://cyphernode:8888/spend
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}`
-
--> Create and process PSBT files to sign remotely
--> "Bump fee" on RBF transactions
--> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
--> Use `getbalances` and `getnewaddress` on the spender wallet to monitor refill the hot wallet
-
-### Making Lightning Network transactions with C-Lightning
-
--> Make sure you have C-Lightning installed
--> blabla
--> blabla
-
-### Wasabi Wallet 
-
--> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
--> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
-
-### PSBT offline signing
-
--> Create a new wallet using `create_wallet` endpoint
--> Load wallet using `load_wallet` endpoint
--> Make this wallet a PSBT wallet by calling the `psbt_enable` endpoint and adding the xpub of the wallet you want to use (e.g. from ColdCard)
--> This will import addresses into the newly craeted wallet, so you will probably want to enable the rescan option and specify a certain blockheight
-
-### Liquid Wallet
-
--> You can send any Liquid asset using the `elements_spend` endpoint
--> You must always specify which asset you are sending by supplying the `assetId`. There is no default asset to avoid accidentally sending L-BTC to someone by accident because you did not specify the asset. The L-BTC assetId is `6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d`
--> Use the `elements_watchtxidrequest` request after receiving the transactionId from `elements_spend` to get noficiations about transaction confirmations
-
-## Receive payments, track balances and get notifications
-
--> Watch a Bitcoin address and get notified to callback URL via Webhook
-
--> External wallet (xpub) tracker
-
-## Receiving Bitcoin payments
-
-Cyphernode allows you to create
-
-
-![image](doc/CN-Arch.jpg)
-
-
-
-
-
-# Example use-case for cyphernode
-
-When building cyphernode, we had specific use-cases in mind that we built for ourselves. Use this as inspiration, and innovate on our procedures.
-
-[See one of Satoshi Portal's use case flow](doc/SATOSHIPORTAL-WORKFLOW.md)
 
 # Contributions
 
