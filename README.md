@@ -33,7 +33,7 @@ Cyphernode was designed for the following purposes:
 - Advanced features like automated conjoin transactions, multiple transaction hops 
 - Liquid Network Bitcoin wallet management, payment processing, transaction notifications, asset issuance, etc.
 
-## When calling a cyphernode endpoint, you are either
+## Cyphernode request handler and API
 
 
 The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
