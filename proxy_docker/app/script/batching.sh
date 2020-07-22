@@ -123,15 +123,17 @@ addtobatch() {
   # args:
   # - address, required, desination address
   # - amount, required, amount to send to the destination address
+  # - outputLabel, optional, if you want to reference this output
   # - batcherId, optional, the id of the batcher to which the output will be added, default batcher if not supplied, overrides batcherLabel
   # - batcherLabel, optional, the label of the batcher to which the output will be added, default batcher if not supplied
   # - webhookUrl, optional, the webhook to call when the batch is broadcast
   #
   # response:
+  # - batcherId, the id of the batcher
   # - outputId, the id of the added output
   # - nbOutputs, the number of outputs currently in the batch
   # - oldest, the timestamp of the oldest output in the batch
-  # - pendingTotal, the current sum of the batch's output amounts
+  # - total, the current sum of the batch's output amounts
   #
   # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
   # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
@@ -144,7 +146,7 @@ addtobatch() {
   local inserted_id
   local row
 
-  local address=$(echo "${request}" | jq ".address")
+  local address=$(echo "${request}" | jq -r ".address")
   trace "[addtobatch] address=${address}"
   local amount=$(echo "${request}" | jq ".amount")
   trace "[addtobatch] amount=${amount}"
@@ -156,6 +158,20 @@ addtobatch() {
   trace "[addtobatch] batcher_label=${batcher_label}"
   local webhook_url=$(echo "${request}" | jq ".webhookUrl")
   trace "[addtobatch] webhook_url=${webhook_url}"
+
+  local isvalid
+  isvalid=$(validateaddress "${address}" | jq ".result.isvalid")
+  if [ "${isvalid}" != "true" ]; then
+
+    response='{"result":null,"error":{"code":-32700,"message":"Invalid address","data":'${request}'}}'
+
+    trace "[addtobatch] Invalid address"
+    trace "[addtobatch] responding=${response}"
+
+    echo "${response}"
+
+    return 1
+  fi
 
   if [ "${batcher_id}" = "null" ] && [ "${batcher_label}" = "null" ]; then
     # If batcher_id and batcher_label are null, use default batcher
@@ -174,7 +190,7 @@ addtobatch() {
     # batcherLabel not found
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
   else
-    inserted_id=$(sql "INSERT INTO recipient (address, amount, webhook_url, batcher_id, label) VALUES (${address}, ${amount}, ${webhook_url}, ${batcher_id}, ${label}); SELECT LAST_INSERT_ROWID();")
+    inserted_id=$(sql "INSERT INTO recipient (address, amount, webhook_url, batcher_id, label) VALUES (\"${address}\", ${amount}, ${webhook_url}, ${batcher_id}, ${label}); SELECT LAST_INSERT_ROWID();")
     returncode=$?
     trace_rc ${returncode}
 
@@ -192,7 +208,7 @@ addtobatch() {
       local total=$(echo "${row}" | cut -d '|' -f3)
       trace "[addtobatch] total=${total}"
 
-      response='{"result":{"batcherId":'${batcher_id}',"outputId":'${inserted_id}',"nbOutputs":'${count}',"oldest":"'${oldest}'","pendingTotal":'${total}'},"error":null}'
+      response='{"result":{"batcherId":'${batcher_id}',"outputId":'${inserted_id}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}'},"error":null}'
     fi
   fi
 
@@ -208,10 +224,11 @@ removefrombatch() {
   # - outputId, required, id of the output to remove
   #
   # response:
+  # - batcherId, the id of the batcher
   # - outputId, the id of the removed output if found
   # - nbOutputs, the number of outputs currently in the batch
   # - oldest, the timestamp of the oldest output in the batch
-  # - pendingTotal, the current sum of the batch's output amounts
+  # - total, the current sum of the batch's output amounts
   #
   # BODY {"id":72}
 
@@ -252,7 +269,7 @@ removefrombatch() {
         local total=$(echo "${row}" | cut -d '|' -f3)
         trace "[removefrombatch] total=${total}"
 
-        response='{"result":{"batcherId":'${batcher_id}',"nbOutputs":'${count}',"oldest":"'${oldest}'","pendingTotal":'${total}'},"error":null}'
+        response='{"result":{"batcherId":'${batcher_id}',"outputId":'${id}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}'},"error":null}'
       fi
     else
       response='{"result":null,"error":{"code":-32700,"message":"Output not found or already spent","data":'${request}'}}'
@@ -450,7 +467,7 @@ batchspend() {
       local total=$(echo "${row}" | cut -d '|' -f3)
       trace "[batchspend] total=${total}"
 
-      response='{"result":{"batcherId":'${batcher_id}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}
+      response='{"result":{"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}
       response="${response},\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":{${recipientsjson}}}"
       response="${response},\"error\":null}"
 
@@ -595,14 +612,14 @@ listbatchers() {
   # curl (GET) http://192.168.111.152:8080/listbatchers
   #
   # {"result":[
-  #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},
-  #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"pendingTotal":0.49827387},
-  #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"pendingTotal":4.16843782}
+  #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},
+  #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"total":0.49827387},
+  #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"total":4.16843782}
   #  ],
   #  "error":null}
 
 
-  local batchers=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"pendingTotal\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL GROUP BY b.id")
+  local batchers=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL GROUP BY b.id")
   trace "[listbatchers] batchers=${batchers}"
 
   local returncode
@@ -635,7 +652,7 @@ getbatcher() {
   # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
   #
   # response:
-  # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},"error":null}
+  # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},"error":null}
   #
   # BODY {}
   # BODY {"batcherId":34}
@@ -665,7 +682,7 @@ getbatcher() {
     whereclause="b.id=${batcher_id}"
   fi
 
-  batcher=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"pendingTotal\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL WHERE ${whereclause} GROUP BY b.id")
+  batcher=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL WHERE ${whereclause} GROUP BY b.id")
   trace "[getbatcher] batcher=${batcher}"
 
   if [ -n "${batcher}" ]; then
@@ -704,14 +721,15 @@ getbatchdetails() {
   #      "size":424,
   #      "vsize":371,
   #      "replaceable":yes,
-  #      "fee":0.00004112,
-  #      "outputs":[
-  #        {"label":"order 1234","address":"1abc","amount":0.12},
-  #        {"label":"order 2345","address":"3abc","amount":0.66},
-  #        "bc1abc":2.848,
-  #        ...
-  #      ]
-  #    }
+  #      "fee":0.00004112
+  #    },
+  #    "outputs":[
+  #      "1abc":0.12,
+  #      "3abc":0.66,
+  #      "bc1abc":2.848,
+  #      ...
+  #    ]
+  #  }
   # },"error":null}
   #
   # BODY {}
@@ -756,7 +774,7 @@ getbatchdetails() {
   fi
 
   # First get the batch summary
-  batch=$(sql "SELECT b.id, COALESCE(t.id, 0), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id")
+  batch=$(sql "SELECT b.id, COALESCE(t.id, NULL), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id")
   trace "[getbatchdetails] batch=${batch}"
 
   if [ -n "${batch}" ]; then
@@ -768,12 +786,12 @@ getbatchdetails() {
     if [ -n "${tx_id}" ]; then
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
+      
+      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
       outerclause="AND r.tx_id IS NULL"
     fi
-
-    tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
 
     batcher_id=$(echo "${batch}" | cut -d '|' -f1)
     outputs=$(sql "SELECT '{\"outputId\":' || id || ',\"outputLabel\":\"' || COALESCE(label, '') || '\",\"address\":\"' || address || '\",\"amount\":' || amount || ',\"addedTimestamp\":\"' || inserted_ts || '\"}' FROM recipient r WHERE batcher_id=${batcher_id} ${outerclause}")

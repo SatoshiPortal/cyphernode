@@ -355,10 +355,11 @@ main() {
           # - webhookUrl, optional, the webhook to call when the batch is broadcast
           #
           # response:
+          # - batcherId, the id of the batcher
           # - outputId, the id of the added output
           # - nbOutputs, the number of outputs currently in the batch
           # - oldest, the timestamp of the oldest output in the batch
-          # - pendingTotal, the current sum of the batch's output amounts
+          # - total, the current sum of the batch's output amounts
           #
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
@@ -376,10 +377,11 @@ main() {
           # - outputId, required, id of the output to remove
           #
           # response:
+          # - batcherId, the id of the batcher
           # - outputId, the id of the removed output if found
           # - nbOutputs, the number of outputs currently in the batch
           # - oldest, the timestamp of the oldest output in the batch
-          # - pendingTotal, the current sum of the batch's output amounts
+          # - total, the current sum of the batch's output amounts
           #
           # BODY {"outputId":72}
 
@@ -447,7 +449,7 @@ main() {
           # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
           #
           # response:
-          # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},"error":null}
+          # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},"error":null}
           #
           # BODY {}
           # BODY {"batcherId":34}
@@ -503,9 +505,9 @@ main() {
           #
           # response:
           # {"result":[
-          #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"pendingTotal":0.86990143},
-          #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"pendingTotal":0.49827387},
-          #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"pendingTotal":4.16843782}
+          #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},
+          #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"total":0.49827387},
+          #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"total":4.16843782}
           #  ],
           #  "error":null}
 
