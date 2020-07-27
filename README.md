@@ -111,7 +111,7 @@ Cyphernode is designed to be deployed on virtual machines with launch scripts, b
 * For a full-node and all modules: 400 GB of storage and 2GB of RAM minimum
 * When adding other modules like Lightning, Coinjoin, other cypherapps, etc. you will need to increase requirements
 
-# Cyphernode Bitcoin Wallet Management:  Receiving payment notifications and tracking wallet balances
+# Cyphernode Bitcoin Wallet Management
 
 Cyphernode allows its users to create and use Bitcoin Wallets via API, but it is not itself a Bitcoin wallet: it is Bitcoin wallet management tool that controls other Bitcoin Wallets. These wallets are used generally for two purposes: receiving Bitcoin payments and sending Bitcoin payments.
 
@@ -130,6 +130,8 @@ In reality, there is only need for one **watcher** wallet in the cyphernode stac
 
 Cyphernode was built originally as an alternative to Bitcoin block explorer APIs. It offers the same features as the most advances commercial APIs but with far greater reliability, flexbility, privacy and more advanced features.
 
+## Receiving payments
+
 Receiving Bitcoin payments involves the following crucial steps:
 
 1. Generating a new Bitcoin addresses for each payment
@@ -137,19 +139,13 @@ Receiving Bitcoin payments involves the following crucial steps:
 3. Monitoring inbound transactions for confirmations 
 4. Logging and displaying transaction details
 
-## Generating Bitcoin addresses
+### Generating Bitcoin addresses
 
 In Cyphernode, there are 6 ways to generate receiving addresses. The methods can be found in the proxy here below.
 
-1.2 [Elements Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/elements_walletoperations.sh)
-1.3 [Bitcoin Derivation Utilities](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/bitcoin.sh)
-1.4 [Manual or automated address import](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/importaddress.sh)
-1.5 [Wasabi Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/wasabi.sh)
-1.6 [Lightning Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/call_lightningd.sh)
-
 Note: always make sure you have access to the keys of the addresses you are generating, or if they are watch only, make sure you know where they are going.
 
-### 1. [Dynamically derived from an XPUB (or ZPUB or YPUB)](https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md#get-derived-addresses-using-path-in-config-and-provided-index-called-by-application)
+#### 1. [Dynamically derived from an XPUB (or ZPUB or YPUB)](https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md#get-derived-addresses-using-path-in-config-and-provided-index-called-by-application)
 
 **How it works**: Using this method, you can simply provide the zpub and it will automatically derive a new one each time. Or you can specify the path you want to derive. There is no limit to how many you can derive. Note: here you would want to specify a segwit path. Currently, this uses pycoin. 
 
@@ -218,7 +214,7 @@ Proxy response:
 
 [Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/walletoperations.sh)
 
-### 2. [From a Bitcoin Core hot wallet (spender)](https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1044) 
+#### 2. [From a Bitcoin Core hot wallet (spender)](https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1044) 
 
 Calls getnewaddress RPC on the spending wallet. Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
 
