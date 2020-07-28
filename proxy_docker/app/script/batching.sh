@@ -468,7 +468,7 @@ batchspend() {
       trace "[batchspend] total=${total}"
 
       response='{"result":{"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}
-      response="${response},\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":{${recipientsjson}}}"
+      response="${response},\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":[${webhooks_data}]}"
       response="${response},\"error\":null}"
 
       # Delete the temp file containing the raw tx (see above)
