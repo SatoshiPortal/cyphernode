@@ -291,13 +291,14 @@ batchspend() {
   # NOTYET - feeRate, optional, overrides confTarget if supplied, overrides default value of createbatcher, default to value of createbatcher, default Bitcoin Core value will be used if not supplied
   #
   # response:
-  # - txid, the txid of the batch
+  # - batcherId, id of the executed batcher
+  # - confTarget, conf_target used for the spend
   # - nbOutputs, the number of outputs spent in the batch
   # - oldest, the timestamp of the oldest output in the spent batch
   # - total, the sum of the spent batch's output amounts
-  # - txid, the transaction txid
+  # - txid, the batch transaction id
   # - hash, the transaction hash
-  # - tx details: size, vsize, replaceable, fee
+  # - tx details: firstseen, size, vsize, replaceable, fee
   # - outputs
   #
   # BODY {}
