@@ -576,6 +576,40 @@ GET http://cyphernode:8888/executecallbacks
 
 Proxy response: EMPTY
 
+### Get txns from spending wallet
+
+Calls listtransactions bitcoin RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/get_txns_spending
+```
+
+Proxy response:
+
+```json
+{
+  "txns": [
+    {
+      "address": "tb1qfk6r46fj0u0we3c9lt0arl0dhqg2cry2sch7mf",
+      "category": "receive",
+      "amount": 0.00160052,
+      "label": "",
+      "vout": 0,
+      "confirmations": 21125,
+      "blockhash": "000000008c232ec9447e0cbcefdbd128a707c98189d4ab5036fdce3c313f0621",
+      "blockindex": 73,
+      "blocktime": 1595094603,
+      "txid": "dc598f96f50f6b1ab36b3172315e0fd928279dd0d909708b60af124c022e1e68",
+      "walletconflicts": [],
+      "time": 1595096613,
+      "timereceived": 1595216058,
+      "bip125-replaceable": "no"
+    }
+  ]
+}
+```
+
+
 ### Get spending wallet's balance (called by application)
 
 Calls getbalance RPC on the spending wallet.
