@@ -32,13 +32,8 @@ web() {
   tor=$(echo ${msg} | jq -e ".tor")
   # jq -e will have a return code of 1 if the supplied tag is null.
   if [ "$?" -ne "0" ]; then
-<<<<<<< HEAD
     # tor tag null
     tor=false
-=======
-    # torbypass tag null
-    torbypass=true
->>>>>>> dev
   fi
   trace "[web] tor=${tor}"
 
