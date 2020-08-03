@@ -609,7 +609,6 @@ Proxy response:
 }
 ```
 
-
 ### Get spending wallet's balance (called by application)
 
 Calls getbalance RPC on the spending wallet.
