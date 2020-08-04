@@ -72,6 +72,59 @@ Proxy response:
   ]
 }
 ```
+### Get a list of txns from a watched label
+
+Returns the list of transactions not spend(txns) from watched label.
+
+```http
+GET http://cyphernode:8888/get_txns_by_watchlabel/Label
+```
+
+Proxy response:
+
+```json
+{
+  "label_txns": [
+    {
+      "label": "Label",
+      "address": "tb3qvsk9em20hgd76d489jyfdpy840vywk5qx9p5sg",
+      "txid": "d48171ecc2ea4310ee7a15d9f11d8410d6a658225152b0c27122de1999d87cb2",
+      "confirmations": "1",
+      "blockheight": "1817509",
+      "v_out": "0",
+      "amount": "2.545e-05",
+      "blockhash": "000000000000015df543042fa9179fe5e0823ef4e9a8cd52c9f26ce96b5935b1",
+      "blocktime": "1596496264",
+      "timereceived": "1596437271"
+    }
+  ]
+}
+```
+
+### Get a list of unused address from a watched label
+
+Returns the list all address not used from watched label.
+
+```http
+GET http://cyphernode:8888/get_unused_addresses_by_watchlabel/Label
+```
+
+Proxy response:
+
+```json
+
+{
+  "label_unused_addresses": [
+    {
+      "pub32_watch_id": "8",
+      "pub32_label": "Label",
+      "pub32": "xpub5VFKvW1pNiCCZqM4eB2qNmJKJnUEzcsWOPDnnR37jMZzMBof1YCiw3MnVPgyTY8RFiBMSPX3rf3M1zGckKdsLoNv64FBd8E1vTS2PzqEgSz",
+      "address_pub32_index": "0",
+      "address": "tb1qvqdit92g96dkch5soru8p3c6whtn2w82n85fj6"
+    }
+  ]
+}
+```
 
 ### Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by application)
 
@@ -608,7 +661,6 @@ Proxy response:
   ]
 }
 ```
-
 
 ### Get spending wallet's balance (called by application)
 
