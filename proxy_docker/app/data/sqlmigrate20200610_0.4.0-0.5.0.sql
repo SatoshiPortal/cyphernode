@@ -14,3 +14,5 @@ ALTER TABLE recipient ADD COLUMN label INTEGER REFERENCES batcher;
 ALTER TABLE recipient ADD COLUMN calledback INTEGER DEFAULT FALSE;
 ALTER TABLE recipient ADD COLUMN calledback_ts INTEGER;
 CREATE INDEX idx_recipient_label ON recipient (label);
+
+ALTER TABLE tx ADD COLUMN conf_target INTEGER DEFAULT NULL;

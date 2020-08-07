@@ -48,6 +48,7 @@ CREATE TABLE tx (
   blockhash TEXT,
   blockheight INTEGER,
   blocktime INTEGER,
+  conf_target INTEGER,
   raw_tx TEXT,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );

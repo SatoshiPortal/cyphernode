@@ -448,7 +448,7 @@ batchspend() {
       row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
 
       # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('batchspend-rawtx-${txid}.blob')); SELECT LAST_INSERT_ROWID();")
+      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}.blob')); SELECT LAST_INSERT_ROWID();")
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -eq 0 ]; then
@@ -469,13 +469,13 @@ batchspend() {
       trace "[batchspend] total=${total}"
 
       response='{"result":{"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}
-      response="${response},\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":[${webhooks_data}]}"
+      response="${response},\"status\":\"accepted\",\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":[${webhooks_data}]}"
       response="${response},\"error\":null}"
 
       # Delete the temp file containing the raw tx (see above)
       rm batchspend-rawtx-${txid}.blob
 
-      batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"txid":"'${txid}'","hash":'${tx_hash}',"details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
+      batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":'${tx_hash}',"details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
 
     else
       local message=$(echo "${data}" | jq -e ".error.message")
@@ -503,8 +503,14 @@ batch_check_webhooks() {
   local tx_vsize
   local tx_replaceable
   local fees
+  local conf_target
+  local row
+  local count
+  local oldest
+  local total
+  local tx_id
 
-  local batching=$(sql "SELECT address, amount, r.id, webhook_url, b.id, t.txid, t.hash, t.timereceived, t.fee, t.size, t.vsize, t.is_replaceable FROM recipient r, batcher b, tx t WHERE r.batcher_id=b.id AND r.tx_id=t.id AND NOT calledback AND tx_id IS NOT NULL AND webhook_url IS NOT NULL")
+  local batching=$(sql "SELECT address, amount, r.id, webhook_url, b.id, t.txid, t.hash, t.timereceived, t.fee, t.size, t.vsize, t.is_replaceable, t.conf_target, t.id FROM recipient r, batcher b, tx t WHERE r.batcher_id=b.id AND r.tx_id=t.id AND NOT calledback AND tx_id IS NOT NULL AND webhook_url IS NOT NULL")
   trace "[batch_check_webhooks] batching=${batching}"
 
   local IFS=$'\n'
@@ -527,18 +533,35 @@ batch_check_webhooks() {
     trace "[batch_check_webhooks] tx_hash=${tx_hash}"
     tx_ts_firstseen=$(echo "${row}" | cut -d '|' -f8)
     trace "[batch_check_webhooks] tx_ts_firstseen=${tx_ts_firstseen}"
-    tx_size=$(echo "${row}" | cut -d '|' -f9)
-    trace "[batch_check_webhooks] tx_size=${tx_size}"
-    tx_vsize=$(echo "${row}" | cut -d '|' -f10)
-    trace "[batch_check_webhooks] tx_vsize=${tx_vsize}"
-    tx_replaceable=$(echo "${row}" | cut -d '|' -f11)
-    trace "[batch_check_webhooks] tx_replaceable=${tx_replaceable}"
-    fees=$(echo "${row}" | cut -d '|' -f12)
+    fees=$(echo "${row}" | cut -d '|' -f9)
     trace "[batch_check_webhooks] fees=${fees}"
+    tx_size=$(echo "${row}" | cut -d '|' -f10)
+    trace "[batch_check_webhooks] tx_size=${tx_size}"
+    tx_vsize=$(echo "${row}" | cut -d '|' -f11)
+    trace "[batch_check_webhooks] tx_vsize=${tx_vsize}"
+    tx_replaceable=$(echo "${row}" | cut -d '|' -f12)
+    trace "[batch_check_webhooks] tx_replaceable=${tx_replaceable}"
+    conf_target=$(echo "${row}" | cut -d '|' -f13)
+    trace "[batch_check_webhooks] conf_target=${conf_target}"
+    tx_id=$(echo "${row}" | cut -d '|' -f14)
+    trace "[batch_check_webhooks] tx_id=${tx_id}"
 
     webhooks_data="{\"outputId\":${recipient_id},\"address\":\"${address}\",\"amount\":${amount},\"webhookUrl\":\"${webhook_url}\"}"
 
-    batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"txid":"'${txid}'","hash":"'${tx_hash}'","details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
+    # I know this query for each output is not very efficient, but this function should not execute often, only in case of
+    # failed callbacks on batches...
+    # Get the info on the batch
+    row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient r WHERE tx_id=\"${tx_id}\"")
+
+    # Use the selected row above
+    count=$(echo "${row}" | cut -d '|' -f1)
+    trace "[batchspend] count=${count}"
+    oldest=$(echo "${row}" | cut -d '|' -f2)
+    trace "[batchspend] oldest=${oldest}"
+    total=$(echo "${row}" | cut -d '|' -f3)
+    trace "[batchspend] total=${total}"
+
+    batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":"'${tx_hash}'","details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
   done
 }
 
