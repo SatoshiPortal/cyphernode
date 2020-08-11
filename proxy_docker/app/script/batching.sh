@@ -190,6 +190,20 @@ addtobatch() {
     # batcherLabel not found
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
   else
+    # Check if address already pending for this batcher...
+    inserted_id=$(sql "SELECT id FROM recipient WHERE address=\"${address}\" AND tx_id IS NULL AND batcher_id=${batcher_id}")
+    if [ -n "${inserted_id}" ]; then
+      response='{"result":null,"error":{"code":-32700,"message":"Duplicated address","data":'${request}'}}'
+
+      trace "[addtobatch] Duplicated address"
+      trace "[addtobatch] responding=${response}"
+
+      echo "${response}"
+
+      return 1
+    fi
+
+    # Insert the new destination
     inserted_id=$(sql "INSERT INTO recipient (address, amount, webhook_url, batcher_id, label) VALUES (\"${address}\", ${amount}, ${webhook_url}, ${batcher_id}, ${label}); SELECT LAST_INSERT_ROWID();")
     returncode=$?
     trace_rc ${returncode}
