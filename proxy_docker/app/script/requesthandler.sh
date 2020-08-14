@@ -217,6 +217,13 @@ main() {
           response=$(get_blockchain_info)
           response_to_client "${response}" ${?}
           ;;
+        gettxoutsetinfo)
+          # http://192.168.111.152:8080/gettxoutsetinfo
+
+          response=$(gettxoutsetinfo)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         gettransaction)
           # curl (GET) http://192.168.111.152:8080/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
 

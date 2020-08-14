@@ -103,3 +103,11 @@ validateaddress() {
   send_to_watcher_node "${data}"
   return $?
 }
+
+gettxoutsetinfo() {
+  trace "Entering gettxoutsetinfo()..."
+
+  local data='{"method":"gettxoutsetinfo"}'
+  send_to_watcher_node "${data}" | jq ".result"
+  return $?
+}
