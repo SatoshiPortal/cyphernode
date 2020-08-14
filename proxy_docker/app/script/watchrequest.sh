@@ -227,7 +227,7 @@ watchpub32() {
 
     returncode=0
   else
-    data="{\"error\":${error_msg},
+    data="{\"error\":\"${error_msg}\",
     \"event\":\"watchxpub\",
     \"pub32\":${pub32},
     \"label\":${label},
