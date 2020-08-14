@@ -100,19 +100,20 @@ watchpub32request() {
 
   local returncode
   local request=${1}
-  local label=$(echo "${request}" | jq -r ".label")
+  local label=$(echo "${request}" | jq ".label")
   trace "[watchpub32request] label=${label}"
-  local pub32=$(echo "${request}" | jq -r ".pub32")
+  local pub32=$(echo "${request}" | jq ".pub32")
   trace "[watchpub32request] pub32=${pub32}"
-  local path=$(echo "${request}" | jq -r ".path")
+  local path=$(echo "${request}" | jq ".path")
   trace "[watchpub32request] path=${path}"
   local nstart=$(echo "${request}" | jq ".nstart")
   trace "[watchpub32request] nstart=${nstart}"
   local cb0conf_url=$(echo "${request}" | jq ".unconfirmedCallbackURL")
+  trace "[watchpub32request] cb0conf_url=${cb0conf_url}"
   local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL")
   trace "[watchpub32request] cb1conf_url=${cb1conf_url}"
 
-  watchpub32 ${label} ${pub32} ${path} ${nstart} ${cb0conf_url} ${cb1conf_url}
+  watchpub32 "${label}" "${pub32}" "${path}" "${nstart}" "${cb0conf_url}" "${cb1conf_url}"
   returncode=$?
   trace_rc ${returncode}
 
@@ -156,7 +157,7 @@ watchpub32() {
   local subspath=$(echo -e $path | sed -En "s/n/${nstart}-${last_n}/p")
   trace "[watchpub32] subspath=${subspath}"
   local addresses
-  addresses=$(derivepubpath "{\"pub32\":\"${pub32}\",\"path\":\"${subspath}\"}")
+  addresses=$(derivepubpath "{\"pub32\":${pub32},\"path\":${subspath}}")
   returncode=$?
   trace_rc ${returncode}
 #  trace "[watchpub32] addresses=${addresses}"
@@ -170,7 +171,7 @@ watchpub32() {
 
     if [ "${returncode}" -eq 0 ]; then
       # Importmulti in Bitcoin Core...
-      result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" "${pub32}" "${addresses}")
+      result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" ${pub32} "${addresses}")
       returncode=$?
       trace_rc ${returncode}
       trace "[watchpub32] result=${result}"
@@ -178,20 +179,29 @@ watchpub32() {
       if [ "${returncode}" -eq 0 ]; then
         if [ -n "${upto_n}" ]; then
           # Update existing row, we are extending the watching window
-          sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=\"${pub32}\""
+          sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=${pub32}"
+          returncode=$?
+          trace_rc ${returncode}
         else
           # Insert in our DB...
-          sql "INSERT INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (\"${pub32}\", \"${label}\", \"${path}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${last_n}) ON CONFLICT(pub32, label) DO UPDATE SET watching=1, callback0conf=${cb0conf_url}, callback1conf=${cb1conf_url}"
+          sql "INSERT INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n) VALUES (${pub32}, ${label}, ${path}, 1, ${cb0conf_url}, ${cb1conf_url}, ${last_n})"
+          returncode=$?
+          trace_rc ${returncode}
+
+          if [ "${returncode}" -ne "0" ]; then
+            trace "[watchpub32] xpub or label already being watched, updating with new values based on supplied xpub..."
+            sql "UPDATE watching_by_pub32 SET watching=1, label=${label}, callback0conf=${cb0conf_url}, callback1conf=${cb1conf_url} WHERE pub32=${pub32}"
+            returncode=$?
+            trace_rc ${returncode}
+          fi
         fi
-        returncode=$?
-        trace_rc ${returncode}
 
         if [ "${returncode}" -eq 0 ]; then
-          id_inserted=$(sql "SELECT id FROM watching_by_pub32 WHERE label='${label}'")
+          id_inserted=$(sql "SELECT id FROM watching_by_pub32 WHERE pub32=${pub32}")
           trace "[watchpub32] id_inserted: ${id_inserted}"
 
           addresses=$(echo ${addresses} | jq ".addresses[].address")
-          insert_watches "${addresses}" ${cb0conf_url} ${cb1conf_url} ${id_inserted} ${nstart}
+          insert_watches "${addresses}" "${cb0conf_url}" "${cb1conf_url}" "${id_inserted}" "${nstart}"
         else
           error_msg="Can't insert xpub watcher in DB"
         fi
@@ -206,23 +216,23 @@ watchpub32() {
   fi
 
   if [ -z "${error_msg}" ]; then
-    data="{\"id\":\"${id_inserted}\",
+    data="{\"id\":${id_inserted},
     \"event\":\"watchxpub\",
-    \"pub32\":\"${pub32}\",
-    \"label\":\"${label}\",
-    \"path\":\"${path}\",
-    \"nstart\":\"${nstart}\",
+    \"pub32\":${pub32},
+    \"label\":${label},
+    \"path\":${path},
+    \"nstart\":${nstart},
     \"unconfirmedCallbackURL\":${cb0conf_url},
     \"confirmedCallbackURL\":${cb1conf_url}}"
 
     returncode=0
   else
-    data="{\"error\":\"${error_msg}\",
+    data="{\"error\":${error_msg},
     \"event\":\"watchxpub\",
-    \"pub32\":\"${pub32}\",
-    \"label\":\"${label}\",
-    \"path\":\"${path}\",
-    \"nstart\":\"${nstart}\",
+    \"pub32\":${pub32},
+    \"label\":${label},
+    \"path\":${path},
+    \"nstart\":${nstart},
     \"unconfirmedCallbackURL\":${cb0conf_url},
     \"confirmedCallbackURL\":${cb1conf_url}}"
 
@@ -259,9 +269,8 @@ insert_watches() {
     fi
     inserted_values="${inserted_values})"
   done
-#  trace "[insert_watches] inserted_values=${inserted_values}"
 
-  sql "INSERT OR IGNORE INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values}"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0"
   returncode=$?
   trace_rc ${returncode}
 
@@ -280,7 +289,7 @@ extend_watchers() {
 
   local last_imported_n
   local row
-  row=$(sql "SELECT pub32, label, derivation_path, callback0conf, callback1conf, last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
+  row=$(sql "SELECT COALESCE('\"'||pub32||'\"', 'null'), COALESCE('\"'||label||'\"', 'null'), COALESCE('\"'||derivation_path||'\"', 'null'), COALESCE('\"'||callback0conf||'\"', 'null'), COALESCE('\"'||callback1conf||'\"', 'null'), last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
   returncode=$?
   trace_rc ${returncode}
 
@@ -304,7 +313,7 @@ extend_watchers() {
     # we want to extend the watched addresses to 166 if our gap is 100 (default).
     trace "[extend_watchers] We have addresses to add to watchers!"
 
-    watchpub32 ${label} ${pub32} ${derivation_path} $((${last_imported_n} + 1)) "${callback0conf}" "${callback1conf}" ${upgrade_to_n} > /dev/null
+    watchpub32 "${label}" "${pub32}" "${derivation_path}" $((${last_imported_n} + 1)) "${callback0conf}" "${callback1conf}" ${upgrade_to_n} > /dev/null
     returncode=$?
     trace_rc ${returncode}
   else
@@ -320,7 +329,7 @@ watchtxidrequest() {
   local returncode
   local request=${1}
   trace "[watchtxidrequest] request=${request}"
-  local txid=$(echo "${request}" | jq -r ".txid")
+  local txid=$(echo "${request}" | jq ".txid")
   trace "[watchtxidrequest] txid=${txid}"
   local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL")
   trace "[watchtxidrequest] cb1conf_url=${cb1conf_url}"
@@ -333,21 +342,21 @@ watchtxidrequest() {
   local result
   trace "[watchtxidrequest] Watch request on txid (${txid}), cb 1-conf (${cb1conf_url}) and cb x-conf (${cbxconf_url}) on ${nbxconf} confirmations."
 
-  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (\"${txid}\", 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
+  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
     inserted=1
-    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid='${txid}'")
+    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid=${txid}")
     trace "[watchtxidrequest] id_inserted: ${id_inserted}"
   else
     inserted=0
   fi
 
-  local data="{\"id\":\"${id_inserted}\",
+  local data="{\"id\":${id_inserted},
   \"event\":\"watchtxid\",
-  \"inserted\":\"${inserted}\",
-  \"txid\":\"${txid}\",
+  \"inserted\":${inserted},
+  \"txid\":${txid},
   \"confirmedCallbackURL\":${cb1conf_url},
   \"xconfCallbackURL\":${cbxconf_url},
   \"nbxconf\":${nbxconf}}"
