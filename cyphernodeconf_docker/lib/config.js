@@ -10,10 +10,11 @@ const schemas = {
   '0.1.0': require('../schema/config-v0.1.0.json'),
   '0.2.0': require('../schema/config-v0.2.0.json'),
   '0.2.2': require('../schema/config-v0.2.2.json'),
-  '0.2.3': require('../schema/config-v0.2.3.json')
+  '0.2.3': require('../schema/config-v0.2.3.json'),
+  '0.2.4': require('../schema/config-v0.2.4.json')
 };
 
-const versionHistory = [ '0.1.0', '0.2.0', '0.2.2', '0.2.3' ];
+const versionHistory = [ '0.1.0', '0.2.0', '0.2.2', '0.2.3', '0.2.4' ];
 const defaultSchemaVersion=versionHistory[0];
 const latestSchemaVersion=versionHistory[versionHistory.length-1];
 
@@ -42,7 +43,8 @@ module.exports = class Config {
     this.migrations = {
       '0.1.0->0.2.0': this.migrate_0_1_0_to_0_2_0,
       '0.2.0->0.2.2': this.migrate_0_2_0_to_0_2_2,
-      '0.2.2->0.2.3': this.migrate_0_2_2_to_0_2_3
+      '0.2.2->0.2.3': this.migrate_0_2_2_to_0_2_3,
+      '0.2.3->0.2.4': this.migrate_0_2_3_to_0_2_4
     };
 
     this.setData( { schema_version: latestSchemaVersion } );
@@ -225,6 +227,14 @@ module.exports = class Config {
       return;
     }
     this.data.schema_version = '0.2.3';
+  }
+
+  async migrate_0_2_3_to_0_2_4() {
+    const currentVersion = this.data.schema_version;
+    if( currentVersion != '0.2.3' ) {
+      return;
+    }
+    this.data.schema_version = '0.2.4';
   }
 
 };

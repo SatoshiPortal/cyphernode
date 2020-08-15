@@ -140,6 +140,7 @@ services:
       - "8888:8888"
     <% } %>
     volumes:
+      - "<%= logs_datapath %>:/cnlogs"
       - "<%= proxy_datapath %>:/proxy/db"
       <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
       - "<%= lightning_datapath %>:/.lightning"
@@ -207,6 +208,8 @@ services:
       - "TOR_HOST=tor"
       - "TOR_PORT=9050"
     <% } %>
+    volumes:
+      - "<%= logs_datapath %>:/cnlogs"
     networks:
       - cyphernodenet
       - cyphernodeappsnet
@@ -233,6 +236,8 @@ services:
     ports:
       - "7777:7777"
     <% } %>
+    volumes:
+      - "<%= logs_datapath %>:/cnlogs"
     networks:
       - cyphernodenet
     <% if (docker_mode == 'compose') { %>
@@ -261,6 +266,7 @@ services:
       - "TOR_PORT=9050"
       <% } %>
     volumes:
+      - "<%= logs_datapath %>:/cnlogs"
       - "<%= otsclient_datapath %>:/otsfiles"
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
     command: $USER /script/startotsclient.sh
@@ -289,6 +295,7 @@ services:
       - "<%= gatekeeper_port %>:<%= gatekeeper_port %>"
     <% } %>
     volumes:
+      - "<%= logs_datapath %>:/cnlogs"
       - "<%= gatekeeper_datapath %>/certs:/etc/ssl/certs:ro"
       - "<%= gatekeeper_datapath %>/private:/etc/ssl/private:ro"
       - "<%= gatekeeper_datapath %>/keys.properties:/etc/nginx/conf.d/keys.properties"
