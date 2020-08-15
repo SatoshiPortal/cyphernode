@@ -17,7 +17,7 @@ compute_fees() {
   local txid=${1}
 
   # Let's reuse the file created in confirmation...
-  local tx_raw_details=$(cat conf-rawtx-${txid}.blob)
+  local tx_raw_details=$(cat rawtx-${txid}-$$.blob)
   trace "[compute_fees]  tx_raw_details=${tx_raw_details}"
   local vin_total_amount=$(compute_vin_total_amount "${tx_raw_details}")
 
@@ -93,10 +93,10 @@ compute_vin_total_amount()
     if ! ${txid_already_inserted}; then
       # Sometimes raw tx are too long to be passed as paramater, so let's write
       # it to a temp file for it to be read by sqlite3 and then delete the file
-      echo "${vin_raw_tx}" > vin-rawtx-${vin_txid}.blob
-      sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime}, readfile('vin-rawtx-${vin_txid}.blob'))"
+      echo "${vin_raw_tx}" > vin-rawtx-${vin_txid}-$$.blob
+      sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime}, readfile('vin-rawtx-${vin_txid}-$$.blob'))"
       trace_rc $?
-      rm vin-rawtx-${vin_txid}.blob
+      rm vin-rawtx-${vin_txid}-$$.blob
       txid_already_inserted=true
     fi
   done
