@@ -33,6 +33,44 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
+      name: 'logs_datapath',
+      default: utils.getDefault( 'logs_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/logs",
+          value: utils.setupDir()+"/cyphernode/logs"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/logs",
+          value: utils.defaultDataDirBase()+"/cyphernode/logs"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/logs",
+          value: utils.defaultDataDirBase()+"/.cyphernode/logs"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/logs",
+          value: utils.defaultDataDirBase()+"/logs"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your log files?'+utils.getHelp('logs_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.logs_datapath === '_custom') },
+      type: 'input',
+      name: 'logs_datapath_custom',
+      default: utils.getDefault( 'logs_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for log files?'+utils.getHelp('logs_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
       name: 'traefik_datapath',
       default: utils.getDefault( 'traefik_datapath' ),
       choices: [
