@@ -313,6 +313,29 @@ Proxy response:
   "minrelaytxfee": 1e-05
 }
 ```
+## Get the unspent transaction output set statistics
+
+Returns statistics about the unspent transaction output set.
+Note this call may take some time.
+
+```http
+GET http://cyphernode:8888/gettxoutsetinfo
+```
+
+Proxy response:
+
+```json
+{
+  "height": 1486864,
+  "bestblock": "000000000000002fb99d683e64bbfc2b7ad16f9a425cf7be77b481fb1afa363b",
+  "transactions": 9197804,
+  "txouts": 24041190,
+  "bogosize": 1803311256,
+  "hash_serialized_2": "ffc1fb007587596f9183154a613843e5b55b1d285b16d7e3b0cb7cbe6b2cba06",
+  "disk_size" : 23647567017, 
+  "total_amount": 20941947.16577759,
+}
+```
 
 ### Get the blockchain information (called by application)
 
@@ -325,6 +348,7 @@ GET http://cyphernode:8888/getblockchaininfo
 Proxy response:
 
 ```json
+
 {
   "chain": "test",
   "blocks": 1486864,
