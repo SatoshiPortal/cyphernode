@@ -83,25 +83,53 @@ build_callback_txid() {
 
   if [ "${returncode}" -eq "0" ]; then
     confirmations=$(echo "${tx_raw_details}" | jq '.result.confirmations')
+    if [ "${confirmations}" == "null" ]; then
+      confirmations=0
+    fi
     trace "[build_callback_txid] confirmations=${confirmations}"
 
     if [ "${confirmations}" -ge "${nbxconf}" ]; then
       trace "[build_callback_txid] Number of confirmations for tx is at least what we're looking for, callback time!"
+
+      # Sometimes raw tx are too long to be passed as paramater, so let's write
+      # it to a temp file for it to be read by sqlite3 and then delete the file
+      echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+
       # Number of confirmations for transaction is at least what we want
       # Let's prepare the callback!
 
-  #    blockhash=$(echo "${tx_raw_details}" | jq '.result.blockhash')
-  #    trace "[build_callback_txid] blockhash=${blockhash}"
-  #    blockheight=$(get_block_info $(echo "${blockhash}" | tr -d '"') | jq '.result.height')
-  #    trace "[build_callback_txid] blockheight=${blockheight}"
+      local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+      trace "[build_callback_txid] tx_hash=${tx_hash}"
+      local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+      trace "[build_callback_txid] tx_size=${tx_size}"
+      local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+      trace "[build_callback_txid] tx_vsize=${tx_vsize}"
+      local fees=$(compute_fees "${txid}")
+      trace "[build_callback_txid] fees=${fees}"
+      local tx_blockhash=$(echo "${tx_raw_details}" | jq '.result.blockhash')
+      trace "[build_callback_txid] tx_blockhash=${tx_blockhash}"
+      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      trace "[build_callback_txid] tx_blockheight=${tx_blockheight}"
+      local tx_blocktime=$(echo "${tx_raw_details}" | jq '.result.blocktime')
+      trace "[build_callback_txid] tx_blocktime=${tx_blocktime}"
 
       data="{\"id\":\"${id}\","
       data="${data}\"txid\":\"${txid}\","
-      data="${data}\"confirmations\":${confirmations}"
-      data="${data}}"
+      data="${data}\"hash\":${tx_hash},"
+      data="${data}\"confirmations\":${confirmations},"
+      data="${data}\"size\":${tx_size},"
+      data="${data}\"vsize\":${tx_vsize},"
+      data="${data}\"fees\":${fees},"
+      data="${data}\"blockhash\":${tx_blockhash},"
+      data="${data}\"blocktime\":\"$(date -Is -d @${tx_blocktime})\","
+      data="${data}\"blockheight\":${tx_blockheight}}"
       trace "[build_callback_txid] data=${data}"
 
       curl_callback_txid "${url}" "${data}"
+
+      # Delete the temp file containing the raw tx (see above)
+      rm rawtx-${txid}-$$.blob
+
       return $?
     else
       trace "[build_callback_txid] Number of confirmations for tx is not enough to call back."
