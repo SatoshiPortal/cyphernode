@@ -126,11 +126,12 @@ build_callback_txid() {
       trace "[build_callback_txid] data=${data}"
 
       curl_callback_txid "${url}" "${data}"
+      returncode=$?
 
       # Delete the temp file containing the raw tx (see above)
       rm rawtx-${txid}-$$.blob
 
-      return $?
+      return ${returncode}
     else
       trace "[build_callback_txid] Number of confirmations for tx is not enough to call back."
       return 1
