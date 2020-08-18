@@ -106,7 +106,7 @@ confirmation() {
     sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('conf-rawtx-${txid}.blob'))"
     trace_rc $?
 
-    id_inserted=$(sql "SELECT id FROM tx WHERE txid='${txid}'")
+    id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
     trace_rc $?
 
   else
@@ -141,7 +141,7 @@ confirmation() {
   local watching_id
 
   # Let's see if we need to insert tx in the join table
-  tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=${tx}")
+  tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=${id_inserted}")
 
   for row in ${rows}
   do

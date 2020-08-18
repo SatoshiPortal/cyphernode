@@ -34,7 +34,7 @@ importmulti_rpc() {
   # {"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},
   # {"scriptPubKey":{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},"timestamp":"now","watchonly":true,"label":"xpub"},
 
-  addresses=$(echo "${addresses}" | sed "s/\"address\"/\"scriptPubKey\":\{\"address\"/g" | sed "s/}/},\"timestamp\":\"now\",\"watchonly\":true,\"label\":\"${label}\"}/g")
+  addresses=$(echo "${addresses}" | sed "s/\"address\"/\"scriptPubKey\":\{\"address\"/g" | sed "s/}/},\"timestamp\":\"now\",\"watchonly\":true,\"label\":${label}}/g")
 #  trace "[importmulti_rpc] addresses=${addresses}"
 
   # Now we use that in the RPC string
