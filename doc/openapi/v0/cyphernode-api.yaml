@@ -803,6 +803,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /gettxoutsetinfo:
+    get:
+      tags:
+        - "stats"
+      summary: "Show UTXO set info"
+      description: "Returns detailed unspent transaction output set information."
+      operationId: "getTxoutsetInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TxoutsetInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'              
   /getinstallation_info:
     get:
       tags:
