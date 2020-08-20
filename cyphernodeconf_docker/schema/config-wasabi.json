@@ -1,9 +1,9 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://cyphernode.io/config-v0.2.3.json",
+  "$id": "http://cyphernode.io/config-wasabi.json",
   "type": "object",
-  "title": "Cyphernode config file structure v0.2.3",
+  "title": "Cyphernode config file structure wasabi",
   "additionalProperties": false,
   "required": [
     "schema_version",
@@ -31,6 +31,7 @@
     "gatekeeper_datapath",
     "gatekeeper_port",
     "proxy_datapath",
+    "logs_datapath",
     "traefik_datapath",
     "traefik_http_port",
     "traefik_https_port"
@@ -145,17 +146,37 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "type": "string",
+              "enum": ["wasabi"]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "wasabi_mixuntil",
+          "wasabi_rpcuser",
+          "wasabi_rpcpassword",
+          "wasabi_instance_count"
+        ]
+      }
     }
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "enum": [
-        "0.2.3"
+        "wasabi"
       ],
       "default": "0.3.0",
       "examples": [
-        "0.2.3"
+        "wasabi"
       ]
     },
     "setup_version": {
@@ -184,14 +205,16 @@
         "enum": [
           "tor",
           "lightning",
-          "otsclient"
+          "otsclient",
+          "wasabi"
         ],
         "title": "The feature",
         "default": "",
         "examples": [
           "tor",
           "lightning",
-          "otsclient"
+          "otsclient",
+          "wasabi"
         ]
       }
     },
@@ -468,6 +491,22 @@
         "/tmp/cyphernode/traefik"
       ]
     },
+    "logs_datapath": {
+      "$id": "#/properties/logs_datapath",
+      "type": "string",
+      "title": "Logs datapath",
+      "examples": [
+        "/tmp/cyphernode/logs"
+      ]
+    },
+    "logs_datapath_custom": {
+      "$id": "#/properties/logs_datapath_custom",
+      "type": "string",
+      "title": "Logs custom datapath",
+      "examples": [
+        "/tmp/cyphernode/logs"
+      ]
+    },
     "tor_datapath": {
       "$id": "#/properties/tor_datapath",
       "type": "string",
@@ -672,6 +711,58 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "wasabi_mixuntil": {
+      "$id": "#/properties/wasabi_mixuntil",
+      "type": "integer",
+      "title": "Wasabi mix until anonymity set",
+      "default": 50,
+      "examples": [
+        50
+      ]
+    },
+    "wasabi_instance_count": {
+      "$id": "#/properties/wasabi_instance_count",
+      "type": "integer",
+      "title": "How many wasabi instances do you want to run",
+      "default": 1,
+      "examples": [
+        1
+      ]
+    },
+    "wasabi_rpcuser": {
+      "$id": "#/properties/wasabi_rpcuser",
+      "type": "string",
+      "title": "Wasabi rpc user",
+      "default": "wasabi",
+      "examples": [
+        "wasabi"
+      ]
+    },
+    "wasabi_rpcpassword": {
+      "$id": "#/properties/wasabi_rpcpassword",
+      "type": "string",
+      "title": "Wasabi rpc password",
+      "default": "CHANGEME",
+      "examples": [
+        "CHANGEME"
+      ]
+    },
+    "wasabi_datapath": {
+      "$id": "#/properties/wasabi_datapath",
+      "type": "string",
+      "title": "Wasabi datapath",
+      "examples": [
+        "/tmp/cyphernode/wasabi"
+      ]
+    },
+    "wasabi_datapath_custom": {
+      "$id": "#/properties/wasabi_datapath_custom",
+      "type": "string",
+      "title": "Wasabi custom datapath",
+      "examples": [
+        "/tmp/cyphernode/wasabi"
       ]
     }
   }
