@@ -13,10 +13,11 @@ const schemas = {
   '0.2.3': require('../schema/config-v0.2.3.json'),
   '0.2.4': require('../schema/config-v0.2.4.json'),
   '0.2.5': require('../schema/config-v0.2.5.json'),
-  '0.2.6': require('../schema/config-v0.2.6.json')
+  '0.2.6': require('../schema/config-v0.2.6.json'),
+  'liquid': require('../schema/config-liquid.json')
 };
 
-const versionHistory = [ '0.1.0', '0.2.0', '0.2.2', '0.2.3', '0.2.4', '0.2.5', '0.2.6' ];
+const versionHistory = [ '0.1.0', '0.2.0', '0.2.2', '0.2.3', '0.2.4', '0.2.5', '0.2.6', 'liquid' ];
 const defaultSchemaVersion=versionHistory[0];
 const latestSchemaVersion=versionHistory[versionHistory.length-1];
 
@@ -48,7 +49,8 @@ module.exports = class Config {
       '0.2.2->0.2.3': this.migrate_0_2_2_to_0_2_3,
       '0.2.3->0.2.4': this.migrate_0_2_3_to_0_2_4,
       '0.2.4->0.2.5': this.migrate_0_2_4_to_0_2_5,
-      '0.2.5->0.2.6': this.migrate_0_2_5_to_0_2_6
+      '0.2.5->0.2.6': this.migrate_0_2_5_to_0_2_6,
+      '0.2.6->liquid': this.migrate_0_2_6_to_liquid
     };
 
     this.setData( { schema_version: latestSchemaVersion } );
@@ -255,6 +257,14 @@ module.exports = class Config {
       return;
     }
     this.data.schema_version = '0.2.6';
+  }
+
+  async migrate_0_2_6_to_liquid() {
+    const currentVersion = this.data.schema_version;
+    if( currentVersion != 'liquid' ) {
+      return;
+    }
+    this.data.schema_version = 'liquid';
   }
 
 };
