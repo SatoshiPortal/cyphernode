@@ -1,9 +1,9 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://cyphernode.io/config-v0.2.5.json",
+  "$id": "http://cyphernode.io/config-liquid.json",
   "type": "object",
-  "title": "Cyphernode config file structure v0.2.5",
+  "title": "Cyphernode config file structure liquid",
   "additionalProperties": false,
   "required": [
     "schema_version",
@@ -152,11 +152,11 @@
     "schema_version": {
       "type": "string",
       "enum": [
-        "0.2.5"
+        "liquid"
       ],
       "default": "0.3.0",
       "examples": [
-        "0.2.5"
+        "liquid"
       ]
     },
     "setup_version": {
