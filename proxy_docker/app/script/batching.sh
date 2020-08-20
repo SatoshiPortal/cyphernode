@@ -554,6 +554,7 @@ batch_check_webhooks() {
     tx_vsize=$(echo "${row}" | cut -d '|' -f11)
     trace "[batch_check_webhooks] tx_vsize=${tx_vsize}"
     tx_replaceable=$(echo "${row}" | cut -d '|' -f12)
+    tx_replaceable=$([ "${tx_replaceable}" -eq "1" ] && echo "true" || echo "false")
     trace "[batch_check_webhooks] tx_replaceable=${tx_replaceable}"
     conf_target=$(echo "${row}" | cut -d '|' -f13)
     trace "[batch_check_webhooks] conf_target=${conf_target}"
@@ -812,7 +813,7 @@ getbatchdetails() {
   fi
 
   # First get the batch summary
-  batch=$(sql "SELECT b.id, COALESCE(t.id, NULL), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id")
+  batch=$(sql "SELECT b.id, COALESCE(t.id, NULL), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || b.conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id")
   trace "[getbatchdetails] batch=${batch}"
 
   if [ -n "${batch}" ]; then
@@ -825,7 +826,7 @@ getbatchdetails() {
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
       
-      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
+      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || (CASE WHEN is_replaceable>0 THEN \"\\\"true\\\"\") || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
       outerclause="AND r.tx_id IS NULL"

@@ -91,7 +91,9 @@ testbatching() {
 
   # addtobatch to default batcher
   echo "Testing addtobatch..."
-  response=$(curl -sd '{"outputLabel":"test001","address":"test001","amount":0.001}' localhost:8888/addtobatch)
+  address1=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
+  echo "address1=${address1}"
+  response=$(curl -sd '{"outputLabel":"test001","address":"'${address1}'","amount":0.001}' localhost:8888/addtobatch)
   echo "response=${response}"
   id=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${id}"
@@ -104,7 +106,9 @@ testbatching() {
   fi
   echo "outputId=${id}"
 
-  response=$(curl -sd '{"batcherId":1,"outputLabel":"test002","address":"test002","amount":0.002}' localhost:8888/addtobatch)
+  address2=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
+  echo "address2=${address2}"
+  response=$(curl -sd '{"batcherId":1,"outputLabel":"test002","address":"'${address2}'","amount":22000000}' localhost:8888/addtobatch)
   echo "response=${response}"
   id2=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${id2}"

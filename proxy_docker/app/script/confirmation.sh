@@ -86,8 +86,8 @@ confirmation() {
 
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
-    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
-    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
+    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
     local fees=$(compute_fees "${txid}")
     trace "[confirmation] fees=${fees}"
@@ -184,8 +184,8 @@ confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
