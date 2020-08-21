@@ -317,8 +317,8 @@ testbatching() {
 }
 
 wait_for_callbacks() {
-  nc -vlp1111 -e ./tests-cb.sh &
-  nc -vlp1112 -e ./tests-cb.sh &
+  nc -vlp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\r\n\r\n" ; timeout 1 tee /dev/tty | cat ; echo 1>&2' &
+  nc -vlp1112 -e sh -c 'echo -en "HTTP/1.1 200 OK\r\n\r\n" ; timeout 1 tee /dev/tty | cat ; echo 1>&2' &
 }
 
 wait_for_callbacks
