@@ -42,7 +42,7 @@ elements_spend() {
 
     # Let's get transaction details on the spending wallet so that we have fee information
     tx_details=$(elements_get_transaction ${txid} "spender")
-    tx_raw_details=$(elements_get_rawtransaction ${txid})
+    tx_raw_details=$(elements_get_rawtransaction ${txid} | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
@@ -393,7 +393,7 @@ elements_batchspend() {
 
     # Let's get transaction details on the spending wallet so that we have fee information
     tx_details=$(elements_get_transaction ${txid} "spender")
-    tx_raw_details=$(elements_get_rawtransaction ${txid})
+    tx_raw_details=$(elements_get_rawtransaction ${txid} | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
