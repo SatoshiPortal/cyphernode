@@ -11,7 +11,7 @@ elements_do_callbacks() {
   trace "Entering elements_do_callbacks()..."
 
   # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, unblinded_address, watching_assetid, assetid FROM elements_watching w LEFT JOIN elements_watching_tx ON w.id = elements_watching_id LEFT JOIN elements_tx ON elements_tx.id = elements_tx_id LEFT JOIN elements_watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND elements_watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
+  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w LEFT JOIN elements_watching_tx ON w.id = elements_watching_id LEFT JOIN elements_tx ON elements_tx.id = elements_tx_id LEFT JOIN elements_watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND elements_watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
   trace "[elements_do_callbacks] callbacks0conf=${callbacks}"
 
   local returncode
@@ -30,7 +30,7 @@ elements_do_callbacks() {
     fi
   done
 
-  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, unblinded_address, watching_assetid, assetid FROM elements_watching w, elements_watching_tx wt, elements_tx t LEFT JOIN elements_watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = elements_watching_id AND elements_tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
+  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w, elements_watching_tx wt, elements_tx t LEFT JOIN elements_watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = elements_watching_id AND elements_tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
   trace "[elements_do_callbacks] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}
@@ -76,6 +76,7 @@ elements_build_callback() {
   local derivation_path
 
   local event_message
+  local hash
 
   # w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime,
   # w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message
@@ -97,6 +98,8 @@ elements_build_callback() {
   trace "[elements_build_callback] unblinded_address=${unblinded_address}"
   txid=$(echo "${row}" | cut -d '|' -f3)
   trace "[elements_build_callback] txid=${txid}"
+  hash=$(echo "${row}" | cut -d '|' -f24)
+  trace "[elements_build_callback] hash=${hash}"
   vout_n=$(echo "${row}" | cut -d '|' -f4)
   trace "[elements_build_callback] vout_n=${vout_n}"
   sent_amount=$(echo "${row}" | cut -d '|' -f5 | awk '{ printf "%.8f", $0 }')
@@ -118,6 +121,7 @@ elements_build_callback() {
   vsize=$(echo "${row}" | cut -d '|' -f10)
   trace "[elements_build_callback] vsize=${vsize}"
   is_replaceable=$(echo "${row}" | cut -d '|' -f15)
+  is_replaceable=$([ "${is_replaceable}" -eq "1" ] && echo "true" || echo "false")
   trace "[elements_build_callback] is_replaceable=${is_replaceable}"
   blockhash=$(echo "${row}" | cut -d '|' -f11)
   trace "[elements_build_callback] blockhash=${blockhash}"
@@ -150,7 +154,8 @@ elements_build_callback() {
   data="${data}\"unblindedAddress\":\"${unblinded_address}\","
   data="${data}\"watchingAssetId\":\"${watching_assetid}\","
   data="${data}\"assetId\":\"${assetid}\","
-  data="${data}\"hash\":\"${txid}\","
+  data="${data}\"txid\":\"${txid}\","
+  data="${data}\"hash\":\"${hash}\","
   data="${data}\"vout_n\":${vout_n},"
   data="${data}\"sent_amount\":${sent_amount},"
   data="${data}\"confirmations\":${confirmations},"
@@ -160,7 +165,7 @@ elements_build_callback() {
   if [ -n "${fee}" ]; then
     data="${data}\"fees\":${fee},"
   fi
-  data="${data}\"is_replaceable\":${is_replaceable},"
+  data="${data}\"replaceable\":${is_replaceable},"
   if [ -n "${blocktime}" ]; then
     data="${data}\"blockhash\":\"${blockhash}\","
     data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
