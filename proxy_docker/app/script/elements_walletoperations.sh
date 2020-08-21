@@ -93,7 +93,7 @@ elements_spend() {
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"assetId\":${assetid},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
+    data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"assetId\":${assetid},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
 
     # Delete the temp file containing the raw tx (see above)
     rm spend-rawtx-${txid}.blob
@@ -305,131 +305,6 @@ elements_getnewaddress() {
   fi
 
   trace "[elements_getnewaddress] responding=${data}"
-  echo "${data}"
-
-  return ${returncode}
-}
-
-elements_addtobatching() {
-  trace "Entering elements_addtobatching()..."
-
-  local address=${1}
-  trace "[elements_addtobatching] address=${address}"
-  local amount=${2}
-  trace "[elements_addtobatching] amount=${amount}"
-  local assetid=${3}
-  trace "[elements_addtobatching] assetid=${assetid}"
-
-  # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
-  local unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
-  trace "[elements_addtobatching] unblinded_address=${unblinded_address}"
-
-  sql "INSERT OR IGNORE INTO elements_recipient (address, unblinded_address, amount, assetid) VALUES (\"${address}\", \"${unblinded_address}\", ${amount}, ${assetid})"
-  returncode=$?
-  trace_rc ${returncode}
-
-  return ${returncode}
-}
-
-elements_batchspend() {
-  trace "Entering elements_batchspend()..."
-
-  local data
-  local response
-  local recipientswhere
-  local unblindedrecipientswhere
-  local amountsjson
-  local assetidjson
-  local id_inserted
-  local tx_details
-  local tx_raw_details
-
-  # We will batch all the addresses in DB without a TXID
-  local batching=$(sql 'SELECT address, amount, assetid, unblinded_address FROM elements_recipient WHERE tx_id IS NULL')
-  trace "[elements_batchspend] batching=${batching}"
-
-  local returncode
-  local address
-  local unblinded_address
-  local amount
-  local assetid
-  local notfirst=false
-  local IFS=$'\n'
-  for row in ${batching}
-  do
-    trace "[elements_batchspend] row=${row}"
-    address=$(echo "${row}" | cut -d '|' -f1)
-    trace "[elements_batchspend] address=${address}"
-    unblinded_address=$(echo "${row}" | cut -d '|' -f4)
-    trace "[elements_batchspend] unblinded_address=${unblinded_address}"
-    amount=$(echo "${row}" | cut -d '|' -f2)
-    trace "[elements_batchspend] amount=${amount}"
-    assetid=$(echo "${row}" | cut -d '|' -f3)
-    trace "[elements_batchspend] assetid=${assetid}"
-
-    if ${notfirst}; then
-      recipientswhere="${recipientswhere},"
-      unblindedrecipientswhere="${unblindedrecipientswhere},"
-      amountsjson="${amountsjson},"
-      assetidjson="${assetidjson},"
-    else
-      notfirst=true
-    fi
-
-    recipientswhere="${recipientswhere}\"${address}\""
-    unblindedrecipientswhere="${unblindedrecipientswhere}\"${unblinded_address}\""
-    amountsjson="${amountsjson}\"${address}\":${amount}"
-    assetidjson="${assetidjson}\"${address}\":${assetid}"
-  done
-
-  response=$(send_to_elements_spender_node "{\"method\":\"sendmany\",\"params\":{\"amounts\":{${amountsjson}},\"output_assets\":{${assetidjson}}}}")
-  returncode=$?
-  trace_rc ${returncode}
-  trace "[elements_batchspend] response=${response}"
-
-  if [ "${returncode}" -eq 0 ]; then
-    local txid=$(echo "${response}" | jq -r ".result")
-    trace "[elements_batchspend] txid=${txid}"
-
-    # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(elements_get_transaction ${txid} "spender")
-    tx_raw_details=$(elements_get_rawtransaction ${txid} | tr -d '\n')
-
-    # Amounts and fees are negative when spending so we absolute those fields
-    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
-    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
-    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
-    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
-    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
-    local tx_replaceable=$(echo "${tx_details}" | jq '.result."bip125-replaceable"')
-    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo 1 || echo 0)
-    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    # Sometimes raw tx are too long to be passed as paramater, so let's write
-    # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > batchspend-rawtx-${txid}.blob
-
-    # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, readfile('batchspend-rawtx-${txid}.blob'))"
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq 0 ]; then
-      id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
-      trace "[elements_batchspend] id_inserted: ${id_inserted}"
-      sql "UPDATE elements_recipient SET tx_id=${id_inserted} WHERE address IN (${recipientswhere}) OR unblinded_address IN (${unblindedrecipientswhere})"
-      trace_rc $?
-    fi
-
-    data="{\"status\":\"accepted\""
-    data="${data},\"hash\":\"${txid}\"}"
-
-    # Delete the temp file containing the raw tx (see above)
-    rm batchspend-rawtx-${txid}.blob
-  else
-    local message=$(echo "${response}" | jq -e ".error.message")
-    data="{\"message\":${message}}"
-  fi
-
-  trace "[elements_batchspend] responding=${data}"
   echo "${data}"
 
   return ${returncode}
