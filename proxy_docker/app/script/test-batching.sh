@@ -113,11 +113,11 @@ testbatching() {
   id2=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${id2}"
   if [ "${id2}" -ne "1" ]; then
-    exit 40
+    exit 47
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
-    exit 42
+    exit 50
   fi
   echo "outputId=${id2}"
   echo "Tested addtobatch."
@@ -128,7 +128,7 @@ testbatching() {
   echo "response=${response}"
   echo "${response}" | jq -e ".error"
   if [ "$?" -ne 0 ]; then
-    exit 44
+    exit 55
   fi
   echo "Tested batchspend."
 
@@ -147,7 +147,7 @@ testbatching() {
   id=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
-    exit 50
+    exit 60
   fi
 
   response=$(curl -sd '{"outputId":'${id2}'}' localhost:8888/removefrombatch)
@@ -155,7 +155,7 @@ testbatching() {
   id=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
-    exit 54
+    exit 64
   fi
   echo "Tested removefrombatch."
 
@@ -166,7 +166,7 @@ testbatching() {
   data2=$(echo "${response}" | jq ".result.nbOutputs")
   echo "nbOutputs=${data2}"
   if [ "${data2}" -ne "$((${data}-2))" ]; then
-    exit 58
+    exit 68
   fi
   echo "Tested getbatchdetails."
 
@@ -189,7 +189,7 @@ testbatching() {
   echo "response=${response}"
   id=$(echo "${response}" | jq -e ".result.batcherId")
   if [ "$?" -ne "0" ]; then
-    exit 60
+    exit 70
   fi
 
   # List batchers (should show at least default and testbatcher batchers)
@@ -199,7 +199,7 @@ testbatching() {
   id=$(echo "${response}" | jq '.result[] | select(.batcherLabel == "testbatcher") | .batcherId')
   echo "batcherId=${id}"
   if [ -z "${id}" ]; then
-    exit 70
+    exit 75
   fi
   echo "Tested listbatchers."
 
@@ -233,7 +233,7 @@ testbatching() {
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
-    exit 32
+    exit 110
   fi
 
   response=$(curl -sd '{"batcherId":'${id}'}' localhost:8888/getbatchdetails)
@@ -241,11 +241,11 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   echo "batcherLabel=${data}"
   if [ "${data}" != "testbatcher" ]; then
-    exit 35
+    exit 120
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
-    exit 37
+    exit 130
   fi
   echo "Tested getbatchdetails."
 
@@ -258,11 +258,11 @@ testbatching() {
   data=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
-    exit 40
+    exit 140
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
-    exit 42
+    exit 142
   fi
   echo "outputId=${id2}"
 
@@ -273,11 +273,11 @@ testbatching() {
   data=$(echo "${response}" | jq ".result.batcherId")
   echo "batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
-    exit 40
+    exit 150
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
-    exit 42
+    exit 152
   fi
   echo "outputId=${id2}"
   echo "Tested addtobatch."
@@ -288,12 +288,12 @@ testbatching() {
   echo "response=${response}"
   data2=$(echo "${response}" | jq -e ".result.txid")
   if [ "$?" -ne 0 ]; then
-    exit 44
+    exit 160
   fi
   echo "txid=${data2}"
   data=$(echo "${response}" | jq ".result.outputs | length")
   if [ "${data}" -ne "2" ]; then
-    exit 42
+    exit 162
   fi
   echo "Tested batchspend."
 
@@ -305,7 +305,7 @@ testbatching() {
   data=$(echo "${response}" | jq ".result.nbOutputs")
   echo "nbOutputs=${data}"
   if [ "${data}" -ne "2" ]; then
-    exit 42
+    exit 170
   fi
   echo "Tested getbatchdetails."
 

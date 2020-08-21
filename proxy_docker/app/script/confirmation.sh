@@ -66,7 +66,7 @@ confirmation() {
 
   local tx=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
   local id_inserted
-  local tx_raw_details=$(get_rawtransaction ${txid})
+  local tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write

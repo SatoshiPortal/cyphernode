@@ -441,7 +441,7 @@ batchspend() {
 
       # Let's get transaction details on the spending wallet so that we have fee information
       tx_details=$(get_transaction ${txid} "spender")
-      tx_raw_details=$(get_rawtransaction ${txid})
+      tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
 
       # Amounts and fees are negative when spending so we absolute those fields
       local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
@@ -456,13 +456,13 @@ batchspend() {
       local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
       # Sometimes raw tx are too long to be passed as paramater, so let's write
       # it to a temp file for it to be read by sqlite3 and then delete the file
-      echo "${tx_raw_details}" > batchspend-rawtx-${txid}.blob
+      echo "${tx_raw_details}" > batchspend-rawtx-${txid}-$$.blob
 
       # Get the info on the batch before setting it to done
       row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
 
       # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}.blob')); SELECT LAST_INSERT_ROWID();")
+      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}-$$.blob')); SELECT LAST_INSERT_ROWID();")
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -eq 0 ]; then
@@ -487,7 +487,7 @@ batchspend() {
       response="${response},\"error\":null}"
 
       # Delete the temp file containing the raw tx (see above)
-      rm batchspend-rawtx-${txid}.blob
+      rm batchspend-rawtx-${txid}-$$.blob
 
       batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":'${tx_hash}',"details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
 
@@ -826,7 +826,7 @@ getbatchdetails() {
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
       
-      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || (CASE WHEN is_replaceable>0 THEN \"\\\"true\\\"\") || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
+      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || CASE is_replaceable WHEN 1 THEN 'true' ELSE 'false' END || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
       outerclause="AND r.tx_id IS NULL"
