@@ -321,7 +321,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
   "size":371,
   "vsize":166,
   "fees":0.00002992,
-  "is_replaceable":0,
+  "replaceable":false,
   "blockhash":"",
   "blocktime":"",
   "blockheight":""
@@ -340,7 +340,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
   "size":371,
   "vsize":166,
   "fees":0.00002992,
-  "is_replaceable":0,
+  "replaceable":false,
   "blockhash":"00000000000000000011bb83bb9bed0f6e131d0d0c903ec3a063e00b3aa00bf6",
   "blocktime":"2018-10-18T16:58:49+0000",
   "blockheight":""

@@ -230,7 +230,7 @@ build_callback() {
   if [ -n "${fee}" ]; then
     data="${data}\"fees\":${fee},"
   fi
-  data="${data}\"is_replaceable\":${is_replaceable},"
+  data="${data}\"replaceable\":${is_replaceable},"
   if [ -n "${blocktime}" ]; then
     data="${data}\"blockhash\":\"${blockhash}\","
     data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
