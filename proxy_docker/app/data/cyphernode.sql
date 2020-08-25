@@ -14,7 +14,7 @@ CREATE TABLE watching_by_pub32 (
 
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  address TEXT UNIQUE,
+  address TEXT,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,
@@ -26,6 +26,8 @@ CREATE TABLE watching (
   event_message TEXT,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_watching_address ON watching (address);
+CREATE UNIQUE INDEX idx_watching_01 ON watching (address, callback0conf, callback1conf);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
@@ -86,7 +88,7 @@ INSERT INTO batcher (id, label, conf_target, feerate) VALUES (1, "default", 6, N
 
 CREATE TABLE watching_by_txid (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  txid TEXT UNIQUE,
+  txid TEXT,
   watching INTEGER DEFAULT FALSE,
   callback1conf TEXT,
   calledback1conf INTEGER DEFAULT FALSE,
@@ -96,6 +98,7 @@ CREATE TABLE watching_by_txid (
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
+CREATE UNIQUE INDEX idx_watching_by_txid_1x ON watching_by_txid (txid, callback1conf, callbackxconf);
 
 CREATE TABLE stamp (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

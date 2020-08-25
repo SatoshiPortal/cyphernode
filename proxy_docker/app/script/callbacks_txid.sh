@@ -23,7 +23,7 @@ do_callbacks_txid() {
     build_callback_txid ${row}
     returncode=$?
     trace_rc ${returncode}
-    if [ "${returncode}" -eq 0 ]; then
+    if [ "${returncode}" -eq "0" ]; then
       id=$(echo "${row}" | cut -d '|' -f1)
       sql "UPDATE watching_by_txid SET calledback1conf=1 WHERE id=\"${id}\""
       trace_rc $?
@@ -39,7 +39,8 @@ do_callbacks_txid() {
   do
     build_callback_txid ${row}
     returncode=$?
-    if [ "${returncode}" -eq 0 ]; then
+    trace_rc ${returncode}
+    if [ "${returncode}" -eq "0" ]; then
       id=$(echo "${row}" | cut -d '|' -f1)
       sql "UPDATE watching_by_txid SET calledbackxconf=1, watching=0 WHERE id=\"${id}\""
       trace_rc $?
@@ -136,6 +137,9 @@ build_callback_txid() {
       trace "[build_callback_txid] Number of confirmations for tx is not enough to call back."
       return 1
     fi
+  else
+    trace "[build_callback_txid] Couldn't get tx from the Bitcoin node."
+    return 1
   fi
 }
 

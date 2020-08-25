@@ -52,12 +52,14 @@ watchrequest() {
     imported=0
   fi
 
-  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0, event_message=excluded.event_message"
+#  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0, event_message=excluded.event_message"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT DO UPDATE watching SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
   returncode=$?
   trace_rc ${returncode}
+
   if [ "${returncode}" -eq 0 ]; then
     inserted=1
-    id_inserted=$(sql "SELECT id FROM watching WHERE address='${address}'")
+    id_inserted=$(sql "SELECT id FROM watching WHERE address='${address}' AND callback0conf=${cb0conf_url} AND callback1conf=${cb1conf_url}")
     trace "[watchrequest] id_inserted: ${id_inserted}"
   else
     inserted=0
@@ -78,15 +80,15 @@ watchrequest() {
 
   result="{\"id\":\"${id_inserted}\",
   \"event\":\"watch\",
-  \"imported\":\"${imported}\",
-  \"inserted\":\"${inserted}\",
+  \"imported\":${imported},
+  \"inserted\":${inserted},
   \"address\":\"${address}\",
   \"unconfirmedCallbackURL\":${cb0conf_url},
   \"confirmedCallbackURL\":${cb1conf_url},
-  \"estimatesmartfee2blocks\":\"${fees2blocks}\",
-  \"estimatesmartfee6blocks\":\"${fees6blocks}\",
-  \"estimatesmartfee36blocks\":\"${fees36blocks}\",
-  \"estimatesmartfee144blocks\":\"${fees144blocks}\",
+  \"estimatesmartfee2blocks\":${fees2blocks},
+  \"estimatesmartfee6blocks\":${fees6blocks},
+  \"estimatesmartfee36blocks\":${fees36blocks},
+  \"estimatesmartfee144blocks\":${fees144blocks},
   \"eventMessage\":${event_message}}"
   trace "[watchrequest] responding=${result}"
 
@@ -270,7 +272,8 @@ insert_watches() {
     inserted_values="${inserted_values})"
   done
 
-  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0"
+#  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT DO UPDATE watching SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
   returncode=$?
   trace_rc ${returncode}
 
@@ -313,7 +316,7 @@ extend_watchers() {
     # we want to extend the watched addresses to 166 if our gap is 100 (default).
     trace "[extend_watchers] We have addresses to add to watchers!"
 
-    watchpub32 "${label}" "${pub32}" "${derivation_path}" $((${last_imported_n} + 1)) "${callback0conf}" "${callback1conf}" ${upgrade_to_n} > /dev/null
+    watchpub32 "${label}" "${pub32}" "${derivation_path}" "$((${last_imported_n} + 1))" "${callback0conf}" "${callback1conf}" "${upgrade_to_n}" > /dev/null
     returncode=$?
     trace_rc ${returncode}
   else
@@ -342,12 +345,21 @@ watchtxidrequest() {
   local result
   trace "[watchtxidrequest] Watch request on txid (${txid}), cb 1-conf (${cb1conf_url}) and cb x-conf (${cbxconf_url}) on ${nbxconf} confirmations."
 
-  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
+#  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
+  sql "INSERT INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
   returncode=$?
   trace_rc ${returncode}
+
+  if [ "${returncode}" -ne "0" ]; then
+    trace "[watchtxidrequest] txid with urls already being watched, updating with new values based on supplied txid, 1confurl and xconfurl..."
+    sql "UPDATE watching_by_txid SET watching=1, nbxconf=${nbxconf}, calledback1conf=0, calledbackxconf=0 WHERE txid=${txid} AND callback1conf=${cb1conf_url} AND callbackxconf=${cbxconf_url}"
+    returncode=$?
+    trace_rc ${returncode}
+  fi
+
   if [ "${returncode}" -eq 0 ]; then
     inserted=1
-    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid=${txid}")
+    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid=${txid} AND callback1conf=${cb1conf_url} AND callbackxconf=${cbxconf_url}")
     trace "[watchtxidrequest] id_inserted: ${id_inserted}"
   else
     inserted=0

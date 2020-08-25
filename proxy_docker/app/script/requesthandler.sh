@@ -100,8 +100,35 @@ main() {
           ;;
         unwatch)
           # curl (GET) 192.168.111.152:8080/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
+          # or
+          # POST http://192.168.111.152:8080/unwatch
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
 
-          response=$(unwatchrequest "${line}")
+          # args:
+          # - address: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by the watch
+
+          local address
+          local unconfirmedCallbackURL
+          local confirmedCallbackURL
+          local watchid
+
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address=$(echo "${line}" | jq -r ".address")
+            unconfirmedCallbackURL=$(echo "${line}" | jq ".unconfirmedCallbackURL")
+            confirmedCallbackURL=$(echo "${line}" | jq ".confirmedCallbackURL")
+            watchid=$(echo "${line}" | jq ".id")
+          else
+            address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -155,6 +182,28 @@ main() {
           # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/watchtxid
 
           response=$(watchtxidrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unwatchtxid)
+          # POST http://192.168.111.152:8080/unwatchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
+
+          # args:
+          # - txid: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by watchtxid
+
+          local txid=$(echo "${line}" | jq -r ".txid")
+          local unconfirmedCallbackURL=$(echo "${line}" | jq ".unconfirmedCallbackURL")
+          local confirmedCallbackURL=$(echo "${line}" | jq ".confirmedCallbackURL")
+          local watchid=$(echo "${line}" | jq ".id")
+
+          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
           response_to_client "${response}" ${?}
           break
           ;;
