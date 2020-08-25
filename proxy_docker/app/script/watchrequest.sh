@@ -52,8 +52,7 @@ watchrequest() {
     imported=0
   fi
 
-#  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0, event_message=excluded.event_message"
-  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT DO UPDATE watching SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT(address,callback0conf,callback1conf) DO UPDATE SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
   returncode=$?
   trace_rc ${returncode}
 
@@ -272,8 +271,7 @@ insert_watches() {
     inserted_values="${inserted_values})"
   done
 
-#  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT(address) DO UPDATE SET watching=1, callback0conf=excluded.callback0conf, calledback0conf=0, callback1conf=excluded.callback1conf, calledback1conf=0"
-  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT DO UPDATE watching SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, watching_by_pub32_id, pub32_index) VALUES ${inserted_values} ON CONFLICT(address,callback0conf,callback1conf) DO UPDATE SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
   returncode=$?
   trace_rc ${returncode}
 
@@ -345,17 +343,9 @@ watchtxidrequest() {
   local result
   trace "[watchtxidrequest] Watch request on txid (${txid}), cb 1-conf (${cb1conf_url}) and cb x-conf (${cbxconf_url}) on ${nbxconf} confirmations."
 
-#  sql "INSERT OR IGNORE INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
-  sql "INSERT INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf})"
+  sql "INSERT INTO watching_by_txid (txid, watching, callback1conf, callbackxconf, nbxconf) VALUES (${txid}, 1, ${cb1conf_url}, ${cbxconf_url}, ${nbxconf}) ON CONFLICT(txid, callback1conf, callbackxconf) DO UPDATE SET watching=1, nbxconf=${nbxconf}, calledback1conf=0, calledbackxconf=0"
   returncode=$?
   trace_rc ${returncode}
-
-  if [ "${returncode}" -ne "0" ]; then
-    trace "[watchtxidrequest] txid with urls already being watched, updating with new values based on supplied txid, 1confurl and xconfurl..."
-    sql "UPDATE watching_by_txid SET watching=1, nbxconf=${nbxconf}, calledback1conf=0, calledbackxconf=0 WHERE txid=${txid} AND callback1conf=${cb1conf_url} AND callbackxconf=${cbxconf_url}"
-    returncode=$?
-    trace_rc ${returncode}
-  fi
 
   if [ "${returncode}" -eq 0 ]; then
     inserted=1
