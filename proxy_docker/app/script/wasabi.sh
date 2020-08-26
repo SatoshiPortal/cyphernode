@@ -296,9 +296,9 @@ wasabi_batchprivatetospender() {
     if [ "${amount}" -gt "0" ]; then
       trace "[wasabi_batchprivatetospender] We have mixed coins ready to consume!"
       # Get an address from the correct wallet
-      case "$wasabi_autospend_cfg" in
+      case "$matching_wallet" in
 	      "_spender") toaddress="$(getnewaddress | jq '.address')" ;;
-	      *) toaddress=$(get_unused_addresses_by_watchlabel "${wasabi_autospend_cfg}" | jq --arg index "$((address_index++))" '.label_unused_addresses | .[($index| tonumber)].address') ;;
+	      *) toaddress=$(get_unused_addresses_by_watchlabel "${matching_wallet}" | jq --arg index "$((address_index++))" '.label_unused_addresses | .[($index| tonumber)].address') ;;
       esac
       trace "[wasabi_batchprivatetospender] toaddress=${toaddress} address_index=${address_index}"
 
