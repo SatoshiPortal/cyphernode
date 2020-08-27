@@ -113,10 +113,10 @@ main() {
           # or
           # - id: the id returned by the watch
 
-          local address
-          local unconfirmedCallbackURL
-          local confirmedCallbackURL
-          local watchid
+          local address="null"
+          local unconfirmedCallbackURL="null"
+          local confirmedCallbackURL="null"
+          local watchid="null"
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
