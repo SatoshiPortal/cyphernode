@@ -1,0 +1,11 @@
+# Replace the following path by the path where Cyphernode writes its log files
+
+/home/debian/.cyphernode/cyphernode/dist/cyphernode/logs/*.log
+{
+  rotate 7
+  daily
+  missingok
+  notifempty
+  delaycompress
+  compress
+}
