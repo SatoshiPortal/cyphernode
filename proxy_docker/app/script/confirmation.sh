@@ -184,8 +184,8 @@ confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
