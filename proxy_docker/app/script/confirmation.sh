@@ -68,6 +68,7 @@ confirmation() {
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
+  local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -80,7 +81,6 @@ confirmation() {
 
     # Let's first insert the tx in our DB
 
-    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
     local tx_amount=$(echo "${tx_details}" | jq '.result.amount')
 
