@@ -1496,3 +1496,270 @@ Proxy response:
   "message": "Base64 string of the information text"
 }
 ```
+
+### Create a batcher
+
+Used to create a batching template, by setting a label and a default confTarget.
+
+```http
+POST http://cyphernode:8888/createbatcher
+with body...
+{"batcherLabel":"lowfees","confTarget":32}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1
+  },
+  "error": null
+}
+```
+
+### Update a batcher
+
+Used to change batching template settings.
+
+```http
+POST http://cyphernode:8888/updatebatcher
+with body...
+{"batcherId":5,"confTarget":12}
+or
+{"batcherLabel":"fast","confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "batcherLabel": "default",
+    "confTarget": 6
+  },
+  "error": null
+}
+```
+
+### Add an output to the next batched transaction (called by application)
+
+Inserts output information in the DB.  Used when batchspend is called later.
+
+```http
+POST http://cyphernode:8888/addtobatch
+with body...
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "outputId": 34,
+    "nbOutputs": 7,
+    "oldest": "2020-09-09 14:00:01",
+    "total": 0.04016971
+  },
+  "error": null
+}
+```
+
+### Remove an output from the next batched transaction (called by application)
+
+Removes a previously added output scheduled for the next batch.
+
+```http
+POST http://cyphernode:8888/removefrombatch
+with body...
+{"outputId":72}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "outputId": 72,
+    "nbOutputs": 6,
+    "oldest": "2020-09-09 14:00:01",
+    "total": 0.03783971
+  },
+  "error": null
+}
+```
+
+### Spend a batched transaction with outputs previously added with addtobatch (called by application)
+
+Calls the sendmany RPC on spending wallet with the unspent "addtobatch" inserted outputs.  Will execute default batcher if no batcherId/batcherLabel supplied and default confTarget if no confTarget supplied.
+
+```http
+POST http://cyphernode:8888/batchspend
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherId":34,"confTarget":12}
+or
+{"batcherLabel":"fastest","confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId":34,
+    "confTarget":6,
+    "nbOutputs":83,
+    "oldest":123123,
+    "total":10.86990143,
+    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "details":{
+      "firstseen":123123,
+      "size":424,
+      "vsize":371,
+      "replaceable":true,
+      "fee":0.00004112
+    },
+    "outputs":{
+      "1abc":0.12,
+      "3abc":0.66,
+      "bc1abc":2.848,
+      ...
+    }
+  },
+  "error":null
+}
+```
+
+### Get batcher (called by application)
+
+Will return current state/summary of the requested batching template.
+
+```http
+POST http://cyphernode:8888/getbatcher
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherLabel":"fastest"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "batcherLabel": "default",
+    "confTarget": 6,
+    "nbOutputs": 12,
+    "oldest": 123123,
+    "total": 0.86990143
+  },
+  "error": null
+}
+```
+
+### Get batch details (called by application)
+
+Will return current state and details of the requested batch, including all outputs.  A batch is the combinatio of a batcher and an optional txid.  If no txid is supplied, will return current non-yet-executed batch.
+
+```http
+POST http://cyphernode:8888/getbatchdetails
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherLabel":"fastest","txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 34,
+    "batcherLabel": "Special batcher for a special client",
+    "confTarget": 6,
+    "nbOutputs": 83,
+    "oldest": 123123,
+    "total": 10.86990143,
+    "txid": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "details": {
+      "firstseen": 123123,
+      "size": 424,
+      "vsize": 371,
+      "replaceable":true,
+      "fee": 0.00004112
+    },
+    "outputs": {
+      "1abc": 0.12,
+      "3abc": 0.66,
+      "bc1abc": 2.848,
+      ...
+    }
+  },
+  "error": null
+}
+```
+
+### Get a list of existing batch templates (called by application)
+
+Will return a list of batch templates.  batcherId 1 is a default batcher created at installation time.
+
+```http
+GET http://cyphernode:8888/listbatchers
+```
+
+Proxy response:
+
+```json
+{
+  "result": [
+    {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},
+    {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"total":0.49827387},
+    {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"total":4.16843782}
+  ],
+  "error": null
+}
+```
+
+### Get an estimation of current Bitcoin fees
+
+This will call the Bitcoin Core estimatesmartfee RPC call and return the result as is.
+
+```http
+POST http://cyphernode:8888/bitcoin_estimatesmartfee
+with body...
+{"confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "feerate": 0.00001000,
+    "blocks": 4
+  },
+  "error": null,
+  "id": null
+}
+```
