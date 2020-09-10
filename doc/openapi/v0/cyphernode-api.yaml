@@ -146,6 +146,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /unwatch:
+    post:
+      tags:
+        - "watching addresses"
+        - "core features"
+      summary: "Stop watching a Bitcoin address"
+      description: "Updates the watched Bitcoin address row in DB so that callbacks won't be called on tx confirmations for that address for the specified URLs or id."
+      operationId: "deleteWatchedAddress"
+      requestBody:
+        description: "Bitcoin address that needs to be watched"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                unconfirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+                confirmedCallbackURL:
+                  type: "string"
+                  format: "url"
+                id:
+                  description: "id returned by the corresponding watch"
+                  type: "string"
+      responses:
+        '200':
+          description: "successfully unwatched"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  event:
+                    type: "string"
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+                  unconfirmedCallbackURL:
+                    type: "string"
+                    format: "url"
+                  confirmedCallbackURL:
+                    type: "string"
+                    format: "url"
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /watchxpub:
     post:
       tags:
@@ -1181,16 +1236,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /createbatcher:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Create a batching template, by setting a label and a default confTarget"
+      description: "Inserts batcher information to the DB."
+      operationId: "createbatcher"
+      requestBody:
+        description: "Batcher label and conf target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                batcherLabel:
+                  type: "string"
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /updatebatcher:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Update a batching template, by changing the label or the default confTarget"
+      description: "Updates batcher information to the DB."
+      operationId: "updatebatcher"
+      requestBody:
+        description: "Batcher id, batcher label and conf target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                batcherId:
+                  type: "number"
+                batcherLabel:
+                  type: "string"
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      batcherLabel:
+                        type: "string"
+                      confTarget:
+                        type: "number"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /addtobatch:
     post:
       tags:
         - "spending wallet"
         - "core features"
+        - "batching"
       summary: "Adds spending of some amount to some address to the next batch"
       description: "Inserts output information in the DB.  Used when batchspend is called later."
       operationId: "spendInNextBatch"
       requestBody:
-        description: "Address and amount"
+        description: "Address, amount, batcherId, batcherLabel and webhookUrl"
         required: true
         content:
           application/json:
@@ -1204,9 +1358,90 @@ paths:
                   $ref: '#/components/schemas/TypeAddressString'
                 amount:
                   type: "number"
+                batcherId:
+                  type: "number"
+                batcherLabel:
+                  type: "string"
+                webhookUrl:
+                  type: "string"
+                  format: "url"
       responses:
         '200':
           description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      outputId:
+                        type: "number"
+                      nbOutputs:
+                        type: "number"
+                      oldest:
+                        type: "string"
+                      total:
+                        type: "number"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /removefrombatch:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Removes a previously added output from the next batch"
+      description: "Deletes output from the DB."
+      operationId: "removeFromNextBatch"
+      requestBody:
+        description: "outputId returned by corresponding addtobatch"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "outputId"
+              properties:
+                outputId:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      outputId:
+                        type: "number"
+                      nbOutputs:
+                        type: "number"
+                      oldest:
+                        type: "string"
+                      total:
+                        type: "number"
+                  error:
+                    type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '405':
@@ -1218,13 +1453,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /batchspend:
-    get:
+    post:
       tags:
         - "spending wallet"
         - "core features"
-      summary: "Spend previously amounts/addresses added with addtobatch"
-      description: "Creates a batched transaction whose outputs are the previously unspent addtobatch calls."
+        - "batching"
+      summary: "Spend previously added amounts/addresses in a batch"
+      description: "Creates a batched transaction whose outputs are the previously unspent addtobatch calls for the batcher."
       operationId: "batchSpend"
+      requestBody:
+        description: "batcherId or batcherLabel with an optional confTarget to override the batcher's default"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                batcherId:
+                  type: "number"
+                batcherLabel:
+                  type: "string"
+                confTarget:
+                  type: "number"
       responses:
         '200':
           description: "operation successful"
@@ -1232,18 +1482,232 @@ paths:
             application/json:
               schema:
                 type: "object"
-                required:
-                  - "status"
-                  - "hash"
                 properties:
-                  status:
-                    type: "string"
-                  hash:
-                    $ref: '#/components/schemas/TypeHashString'
-        '400':
-          $ref: '#/components/schemas/ApiResponseInvalidInput'
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      confTarget:
+                        type: "number"
+                      nbOutputs:
+                        type: "number"
+                      oldest:
+                        type: "string"
+                      total:
+                        type: "number"
+                      txid:
+                        type: "string"
+                      hash:
+                        type: "string"
+                      details:
+                        type: "object"
+                      outputs:
+                        type: "object"
+                  error:
+                    type: "object"
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbatcher:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Returns current state/summary of the requested batching template"
+      description: "Get information from the batcher and recipient DB tables."
+      operationId: "getBatcher"
+      requestBody:
+        description: "Optional batcherId or batcherLabel, default batcher if not supplied"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                batcherId:
+                  type: "number"
+                batcherLabel:
+                  type: "string"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      batcherLabel:
+                        type: "string"
+                      confTarget:
+                        type: "number"
+                      nbOutputs:
+                        type: "number"
+                      oldest:
+                        type: "string"
+                      total:
+                        type: "number"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getbatchdetails:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Returns current state and details of the requested batch, including all outputs"
+      description: "Get detailed information from the batcher and recipient DB tables."
+      operationId: "getBatcherDetails"
+      requestBody:
+        description: "Optional batcherId or batcherLabel and txid, default batcher if not supplied"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                batcherId:
+                  type: "number"
+                batcherLabel:
+                  type: "string"
+                txid:
+                  type: "string"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      batcherId:
+                        type: "number"
+                      batcherLabel:
+                        type: "string"
+                      confTarget:
+                        type: "number"
+                      nbOutputs:
+                        type: "number"
+                      oldest:
+                        type: "string"
+                      total:
+                        type: "number"
+                      txid:
+                        type: "string"
+                      hash:
+                        type: "string"
+                      details:
+                        type: "object"
+                      outputs:
+                        type: "object"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /listbatchers:
+    get:
+      tags:
+        - "spending wallet"
+        - "core features"
+        - "batching"
+      summary: "Get list of batchers, including the default batcher"
+      description: "Returns the list of batch templates."
+      operationId: "listBatchers"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "array"
+                  error:
+                    type: "object"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bitcoin_estimatesmartfee:
+    post:
+      tags:
+        - "core features"
+        - "bitcoin"
+      summary: "Returns current fee estimation computed by Bitcoin Core's estimatesmartfee"
+      description: "Returns current fee estimation computed by Bitcoin Core's estimatesmartfee"
+      operationId: "estimateSmartFee"
+      requestBody:
+        description: "Conf Target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      feerate:
+                        type: "number"
+                      blocks:
+                        type: "number"
+                  error:
+                    type: "object"
+                  id:
+                    type: "number"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
         '503':
           description: "Resource temporarily unavailable"
           content:
