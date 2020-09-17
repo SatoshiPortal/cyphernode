@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS builder
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine3.12 AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
@@ -28,7 +28,7 @@ RUN rm -rf /app/TorDaemons
 RUN rm -rf /app/runtimes/osx /app/runtimes/tizen-armel /app/runtimes/tizen-x86 /app/runtimes/win /app/runtimes/win-x64 /app/runtimes/win--x86
 RUN rm -rf /app/Hwi/Software/hwi-osx64.zip /app/Hwi/Software/hwi-win64
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.12
 
 ENV APPDATA=/root/.walletwasabi/client
 
