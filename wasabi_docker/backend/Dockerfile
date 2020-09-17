@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS builder
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine3.12 AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git patch
@@ -17,7 +17,7 @@ WORKDIR /WalletWasabi/WalletWasabi.Backend
 RUN dotnet build -c Release -o /app/ -r linux-x64
 RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.12
 
 RUN apk add --no-cache --update \
     icu
