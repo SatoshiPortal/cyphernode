@@ -2,9 +2,9 @@
 
 ## Current API
 
-### Watch a Bitcoin Address (called by application)
+### Watch a Bitcoin Address (called by your application)
 
-Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
+Inserts the address, webhook URLs and eventMessage in the DB and imports the address to the Watching wallet.  The webhook URLs (callbackURLs) and event message are optional.  If eventMessage is not supplied, the event will not be published to the tx_confirmation topic on confirmations.  Event message should be in base64 format to avoid dealing with escaping special characters.  The same address can be watched by different requests with different webhook URLs.
 
 ```http
 POST http://cyphernode:8888/watch
@@ -31,12 +31,18 @@ Proxy response:
 }
 ```
 
-### Un-watch a previously watched Bitcoin Address (called by application)
+### Un-watch a previously watched Bitcoin Address (called by your application)
 
-Updates the watched address row in DB so that callbacks won't be called on tx confirmations for that address.
+Updates the watched address row in DB so that webhooks won't be called on tx confirmations for that address.  You can POST the URLs to make sure you unwatch the good watcher, since there may be multiple watchers on the same address with different webhook URLs.  You can also, more conveniently, supply the watch id to unwatch.
 
 ```http
 GET http://cyphernode:8888/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
+or
+POST http://192.168.111.152:8080/unwatch
+with body...
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+or
+{"id":3124}
 ```
 
 Proxy response:
@@ -44,11 +50,13 @@ Proxy response:
 ```json
 {
   "event": "unwatch",
-    "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"
+  "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+  "unconfirmedCallbackURL": "192.168.133.233:1111/callback0conf",
+  "confirmedCallbackURL": "192.168.133.233:1111/callback1conf"
 }
 ```
 
-### Get a list of Bitcoin addresses being watched (called by application)
+### Get a list of Bitcoin addresses being watched (called by your application)
 
 Returns the list of currently watched addresses and callback information.
 
@@ -61,17 +69,19 @@ Proxy response:
 ```json
 {
   "watches": [
-  {
-  "id":"291",
-  "address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
-  "imported":"1",
-  "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
-  "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
-  "watching_since":"2018-09-06 21:14:03",
-  "eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
+    {
+      "id":"291",
+      "address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
+      "imported":"1",
+      "unconfirmedCallbackURL":"192.168.133.233:1111/callback0conf",
+      "confirmedCallbackURL":"192.168.133.233:1111/callback1conf",
+      "watching_since":"2018-09-06 21:14:03",
+      "eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"
+    }
   ]
 }
 ```
+
 ### Get a list of txns from a watched label
 
 Returns the list of transactions not spend(txns) from watched label.
@@ -126,7 +136,7 @@ Proxy response:
 }
 ```
 
-### Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by application)
+### Watch a Bitcoin xpub/ypub/zpub/tpub/upub/vpub extended public key (called by your application)
 
 Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
 
@@ -151,7 +161,7 @@ Proxy response:
 }
 ```
 
-### Un-watch a previously watched Bitcoin xpub by providing the xpub (called by application)
+### Un-watch a previously watched Bitcoin xpub by providing the xpub (called by your application)
 
 Updates the watched address rows in DB so that callbacks won't be called on tx confirmations for the provided xpub and related addresses.
 
@@ -168,7 +178,7 @@ Proxy response:
 }
 ```
 
-### Un-watch a previously watched Bitcoin xpub by providing the label (called by application)
+### Un-watch a previously watched Bitcoin xpub by providing the label (called by your application)
 
 Updates the watched address rows in DB so that callbacks won't be called on tx confirmations for the provided xpub and related addresses.
 
@@ -185,7 +195,7 @@ Proxy response:
 }
 ```
 
-### Watch a TXID (called by application)
+### Watch a TXID (called by your application)
 
 Used to watch a transaction.  Will call the 1-conf callback url after the transaction has been mined.  Will call the x-conf callback url after the transaction has x confirmations.
 
@@ -209,7 +219,7 @@ Proxy response:
 }
 ```
 
-### Get a list of Bitcoin xpub being watched (called by application)
+### Get a list of Bitcoin xpub being watched (called by your application)
 
 Returns the list of currently watched xpub and callback information.
 
@@ -235,7 +245,7 @@ Proxy response:
 }
 ```
 
-### Get a list of Bitcoin addresses being watched by provided xpub (called by application)
+### Get a list of Bitcoin addresses being watched by provided xpub (called by your application)
 
 Returns the list of currently watched addresses related to the provided xpub and callback information.
 
@@ -262,7 +272,7 @@ Proxy response:
 }
 ```
 
-### Get a list of Bitcoin addresses being watched by provided xpub label (called by application)
+### Get a list of Bitcoin addresses being watched by provided xpub label (called by your application)
 
 Returns the list of currently watched addresses related to the provided xpub label and callback information.
 
@@ -321,7 +331,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
   "size":371,
   "vsize":166,
   "fees":0.00002992,
-  "is_replaceable":0,
+  "replaceable":false,
   "blockhash":"",
   "blocktime":"",
   "blockheight":""
@@ -340,7 +350,7 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
   "size":371,
   "vsize":166,
   "fees":0.00002992,
-  "is_replaceable":0,
+  "replaceable":false,
   "blockhash":"00000000000000000011bb83bb9bed0f6e131d0d0c903ec3a063e00b3aa00bf6",
   "blocktime":"2018-10-18T16:58:49+0000",
   "blockheight":""
@@ -367,7 +377,7 @@ Proxy response:
 }
 ```
 
-### Get the blockchain information (called by application)
+### Get the blockchain information (called by your application)
 
 Returns the blockchain information of the Bitcoin node.  Used for example by the welcome app to get syncing progression.
 
@@ -431,7 +441,7 @@ Proxy response:
 }
 ```
 
-### Get the Block Hash from Height (called by application)
+### Get the Block Hash from Height (called by your application)
 
 Returns the best block hash matching height provided.
 
@@ -449,7 +459,7 @@ Proxy response:
 }
 ```
 
-### Get the Best Block Hash (called by application)
+### Get the Best Block Hash (called by your application)
 
 Returns the best block hash of the watching Bitcoin node.
 
@@ -467,7 +477,7 @@ Proxy response:
 }
 ```
 
-### Get Block Info (called by application)
+### Get Block Info (called by your application)
 
 Returns block info for the supplied block hash.
 
@@ -506,7 +516,7 @@ Proxy response:
 }
 ```
 
-### Get the Best Block Info (called by application)
+### Get the Best Block Info (called by your application)
 
 Returns best block info: calls getblockinfo with bestblockhash.
 
@@ -545,7 +555,7 @@ Proxy response:
 }
 ```
 
-### Get a transaction details (node's getrawtransaction) (called by application)
+### Get a transaction details (node's getrawtransaction) (called by your application)
 
 Calls getrawtransaction RPC for the supplied txid.
 
@@ -662,7 +672,7 @@ Proxy response:
 }
 ```
 
-### Get spending wallet's balance (called by application)
+### Get spending wallet's balance (called by your application)
 
 Calls getbalance RPC on the spending wallet.
 
@@ -678,7 +688,7 @@ Proxy response:
 }
 ```
 
-### Get spending wallet's extended balances (called by application)
+### Get spending wallet's extended balances (called by your application)
 
 Calls getbalances RPC on the spending wallet.
 
@@ -700,7 +710,7 @@ Proxy response:
 }
 ```
 
-### Get a new Bitcoin address from spending wallet (called by application)
+### Get a new Bitcoin address from spending wallet (called by your application)
 
 Calls getnewaddress RPC on the spending wallet.  Used to refill the spending wallet from cold wallet (ie Trezor).  Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
 
@@ -725,7 +735,7 @@ Proxy response:
 }
 ```
 
-### Spend coins from spending wallet (called by application)
+### Spend coins from spending wallet (called by your application)
 
 Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.
 
@@ -757,7 +767,7 @@ Proxy response:
 }
 ```
 
-### Bump transaction's fees (called by application)
+### Bump transaction's fees (called by your application)
 
 Calls bumpfee RPC on the spending wallet with supplied info.
 
@@ -780,7 +790,7 @@ Proxy response:
 }
 ```
 
-### Add an output to the next batched transaction (called by application)
+### Add an output to the next batched transaction (called by your application)
 
 Inserts output information in the DB.  Used when batchspend is called later.
 
@@ -792,7 +802,7 @@ with body...
 
 Proxy response: EMPTY
 
-### Spend a batched transaction with outputs added with addtobatch (called by application)
+### Spend a batched transaction with outputs added with addtobatch (called by your application)
 
 Calls sendmany RPC on spending wallet with the unspent "addtobatch" inserted outputs.  Will be useful during next bull run.
 
@@ -809,7 +819,7 @@ Proxy response:
 }
 ```
 
-### Get derived address(es) using path in config and provided index (called by application)
+### Get derived address(es) using path in config and provided index (called by your application)
 
 Derives addresses for supplied index.  Must be used with derivation.pub32 and derivation.path properties in config.properties.
 
@@ -833,7 +843,7 @@ Proxy response:
 }
 ```
 
-### Get derived address(es) using provided path and index (called by application)
+### Get derived address(es) using provided path and index (called by your application)
 
 Derives addresses for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used.
 
@@ -866,7 +876,7 @@ Proxy response:
 }
 ```
 
-### Get info from Lightning Network node (called by application)
+### Get info from Lightning Network node (called by your application)
 
 Calls getinfo from lightningd.  Useful to let your users know where to connect to.
 
@@ -901,7 +911,7 @@ Proxy response:
 }
 ```
 
-### Create a Lightning Network invoice (called by application)
+### Create a Lightning Network invoice (called by your application)
 
 Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds and optional.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
 
@@ -923,7 +933,7 @@ Proxy response:
 }
 ```
 
-### Pay a Lightning Network invoice (called by application)
+### Pay a Lightning Network invoice (called by your application)
 
 Make a LN payment.  expected_msatoshi and expected_description are respectively the amount and description you gave your user for her to create the invoice; they must match the given bolt11 invoice supplied by your user.  If the bolt11 invoice doesn't contain an amount, then the expected_msatoshi supplied here will be used as the paid amount.
 
@@ -962,7 +972,7 @@ Proxy response:
 
 ```
 
-### Get a new Bitcoin address from the Lightning Network node (to fund it) (called by application)
+### Get a new Bitcoin address from the Lightning Network node (to fund it) (called by your application)
 
 Returns a Bitcoin bech32 address to fund your LN wallet.
 
@@ -1098,7 +1108,7 @@ Proxy response:
 }
 ```
 
-### Get the list of peers, with channels, from Lightning Network node (called by application)
+### Get the list of peers, with channels, from Lightning Network node (called by your application)
 
 Calls listpeers from lightningd.  Returns the list of peers and the channels opened with them, even for currently offline peers.
 
@@ -1389,7 +1399,7 @@ Proxy response:
   "txid": "6b38....b0c3b"
 }
 ```
-### Stamp a hash on the Bitcoin blockchain using OTS (called by application)
+### Stamp a hash on the Bitcoin blockchain using OTS (called by your application)
 
 Will stamp the supplied hash to the Bitcoin blockchain using OTS.  Cyphernode will curl the callback when the OTS stamping is complete.
 
@@ -1494,5 +1504,272 @@ Proxy response:
   "method": "ots_info",
   "result": "success",
   "message": "Base64 string of the information text"
+}
+```
+
+### Create a batcher
+
+Used to create a batching template, by setting a label and a default confTarget.
+
+```http
+POST http://cyphernode:8888/createbatcher
+with body...
+{"batcherLabel":"lowfees","confTarget":32}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1
+  },
+  "error": null
+}
+```
+
+### Update a batcher
+
+Used to change batching template settings.
+
+```http
+POST http://cyphernode:8888/updatebatcher
+with body...
+{"batcherId":5,"confTarget":12}
+or
+{"batcherLabel":"fast","confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "batcherLabel": "default",
+    "confTarget": 6
+  },
+  "error": null
+}
+```
+
+### Add an output to the next batched transaction (called by your application)
+
+Inserts output information in the DB.  Used when batchspend is called later.
+
+```http
+POST http://cyphernode:8888/addtobatch
+with body...
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+or
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "outputId": 34,
+    "nbOutputs": 7,
+    "oldest": "2020-09-09 14:00:01",
+    "total": 0.04016971
+  },
+  "error": null
+}
+```
+
+### Remove an output from the next batched transaction (called by your application)
+
+Removes a previously added output scheduled for the next batch.
+
+```http
+POST http://cyphernode:8888/removefrombatch
+with body...
+{"outputId":72}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "outputId": 72,
+    "nbOutputs": 6,
+    "oldest": "2020-09-09 14:00:01",
+    "total": 0.03783971
+  },
+  "error": null
+}
+```
+
+### Spend a batched transaction with outputs previously added with addtobatch (called by your application)
+
+Calls the sendmany RPC on spending wallet with the unspent "addtobatch" inserted outputs.  Will execute default batcher if no batcherId/batcherLabel supplied and default confTarget if no confTarget supplied.
+
+```http
+POST http://cyphernode:8888/batchspend
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherId":34,"confTarget":12}
+or
+{"batcherLabel":"fastest","confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId":34,
+    "confTarget":6,
+    "nbOutputs":83,
+    "oldest":123123,
+    "total":10.86990143,
+    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "details":{
+      "firstseen":123123,
+      "size":424,
+      "vsize":371,
+      "replaceable":true,
+      "fee":0.00004112
+    },
+    "outputs":{
+      "1abc":0.12,
+      "3abc":0.66,
+      "bc1abc":2.848,
+      ...
+    }
+  },
+  "error":null
+}
+```
+
+### Get batcher (called by your application)
+
+Will return current state/summary of the requested batching template.
+
+```http
+POST http://cyphernode:8888/getbatcher
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherLabel":"fastest"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 1,
+    "batcherLabel": "default",
+    "confTarget": 6,
+    "nbOutputs": 12,
+    "oldest": 123123,
+    "total": 0.86990143
+  },
+  "error": null
+}
+```
+
+### Get batch details (called by your application)
+
+Will return current state and details of the requested batch, including all outputs.  A batch is the combination of a batcher and an optional txid.  If no txid is supplied, will return current non-yet-executed batch.
+
+```http
+POST http://cyphernode:8888/getbatchdetails
+with body...
+{}
+or
+{"batcherId":34}
+or
+{"batcherLabel":"fastest","txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "batcherId": 34,
+    "batcherLabel": "Special batcher for a special client",
+    "confTarget": 6,
+    "nbOutputs": 83,
+    "oldest": 123123,
+    "total": 10.86990143,
+    "txid": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "hash": "af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+    "details": {
+      "firstseen": 123123,
+      "size": 424,
+      "vsize": 371,
+      "replaceable":true,
+      "fee": 0.00004112
+    },
+    "outputs": {
+      "1abc": 0.12,
+      "3abc": 0.66,
+      "bc1abc": 2.848,
+      ...
+    }
+  },
+  "error": null
+}
+```
+
+### Get a list of existing batch templates (called by your application)
+
+Will return a list of batch templates.  batcherId 1 is a default batcher created at installation time.
+
+```http
+GET http://cyphernode:8888/listbatchers
+```
+
+Proxy response:
+
+```json
+{
+  "result": [
+    {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},
+    {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"total":0.49827387},
+    {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"total":4.16843782}
+  ],
+  "error": null
+}
+```
+
+### Get an estimation of current Bitcoin fees
+
+This will call the Bitcoin Core estimatesmartfee RPC call and return the result as is.
+
+```http
+POST http://cyphernode:8888/bitcoin_estimatesmartfee
+with body...
+{"confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "feerate": 0.00001000,
+    "blocks": 4
+  },
+  "error": null,
+  "id": null
 }
 ```

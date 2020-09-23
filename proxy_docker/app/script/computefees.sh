@@ -68,7 +68,7 @@ compute_vin_total_amount()
     vin_raw_tx=$(sql "SELECT raw_tx FROM tx WHERE txid=\"${vin_txid}\"")
     if [ -z "${vin_raw_tx}" ]; then
       txid_already_inserted=false
-      vin_raw_tx=$(get_rawtransaction "${vin_txid}")
+      vin_raw_tx=$(get_rawtransaction "${vin_txid}" | tr -d '\n')
       returncode=$?
       if [ "${returncode}" -ne 0 ]; then
         return ${returncode}

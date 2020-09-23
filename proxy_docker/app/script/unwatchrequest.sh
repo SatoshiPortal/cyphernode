@@ -6,16 +6,27 @@
 unwatchrequest() {
   trace "Entering unwatchrequest()..."
 
-  local request=${1}
-  local address=$(echo "${request}" | cut -d ' ' -f2 | cut -d '/' -f3)
+  local watchid=${1}
+  local address=${2}
+  local unconfirmedCallbackURL=${3}
+  local confirmedCallbackURL=${4}
   local returncode
-  trace "[unwatchrequest] Unwatch request on address ${address}"
+  trace "[unwatchrequest] Unwatch request id ${watchid} on address ${address} with url0conf ${unconfirmedCallbackURL} and url1conf ${confirmedCallbackURL}"
 
-  sql "UPDATE watching SET watching=0 WHERE address=\"${address}\""
-  returncode=$?
-  trace_rc ${returncode}
+  if [ "${watchid}" != "null" ]; then
+    sql "UPDATE watching SET watching=0 WHERE id=${watchid}"
+    returncode=$?
+    trace_rc ${returncode}
 
-  data="{\"event\":\"unwatch\",\"address\":\"${address}\"}"
+    data="{\"event\":\"unwatch\",\"id\":${watchid}}"
+  else
+    sql "UPDATE watching SET watching=0 WHERE address='${address}' AND callback0conf=${unconfirmedCallbackURL} AND callback1conf=${confirmedCallbackURL}"
+    returncode=$?
+    trace_rc ${returncode}
+
+    data="{\"event\":\"unwatch\",\"address\":\"${address}\",\"unconfirmedCallbackURL\":${unconfirmedCallbackURL},\"confirmedCallbackURL\":${confirmedCallbackURL}}"
+  fi
+
   trace "[unwatchrequest] responding=${data}"
 
   echo "${data}"
@@ -75,6 +86,37 @@ unwatchpub32labelrequest() {
 
   data="{\"event\":\"unwatchxpubbylabel\",\"label\":\"${label}\"}"
   trace "[unwatchpub32labelrequest] responding=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}
+
+unwatchtxidrequest() {
+  trace "Entering unwatchtxidrequest()..."
+
+  local watchid=${1}
+  local txid=${2}
+  local unconfirmedCallbackURL=${3}
+  local confirmedCallbackURL=${4}
+  local returncode
+  trace "[unwatchtxidrequest] Unwatch request id ${watchid} on txid ${txid} with url0conf ${unconfirmedCallbackURL} and url1conf ${confirmedCallbackURL}"
+
+  if [ "${watchid}" != "null" ]; then
+    sql "UPDATE watching_by_txid SET watching=0 WHERE id=${watchid}"
+    returncode=$?
+    trace_rc ${returncode}
+
+    data="{\"event\":\"unwatchtxid\",\"id\":${watchid}}"
+  else
+    sql "UPDATE watching_by_txid SET watching=0 WHERE txid='${txid}' AND callback0conf=${unconfirmedCallbackURL} AND callback1conf=${confirmedCallbackURL}"
+    returncode=$?
+    trace_rc ${returncode}
+
+    data="{\"event\":\"unwatchtxid\",\"txid\":\"${txid}\",\"unconfirmedCallbackURL\":${unconfirmedCallbackURL},\"confirmedCallbackURL\":${confirmedCallbackURL}}"
+  fi
+
+  trace "[unwatchtxidrequest] responding=${data}"
 
   echo "${data}"
 

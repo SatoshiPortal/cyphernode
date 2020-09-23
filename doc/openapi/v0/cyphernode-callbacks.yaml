@@ -116,7 +116,7 @@ components:
           type: "integer"
         fees:
           type: "number"
-        is_replaceable:
+        replaceable:
           type: "integer"
         blockhash:
           $ref: '#/components/schemas/TypeHashString'

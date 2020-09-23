@@ -14,7 +14,7 @@ CREATE TABLE watching_by_pub32 (
 
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  address TEXT UNIQUE,
+  address TEXT,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,
@@ -26,6 +26,8 @@ CREATE TABLE watching (
   event_message TEXT,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_watching_address ON watching (address);
+CREATE UNIQUE INDEX idx_watching_01 ON watching (address, callback0conf, callback1conf);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
@@ -48,6 +50,7 @@ CREATE TABLE tx (
   blockhash TEXT,
   blockheight INTEGER,
   blocktime INTEGER,
+  conf_target INTEGER,
   raw_tx TEXT,
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,13 +67,28 @@ CREATE TABLE recipient (
   address TEXT,
   amount REAL,
   tx_id INTEGER REFERENCES tx,
-  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP,
+  webhook_url TEXT,
+  calledback INTEGER DEFAULT FALSE,
+  calledback_ts INTEGER,
+  batcher_id INTEGER REFERENCES batcher,
+  label TEXT
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
+CREATE INDEX idx_recipient_label ON recipient (label);
+
+CREATE TABLE batcher (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  label TEXT UNIQUE,
+  conf_target INTEGER,
+  feerate REAL,
+  inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO batcher (id, label, conf_target, feerate) VALUES (1, "default", 6, NULL);
 
 CREATE TABLE watching_by_txid (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  txid TEXT UNIQUE,
+  txid TEXT,
   watching INTEGER DEFAULT FALSE,
   callback1conf TEXT,
   calledback1conf INTEGER DEFAULT FALSE,
@@ -80,6 +98,7 @@ CREATE TABLE watching_by_txid (
   inserted_ts INTEGER DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
+CREATE UNIQUE INDEX idx_watching_by_txid_1x ON watching_by_txid (txid, callback1conf, callbackxconf);
 
 CREATE TABLE stamp (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -20,6 +20,7 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./newblock.sh
+. ./batching.sh
 
 main() {
   trace "Entering main()..."
@@ -99,8 +100,35 @@ main() {
           ;;
         unwatch)
           # curl (GET) 192.168.111.152:8080/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
+          # or
+          # POST http://192.168.111.152:8080/unwatch
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
 
-          response=$(unwatchrequest "${line}")
+          # args:
+          # - address: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by the watch
+
+          local address="null"
+          local unconfirmedCallbackURL="null"
+          local confirmedCallbackURL="null"
+          local watchid="null"
+
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address=$(echo "${line}" | jq -r ".address")
+            unconfirmedCallbackURL=$(echo "${line}" | jq ".unconfirmedCallbackURL")
+            confirmedCallbackURL=$(echo "${line}" | jq ".confirmedCallbackURL")
+            watchid=$(echo "${line}" | jq ".id")
+          else
+            address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -154,6 +182,28 @@ main() {
           # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/watchtxid
 
           response=$(watchtxidrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        unwatchtxid)
+          # POST http://192.168.111.152:8080/unwatchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
+
+          # args:
+          # - txid: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by watchtxid
+
+          local txid=$(echo "${line}" | jq -r ".txid")
+          local unconfirmedCallbackURL=$(echo "${line}" | jq ".unconfirmedCallbackURL")
+          local confirmedCallbackURL=$(echo "${line}" | jq ".confirmedCallbackURL")
+          local watchid=$(echo "${line}" | jq ".id")
+
+          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -300,18 +350,226 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        createbatcher)
+          # POST http://192.168.111.152:8080/createbatcher
+          #
+          # args:
+          # - batcherLabel, optional, id can be used to reference the batcher
+          # - confTarget, optional, overriden by batchspend's confTarget, default Bitcoin Core conf_target will be used if not supplied
+          # NOTYET - feeRate, sat/vB, optional, overrides confTarget if supplied, overriden by batchspend's feeRate, default Bitcoin Core fee policy will be used if not supplied
+          #
+          # response:
+          # - batcherId, the batcher id
+          #
+          # BODY {"batcherLabel":"lowfees","confTarget":32}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":231.8}
+
+          response=$(createbatcher "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        updatebatcher)
+          # POST http://192.168.111.152:8080/updatebatcher
+          #
+          # args:
+          # - batcherId, optional, batcher id to update, will update default batcher if not supplied
+          # - batcherLabel, optional, id can be used to reference the batcher, will update default batcher if not supplied, if id is present then change the label with supplied text
+          # - confTarget, optional, new confirmation target for the batcher
+          # NOTYET - feeRate, sat/vB, optional, new feerate for the batcher
+          #
+          # response:
+          # - batcherId, the batcher id
+          # - batcherLabel, the batcher label
+          # - confTarget, the batcher default confirmation target
+          # NOTYET - feeRate, the batcher default feerate
+          #
+          # BODY {"batcherId":5,"confTarget":12}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":400}
+          # NOTYET BODY {"batcherId":3,"label":"ultrahighfees","feeRate":800}
+          # BODY {"batcherLabel":"fast","confTarget":2}
+
+          response=$(updatebatcher "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         addtobatch)
           # POST http://192.168.111.152:8080/addtobatch
+          #
+          # args:
+          # - address, required, desination address
+          # - amount, required, amount to send to the destination address
+          # - outputLabel, optional, if you want to reference this output
+          # - batcherId, optional, the id of the batcher to which the output will be added, default batcher if not supplied, overrides batcherLabel
+          # - batcherLabel, optional, the label of the batcher to which the output will be added, default batcher if not supplied
+          # - webhookUrl, optional, the webhook to call when the batch is broadcast
+          #
+          # response:
+          # - batcherId, the id of the batcher
+          # - outputId, the id of the added output
+          # - nbOutputs, the number of outputs currently in the batch
+          # - oldest, the timestamp of the oldest output in the batch
+          # - total, the current sum of the batch's output amounts
+          #
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherLabel":"lowfees","webhookUrl":"https://myCypherApp:3000/batchExecuted"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"batcherId":34,"webhookUrl":"https://myCypherApp:3000/batchExecuted"}
 
-          response=$(addtobatching $(echo "${line}" | jq -r ".address") $(echo "${line}" | jq ".amount"))
+          response=$(addtobatch "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        removefrombatch)
+          # POST http://192.168.111.152:8080/removefrombatch
+          #
+          # args:
+          # - outputId, required, id of the output to remove
+          #
+          # response:
+          # - batcherId, the id of the batcher
+          # - outputId, the id of the removed output if found
+          # - nbOutputs, the number of outputs currently in the batch
+          # - oldest, the timestamp of the oldest output in the batch
+          # - total, the current sum of the batch's output amounts
+          #
+          # BODY {"outputId":72}
+
+          response=$(removefrombatch "${line}")
           response_to_client "${response}" ${?}
           break
           ;;
         batchspend)
-          # GET http://192.168.111.152:8080/batchspend
+          # POST http://192.168.111.152:8080/batchspend
+          #
+          # args:
+          # - batcherId, optional, id of the batcher to execute, overrides batcherLabel, default batcher will be spent if not supplied
+          # - batcherLabel, optional, label of the batcher to execute, default batcher will be executed if not supplied
+          # - confTarget, optional, overrides default value of createbatcher, default to value of createbatcher, default Bitcoin Core conf_target will be used if not supplied
+          # NOTYET - feeRate, optional, overrides confTarget if supplied, overrides default value of createbatcher, default to value of createbatcher, default Bitcoin Core value will be used if not supplied
+          #
+          # response:
+          # - batcherId, id of the executed batcher
+          # - confTarget, conf_target used for the spend
+          # - nbOutputs, the number of outputs spent in the batch
+          # - oldest, the timestamp of the oldest output in the spent batch
+          # - total, the sum of the spent batch's output amounts
+          # - txid, the batch transaction id
+          # - hash, the transaction hash
+          # - tx details: firstseen, size, vsize, replaceable, fee
+          # - outputs
+          #
+          # {"result":{
+          #    "batcherId":34,
+          #    "confTarget":6,
+          #    "nbOutputs":83,
+          #    "oldest":123123,
+          #    "total":10.86990143,
+          #    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "details":{
+          #      "firstseen":123123,
+          #      "size":424,
+          #      "vsize":371,
+          #      "replaceable":yes,
+          #      "fee":0.00004112
+          #    },
+          #    "outputs":{
+          #      "1abc":0.12,
+          #      "3abc":0.66,
+          #      "bc1abc":2.848,
+          #      ...
+          #    }
+          #  }
+          # },"error":null}
+          #
+          # BODY {}
+          # BODY {"batcherId":34,"confTarget":12}
+          # NOTYET BODY {"batcherLabel":"highfees","feeRate":233.7}
+          # BODY {"batcherId":411,"confTarget":6}
 
           response=$(batchspend "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbatcher)
+          # POST (GET) http://192.168.111.152:8080/getbatcher
+          #
+          # args:
+          # - batcherId, optional, id of the batcher, overrides batcherLabel, default batcher will be used if not supplied
+          # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
+          #
+          # response:
+          # {"result":{"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},"error":null}
+          #
+          # BODY {}
+          # BODY {"batcherId":34}
+
+          response=$(getbatcher "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        getbatchdetails)
+          # POST (GET) http://192.168.111.152:8080/getbatchdetails
+          #
+          # args:
+          # - batcherId, optional, id of the batcher, overrides batcherLabel, default batcher will be spent if not supplied
+          # - batcherLabel, optional, label of the batcher, default batcher will be used if not supplied
+          # - txid, optional, if you want the details of an executed batch, supply the batch txid, will return current pending batch
+          #     if not supplied
+          #
+          # response:
+          # {"result":{
+          #    "batcherId":34,
+          #    "batcherLabel":"Special batcher for a special client",
+          #    "confTarget":6,
+          #    "nbOutputs":83,
+          #    "oldest":123123,
+          #    "total":10.86990143,
+          #    "txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "hash":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648",
+          #    "details":{
+          #      "firstseen":123123,
+          #      "size":424,
+          #      "vsize":371,
+          #      "replaceable":yes,
+          #      "fee":0.00004112
+          #    },
+          #    "outputs":[
+          #      "1abc":0.12,
+          #      "3abc":0.66,
+          #      "bc1abc":2.848,
+          #      ...
+          #    ]
+          #  }
+          # },"error":null}
+          #
+          # BODY {}
+          # BODY {"batcherId":34}
+
+          response=$(getbatchdetails "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        listbatchers)
+          # curl (GET) http://192.168.111.152:8080/listbatchers
+          #
+          # response:
+          # {"result":[
+          #   {"batcherId":1,"batcherLabel":"default","confTarget":6,"nbOutputs":12,"oldest":123123,"total":0.86990143},
+          #   {"batcherId":2,"batcherLabel":"lowfee","confTarget":32,"nbOutputs":44,"oldest":123123,"total":0.49827387},
+          #   {"batcherId":3,"batcherLabel":"highfee","confTarget":2,"nbOutputs":7,"oldest":123123,"total":4.16843782}
+          #  ],
+          #  "error":null}
+
+          response=$(listbatchers)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        bitcoin_estimatesmartfee)
+          # POST http://192.168.111.152:8080/bitcoin_estimatesmartfee
+          # BODY {"confTarget":2}
+
+          response=$(bitcoin_estimatesmartfee $(echo "${line}" | jq -r ".confTarget"))
           response_to_client "${response}" ${?}
           break
           ;;

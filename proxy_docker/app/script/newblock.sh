@@ -3,6 +3,7 @@
 . ./trace.sh
 . ./callbacks_txid.sh
 . ./blockchainrpc.sh
+. ./batching.sh
 
 newblock() {
   trace "Entering newblock()..."
@@ -22,4 +23,5 @@ newblock() {
   trace_rc ${returncode}
 
   do_callbacks_txid
+  batch_check_webhooks
 }
