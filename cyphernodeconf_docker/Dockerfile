@@ -23,7 +23,7 @@ RUN apk add --update --no-cache \
     git \
     pkgconfig
 
-RUN git clone https://github.com/fukuchi/libqrencode.git \
+RUN git clone -b v4.1.0 https://github.com/fukuchi/libqrencode.git \
  && cd libqrencode \
  && ./autogen.sh \
  && ./configure \
