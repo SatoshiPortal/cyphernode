@@ -13,7 +13,7 @@ image() {
 
   echo "Building and pushing $image from $dir for $arch using $dockerfile tagging as $v1, $v2 and $v3..."
 
-  docker build -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
+  docker build --no-cache -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
   && docker push cyphernode/${image}:${arch}-${v3} \
   && docker push cyphernode/${image}:${arch}-${v2} \
   && docker push cyphernode/${image}:${arch}-${v1}
@@ -65,9 +65,9 @@ aarch64_docker="arm64"
 #arch_docker=${aarch64_docker}
 arch_docker=${x86_docker}
 
-v1="v0-dev"
-v2="v0.4-dev"
-v3="v0.4.0-dev"
+v1="v0"
+v2="v0.5"
+v3="v0.5.0"
 
 echo "\nBuilding Cyphernode Core containers\n"
 echo "arch_docker=$arch_docker\n"
