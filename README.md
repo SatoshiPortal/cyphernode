@@ -514,11 +514,9 @@ Additional options
 ### Step 4: put a watch on your payment or address for callback notifications
 -> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
 -> You can also use `watchtaddress` endpoint, which can cover different use-cases
+Why not both?
 
-
-### 
-
-API DOC: "ln_pay"
+### Pay using Lightning 
 
 Pay a Lightning Network invoice (called by application)
 
@@ -559,9 +557,7 @@ Proxy response:
 
 ```
 
-
-
-#### API DOC: "ln_connectfund" (custom feature to connect to a LN node and fund a channel with it)
+### API DOC: "ln_connectfund" (custom feature to connect to a LN node and fund a channel with it)
 
 First, it will connect your LN node to the supplied LN node.  Then, it will fund a channel of the provided amount between you two.  Cyphernode will call the supplied callback URL when the channel is ready to be used.
 
@@ -589,14 +585,14 @@ Proxy response:
 ```
 
 
-## Wasabi Wallet 
+# Wasabi Wallet 
 
 -> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
 -> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
 
 ### Receiving payments with wasabi wallet
 
-#### API DOC: "wasabi_getnewaddress"
+API DOC: "wasabi_getnewaddress"
 
 Queries random instance for a new bech32 address
 
@@ -615,7 +611,7 @@ Empty BODY: Label will be "unknown"
 }
 ```
 
-#### API DOC: "wasabi_getbalances"
+API DOC: "wasabi_getbalances"
 
 Will get the balances of all instances if not specified, or of a specified instance.
 
@@ -637,9 +633,9 @@ GET http://192.168.111.152:8080/wasabi_getbalances/87
 
 ```
 
+### Spend from Wasabi Wallet 
 
-
-#### API DOC: "wasabi_spend"
+API DOC: "wasabi_spend"
 
 Spend unused coins from Wasabi wallet
 ```http
@@ -665,7 +661,9 @@ BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 }
 ```
 
-#### API DOC: "wasabi_getunspentcoins"
+### Get the list of unspent coins in the wallet
+
+API DOC: "wasabi_getunspentcoins"
 
 Return all unspent coins of either one wasabi instance or all instances, depending on the instanceId parameter
 
@@ -691,7 +689,9 @@ args:
 }
 ```
 
-#### API DOC: "wasabi_gettransactions"
+### Get list of transactions from Wasabi Wallet 
+
+API DOC: "wasabi_gettransactions"
 
 ```http
 POST http://192.168.111.152:8080/wasabi_gettransactions/
@@ -715,35 +715,24 @@ args:
     }]
     
 }
-
 ```
 
-### PSBT offline signing
+# PSBT offline signing
 
 -> Create a new wallet using `create_wallet` endpoint
 -> Load wallet using `load_wallet` endpoint
 -> Make this wallet a PSBT wallet by calling the `psbt_enable` endpoint and adding the xpub of the wallet you want to use (e.g. from ColdCard)
 -> This will import addresses into the newly craeted wallet, so you will probably want to enable the rescan option and specify a certain blockheight
 
-### Liquid Wallet
+# Liquid Network Wallet
 
 -> You can send any Liquid asset using the `elements_spend` endpoint
 -> You must always specify which asset you are sending by supplying the `assetId`. There is no default asset to avoid accidentally sending L-BTC to someone by accident because you did not specify the asset. The L-BTC assetId is `6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d`
 -> Use the `elements_watchtxidrequest` request after receiving the transactionId from `elements_spend` to get noficiations about transaction confirmations
 
-## Receive payments, track balances and get notifications
-
--> Watch a Bitcoin address and get notified to callback URL via Webhook
-
--> External wallet (xpub) tracker
-
-## Receiving Bitcoin payments
-
-Cyphernode allows you to create
 
 
-
-**Example code for a payment processor**
+# Example for Bitcoin payment processing
 
 1. Getting a new address
 
@@ -843,7 +832,3 @@ Cyphernode allows you to create
         "confirmations": 2
 }
 ```
-
-# Contributions
-
-[See contributing document](CONTRIBUTING.md)
