@@ -415,6 +415,109 @@ Proxy response:
 ```
 
 
+
+# Example for Bitcoin payment processing
+
+1. Getting a new address
+
+```{
+    "type": "cyphernode-address-created",
+    "address": {
+        "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+        "keyPath": "84'/0'/0'/0/22",
+        "label": "[\"order 22\"]",
+    }
+}
+```
+```
+{
+    "type": "cyphernode-address-created",
+    "address": {
+        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa"
+    }
+}
+```
+2. WebHook created for address `2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa`
+
+```{
+    "type": "cypnernode-hook-created",
+    "field": "invoince_address",
+    "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
+    "is_error": false,
+    "error": null,
+    "result": {
+        "id": "614",
+        "event": "watch",
+        "imported": "1",
+        "inserted": "1",
+        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
+        "unconfirmedCallbackURL": "`your_callback_url_1`"
+        "confirmedCallbackURL": "`your_callback_url_2`",
+        "estimatesmartfee6blocks": "0.00001000",
+        "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+    }
+}
+```
+
+3. Receive information for unconfirmed-tx event`
+```{
+    "_id": "YuJ5oLsRx73EzCKpt",
+    "created_at": "2020-05-19T23:21:43.430Z",
+    "opts": {
+        "query": {
+            "event": "unconfirmed-tx",
+            "order_id": "asj109e2u1so"
+        },
+        "body": {
+            "id": "615",
+            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
+            "vout_n": 0,
+            "sent_amount": 0.00161244,
+            "confirmations": 0,
+            "received": "2018-03-19T13:29:33+0000",
+            "size": 518,
+            "vsize": 276,
+            "fees": 0.00000276,
+            "is_replaceable": 0,
+            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+        },
+        "confirmations": 0
+    }
+}
+```
+```
+{
+    "_id": "YuJ5oLsRx73EzCKpt",
+    "created_at": "2020-05-19T23:29:21.334Z",
+    "opts": {
+        "query": {
+            "event": "confirmed-tx",
+            "order_id": "asj109e2u1so",
+        },
+        "body": {
+            "id": "615",
+            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
+            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
+            "vout_n": 0,
+            "vout_n": 0,
+            "sent_amount": 0.00161244,
+            "confirmations": 2,
+            "received": "2018-03-19T13:32:13+0000",
+            "size": 518,
+            "vsize": 276,
+            "fees": 0.00000276,
+            "is_replaceable": 0,
+            "blockhash": "0000000000000e5c7c34a643b4a43dfdcf907236ee615a32e00c565e482d4ba9",
+            "blocktime": "2020-05-19T23:28:26+0000",
+            "blockheight": 1745836,
+            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
+        },
+        "confirmations": 2
+}
+```
+
+
 # Sending Bitcoin payments via the Cyphernode wallet API
 
 A **spender** wallet 
@@ -731,104 +834,3 @@ args:
 -> Use the `elements_watchtxidrequest` request after receiving the transactionId from `elements_spend` to get noficiations about transaction confirmations
 
 
-
-# Example for Bitcoin payment processing
-
-1. Getting a new address
-
-```{
-    "type": "cyphernode-address-created",
-    "address": {
-        "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
-        "keyPath": "84'/0'/0'/0/22",
-        "label": "[\"order 22\"]",
-    }
-}
-```
-```
-{
-    "type": "cyphernode-address-created",
-    "address": {
-        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa"
-    }
-}
-```
-2. WebHook created for address `2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa`
-
-```{
-    "type": "cypnernode-hook-created",
-    "field": "invoince_address",
-    "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
-    "is_error": false,
-    "error": null,
-    "result": {
-        "id": "614",
-        "event": "watch",
-        "imported": "1",
-        "inserted": "1",
-        "address": "2MwhJkJWAuZevor6v1EPRPr4ZhWvZqhu7Sa",
-        "unconfirmedCallbackURL": "`your_callback_url_1`"
-        "confirmedCallbackURL": "`your_callback_url_2`",
-        "estimatesmartfee6blocks": "0.00001000",
-        "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
-    }
-}
-```
-
-3. Receive information for unconfirmed-tx event`
-```{
-    "_id": "YuJ5oLsRx73EzCKpt",
-    "created_at": "2020-05-19T23:21:43.430Z",
-    "opts": {
-        "query": {
-            "event": "unconfirmed-tx",
-            "order_id": "asj109e2u1so"
-        },
-        "body": {
-            "id": "615",
-            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
-            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
-            "vout_n": 0,
-            "sent_amount": 0.00161244,
-            "confirmations": 0,
-            "received": "2018-03-19T13:29:33+0000",
-            "size": 518,
-            "vsize": 276,
-            "fees": 0.00000276,
-            "is_replaceable": 0,
-            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
-        },
-        "confirmations": 0
-    }
-}
-```
-```
-{
-    "_id": "YuJ5oLsRx73EzCKpt",
-    "created_at": "2020-05-19T23:29:21.334Z",
-    "opts": {
-        "query": {
-            "event": "confirmed-tx",
-            "order_id": "asj109e2u1so",
-        },
-        "body": {
-            "id": "615",
-            "address": "tb1qhytxwr0q5q30kw49m4peek0j35s8nz4y55494d",
-            "hash": "1287exvmb29hls02094igbsidif238j9b13a071eb69697f34b340ab76cec",
-            "vout_n": 0,
-            "vout_n": 0,
-            "sent_amount": 0.00161244,
-            "confirmations": 2,
-            "received": "2018-03-19T13:32:13+0000",
-            "size": 518,
-            "vsize": 276,
-            "fees": 0.00000276,
-            "is_replaceable": 0,
-            "blockhash": "0000000000000e5c7c34a643b4a43dfdcf907236ee615a32e00c565e482d4ba9",
-            "blocktime": "2020-05-19T23:28:26+0000",
-            "blockheight": 1745836,
-            "eventMessage": "eyJib3VuY2VB13098fmoDdvosd230fggfxsg8BM0trblpQUlVKelNnWXkiLCJuYsdf23d9"
-        },
-        "confirmations": 2
-}
-```
