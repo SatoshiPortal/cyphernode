@@ -1,3 +1,5 @@
+# The Cyphernode Project
+
 Cyphernode is a Bitcoin microservices API server architecture, Bitcoin wallet management software and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
 
 Combined with the Cypherapps framework, Cyphernode provides all advanced features and utilities necessary to build and deploy entreprise-grade applications such as Bitcoin exchanges, Bitcoin payment processors and Bitcoin wallets.
@@ -7,21 +9,17 @@ Combined with the Cypherapps framework, Cyphernode provides all advanced feature
 - Hold your own keys without compromise: hot wallets and cold store both supported
 - Protect user privacy: 100% anonymous, no data leaks to 3rd parties
 
-# Project management
-
 * Created by Francis Pouliot and Kexkey
-* Financed by Bull Bitcoin
-* Contributors: @\_\_escapee\_\_ @sifirapps @Gus
+* Financed by Bull Bitcoin 
+* Contributors: SKP, Sifir, Veriphi
 
-Cyphernode has been used in production by Bull Bitcoin and Bylls since June 2018 for all of its Bitcoin transactions (hundrends of thousands) in and out. We haven't had any major problems. Use at your own risk. We operated on a skin-in-the-game basis: what's good for the other users of the software project is good for us.
+Cyphernode has been used in production by Bull Bitcoin and Bylls since June 2018 for all of its Bitcoin transactions (hundrends of thousands) in and out. We haven't had any major problem (no loss of funds). Use at your own risk. We operated on a skin-in-the-game basis.
 
 Changes are marged into the master branch if, and only if, they have been thouroughly tested in production by Bull Bitcoin and Bylls for at least a few weeks. Often, some of the experimental feature branches are run for months before they are merged into dev, from where they are merged into master.
 
-Use at your own risk. We operated on a skin-in-the-game basis: what's good for the other users of the software project is good for us.
+## Who is this for?
 
-# Who is this for?
-
-Cyphernode was designed for the following purposes:
+Cyphernode is designed specifically for Bitcoin applications and advances services:
 
 - Build a Bitcoin payment processing application or Bitcoin exchange
 - Build an end-user Bitcoin wallet UI, Bitcoin Node dashboard UI, wallet balance tracker, etc.
@@ -31,33 +29,79 @@ Cyphernode was designed for the following purposes:
 - Advanced features like automated conjoin transactions, multiple transaction hops 
 - Liquid Network Bitcoin wallet management, payment processing, transaction notifications, asset issuance, etc.
 
+## Alternatives and substitutes
+
+Cyphernode is a self-hosted alternative to hosted, 3rd party hot-wallet and block explorer APIs such as:
+- Bitgo
+- Blockchain(dot)info
+- Bitpay
+- Coinbase
+- Blockcypher
+
+It is a more modular, generaic and lightweight substitute to other self-hosted software projects such as:
+
+- BTCPAY server: Cyphernode is a much more generic software project not made specifically for merchants, and does not have a user interface.
+- Electrum server: Cyphernode is designed first and foremost as an entreprise-grade API, not wallet backend.
+- Blockstream esplora: Most apps and services do not need a full block explorer, because they are only interested in their own transactions and the transactions of their users, not the entire network.
+
 # Cyphernode Architecture
 
 ![image](doc/CN-Arch.jpg)
 
 Cyphernode is an assembly of Docker containers being called by a request dispatcher.
 
-The request dispatcher (requesthandler.sh) is the HTTP entry point.
-The request dispatcher is stateful: it keeps some data to be more effective on next calls.
-The request dispatcher is where Cyphernode scales with new features: add your switch, dispatch requests to your stuff.
-We are trying to construct each container so that it can be used separately, as a standalone reusable component.
+- The request dispatcher (requesthandler.sh) is the HTTP entry point.
+- The request dispatcher is stateful: it keeps some data to be more effective on next calls.
+- The request dispatcher is where Cyphernode scales with new features: add your switch, dispatch requests to your stuff.
+- We are trying to construct each container so that it can be used separately, as a standalone reusable component.
 
-Center element: proxy_docker
+## Documentation
+
+- Read the API Documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
+- Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
+- How to use the Batching: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/BATCHING.md
+- General readme: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/README.md
+
+## Ingredients
+
+Cyphernode incorporates the following software projects:
+
+- Bitcoin Core
+- C-Lightning
+- Wasabi Wallet
+- Spark Wallet
+- Specter-Desktop
+- Elements 
+- OpenTimestamps
+- Pycoin 
+- Tor
+- Docker 
+- Traefik
+
+
+## Requirements
+
+Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases).
+
+* For a full-node and all modules: 400 GB of storage and 2GB of RAM minimum
+* When adding other modules like Lightning, Coinjoin, other cypherapps, etc. you will need to increase RAM.
+
+## Key code components
+
+**Center element: [proxy_docker](https://github.com/FrancisPouliot/cyphernode/tree/docs/proxy_docker)**
 The proxy_docker is the container receiving and dispatching calls from clients. When adding a feature to Cyphernode, it is the first part to be modified to integrate the new feature.
-
-proxy_docker/app/script/requesthandler.sh
+**[Request handler](https://github.com/FrancisPouliot/cyphernode/tree/docs/proxy_docker)**
 You will find in there the switch statement used to dispatch the requests. Just add a case block with your command, using other cases as examples for POST or GET requests.
-
-proxy_docker/app/config
-You will find there config files. config.properties should be used to centralize configs. spender and watcher properties are used to obfuscate credentials on curl calls.
-
-proxy_docker/app/data
+**[Config Schema](https://github.com/SatoshiPortal/cyphernode/blob/f9cf6125cbecae609c95dc9b14f46060b918be31/cyphernodeconf_docker/schema/config-v0.2.4.json)**
+The configs which can be edited
+**[API permissions](https://github.com/SatoshiPortal/cyphernode/blob/master/api_auth_docker/api-sample.properties)**
+This shows all the functions that can be called and the required permissions
+**[Proxy data](https://github.com/SatoshiPortal/cyphernode/tree/master/proxy_docker/app/data)**
 watching.sql contains the data model. Called "watching" because in the beginning of the project, it was only used for watching addresses. Now could be used to index the blockchain (build an explorer) and add more features.
-
-cron_docker
+**[cron_docker](https://github.com/SatoshiPortal/cyphernode/tree/master/cron_docker)**
 If you have jobs to be scheduled, use this container. Just add an executable and add it to the crontab.
-
-Currently used to make sure callbacks have been called for missed transactions.
+**[Cyphernode scripts](https://github.com/FrancisPouliot/cyphernode/tree/docs/proxy_docker/app/script)**
+Cyphernode features and functions
 
 ## Cyphernode request handler and API
 
@@ -72,8 +116,7 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 - sending eventmessages to the cyphernode pub/sub system to trigger other events
 - making requests to a cypherapp within the cyphernode network, either from the outside via the API or from other apps within the network
 
-
-## What are cypherapps?
+# Cypherapps
 
 Cypherapps are regular software applications that are dockerized and deployed to communicate in a secure way with the rest of the cyphernode stack, and particularly with the broker/notifier and proxy to either get notifications or control the wallets. 
 
@@ -98,19 +141,6 @@ The advantage of using cypherapps to deploy your apps is that you can leverage a
 - Conjoin managers: apps that will manage all the automation and database for more complex coinjoin operations
 - Existing projects like Spark Wallet, Specter-Dashboard, BTC-RPC-EXPLORER and other node user interface or middleware projects can be added as cypherapps
 
-# Documentation
-
-* Read the API docs here: 
-  * API v0 (Current): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
-  * API v1 (RESTful): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v1.md 
-* Installation documentation: https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL.md
-* Step-by-step manual install (deprecated): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/INSTALL-MANUAL-STEPS.md
-
-Cyphernode is designed to be deployed on virtual machines with launch scripts, but with efficiency and minimalism in mind so that it can also run on multiple Rasberry Pi with very low computing ressources (and extremely low if installing pre-synchronized blockchain and pruned). Because of the modular architecture, heavier modules like blockchain indexers are optional (and not needed for most commercial use-cases).
-
-* For a full-node and all modules: 400 GB of storage and 2GB of RAM minimum
-* When adding other modules like Lightning, Coinjoin, other cypherapps, etc. you will need to increase requirements
-
 # Cyphernode Bitcoin Wallet Management
 
 Cyphernode allows its users to create and use Bitcoin Wallets via API, but it is not itself a Bitcoin wallet: it is Bitcoin wallet management tool that controls other Bitcoin Wallets. These wallets are used generally for two purposes: receiving Bitcoin payments and sending Bitcoin payments.
@@ -130,7 +160,7 @@ In reality, there is only need for one **watcher** wallet in the cyphernode stac
 
 Cyphernode was built originally as an alternative to Bitcoin block explorer APIs. It offers the same features as the most advances commercial APIs but with far greater reliability, flexbility, privacy and more advanced features.
 
-## Receiving payments
+# Receiving payments
 
 Receiving Bitcoin payments involves the following crucial steps:
 
@@ -139,24 +169,21 @@ Receiving Bitcoin payments involves the following crucial steps:
 3. Monitoring inbound transactions for confirmations 
 4. Logging and displaying transaction details
 
-### Generating Bitcoin addresses
+## Receiving payments step 1: Generating Bitcoin addresses
 
 In Cyphernode, there are 6 ways to generate receiving addresses. The methods can be found in the proxy here below.
 
-Note: always make sure you have access to the keys of the addresses you are generating, or if they are watch only, make sure you know where they are going.
+- Derived from an imported XPUB
+- Bitcoin Core hot wallet (spender)
+- Wasabi Wallet (auto-mix)
 
-#### 1. [Dynamically derived from an XPUB (or ZPUB or YPUB)](https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md#get-derived-addresses-using-path-in-config-and-provided-index-called-by-application)
+### Generate address: Dynamically derived from an XPUB (or ZPUB or YPUB)
 
-**How it works**: Using this method, you can simply provide the zpub and it will automatically derive a new one each time. Or you can specify the path you want to derive. There is no limit to how many you can derive. Note: here you would want to specify a segwit path. Currently, this uses pycoin. 
+https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md#get-derived-addresses-using-path-in-config-and-provided-index-called-by-application
+
+Using this method, you can simply provide the zpub and it will automatically derive a new one each time. Or you can specify the path you want to derive. There is no limit to how many you can derive. Note: here you would want to specify a segwit path. Currently, this uses pycoin. 
 
 Note: there are two API calls, `deriveindex` and `derivepubpath`. `deriveindex` must be used with derivation.pub32 and derivation.path properties in config.properties. Use `derivepubpath` if you want to specify the path for each API call (config.properties' derivation.pub32 and derivation.path are not used).
-
-**Permissions**: 
-
-`action_deriveindex=spender`
-`action_derivepubpath=spender`
-
-**Code**: https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/bitcoin.sh
 
 **API call**: `deriveindex` (https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/API.v0.md#get-derived-addresses-using-path-in-config-and-provided-index-called-by-application)
 
@@ -211,20 +238,11 @@ Proxy response:
 }
 ```
 
-
-[Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/walletoperations.sh)
-
-#### 2. [From a Bitcoin Core hot wallet (spender)](https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1044) 
+### Generate address from a Bitcoin Core hot wallet (spender)
 
 Calls getnewaddress RPC on the spending wallet. Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
 
-Permissions:
-
-`action_getnewaddress=spender`
-
-Code: [Wallet Operations](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/walletoperations.sh)
-
-API docs:
+**API call** `getnewaddress` https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1044) 
 
 ```http
 GET http://cyphernode:8888/getnewaddress
@@ -247,30 +265,56 @@ Proxy response:
 }
 ```
 
-3. [From Wasabi Wallet using](https://github.com/SatoshiPortal/cyphernode/blob/5080b796e6ddb4a00b1487b35a4cc3da9f4a1810/doc/openapi/v0/cyphernode-api.yaml#L1877) `wasabi_getnewaddress`
-`action_wasabi_getnewaddress=spender`
+### Generate an address from Wasabi Wallet (auto-mix)
+
+This is the preferred technique when receiving payments from multiple users. When auto-mix is turned on, the coins received in Wasabi Wallet will automatically be enqueued into a Coinjoin without prior utxo aggregation. You can have multiple receiving wallets which will be alternated automatically when asking using the `wasabi_getnewaddress` function. This mitigates utxo aggregation and provides additional privacy. If the autospend feature is turned on, the mixed coins will automatically be sent to Bitcoin Core spender wallet. Post-mix utxos are by default aggregated every block. 
+
+**API call**: `wasabi_getnewaddress`  https://github.com/SatoshiPortal/cyphernode/blob/5080b796e6ddb4a00b1487b35a4cc3da9f4a1810/doc/openapi/v0/cyphernode-api.yaml#L1877) 
+
 These addresses will be native segwit (bech32) only.
 
-4.[From C-Lightning using](https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1405) `ln_create_invoice`
-`action_ln_create_invoice=watcher`
+### Create Bolt11 invoice from C-Lightning 
 
-5. [Getting an L-BTC address from Liquid (Elements)](https://github.com/SatoshiPortal/cyphernode/blob/56c3230bf2c99f0fbee3e71f66b364c811059ca1/proxy_docker/app/script/elements_walletoperations.sh#L6) spender
-`action_elements_spend=spender`
-`elements_getnweaddress`
+Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds and optional.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
+
+**API call**: `ln_create_invoice` https://github.com/SatoshiPortal/cyphernode/blob/79839fe94982324f59d485bf6266cc01ab43d3cf/doc/openapi/v0/cyphernode-api.yaml#L1405) 
+
+```http
+POST http://cyphernode:8888/ln_create_invoice
+with body...
+{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900,"callbackUrl":"https://thesite/lnwebhook/9d8sa98yd"}
+or
+{"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
+```
+
+Proxy response:
+
+```json
+{
+  "payment_hash": "fd27edf261d4b089c3478dece4f2c92c8c68db7be3999e89d452d39c083ad00f",
+  "expires_at": 1536593926,
+  "bolt11": "lntb100n1pdedryzpp5l5n7munp6jcgns683hkwfukf9jxx3kmmuwveazw52tfeczp66q8sdqagfukcmrnyphhyer9wgszxvfsxc6rjxqzuycqp2ak5feh7x7wkkt76uc5ptzcv90jhzhs5swzefv9344hnv74c25dvsstx7l24y46sx5tnkenu480pe06wtly2h5lrj63vszzgrxt4grkcqcltquj"
+}
+```
+
+
+### Getting an L-BTC address from Liquid (Elements) 
+
+**API call**: `elements_getnweaddress` (https://github.com/SatoshiPortal/cyphernode/blob/56c3230bf2c99f0fbee3e71f66b364c811059ca1/proxy_docker/app/script/elements_walletoperations.sh#L6) 
 
 By default these will be confidential addresses, legacy segwit (not belch32) because native segwit (blech32) is not compatible with Green by Blockstream.
 
-6. [Manually import addresses, or use the importmulti function](https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/importaddress.sh)
+### Manually import addresses, or use the importmulti function
 
-### Watching Bitcoin addresses
+(https://github.com/SatoshiPortal/cyphernode/blob/features/liquidwasabi/proxy_docker/app/script/importaddress.sh)
 
-The term "watching" in Cyphernode lingo means a function that will monitor Bitcoin address and send notifications either internally via the broker/notifier system or externally via API with webhook notifications at specified callback URLs.
+# Watching Bitcoin addresses
+
+The term "watching" in Cyphernode lingo means a function that will monitor Bitcoin addresses or transactions and send notifications either internally via the broker/notifier system or externally via API with webhook notifications at specified callback URLs.
 
 There are two principal ways to watch Bitcoin addresses:
 1. Watch each address individually: the addresses will be imported into the Bitcoin Core watcher wallet, notifications will be sent when they are involved in Bitcoin transactions. This is best if you are creating invoices, or watching deposit addresses for an account.
 2. Watch XPUBs, YPUBs and ZPUBs: we will derive multiple addresses (batches of 1000) and import them all into Bitcoin Core, notifications will be sent when any of the adresses being watched are involved in Bitcoin transactions. In addition, this allows you to query the entire balance of the addresses in an XPUB. This would be for tracking all movements in and out of a wallet and logging these changes with balances, for example.
-
-There is no real limit to how many addresses can be watched.
 
 When watching a Bitcoin address, you can configure these additional options:
 
@@ -284,7 +328,7 @@ Because we will be importanting many different addresses from many different xpu
 
 The system we use by default is to put the XPUB itself as the label when importing addresses using the XPUB watcher feature. So we can tell which addresses were from which xpubs simply because the xpub is in the internal Bitcoin Core address label for all addresses. For this reason, we have some watching functions which are based on labels, and we can decide to watch addresses only of a certain label and send them collectively to one callback URLs (or grouping).
 
-#### API DOC: "watch"
+### API DOC: "watch"
 
 Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
 
@@ -317,7 +361,7 @@ Proxy response:
 
 
 
-#### API DOC: "watchxpub"
+### API DOC: "watchxpub"
 
 Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
 
@@ -342,13 +386,13 @@ Proxy response:
 }
 ```
 
-### Watching transactions
+# Watching transactions
 
 The Watch Transaction feature will provide notitifications about a supplied txid, usually triggered by blocks. This is used internally in various processes, but it is also a neat feautre to watch transactions you are sending outbound to be notified with detailed information when the transaction confirms. You can also put a watch on inbound transactions to trigger specific event notifications.
 
 It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
 
-#### API DOC: "watchtxid"
+### API DOC: "watchtxid"
 
 ```http
 POST http://cyphernode:8888/watchtxid
@@ -370,49 +414,8 @@ Proxy response:
 }
 ```
 
-### Getting paid with Lightning
 
-#### API DOC: "ln_create_invoice"
-
-Returns a LN invoice.  Label must be unique.  Description will be used by your user for payment.  Expiry is in seconds and optional.  If msatoshi is not supplied, will use "any" (ie donation invoice).  callbackUrl is optional.
-
-```http
-POST http://cyphernode:8888/ln_create_invoice
-with body...
-{"msatoshi":10000,"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900,"callbackUrl":"https://thesite/lnwebhook/9d8sa98yd"}
-or
-{"label":"koNCcrSvhX3dmyFhW","description":"Bylls order #10649","expiry":900}
-```
-
-Proxy response:
-
-```json
-{
-  "payment_hash": "fd27edf261d4b089c3478dece4f2c92c8c68db7be3999e89d452d39c083ad00f",
-  "expires_at": 1536593926,
-  "bolt11": "lntb100n1pdedryzpp5l5n7munp6jcgns683hkwfukf9jxx3kmmuwveazw52tfeczp66q8sdqagfukcmrnyphhyer9wgszxvfsxc6rjxqzuycqp2ak5feh7x7wkkt76uc5ptzcv90jhzhs5swzefv9344hnv74c25dvsstx7l24y46sx5tnkenu480pe06wtly2h5lrj63vszzgrxt4grkcqcltquj"
-}
-```
-
-#### API DOC: "ln_newaddr"
-
-Get a new Bitcoin address from the Lightning Network node (to fund it) (called by application)
-
-Returns a Bitcoin bech32 address to fund your LN wallet.
-
-```http
-GET http://cyphernode:8888/ln_newaddr
-```
-
-Proxy response:
-
-```json
-{
-  "address": "tb1q9n8jfwe9qvlgczfxa5n4pe7haarqflzerqfhk9"
-}
-```
-
-## Sending Bitcoin payments via the Cyphernode wallet API
+# Sending Bitcoin payments via the Cyphernode wallet API
 
 A **spender** wallet 
 
@@ -423,11 +426,11 @@ The wallet API delegates the tasks of creating, signing and boradcasting transac
 - Wasabi Wallet
 - Liquid network (Elements)
 
-These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be 
+These wallets are hot wallets. In the Cyphernode framework, we call them "spender" wallets and only users with spending rights will be able to use it. This is different than the "watching" wallets, which are watch-only for the watches we put on addresses and transactions.
 
-### Making Bitcoin transactions with Bitcoin Core
+# Making Bitcoin transactions with Bitcoin Core Step by step
 
-#### Get a new address from the spender to fund your wallet
+### Step 1: Get a new address from the spender to fund your wallet
 
 This will call getnewaddress RPC on the spending wallet.  Used to refill the spending wallet from cold wallet (ie Trezor).  Will derive the default address type (set in your bitcoin.conf file, p2sh-segwit if not specified) or you can supply the address type like the following examples.
 
@@ -451,8 +454,29 @@ Proxy response:
   "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj"
 }
 ```
- 
-#### Call the spend endpoint to send Bitcoin payments
+ ### Step 2: know how much money you have in each wallet with "getbalances"
+
+Calls getbalances RPC on the spending wallet.
+
+```http
+GET http://cyphernode:8888/getbalances
+```
+
+Proxy response:
+
+```json
+{
+  "balances": {
+    "mine": {
+      "trusted": 1.29979716,
+      "untrusted_pending": 0,
+      "immature": 0
+    }
+  }
+}
+```
+
+### "Step 3: Call the spend endpoint to send Bitcoin payments
 
 Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.
 
@@ -483,40 +507,18 @@ Proxy response:
   }
 }
 ```
-
+Additional options
 -> Create and process PSBT files to sign remotely
 -> "Bump fee" on RBF transactions
+
+### Step 4: put a watch on your payment or address for callback notifications
 -> After sending a transaction, use the `watchtxid` endpoint with a callback URL to get webhook notifications for confirmations
+-> You can also use `watchtaddress` endpoint, which can cover different use-cases
 
-#### API DOC: "getbalances"
 
-Calls getbalances RPC on the spending wallet.
+### 
 
-```http
-GET http://cyphernode:8888/getbalances
-```
-
-Proxy response:
-
-```json
-{
-  "balances": {
-    "mine": {
-      "trusted": 1.29979716,
-      "untrusted_pending": 0,
-      "immature": 0
-    }
-  }
-}
-```
-
-### Making Lightning Network transactions with C-Lightning
-
-- TO DO
-- TO DO
-- TO DO
-
-#### API DOC: "ln_pay"
+API DOC: "ln_pay"
 
 Pay a Lightning Network invoice (called by application)
 
