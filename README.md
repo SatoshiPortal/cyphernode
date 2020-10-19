@@ -1,6 +1,6 @@
 # The Cyphernode Project
 
-Cyphernode is a Bitcoin microservices API server architecture, Bitcoin wallet management software and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
+Cyphernode is a Bitcoin microservices API server, Bitcoin wallet management software and utilities toolkit to build scalable, secure and featureful apps and services without trusted third parties.
 
 Combined with the Cypherapps framework, Cyphernode provides all advanced features and utilities necessary to build and deploy entreprise-grade applications such as Bitcoin exchanges, Bitcoin payment processors and Bitcoin wallets.
 
