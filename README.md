@@ -328,7 +328,7 @@ Because we will be importanting many different addresses from many different xpu
 
 The system we use by default is to put the XPUB itself as the label when importing addresses using the XPUB watcher feature. So we can tell which addresses were from which xpubs simply because the xpub is in the internal Bitcoin Core address label for all addresses. For this reason, we have some watching functions which are based on labels, and we can decide to watch addresses only of a certain label and send them collectively to one callback URLs (or grouping).
 
-### API DOC: "watch"
+API DOC: `watch`
 
 Inserts the address and callbacks in the DB and imports the address to the Watching wallet.  The callback URLs and event message are optional.  If eventMessage is not supplied, tx_confirmation for that watch will not be published.  Event message should be in base64 format to avoid dealing with escaping special characters.
 
@@ -359,9 +359,7 @@ Proxy response:
 
 **Note: the difference between using addresses individually or watching an XPUB is you can specify different callback URLs for notifications and unique labels for individual watching, as well as event messages, which lets you know where the transactions are coming from and what is suppsed to happen next. When using the watch XPUB, you are monitoring for transactions and you will know which addresses are involved, but you will not be able to specific a different callback URL for each address.**
 
-
-
-### API DOC: "watchxpub"
+API DOC: `watchxpub`
 
 Used to watch the transactions related to an xpub.  It will first derive 100 addresses using the provided xpub, derivation path and index information.  It will add those addresses to the watching DB table and add those addresses to the Watching-by-xpub wallet.  The watching process will take care of calling the provided callbacks when a transaction occurs.  When a transaction is seen, Cyphernode will derive and start watching new addresses related to the xpub, keeping a 100 address gap between the last used address in a transaction and the last watched address of that xpub.  The label can be used later, instead of the whole xpub, with unwatchxpub* and and getactivewatchesby*.
 
@@ -392,7 +390,7 @@ The Watch Transaction feature will provide notitifications about a supplied txid
 
 It will send back the same information as when watching addresses, but you can use it to receive asyoncronous callbacks of transaction confirmations, to watch out for double-spends, etc. 
 
-### API DOC: "watchtxid"
+API DOC: `watchtxid`
 
 ```http
 POST http://cyphernode:8888/watchtxid
@@ -413,7 +411,6 @@ Proxy response:
   "nbxconf":6
 }
 ```
-
 
 
 # Example for Bitcoin payment processing
@@ -459,7 +456,7 @@ Proxy response:
 }
 ```
 
-3. Receive information for unconfirmed-tx event`
+3. Receive information for `unconfirmed-tx` event`
 ```{
     "_id": "YuJ5oLsRx73EzCKpt",
     "created_at": "2020-05-19T23:21:43.430Z",
@@ -659,8 +656,7 @@ Proxy response:
 }
 
 ```
-
-### API DOC: "ln_connectfund" (custom feature to connect to a LN node and fund a channel with it)
+API DOC: "ln_connectfund" (custom feature to connect to a LN node and fund a channel with it)
 
 First, it will connect your LN node to the supplied LN node.  Then, it will fund a channel of the provided amount between you two.  Cyphernode will call the supplied callback URL when the channel is ready to be used.
 
@@ -693,9 +689,17 @@ Proxy response:
 -> We recommend using Bitcoin Core as primary hot wallet. Wasabi integration in Cyphernode is meant to be used primarily for Coinjoin.
 -> You can call the wasabi_spend endpoint and specify which wallet instance you are using to send Bitcoin payments.
 
+
+When you are using Wasabi to receive Bitcoin from users by using `wasabi_getnewaddress`, assuming you have selected to use 2 receiving Wasabi Wallets, you will achieve this payments flow:
+
+`user a` -> `Payment request 1` -> `Wasabi Wallet 1 - address 1` -> [coinjoin] -> `Wasabi Wallet 1`-> `Bitcoin Core Spender - address 1`
+`user b` -> `Paymetn request 2` -> `Wasabi Wallet 2 - address 2` -> [coinjoin] -> `Wasabi Wallet 2`-> `Bitcoin Core Spender - address 2`
+`user c` -> `Paymetn request 3` -> `Wasabi Wallet 1 - address 2` -> [coinjoin] -> `Wasabi Wallet 1`-> `Bitcoin Core Spender - address 3`
+`user d` -> `Paymetn request 4` -> `Wasabi Wallet 1 - address 2` -> [coinjoin] -> `Wasabi Wallet 2`-> `Bitcoin Core Spender - address 4`
+
 ### Receiving payments with wasabi wallet
 
-API DOC: "wasabi_getnewaddress"
+API DOC: `wasabi_getnewaddress`
 
 Queries random instance for a new bech32 address
 
@@ -714,7 +718,7 @@ Empty BODY: Label will be "unknown"
 }
 ```
 
-API DOC: "wasabi_getbalances"
+API DOC: `wasabi_getbalances`
 
 Will get the balances of all instances if not specified, or of a specified instance.
 
@@ -738,7 +742,7 @@ GET http://192.168.111.152:8080/wasabi_getbalances/87
 
 ### Spend from Wasabi Wallet 
 
-API DOC: "wasabi_spend"
+API DOC: `wasabi_spend`
 
 Spend unused coins from Wasabi wallet
 ```http
@@ -766,7 +770,7 @@ BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
 ### Get the list of unspent coins in the wallet
 
-API DOC: "wasabi_getunspentcoins"
+API DOC: `wasabi_getunspentcoins`
 
 Return all unspent coins of either one wasabi instance or all instances, depending on the instanceId parameter
 
@@ -794,7 +798,7 @@ args:
 
 ### Get list of transactions from Wasabi Wallet 
 
-API DOC: "wasabi_gettransactions"
+API DOC: `wasabi_gettransactions`
 
 ```http
 POST http://192.168.111.152:8080/wasabi_gettransactions/
