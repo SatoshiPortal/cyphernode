@@ -3,10 +3,10 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git
 
-# Version v1.1.11.1 = f7ec42c0d7c5852ca2267d61f7983bf039362902
+# Version v1.1.12.2
 RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi \
  && cd WalletWasabi \
- && git checkout f7ec42c0d7c5852ca2267d61f7983bf039362902
+ && git checkout v1.1.12.2
 
 WORKDIR /WalletWasabi
 
@@ -14,8 +14,8 @@ COPY WalletGenerator /WalletGenerator
 
 WORKDIR /WalletGenerator
 
-RUN dotnet build -c Release -o /app/ -r linux-x64
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
+RUN dotnet build WalletGenerator.sln -c Release -o /app/ -r linux-x64
+RUN dotnet publish WalletGenerator.sln --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
 WORKDIR /WalletWasabi/WalletWasabi.Gui
 
