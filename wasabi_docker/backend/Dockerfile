@@ -5,8 +5,8 @@ RUN apk add --no-cache git patch
 
 RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 WORKDIR /WalletWasabi
-# commit where rpc was added. Prevent break by upgrade of source
-RUN git checkout eb318b8dcfe06870be768d2c9670fa7ff343d1aa
+
+RUN git checkout v1.1.12.2
 
 COPY patches/Program.patch .
 RUN patch WalletWasabi.Backend/Program.cs -i Program.patch
