@@ -21,7 +21,7 @@
   "MixUntilAnonymitySet": <%= wasabi_mixuntil %>,
   "PrivacyLevelSome": 2,
   "PrivacyLevelFine": 21,
-  "PrivacyLevelStrong": 50,
+  "PrivacyLevelStrong": <%= wasabi_mixuntil %>,
   "DustThreshold": "0.00000001",
   "JsonRpcServerEnabled": true,
   "JsonRpcUser": "<%= wasabi_rpcuser %>",
