@@ -20,7 +20,7 @@
   "RegTestBitcoinP2pEndPoint": "bitcoin:18444",
   "MixUntilAnonymitySet": <%= wasabi_mixuntil %>,
   "PrivacyLevelSome": 2,
-  "PrivacyLevelFine": 21,
+  "PrivacyLevelFine": 2,
   "PrivacyLevelStrong": <%= wasabi_mixuntil %>,
   "DustThreshold": "0.00000001",
   "JsonRpcServerEnabled": true,
