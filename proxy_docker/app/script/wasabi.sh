@@ -219,18 +219,28 @@ wasabi_getbalances() {
     total=$((${total}+${balance}))
     trace "[wasabi_getbalances] total=${total}"
 
+    res_rcvd_0conf=$(awk "BEGIN { printf(\"%.8f\", ${rcvd_0conf}/100000000); exit }")
+    res_mixing=$(awk "BEGIN { printf(\"%.8f\", ${mixing}/100000000); exit }")
+    res_priv_bal=$(awk "BEGIN { printf(\"%.8f\", ${priv_bal}/100000000); exit }")
+    res_balance=$(awk "BEGIN { printf(\"%.8f\", ${balance}/100000000); exit }")
+
     if [ -z "${balances}" ]; then
-      balances="\"${i}\":{\"rcvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
+      balances="\"${i}\":{\"rcvd0conf\":${res_rcvd_0conf},\"mixing\":${res_mixing},\"private\":${res_priv_bal},\"total\":${res_balance}}"
     else
-      balances="${balances},\"${i}\":{\"rcvd0conf\":${rcvd_0conf},\"mixing\":${mixing},\"private\":${priv_bal},\"total\":${balance}}"
+      balances="${balances},\"${i}\":{\"rcvd0conf\":${res_rcvd_0conf},\"mixing\":${res_mixing},\"private\":${res_priv_bal},\"total\":${res_balance}}"
     fi
     trace "[wasabi_getbalances] balances=${balances}"
   done
 
+  res_rcvd_0conf_total=$(awk "BEGIN { printf(\"%.8f\", ${rcvd_0conf_total}/100000000); exit }")
+  res_mixing_total=$(awk "BEGIN { printf(\"%.8f\", ${mixing_total}/100000000); exit }")
+  res_priv_total=$(awk "BEGIN { printf(\"%.8f\", ${priv_total}/100000000); exit }")
+  res_total=$(awk "BEGIN { printf(\"%.8f\", ${total}/100000000); exit }")
+
   if [ -z "${balances}" ]; then
-    balances="{\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+    balances="{\"all\":{\"rcvd0conf\":${res_rcvd_0conf_total},\"mixing\":${res_mixing_total},\"private\":${res_priv_total},\"total\":${res_total}}}"
   else
-    balances="{${balances},\"all\":{\"rcvd0conf\":${rcvd_0conf_total},\"mixing\":${mixing_total},\"private\":${priv_total},\"total\":${total}}}"
+    balances="{${balances},\"all\":{\"rcvd0conf\":${res_rcvd_0conf_total},\"mixing\":${res_mixing_total},\"private\":${res_priv_total},\"total\":${res_total}}}"
   fi
   trace "[wasabi_getbalances] balances=${balances}"
   echo "${balances}"
@@ -442,8 +452,9 @@ wasabi_spend() {
   # - id: integer, optional
   # - private: boolean, optional, default=false
   # - address: string, required
-  # - amount: number, required
+  # - amount: number in BTC, required
   # - minanonset: number, optional, default=WASABI_MIXUNTIL
+  # - confTarget: number, optional
 
   # If no instance id supplied, will find the first with enough funds
   # There must be enough funds on at least one instance
@@ -482,8 +493,10 @@ wasabi_spend() {
   local returncode
   local response
 
+  local amount
+  amount=$(echo "${request}" | jq ".amount")
   local spendingAmount
-  spendingAmount=$(echo "${request}" | jq ".amount")
+  spendingAmount=$(awk "BEGIN { printf(\"%d\", ${amount}*100000000); exit }")
   if [ "${spendingAmount}" = "null" ]; then
     # amount tag null but required
     trace "[wasabi_spend] spendingAmount is required"
@@ -516,11 +529,19 @@ wasabi_spend() {
   fi
   trace "[wasabi_spend] label=${label}"
 
+  local conf_target
+  conf_target=$(echo "${request}" | jq -r ".confTarget")
+  # check if confTarget provided
+  if [[ -z "${conf_target}"  ]] || [[ "${conf_target}" = "null" ]]; then
+    conf_target="2"
+  fi
+  trace "[wasabi_spend] conf_target=${conf_target}"
+
   local minanonset
   minanonset=$(echo "${request}" | jq ".minanonset")
   # check minnonset provided and is valid number > 1 , otherwise fallback to config
-  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" -lt 1 ]]; then
-    minanonset=$WASABI_MIXUNTIL	
+  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" = "null" ]] || [[ "${minanonset}" -lt 1 ]]; then
+    minanonset=$WASABI_MIXUNTIL
   fi
   trace "[wasabi_spend] minanonset=${minanonset}"
 
@@ -550,7 +571,7 @@ wasabi_spend() {
   esac
   trace "[wasabi_spend] spendingAmount=${spendingAmount} from balance type ${balance_type}"
   # search balances for first entry with balance type (total, or private) >= spending amount that's withing instance bounds
-  instanceid=$(echo "$balances" | jq -r --arg btype "${balance_type}" --arg amount "${spendingAmount}" --arg min "${minInstanceIndex}" --arg max "${maxInstanceIndex}"  '
+  instanceid=$(echo "$balances" | jq -r --arg btype "${balance_type}" --arg amount "${amount}" --arg min "${minInstanceIndex}" --arg max "${maxInstanceIndex}"  '
   [
     to_entries | .[] | select(
        .value[$btype] >= ($amount | tonumber) and .key >= ($min | tostring)  and .key <= ($max | tostring)
@@ -573,12 +594,33 @@ wasabi_spend() {
     trace "[wasabi_spend] dequeue utxos response ${dequeue_resp}"
 
     # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"send", "params": { "sendto": "tb1qjlls57n6kgrc6du7yx4da9utdsdaewjg339ang", "coins":[{"transactionid":"8c5ef6e0f10c68dacd548bbbcd9115b322891e27f741eb42c83ed982861ee121", "index":0}], "amount": 15000, "label": "test transaction", "feeTarget":2 }}' http://wasabi_0:18099/
-    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"${label}\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":2,\"password\":\"\"}")
+    response=$(send_to_wasabi ${instanceid} send "{\"payments\":[{\"sendto\":\"${address}\",\"amount\":${spendingAmount},\"label\":\"${label}\",\"subtractFee\":true}],\"coins\":${utxostring},\"feeTarget\":${conf_target},\"password\":\"\"}")
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -ne "0" ]; then
       return ${returncode}
     fi
+
+    local txid=$(echo ${response} | jq -r ".result.txid")
+    local tx_raw_details
+    tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+
+    # Sometimes raw tx are too long to be passed as paramater, so let's write
+    # it to a temp file for it to be read by sqlite3 and then delete the file
+    echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+
+    local fees=$(compute_fees "${txid}")
+    trace "[wasabi_spend] fees=${fees}"
+
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
+    response=$(echo ${response} | jq ".result += {\"status\":\"accepted\",\"details\":{\"address\":\"${address}\",\"amount\":\"${amount}\",\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}")
+
+    # Delete the temp file containing the raw tx (see above)
+    rm rawtx-${txid}-$$.blob
+
   else
     response="{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"Not enough funds\"}"
   fi

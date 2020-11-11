@@ -800,12 +800,13 @@ main() {
           # - instanceId: integer, optional
           # - private: boolean, optional, default=false
           # - address: string, required
-          # - amount: number, required
+          # - amount: number in BTC, required
           # - minanonset: number, optional
           # - label: number, optional
+          # - confTarget: number, optional
           #
           # POST http://192.168.111.152:8080/wasabi_spend
-          # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90}
+          # BODY {"instanceId":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90, confTarget: 6}
           # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
           response=$(wasabi_spend "${line}")
@@ -828,11 +829,11 @@ main() {
           # - instanceId: integer, optional
           # return all transactions of either one wasabi instance
           # or all instances, depending on the instanceId parameter
-	  # - txnFilterInternal = true, optional , will only return transcations having a label (label != '')
+          # - txnFilterInternal = true, optional , will only return transcations having a label (label != '')
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           local instanceid
-	  local filter_internal
+          local filter_internal
           if [ "$http_method" = "POST" ]; then
             instanceid=$(echo "${line}" | jq ".instanceId")
             filter_internal=$(echo "${line}" | jq ".txnFilterInternal")
@@ -852,16 +853,16 @@ main() {
         config_props)
           # GET http://192.168.111.152:8080/config_props
           # Get currently saved configs from propstable
-          if [ "$http_method" = "GET" ]; then		
-	        response=$(cyphernode_props_get_props)
-        	response_to_client "${response}" ${?}
-          # POST http://192.168.111.152:8080/config_props
-	  # body {"id": null | "property_id", "property": "how_big", "value": "6.15" }
-	  # Will updset (Insert or update) property with value,  depending if id already exists 
-	  elif [ "$http_method" = "POST" ] || [ "$http_method" = "PUT" ]; then
-	        response=$(cyphernode_props_upsert_prop "${line}")
-        	response_to_client "${response}" ${?}
-	  fi
+          if [ "$http_method" = "GET" ]; then    
+            response=$(cyphernode_props_get_props)
+            response_to_client "${response}" ${?}
+          elif [ "$http_method" = "POST" ] || [ "$http_method" = "PUT" ]; then
+            # POST http://192.168.111.152:8080/config_props
+            # body {"id": null | "property_id", "property": "how_big", "value": "6.15" }
+            # Will updset (Insert or update) property with value,  depending if id already exists 
+            response=$(cyphernode_props_upsert_prop "${line}")
+            response_to_client "${response}" ${?}
+          fi
           break
           ;;
       esac

@@ -18,6 +18,10 @@ compute_fees() {
 
   # Let's reuse the file created in confirmation...
   local tx_raw_details=$(cat rawtx-${txid}-$$.blob)
+  if [ -z "${tx_raw_details}" ]; then
+    trace "[compute_fees] tx_raw_details file not found, fetching from Bitcoin node"
+    tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+  fi
   trace "[compute_fees]  tx_raw_details=${tx_raw_details}"
   local vin_total_amount=$(compute_vin_total_amount "${tx_raw_details}")
 
