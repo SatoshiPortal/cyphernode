@@ -767,10 +767,22 @@ install_apps() {
     sudo_if_required chown -R $user $current_path/apps
   fi
 
+  if [[ $FEATURE_LIGHTNING == true ]]; then
+    if [ -d "$current_path/apps/sparkwallet" ]; then
+      step "   [32mdelete[0m ignoreThisApp for enabled Sparkwallet"
+      sudo_if_required rm -f $current_path/apps/sparkwallet/ignoreThisApp
+    fi
+  else
+    if [ -d "$current_path/apps/sparkwallet" ]; then
+      step "   [32mcreate[0m ignoreThisApp for disabled Sparkwallet"
+      sudo_if_required touch $current_path/apps/sparkwallet/ignoreThisApp
+    fi
+  fi
+
   if [[ $FEATURE_BATCHER == true ]]; then
     if [ -d "$current_path/apps/batcher" ]; then
       step "   [32mdelete[0m ignoreThisApp for enabled Batcher"
-      sudo_if_required rm $current_path/apps/batcher/ignoreThisApp
+      sudo_if_required rm -f $current_path/apps/batcher/ignoreThisApp
     fi
   else
     if [ -d "$current_path/apps/batcher" ]; then
