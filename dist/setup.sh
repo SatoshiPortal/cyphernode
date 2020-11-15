@@ -766,6 +766,18 @@ install_apps() {
     docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
     sudo_if_required chown -R $user $current_path/apps
   fi
+
+  if [[ $FEATURE_BATCHER == true ]]; then
+    if [ -d "$current_path/apps/batcher" ]; then
+      step "   [32mdelete[0m ignoreThisApp for enabled Batcher"
+      sudo_if_required rm $current_path/apps/batcher/ignoreThisApp
+    fi
+  else
+    if [ -d "$current_path/apps/batcher" ]; then
+      step "   [32mcreate[0m ignoreThisApp for disabled Batcher"
+      sudo_if_required touch $current_path/apps/batcher/ignoreThisApp
+    fi
+  fi
 }
 
 install() {
