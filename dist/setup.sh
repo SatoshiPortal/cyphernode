@@ -765,17 +765,20 @@ install_apps() {
     echo "   [32mclone[0m $apps_repo into apps"
     docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
     sudo_if_required chown -R $user $current_path/apps
+    next
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
     if [ -d "$current_path/apps/sparkwallet" ]; then
       step "   [32mdelete[0m ignoreThisApp for enabled Sparkwallet"
       sudo_if_required rm -f $current_path/apps/sparkwallet/ignoreThisApp
+      next
     fi
   else
     if [ -d "$current_path/apps/sparkwallet" ]; then
       step "   [32mcreate[0m ignoreThisApp for disabled Sparkwallet"
       sudo_if_required touch $current_path/apps/sparkwallet/ignoreThisApp
+      next
     fi
   fi
 
@@ -783,11 +786,13 @@ install_apps() {
     if [ -d "$current_path/apps/batcher" ]; then
       step "   [32mdelete[0m ignoreThisApp for enabled Batcher"
       sudo_if_required rm -f $current_path/apps/batcher/ignoreThisApp
+      next
     fi
   else
     if [ -d "$current_path/apps/batcher" ]; then
       step "   [32mcreate[0m ignoreThisApp for disabled Batcher"
       sudo_if_required touch $current_path/apps/batcher/ignoreThisApp
+      next
     fi
   fi
 }
