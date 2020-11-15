@@ -135,8 +135,6 @@ module.exports = class Config {
     const version = this.data.schema_version || this.data.__version;
 
     if( !version || !this.validators[version] || Object.keys( schemas ).indexOf( version ) == -1 ) {
-      console.log(version)
-      console.log(schemas)
       throw "Unknown version in data"
     }
 
