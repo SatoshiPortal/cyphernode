@@ -10,5 +10,10 @@
   {
     "name": "Opentimestamps client",
     "value": "otsclient"
+  },
+  {
+    "name": "Batcher Cypherapp",
+    "value": "batcher"
   }
+
 ]

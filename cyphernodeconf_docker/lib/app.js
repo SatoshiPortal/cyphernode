@@ -530,6 +530,10 @@ module.exports = class App {
           torified_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
         }
       },
+      batcher: {
+        networks: ['cyphernodeappsnet'],
+        docker: "cyphernode/batcher:" + this.config.docker_versions['cyphernode/batcher']
+      },
       lightning: {
         networks: ['cyphernodenet'],
         docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
