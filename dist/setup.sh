@@ -795,6 +795,20 @@ install_apps() {
       next
     fi
   fi
+
+  if [[ $FEATURE_SPECTER == true ]]; then
+    if [ -d "$current_path/apps/specter" ]; then
+      step "   [32mdelete[0m ignoreThisApp for enabled Specter"
+      sudo_if_required rm -f $current_path/apps/specter/ignoreThisApp
+      next
+    fi
+  else
+    if [ -d "$current_path/apps/specter" ]; then
+      step "   [32mcreate[0m ignoreThisApp for disabled Specter"
+      sudo_if_required touch $current_path/apps/specter/ignoreThisApp
+      next
+    fi
+  fi
 }
 
 install() {

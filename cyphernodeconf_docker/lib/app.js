@@ -534,6 +534,10 @@ module.exports = class App {
         networks: ['cyphernodeappsnet'],
         docker: "cyphernode/batcher:" + this.config.docker_versions['cyphernode/batcher']
       },
+      specter: {
+        networks: ['cyphernodeappsnet'],
+        docker: "cyphernode/specter:" + this.config.docker_versions['cyphernode/specter']
+      },
       lightning: {
         networks: ['cyphernodenet'],
         docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
