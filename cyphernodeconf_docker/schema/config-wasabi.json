@@ -198,7 +198,7 @@
       "$id": "#/properties/features",
       "type": "array",
       "title": "The optional features of this cyphernode",
-      "default": [],
+      "default": ["specter"],
       "items": {
         "$id": "#/properties/features/items",
         "type": "string",
@@ -206,6 +206,8 @@
           "tor",
           "lightning",
           "otsclient",
+          "batcher",
+          "specter",
           "wasabi"
         ],
         "title": "The feature",
@@ -214,6 +216,8 @@
           "tor",
           "lightning",
           "otsclient",
+          "batcher",
+          "specter",
           "wasabi"
         ]
       }
