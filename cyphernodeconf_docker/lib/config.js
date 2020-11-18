@@ -261,7 +261,7 @@ module.exports = class Config {
 
   async migrate_0_2_6_to_liquid() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != 'liquid' ) {
+    if( currentVersion != '0.2.6' ) {
       return;
     }
     this.data.schema_version = 'liquid';

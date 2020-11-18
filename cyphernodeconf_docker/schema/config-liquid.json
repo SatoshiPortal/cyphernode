@@ -135,6 +135,25 @@
           "features": {
             "contains": {
               "enum": [
+                "elements"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "elements_datapath",
+          "elements_expose"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
                 "otsclient"
               ]
             }
@@ -185,6 +204,7 @@
         "enum": [
           "tor",
           "lightning",
+          "elements",
           "otsclient",
           "batcher",
           "specter"
@@ -194,6 +214,7 @@
         "examples": [
           "tor",
           "lightning",
+          "elements",
           "otsclient",
           "batcher",
           "specter"
@@ -212,6 +233,7 @@
           "tor_traefik",
           "tor_bitcoin",
           "tor_lightning",
+          "tor_elements",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
@@ -223,6 +245,7 @@
           "tor_traefik",
           "tor_bitcoin",
           "tor_lightning",
+          "tor_elements",
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
@@ -240,13 +263,15 @@
         "type": "string",
         "enum": [
           "clearnet_bitcoin",
-          "clearnet_lightning"
+          "clearnet_lightning",
+          "clearnet_elements"
         ],
         "title": "The clearnet-allowed Torified feature",
         "default": "",
         "examples": [
           "clearnet_bitcoin",
-          "clearnet_lightning"
+          "clearnet_lightning",
+          "clearnet_elements"
         ]
       }
     },
@@ -407,6 +432,22 @@
         "/tmp/cyphernode/lightning"
       ]
     },
+    "elements_datapath": {
+      "$id": "#/properties/elements_datapath",
+      "type": "string",
+      "title": "Elements datapath",
+      "examples": [
+        "/tmp/cyphernode/elements"
+      ]
+    },
+    "elements_datapath_custom": {
+      "$id": "#/properties/elements_datapath_custom",
+      "type": "string",
+      "title": "Elements custom datapath",
+      "examples": [
+        "/tmp/cyphernode/elements"
+      ]
+    },
     "proxy_datapath": {
       "$id": "#/properties/proxy_datapath",
       "type": "string",
@@ -548,7 +589,16 @@
       "$id": "#/properties/lightning_expose",
       "type": "boolean",
       "title": "Expose lightning node",
-      "default": true,
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "elements_expose": {
+      "$id": "#/properties/elements_expose",
+      "type": "boolean",
+      "title": "Expose elements node",
+      "default": false,
       "examples": [
         false
       ]
@@ -559,7 +609,7 @@
       "title": "Expose gatekeeper port",
       "default": false,
       "examples": [
-        true
+        false
       ]
     },
     "gatekeeper_datapath": {
