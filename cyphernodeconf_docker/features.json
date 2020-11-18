@@ -14,6 +14,9 @@
   {
     "name": "Batcher Cypherapp",
     "value": "batcher"
+  },
+  {
+    "name": "Specter Cypherapp",
+    "value": "specter"
   }
-
 ]
