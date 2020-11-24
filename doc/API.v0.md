@@ -33,7 +33,7 @@ Proxy response:
 
 ### Un-watch a previously watched Bitcoin Address (called by your application)
 
-Updates the watched address row in DB so that webhooks won't be called on tx confirmations for that address.  You can POST the URLs to make sure you unwatch the good watcher, since there may be multiple watchers on the same address with different webhook URLs.  You can also, more conveniently, supply the watch id to unwatch.
+Updates the watched address row in DB so that webhooks won't be called on tx confirmations for that address.  You can POST the URLs to make sure you unwatch the good watcher, since there may be multiple watchers on the same address with different webhook URLs.  If you don't supply URLs and there are several watchers on the same address for different URLs, all watchers will be turned off for that address.  You can also, more conveniently, supply the watch id to unwatch.
 
 ```http
 GET http://cyphernode:8888/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp

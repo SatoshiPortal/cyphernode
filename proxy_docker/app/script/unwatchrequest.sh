@@ -20,7 +20,17 @@ unwatchrequest() {
 
     data="{\"event\":\"unwatch\",\"id\":${watchid}}"
   else
-    sql "UPDATE watching SET watching=0 WHERE address='${address}' AND callback0conf=${unconfirmedCallbackURL} AND callback1conf=${confirmedCallbackURL}"
+    local cb0_where=
+    local cb1_where=
+
+    if [ "${unconfirmedCallbackURL}" != "null" ]; then
+      cb0_where=" AND callback0conf='${unconfirmedCallbackURL}'"
+    fi
+    if [ "${confirmedCallbackURL}" != "null" ]; then
+      cb1_where=" AND callback1conf='${confirmedCallbackURL}'"
+    fi
+
+    sql "UPDATE watching SET watching=0 WHERE address='${address}'${cb0_where}${cb1_where}"
     returncode=$?
     trace_rc ${returncode}
 
