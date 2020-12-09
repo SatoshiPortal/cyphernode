@@ -6,6 +6,9 @@
 . ./batching.sh
 
 newblock() {
+  (
+  flock -x 202
+
   trace "Entering newblock()..."
 
   local request=${1}
@@ -24,4 +27,6 @@ newblock() {
 
   do_callbacks_txid
   batch_check_webhooks
+
+  ) 202>./.newblock.lock
 }

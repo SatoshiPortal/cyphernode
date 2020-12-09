@@ -150,6 +150,7 @@ serve_ots_backoffice() {
 
   local result
   local returncode
+  local response
 
   # Let's fetch all the incomplete stamping request
   local callbacks=$(sql 'SELECT hash, callbackUrl, requested, upgraded, id FROM stamp WHERE NOT calledback')
@@ -213,7 +214,7 @@ serve_ots_backoffice() {
         if [ -n ${url} ]; then
           trace "[serve_ots_backoffice] url is not empty, now trying to call it!"
 
-          notify_web "${url}" ${TOR_OTS_WEBHOOKS}
+          response=$(notify_web "${url}" ${TOR_OTS_WEBHOOKS})
           returncode=$?
           trace_rc ${returncode}
 

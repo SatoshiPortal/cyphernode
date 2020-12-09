@@ -253,8 +253,9 @@ curl_callback() {
   trace "Entering curl_callback()..."
 
   local returncode
+  local response
 
-  notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS}
+  response=$(notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS})
   returncode=$?
   trace_rc ${returncode}
 

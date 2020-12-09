@@ -37,6 +37,8 @@ notify_web() {
   http_code=$(echo "${response}" | jq -r ".http_code")
   trace "[notify_web] http_code=${http_code}"
 
+  echo "${response}"
+
   if [ "${curl_code}" -eq "0" ] && [ "${returncode}" -eq "0" ]; then
     if [ "${http_code}" -lt "400" ]; then
       return 0

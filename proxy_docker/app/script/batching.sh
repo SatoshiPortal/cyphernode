@@ -601,6 +601,7 @@ batch_webhooks() {
   local body
   local successful_recipient_ids
   local returncode
+  local response
 
   outputs=$(echo "${webhooks_data}" | jq -Mc ".[]")
 
@@ -626,7 +627,7 @@ batch_webhooks() {
     body='{"outputId":'${output_id}',"address":'${address}',"amount":'${amount}','${tx}'}'
     trace "[batch_webhooks] body=${body}"
 
-    notify_web "${webhook_url}" "${body}" ${TOR_ADDR_WATCH_WEBHOOKS}
+    response=$(notify_web "${webhook_url}" "${body}" ${TOR_ADDR_WATCH_WEBHOOKS})
     returncode=$?
     trace_rc ${returncode}
 
