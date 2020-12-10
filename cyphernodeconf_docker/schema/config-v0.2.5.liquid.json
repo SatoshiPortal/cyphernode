@@ -1,9 +1,9 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://cyphernode.io/config-liquid.json",
+  "$id": "http://cyphernode.io/config-v0.2.5.liquid.json",
   "type": "object",
-  "title": "Cyphernode config file structure liquid",
+  "title": "Cyphernode config file structure v0.2.5.liquid",
   "additionalProperties": false,
   "required": [
     "schema_version",
@@ -171,11 +171,11 @@
     "schema_version": {
       "type": "string",
       "enum": [
-        "liquid"
+        "0.2.5.liquid"
       ],
       "default": "0.3.0",
       "examples": [
-        "liquid"
+        "0.2.5.liquid"
       ]
     },
     "setup_version": {
@@ -589,7 +589,7 @@
       "$id": "#/properties/lightning_expose",
       "type": "boolean",
       "title": "Expose lightning node",
-      "default": false,
+      "default": true,
       "examples": [
         false
       ]
@@ -609,7 +609,7 @@
       "title": "Expose gatekeeper port",
       "default": false,
       "examples": [
-        false
+        true
       ]
     },
     "gatekeeper_datapath": {
