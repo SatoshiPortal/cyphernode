@@ -5,6 +5,9 @@
 . ./elements_blockchainrpc.sh
 
 elements_newblock() {
+  (
+  flock -x 200
+
   trace "Entering elements_newblock()..."
 
   local request=${1}
@@ -22,4 +25,6 @@ elements_newblock() {
     trace "[elements_newblock] Let's see if we have webhooks to call"
     elements_do_callbacks_txid
   fi
+
+  ) 200>./.elements_newblock.lock 
 }
