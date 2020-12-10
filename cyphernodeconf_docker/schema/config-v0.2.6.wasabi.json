@@ -1,9 +1,9 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "http://cyphernode.io/config-wasabi.json",
+  "$id": "http://cyphernode.io/config-v0.2.6.wasabi.json",
   "type": "object",
-  "title": "Cyphernode config file structure wasabi",
+  "title": "Cyphernode config file structure v0.2.6.wasabi",
   "additionalProperties": false,
   "required": [
     "schema_version",
@@ -172,11 +172,11 @@
     "schema_version": {
       "type": "string",
       "enum": [
-        "wasabi"
+        "0.2.6.wasabi"
       ],
       "default": "0.3.0",
       "examples": [
-        "wasabi"
+        "0.2.6.wasabi"
       ]
     },
     "setup_version": {
@@ -206,9 +206,9 @@
           "tor",
           "lightning",
           "otsclient",
+          "wasabi",
           "batcher",
-          "specter",
-          "wasabi"
+          "specter"
         ],
         "title": "The feature",
         "default": "",
@@ -216,9 +216,9 @@
           "tor",
           "lightning",
           "otsclient",
+          "wasabi",
           "batcher",
-          "specter",
-          "wasabi"
+          "specter"
         ]
       }
     },
