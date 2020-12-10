@@ -297,44 +297,6 @@ module.exports = {
       message: prefix()+'Custom path for your bitcoin full node data?'+utils.getHelp('bitcoin_datapath_custom'),
     },
     {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
-      type: 'list',
-      name: 'lightning_datapath',
-      default: utils.getDefault( 'lightning_datapath' ),
-      choices: [
-        {
-          name: utils.setupDir()+"/cyphernode/lightning",
-          value: utils.setupDir()+"/cyphernode/lightning"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/cyphernode/lightning",
-          value: utils.defaultDataDirBase()+"/cyphernode/lightning"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/.cyphernode/lightning",
-          value: utils.defaultDataDirBase()+"/.cyphernode/lightning"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/lightning",
-          value: utils.defaultDataDirBase()+"/lightning"
-        },
-        {
-          name: "Custom path",
-          value: "_custom"
-        }
-      ],
-      message: prefix()+'Where do you want to store your lightning node data?'+utils.getHelp('lightning_datapath'),
-    },
-    {
-      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 && props.lightning_datapath === '_custom'},
-      type: 'input',
-      name: 'lightning_datapath_custom',
-      default: utils.getDefault( 'lightning_datapath_custom' ),
-      filter: utils.trimFilter,
-      validate: utils.pathValidator,
-      message: prefix()+'Custom path for your lightning node data?'+utils.getHelp('lightning_datapath_custom'),
-    },
-    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1 },
       type: 'list',
       name: 'elements_datapath',
@@ -371,6 +333,44 @@ module.exports = {
       filter: utils.trimFilter,
       validate: utils.pathValidator,
       message: prefix()+'Custom path for your elements node data?'+utils.getHelp('elements_datapath_custom'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
+      type: 'list',
+      name: 'lightning_datapath',
+      default: utils.getDefault( 'lightning_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/lightning",
+          value: utils.setupDir()+"/cyphernode/lightning"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/lightning",
+          value: utils.defaultDataDirBase()+"/cyphernode/lightning"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/lightning",
+          value: utils.defaultDataDirBase()+"/.cyphernode/lightning"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/lightning",
+          value: utils.defaultDataDirBase()+"/lightning"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your lightning node data?'+utils.getHelp('lightning_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 && props.lightning_datapath === '_custom'},
+      type: 'input',
+      name: 'lightning_datapath_custom',
+      default: utils.getDefault( 'lightning_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your lightning node data?'+utils.getHelp('lightning_datapath_custom'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
