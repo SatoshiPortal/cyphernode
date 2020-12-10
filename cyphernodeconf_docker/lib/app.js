@@ -545,6 +545,16 @@ module.exports = class App {
         networks: ['cyphernodeappsnet'],
         docker: "cyphernode/specter"
       },
+      elements: {
+        networks: ['cyphernodenet'],
+        docker: "cyphernode/elements:"+this.config.docker_versions['cyphernode/elements'],
+        extra: {
+          expose: this.config.data.elements_expose,
+          torified: this.torifyables.find(data => data.value === 'tor_elements').checked,
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_elements'),
+          tor_hostname: this.sessionData.tor_elements_hostname
+        }
+      },
       lightning: {
         networks: ['cyphernodenet'],
         docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
@@ -557,16 +567,6 @@ module.exports = class App {
           torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
-        }
-      },
-      elements: {
-        networks: ['cyphernodenet'],
-        docker: "cyphernode/elements:"+this.config.docker_versions['cyphernode/elements'],
-        extra: {
-          expose: this.config.data.elements_expose,
-          torified: this.torifyables.find(data => data.value === 'tor_elements').checked,
-          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_elements'),
-          tor_hostname: this.sessionData.tor_elements_hostname
         }
       },
     }
