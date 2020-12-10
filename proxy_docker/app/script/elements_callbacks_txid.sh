@@ -151,8 +151,9 @@ elements_curl_callback_txid() {
   trace "Entering elements_curl_callback_txid()..."
 
   local returncode
+  local response
 
-  notify_web "${1}" "${2}" ${TOR_TXID_WATCH_WEBHOOKS}
+  response=$(notify_web "${1}" "${2}" ${TOR_TXID_WATCH_WEBHOOKS})
   returncode=$?
   trace_rc ${returncode}
 
