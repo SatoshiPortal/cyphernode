@@ -5,7 +5,9 @@ HiddenServicePort <%= traefik_http_port %> traefik:<%= traefik_http_port %>
 HiddenServicePort <%= traefik_https_port %> traefik:<%= traefik_https_port %>
 <% } %>
 
-<% if ( torifyables && torifyables.indexOf('tor_lightning') !== -1 && lightning_expose ) { %>
+<% if (features.indexOf('lightning') != -1) { %>
+
+<% if ( features.indexOf('lightning') != -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 && lightning_expose ) { %>
 HiddenServiceDir /tor/lightning/hidden_service/
 HiddenServiceVersion 3
 HiddenServicePort 9735 lightning:9735
