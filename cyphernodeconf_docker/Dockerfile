@@ -36,7 +36,7 @@ ENV EDITOR=/usr/bin/nano
 
 COPY . /app
 COPY --from=builder-go /go/src/torgen/torgen /app/torgen
-COPY --from=builder-go /go/src/github.com/SatoshiPortal/cam /app/cam
+COPY --from=builder-go /go/src/github.com/SatoshiPortal/cam/cam /app/cam
 
 COPY --from=builder-qrencode /usr/local/bin/qrencode /usr/local/bin/
 COPY --from=builder-qrencode /usr/local/lib/libqrencode.so.4.1.0 /usr/local/lib/libqrencode.so.4
