@@ -788,11 +788,30 @@ sanity_checks_pre_install() {
 }
 
 install_apps() {
-  if [ ! -d "$current_path/apps" ]; then
+  if [ ! -d "$current_path/.cam" ]; then
     local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
-    local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
-    echo "   [32mclone[0m $apps_repo into apps"
-    docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
+#    local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
+    echo "     [32minit[0m cam"
+    # initialise cam tool in dist
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION i > /dev/null 2>&1
+
+    # copy some files needed by cam
+    copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $current_path/.cam/keys.properties 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/cyphernode/info.json $current_path/.cam/cyphernode.json 1 $SUDO_REQUIRED
+
+    # add local repo as a source
+    echo "  [32minstall[0m local sources"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s a file:///dist/cam/local > /dev/null 2>&1
+
+    # update cam cypherapp index
+    echo "   [32mupdate[0m local sources"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s u > /dev/null 2>&1
+
+    # install default cypherapps: <trustzone>:<label or hash>@<version> <mount point>
+    echo "  [32minstall[0m default cypherapps"
+    echo "          * sparkwallet"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i trusted:sparkwallet@latest sparkwallet > /dev/null 2>&1
+
     sudo_if_required chown -R $user $current_path/apps
     next
   fi
