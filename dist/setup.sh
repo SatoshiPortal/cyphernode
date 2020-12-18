@@ -628,6 +628,7 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/testfeatures.sh $current_path/testfeatures.sh 0
   copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
   copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
+  copy_file $cyphernodeconf_filepath/installer/cam.sh $current_path/cam.sh 0
   copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
@@ -639,6 +640,12 @@ install_docker() {
   if [[ ! -x $current_path/stop.sh ]]; then
     step "     [32mmake[0m stop.sh executable"
     try chmod +x $current_path/stop.sh
+    next
+  fi
+
+  if [[ ! -x $current_path/cam.sh ]]; then
+    step "     [32mmake[0m cam.sh executable"
+    try chmod +x $current_path/cam.sh
     next
   fi
 

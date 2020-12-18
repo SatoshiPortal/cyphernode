@@ -377,9 +377,10 @@ module.exports = {
     }];
   },
   templates: function( props ) {
+    const templates = ['config.sh', 'start.sh', 'stop.sh', 'cam.sh', 'testfeatures.sh', 'testdeployment.sh'];
     if( props.installer_mode === 'docker' ) {
-      return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', 'testdeployment.sh', path.join('docker', 'docker-compose.yaml')];
+      templates.push( path.join('docker', 'docker-compose.yaml') );
     }
-    return ['config.sh','start.sh', 'stop.sh', 'testfeatures.sh', 'testdeployment.sh'];
+    return templates;
   }
 };
