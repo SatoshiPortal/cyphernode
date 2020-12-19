@@ -75,11 +75,37 @@ const randomColor = () => {
 module.exports = class App {
 
   constructor() {
+
+    this.sessionData = {
+      defaultDataDirBase: process.env.DEFAULT_DATADIR_BASE ||  process.env.HOME,
+      setupDir: process.env.SETUP_DIR || path.join( process.env.HOME, 'cyphernode' ),
+      workDir: process.env.WORK_DIR || '/data',
+      default_username: process.env.DEFAULT_USER || '',
+      gatekeeper_version: process.env.GATEKEEPER_VERSION,
+      tor_version: process.env.TOR_VERSION,
+      gatekeeper_cns: process.env.DEFAULT_CERT_HOSTNAME,
+      proxy_version: process.env.PROXY_VERSION,
+      proxycron_version: process.env.PROXYCRON_VERSION,
+      pycoin_version: process.env.PYCOIN_VERSION,
+      traefik_version: process.env.TRAEFIK_VERSION,
+      mosquitto_version: process.env.MOSQUITTO_VERSION,
+      otsclient_version: process.env.OTSCLIENT_VERSION,
+      bitcoin_version: process.env.BITCOIN_VERSION,
+      lightning_version: process.env.LIGHTNING_VERSION,
+      notifier_version: process.env.NOTIFIER_VERSION,
+      conf_version: process.env.CONF_VERSION,
+      setup_version: process.env.SETUP_VERSION,
+      lightning_nodename: name.generate(),
+      lightning_nodecolor: randomColor(),
+      installer_cleanup: false,
+      devmode: process.env.DEVMODE || false
+    };
+
     this.features = features;
     this.torifyables = torifyables;
 
-    if ( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
-      fs.unlinkSync(path.join('/data', destinationDirName, 'exitStatus.sh'));
+    if ( fs.existsSync(path.join(this.workDir(), destinationDirName, 'exitStatus.sh')) ) {
+      fs.unlinkSync(path.join(this.workDir(), destinationDirName, 'exitStatus.sh'));
     }
 
     this.splash = new SplashScreen( {
@@ -96,31 +122,8 @@ module.exports = class App {
     options = options || {
     };
 
-    this.sessionData = {
-      defaultDataDirBase: process.env.DEFAULT_DATADIR_BASE ||  process.env.HOME,
-      setupDir: process.env.SETUP_DIR || path.join( process.env.HOME, 'cyphernode' ),
-      default_username: process.env.DEFAULT_USER || '',
-      gatekeeper_version: process.env.GATEKEEPER_VERSION,
-      tor_version: process.env.TOR_VERSION,
-      gatekeeper_cns: process.env.DEFAULT_CERT_HOSTNAME,
-      proxy_version: process.env.PROXY_VERSION,
-      proxycron_version: process.env.PROXYCRON_VERSION,
-      pycoin_version: process.env.PYCOIN_VERSION,
-      traefik_version: process.env.TRAEFIK_VERSION,
-      mosquitto_version: process.env.MOSQUITTO_VERSION,
-      otsclient_version: process.env.OTSCLIENT_VERSION,
-      bitcoin_version: process.env.BITCOIN_VERSION,
-      lightning_version: process.env.LIGHTNING_VERSION,
-      notifier_version: process.env.NOTIFIER_VERSION,
-      conf_version: process.env.CONF_VERSION,
-      setup_version: process.env.SETUP_VERSION,
-      noWizard: !!options.noWizard,
-      noSplashScreen: !!options.noSplashScreen,
-      lightning_nodename: name.generate(),
-      lightning_nodecolor: randomColor(),
-      installer_cleanup: false,
-      devmode: process.env.DEVMODE || false
-    };
+    this.sessionData.noWizard = !!options.noWizard;
+    this.sessionData.noSplashScreen = !!options.noSplashScreen;
 
     await this.setupConfigArchive();
 
@@ -437,7 +440,7 @@ module.exports = class App {
       }
     }
 
-    fs.writeFileSync(path.join('/data', destinationDirName, 'exitStatus.sh'), 'EXIT_STATUS=0');
+    fs.writeFileSync(path.join(this.workDir(), destinationDirName, 'exitStatus.sh'), 'EXIT_STATUS=0');
 
   }
 
@@ -456,6 +459,7 @@ module.exports = class App {
 
     const features = [
       {
+        active: true,
         name: 'Bitcoin core node',
         label: 'bitcoin',
         host: 'bitcoin',
@@ -472,6 +476,7 @@ module.exports = class App {
         }
       },
       {
+        active: true,
         name: 'Gatekeeper',
         label: 'gatekeeper',
         host: 'gatekeeper',
@@ -483,6 +488,7 @@ module.exports = class App {
         }
       },
       {
+        active: true,
         name: 'Proxy',
         label: 'proxy',
         host: 'proxy',
@@ -495,6 +501,7 @@ module.exports = class App {
         }
       },
       {
+        active: true,
         name: 'Proxy cron',
         label: 'proxycron',
         host: 'proxycron',
@@ -502,6 +509,7 @@ module.exports = class App {
         docker: 'cyphernode/proxycron:'+this.config.docker_versions['cyphernode/proxycron']
       },
       {
+        active: true,
         name: 'Pycoin',
         label: 'pycoin',
         host: 'pycoin',
@@ -509,6 +517,7 @@ module.exports = class App {
         docker: 'cyphernode/pycoin:'+this.config.docker_versions['cyphernode/pycoin']
       },
       {
+        active: true,
         name: 'Notifier',
         label: 'notifier',
         host: 'notifier',
@@ -516,6 +525,7 @@ module.exports = class App {
         docker: 'cyphernode/notifier:'+this.config.docker_versions['cyphernode/notifier']
       },
       {
+        active: true,
         name: 'MQ broker',
         label: 'broker',
         host: 'broker',
@@ -523,6 +533,7 @@ module.exports = class App {
         docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
       },
       {
+        active: true,
         name: 'Traefik',
         label: 'traefik',
         host: 'traefik',
@@ -628,7 +639,7 @@ module.exports = class App {
   /* some utils */
 
   destinationPath( relPath ) {
-    return path.join( '/data', relPath );
+    return path.join( this.workDir(), relPath );
   }
 
   templatePath( relPath ) {
@@ -734,6 +745,10 @@ module.exports = class App {
 
   setupDir() {
     return this.sessionData.setupDir;
+  }
+
+  workDir() {
+    return this.sessionData.workDir;
   }
 
   defaultDataDirBase() {
