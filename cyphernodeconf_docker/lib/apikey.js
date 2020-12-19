@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const spawn = require('child_process').spawn;
 const configEntryRegexp = /^kapi_id="(\w+)";kapi_key="(\w+)";kapi_groups="(.+)";(.+)$/;
 
@@ -11,10 +12,10 @@ module.exports = class ApiKey {
 
   setFromConfigEntry(configEntry ) {
     const match = configEntryRegexp.exec( configEntry );
-    if( match ) {
+    if ( match ) {
       this.setId( match[1] );
       this.setKey( match[2] );
-      this.setGroups( match[3].split(',').map( (e)=>e.trim() ) )
+      this.setGroups( match[3].split(',').map( (e)=>e.trim() ) );
       this.setScript( match[4] );
     }
   }
@@ -35,34 +36,32 @@ module.exports = class ApiKey {
     this.key = key;
   }
 
-  async randomiseKey() {
-    try {
+  async randomiseKey() {
 
-      //const dd = spawn('/bin/dd if=/dev/urandom bs=32 count=1 | /usr/bin/xxd -pc 32');
-      const dd = spawn("dd if=/dev/urandom bs=32 count=1 | xxd -pc32", [], {stdio: ['ignore', 'pipe', 'ignore' ], shell: true} );
+    //const dd = spawn('/bin/dd if=/dev/urandom bs=32 count=1 | /usr/bin/xxd -pc 32');
+    const dd = spawn('dd if=/dev/urandom bs=32 count=1 | xxd -pc32', [], {
+      stdio: ['ignore', 'pipe', 'ignore' ], shell: true
+    } );
 
-      const result = await new Promise( function(resolve, reject ) {
+    const result = await new Promise( function(resolve, reject ) {
 
-        let result = '';
-        dd.stdout.on('data', function( a,b,c) {
-          let chunk = a.toString().trim();
-          result += chunk;
-        });
-
-        dd.stdout.on('end', function() {
-          result = result.replace(/[^a-zA-Z0-9]/,'');
-          resolve(result);
-        });
-
-        dd.stdout.on('error', function(err) {
-          reject(err);
-        })
+      let result = '';
+      dd.stdout.on('data', function( a ) {
+        let chunk = a.toString().trim();
+        result += chunk;
       });
-      this.key = result;
 
-    } catch( err ) {
-      reject(err);
-    }
+      dd.stdout.on('end', function() {
+        result = result.replace(/[^a-zA-Z0-9]/, '');
+        resolve(result);
+      });
+
+      dd.stdout.on('error', function(err) {
+        reject(err);
+      });
+    });
+    this.key = result;
+
   }
 
   getKey() {
@@ -70,7 +69,7 @@ module.exports = class ApiKey {
   }
 
   getConfigEntry() {
-    if( !this.key ) {
+    if ( !this.key ) {
       return;
     }
     return `kapi_id="${this.id}";kapi_key="${this.key}";kapi_groups="${this.groups.join(',')}";${this.script}`;

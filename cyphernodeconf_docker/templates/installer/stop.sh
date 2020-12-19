@@ -21,26 +21,28 @@ stop_apps() {
     if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
       APP_STOP_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
       APP_ID=$(basename $APP_SCRIPT_PATH)
+      export APP_SCRIPT_PATH
+      export APP_ID
+      export GATEKEEPER_CERTS_PATH
+      export GATEKEEPER_PORT
+      export DOCKER_MODE
+      export BITCOIN_NETWORK=<%= net %>
+      export OTSCLIENT_DATAPATH
+      export TRUSTED__LIGHTNING_DATAPATH=${LIGHTNING_DATAPATH}
+      export SERVICE__LOGS_DATAPATH=${LOGS_DATAPATH}
+      export SERVICE__BITCOIN_DATAPATH=${BITCOIN_DATAPATH}
+      export SERVICE__TOR_DATAPATH=${TOR_DATAPATH}
+
+      printenv
 
       if [ -f "$APP_STOP_SCRIPT_PATH" ]; then
         . $APP_STOP_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
-        export SHARED_HTPASSWD_PATH
-        export GATEKEEPER_DATAPATH
-        export GATEKEEPER_PORT
-        export TOR_DATAPATH
-        export LIGHTNING_DATAPATH
-        export BITCOIN_DATAPATH
-        export APP_SCRIPT_PATH
-        export APP_ID
-        export DOCKER_MODE
-
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack rm $APP_ID
         elif [ "$DOCKER_MODE" = "compose" ]; then
           docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml down
         fi
-
       fi
     fi
   done

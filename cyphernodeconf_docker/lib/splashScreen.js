@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const fs = require('fs');
 const path = require('path');
 const ansi = require( './ansi.js' );
@@ -7,9 +8,9 @@ const easeOutCubic = (t, b, c, d) => {
   return c*((t=t/d-1)*t*t+1)+b;
 };
 
-lunicode.tools.creepify.options.top = true; 	// add diacritics on top. Default: true
-lunicode.tools.creepify.options.middle = true;	// add diacritics in the middle. Default: true
-lunicode.tools.creepify.options.bottom = true;	// add diacritics on the bottom. Default: true
+lunicode.tools.creepify.options.top = true; // add diacritics on top. Default: true
+lunicode.tools.creepify.options.middle = true; // add diacritics in the middle. Default: true
+lunicode.tools.creepify.options.bottom = true; // add diacritics on the bottom. Default: true
 lunicode.tools.creepify.options.maxHeight = 15; // How many diacritic marks shall we put on top/bottom? Default: 15
 lunicode.tools.creepify.options.randomization = 100; // 0-100%. maxHeight 100 and randomization 20%: the height goes from 80 to 100. randomization 70%: height goes from 30 to 100. Default: 100
 
@@ -24,10 +25,11 @@ const fortunes = [
 module.exports = class SplashScreen {
 
   constructor( options ) {
-    options = options || {};
+    options = options || {
+    };
 
-    if( !options.frameDir ) {
-      throw "no frame directory to load"
+    if ( !options.frameDir ) {
+      throw 'no frame directory to load';
     }
 
     this.width = options.width || 82;
@@ -37,26 +39,22 @@ module.exports = class SplashScreen {
 
     this.loadFramesFromDir( options.frameDir );
 
-    if( this.fortuneEnabled ) {
+    if ( this.fortuneEnabled ) {
 
       let fortune = this.fortune();
-      if( fortune.length > this.width-2 ) {
-        fortune = fortune.substr(0,this.width-2);
+      if ( fortune.length > this.width-2 ) {
+        fortune = fortune.substr(0, this.width-2);
       }
       fortune =  this.center(fortune);
 
       let fortuneLines = [];
 
 
-
-
       fortuneLines.push( this.creepify(fortune) )+'\n';
 
 
-
-
-      for( let i=0; i<this.frames.length; i++ ) {
-        for( let j=0; j<fortuneLines.length; j++ ) {
+      for ( let i=0; i<this.frames.length; i++ ) {
+        for ( let j=0; j<fortuneLines.length; j++ ) {
           this.frames[i] += fortuneLines[j];
         }
       }
@@ -67,7 +65,7 @@ module.exports = class SplashScreen {
   loadFramesFromDir( frameDir ) {
     this.frames = [];
     fs.readdirSync(frameDir).forEach((file) => {
-      this.frames.push(fs.readFileSync(path.join(__dirname,'..','splash',file)));
+      this.frames.push(fs.readFileSync(path.join(__dirname, '..', 'splash', file)));
     });
   }
 
@@ -80,7 +78,7 @@ module.exports = class SplashScreen {
   }
 
   creepify( string ) {
-    if( this.fortuneChalk ) {
+    if ( this.fortuneChalk ) {
       return this.fortuneChalk(lunicode.tools.creepify.encode( string ));
     }
     return lunicode.tools.creepify.encode( string );
@@ -88,7 +86,7 @@ module.exports = class SplashScreen {
 
   center( string ) {
     const offset = ((this.width - string.length)*0.5) << 0;
-    for( let i=0; i<offset; i++ ) {
+    for ( let i=0; i<offset; i++ ) {
       string =  ' '+string+' ';
     }
 
@@ -109,19 +107,19 @@ module.exports = class SplashScreen {
 
     await this.sleep(150);
 
-    for( let i=0; i<=steps; i++ ) {
+    for ( let i=0; i<=steps; i++ ) {
       const pos = easeOutCubic( i, 0, frame0lineCount, steps ) | 0;
       process.stdout.write(ansi.reset);
-      for( let l=frame0lineCount-pos; l<frame0lineCount; l++ ) {
+      for ( let l=frame0lineCount-pos; l<frame0lineCount; l++ ) {
         process.stdout.write( frame0lines[l]+'\n' );
       }
       await this.sleep(33);
     }
 
-    if( this.frames.length > 1 ) {
+    if ( this.frames.length > 1 ) {
       await this.sleep(400);
 
-      for( let frame of this.frames ) {
+      for ( let frame of this.frames ) {
         process.stdout.write(ansi.reset);
         process.stdout.write(frame.toString());
         await this.sleep(33);

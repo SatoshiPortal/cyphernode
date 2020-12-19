@@ -1,4 +1,7 @@
-const {promisify} = require('util');
+/* eslint-disable camelcase */
+const {
+  promisify
+} = require('util');
 
 const fs = require('fs');
 const path = require('path');
@@ -25,15 +28,33 @@ const ansi = require( './ansi.js' );
 const features = require('../features.json');
 const torifyables = require('../torifyables.json');
 
+const _000_cyphernode = require( '../prompters/000_cyphernode.js');
+const _010_gatekeeper = require( '../prompters/010_gatekeeper.js');
+const _030_traefik = require( '../prompters/030_traefik.js');
+const _040_tor = require( '../prompters/040_tor.js');
+const _100_lightning = require( '../prompters/100_lightning.js');
+const _900_bitcoin = require( '../prompters/900_bitcoin.js');
+const _999_installer = require( '../prompters/999_installer.js');
+
+const help = require('../help.json');
+
+const prompters = [
+  _000_cyphernode, _010_gatekeeper,
+  _030_traefik,
+  _040_tor,
+  _100_lightning,
+  _900_bitcoin, _999_installer
+];
+
 const uaCommentRegexp = /^[a-zA-Z0-9 \.,:_\-\?\/@]+$/; // TODO: look for spec of unsafe chars
 const userRegexp = /^[a-zA-Z0-9\._\-]+$/;
 const maxWidth = 82;
 
 const keyIds = {
   '000': ['stats'],
-  '001': ['stats','watcher'],
-  '002': ['stats','watcher','spender'],
-  '003': ['stats','watcher','spender','admin']
+  '001': ['stats', 'watcher'],
+  '002': ['stats', 'watcher', 'spender'],
+  '003': ['stats', 'watcher', 'spender', 'admin']
 };
 
 const configArchiveFileName = 'config.7z';
@@ -45,14 +66,11 @@ const prefix = () => {
 };
 
 const randomColor = () => {
-  const hex = colorsys.hslToHex( { h: (Math.random()*360)<<0, s: 50, l: 50 } );
+  const hex = colorsys.hslToHex( {
+    h: (Math.random()*360)<<0, s: 50, l: 50
+  } );
   return hex.substr(1);
 };
-
-let prompters = [];
-fs.readdirSync(path.join(__dirname, '..','prompters')).forEach((file) => {
-  prompters.push(require(path.join(__dirname, '..','prompters',file)));
-});
 
 module.exports = class App {
 
@@ -60,7 +78,7 @@ module.exports = class App {
     this.features = features;
     this.torifyables = torifyables;
 
-    if( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
+    if ( fs.existsSync(path.join('/data', destinationDirName, 'exitStatus.sh')) ) {
       fs.unlinkSync(path.join('/data', destinationDirName, 'exitStatus.sh'));
     }
 
@@ -75,12 +93,13 @@ module.exports = class App {
 
   async start( options ) {
 
-    options = options || {};
+    options = options || {
+    };
 
     this.sessionData = {
       defaultDataDirBase: process.env.DEFAULT_DATADIR_BASE ||  process.env.HOME,
       setupDir: process.env.SETUP_DIR || path.join( process.env.HOME, 'cyphernode' ),
-      default_username: process.env.DEFAULT_USER || '',
+      default_username: process.env.DEFAULT_USER || '',
       gatekeeper_version: process.env.GATEKEEPER_VERSION,
       tor_version: process.env.TOR_VERSION,
       gatekeeper_cns: process.env.DEFAULT_CERT_HOSTNAME,
@@ -105,29 +124,29 @@ module.exports = class App {
 
     await this.setupConfigArchive();
 
-    if( !this.sessionData.noSplashScreen ) {
+    if ( !this.sessionData.noSplashScreen ) {
       await this.splash.show();
     }
 
     let missingProperties = [];
 
-    if( this.config.validateErrors && this.config.validateErrors.length ) {
-      for( let error of this.config.validateErrors ) {
-        if( error.keyword === 'required' && error.params && error.params.missingProperty ) {
+    if ( this.config.validateErrors && this.config.validateErrors.length ) {
+      for ( let error of this.config.validateErrors ) {
+        if ( error.keyword === 'required' && error.params && error.params.missingProperty ) {
           missingProperties.push( error.params.missingProperty );
         }
       }
     }
 
-    if( this.sessionData.noWizard && missingProperties.length && this.config.isLoaded ) {
+    if ( this.sessionData.noWizard && missingProperties.length && this.config.isLoaded ) {
       console.log(chalk.bold.red('Unable to migrate client.7z non-interactively. Rerun without the -r option') );
       process.exit(1);
     }
 
-    if( !this.sessionData.noWizard  ) {
+    if ( !this.sessionData.noWizard  ) {
       // save gatekeeper key password to check if it changed
       this.sessionData.gatekeeper_clientkeyspassword = this.config.data.gatekeeper_clientkeyspassword;
-      if(  missingProperties.length && this.config.isLoaded ) {
+      if (  missingProperties.length && this.config.isLoaded ) {
         this.sessionData.markProperties = missingProperties;
       }
       await this.startWizard();
@@ -156,17 +175,18 @@ module.exports = class App {
       }
     } );
 
-    if( !fs.existsSync(this.destinationPath(configArchiveFileName)) ) {
-      if( this.sessionData.noWizard ) {
+    if ( !fs.existsSync(this.destinationPath(configArchiveFileName)) ) {
+      if ( this.sessionData.noWizard ) {
         console.log(chalk.bold.red('Unable to run in no wizard mode without a config.7z')+'\n');
         process.exit();
         return;
       }
-      let r = {};
+      let r = {
+      };
       process.stdout.write(ansi.clear+ansi.reset);
-      while( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
+      while ( !r.password0 || !r.password1 || r.password0 !== r.password1 ) {
 
-        if( r.password0 && r.password1 && r.password0 !== r.password1 ) {
+        if ( r.password0 && r.password1 && r.password0 !== r.password1 ) {
           console.log(chalk.bold.red('Passwords do not match')+'\n');
         }
 
@@ -176,22 +196,23 @@ module.exports = class App {
           message: prefix()+chalk.bold.blue('Choose your configuration password'),
           filter: this.trimFilter
         },
-          {
-            type: 'password',
-            name: 'password1',
-            message: prefix()+chalk.bold.blue('Confirm your configuration password'),
-            filter: this.trimFilter
-          }]);
+        {
+          type: 'password',
+          name: 'password1',
+          message: prefix()+chalk.bold.blue('Confirm your configuration password'),
+          filter: this.trimFilter
+        }]);
       }
       this.sessionData.configurationPassword = r.password0;
     } else {
       try {
-        let r = {};
-        if( process.env.CFG_PASSWORD ) {
+        let r = {
+        };
+        if ( process.env.CFG_PASSWORD ) {
           this.sessionData.configurationPassword = process.env.CFG_PASSWORD;
         } else {
           process.stdout.write(ansi.reset);
-          while( !r.password ) {
+          while ( !r.password ) {
             r = await this.prompt([{
               type: 'password',
               name: 'password',
@@ -209,7 +230,7 @@ module.exports = class App {
 
           // store clientkeyspassword in sessionData so it can be retrieved by getDefault
           // and a simple return will not result in a password mismatch
-          if( this.config.data.hasOwnProperty('gatekeeper_clientkeyspassword') ) {
+          if ( this.config.data.hasOwnProperty('gatekeeper_clientkeyspassword') ) {
             this.sessionData.gatekeeper_clientkeyspassword_c =
               this.config.data.gatekeeper_clientkeyspassword;
           }
@@ -218,7 +239,7 @@ module.exports = class App {
           console.log(chalk.bold.red(e));
           process.exit();
         }
-      } catch( err ) {
+      } catch ( err ) {
         console.log(chalk.bold.red('config archive is corrupt.'));
         process.exit(1);
       }
@@ -226,11 +247,11 @@ module.exports = class App {
 
     this.config.data.adminhash = await htpasswd(this.sessionData.configurationPassword);
 
-    for( let feature of this.features ) {
+    for ( let feature of this.features ) {
       feature.checked = this.isChecked( 'features', feature.value );
     }
 
-    for( let torifyable of this.torifyables ) {
+    for ( let torifyable of this.torifyables ) {
       torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
     }
   }
@@ -245,21 +266,21 @@ module.exports = class App {
 
     this.config.data.enablehelp = r.enablehelp;
 
-    if( this.config.data.enablehelp ) {
-      this.help = require('../help.json');
+    if ( this.config.data.enablehelp ) {
+      this.help = help;
     }
 
     let prompts = [];
 
-    for( let m of prompters ) {
+    for ( let m of prompters ) {
       let newPrompts = m.prompts(this);
 
-      if( this.sessionData.markProperties &&
-          this.sessionData.markProperties.length &&
-          this.config.isLoaded ) {
+      if ( this.sessionData.markProperties &&
+        this.sessionData.markProperties.length &&
+        this.config.isLoaded ) {
 
-        for( let prompt of newPrompts ) {
-          if(  this.sessionData.markProperties.indexOf(prompt.name) !== -1  ) {
+        for ( let prompt of newPrompts ) {
+          if (  this.sessionData.markProperties.indexOf(prompt.name) !== -1  ) {
             prompt.message = prompt.message+' '+chalk.bgGreen('new option');
           }
         }
@@ -276,7 +297,7 @@ module.exports = class App {
   async processProps() {
 
     // Tor...
-    if( this.isChecked( 'features', 'tor' ) ) {
+    if ( this.isChecked( 'features', 'tor' ) ) {
       const torgen = new TorGen();
 
       if (this.isChecked('torifyables', 'tor_traefik')) {
@@ -291,7 +312,7 @@ module.exports = class App {
     }
 
     // creates keys if they don't exist or we say so.
-    if( this.config.data.gatekeeper_recreatekeys ||
+    if ( this.config.data.gatekeeper_recreatekeys ||
       this.config.data.gatekeeper_keys.configEntries.length===0 ) {
 
       delete this.config.data.gatekeeper_recreatekeys;
@@ -299,7 +320,7 @@ module.exports = class App {
       let configEntries = [];
       let clientInformation = [];
 
-      for( let keyId in keyIds ) {
+      for ( let keyId in keyIds ) {
         const apikey = await this.createRandomKey( keyId, keyIds[keyId] );
         configEntries.push(apikey.getConfigEntry());
         clientInformation.push(apikey.getClientInformation());
@@ -308,7 +329,7 @@ module.exports = class App {
       this.config.data.gatekeeper_keys = {
         configEntries: configEntries,
         clientInformation: clientInformation
-      }
+      };
 
     }
 
@@ -316,7 +337,7 @@ module.exports = class App {
     this.sessionData.cns = cert.cns(this.config.data.gatekeeper_cns);
 
     // create certs if they don't exist or we say so.
-    if( this.config.data.gatekeeper_recreatecert ||
+    if ( this.config.data.gatekeeper_recreatecert ||
       !this.config.data.gatekeeper_sslcert ||
       !this.config.data.gatekeeper_sslkey ) {
       delete this.config.data.gatekeeper_recreatecert;
@@ -324,33 +345,33 @@ module.exports = class App {
       console.log(chalk.bold.green( '☕ Generating gatekeeper cert. This may take a while ☕' ));
       try {
         const result = await cert.create(this.sessionData.cns);
-        if( result.code === 0 ) {
+        if ( result.code === 0 ) {
           this.config.data.gatekeeper_sslkey = result.key.toString();
           this.config.data.gatekeeper_sslcert = result.cert.toString();
         } else {
           console.log(chalk.bold.red( 'error! Gatekeeper cert was not created' ));
         }
-      } catch( err ) {
+      } catch ( err ) {
         console.log(chalk.bold.red( 'error! Gatekeeper cert was not created' ));
       }
     }
   }
 
   async createRandomKey( id, groups ) {
-    if( !id || !groups || !groups.length ) {
+    if ( !id || !groups || !groups.length ) {
       return;
     }
     const apikey = new ApiKey();
     apikey.setId(id);
     apikey.setGroups(groups);
     await apikey.randomiseKey();
-    return apikey
+    return apikey;
   }
 
   async writeFiles() {
 
     console.log( chalk.green( '   create' )+' '+configArchiveFileName );
-    if( !this.config.serialize(
+    if ( !this.config.serialize(
       this.destinationPath(configArchiveFileName),
       this.sessionData.configurationPassword
     ) ) {
@@ -368,25 +389,29 @@ module.exports = class App {
       'otsclient_datapath'
     ];
 
-    for( let pathProp of pathProps ) {
-      if( this.config.data[pathProp] === '_custom' ) {
+    for ( let pathProp of pathProps ) {
+      if ( this.config.data[pathProp] === '_custom' ) {
         this.config.data[pathProp] = this.config.data[pathProp+'_custom'] || '';
       }
     }
 
     this.sessionData.installationInfo = this.installationInfo();
 
-    for( let m of prompters ) {
+    for ( let m of prompters ) {
       const name = m.name();
-      for( let t of m.templates(this.config.data) ) {
-        const p = path.join(name,t);
+      for ( let t of m.templates(this.config.data) ) {
+        const p = path.join(name, t);
         const destFile = this.destinationPath( path.join( destinationDirName, p ) );
         const targetDir = path.dirname( destFile );
 
-        if( !fs.existsSync(targetDir) ) {
-          fs.mkdirSync(targetDir, { recursive: true });
+        if ( !fs.existsSync(targetDir) ) {
+          fs.mkdirSync(targetDir, {
+            recursive: true
+          });
         }
-        const result = await ejsRenderFileAsync( this.templatePath(p), Object.assign({}, this.sessionData, this.config.data), {} );
+        const result = await ejsRenderFileAsync( this.templatePath(p), Object.assign({
+        }, this.sessionData, this.config.data), {
+        } );
 
         console.log( chalk.green( '   create' )+' '+p );
         fs.writeFileSync( destFile, result );
@@ -396,18 +421,18 @@ module.exports = class App {
 
     console.log( chalk.green( '   create' )+' '+keyArchiveFileName );
 
-    if( this.config.data.gatekeeper_keys && this.config.data.gatekeeper_keys.clientInformation ) {
+    if ( this.config.data.gatekeeper_keys && this.config.data.gatekeeper_keys.clientInformation ) {
 
-      if( this.sessionData.gatekeeper_clientkeyspassword !== this.config.data.gatekeeper_clientkeyspassword &&
-          fs.existsSync(this.destinationPath(keyArchiveFileName)) ) {
+      if ( this.sessionData.gatekeeper_clientkeyspassword !== this.config.data.gatekeeper_clientkeyspassword &&
+        fs.existsSync(this.destinationPath(keyArchiveFileName)) ) {
         fs.unlinkSync( this.destinationPath(keyArchiveFileName) );
       }
 
       const archive = new Archive( this.destinationPath(keyArchiveFileName), this.config.data.gatekeeper_clientkeyspassword );
-      if( !await archive.writeEntry( 'keys.txt', this.config.data.gatekeeper_keys.clientInformation.join('\n') ) ) {
+      if ( !await archive.writeEntry( 'keys.txt', this.config.data.gatekeeper_keys.clientInformation.join('\n') ) ) {
         console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
-      if( !await archive.writeEntry( 'cacert.pem', this.config.data.gatekeeper_sslcert ) ) {
+      if ( !await archive.writeEntry( 'cacert.pem', this.config.data.gatekeeper_sslcert ) ) {
         console.log(chalk.bold.red( 'error! Client gatekeeper key archive was not written' ));
       }
     }
@@ -418,11 +443,11 @@ module.exports = class App {
 
   installationInfo() {
 
-    for( let feature of this.features ) {
+    for ( let feature of this.features ) {
       feature.checked = this.isChecked( 'features', feature.value );
     }
 
-    for( let torifyable of this.torifyables ) {
+    for ( let torifyable of this.torifyables ) {
       torifyable.checked = this.isChecked('features', 'tor') && this.isChecked( 'torifyables', torifyable.value );
     }
 
@@ -515,7 +540,7 @@ module.exports = class App {
     const optional_features_data = {
       tor: {
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
-        docker: "cyphernode/tor:" + this.config.docker_versions['cyphernode/tor'],
+        docker: 'cyphernode/tor:' + this.config.docker_versions['cyphernode/tor'],
         extra: {
           traefik_hostname: this.sessionData.tor_traefik_hostname,
           lightning_hostname: this.sessionData.tor_lightning_hostname,
@@ -524,7 +549,7 @@ module.exports = class App {
       },
       otsclient: {
         networks: ['cyphernodenet'],
-        docker: "cyphernode/otsclient:" + this.config.docker_versions['cyphernode/otsclient'],
+        docker: 'cyphernode/otsclient:' + this.config.docker_versions['cyphernode/otsclient'],
         extra: {
           torified: this.torifyables.find(data => data.value === 'tor_otsoperations').checked,
           torified_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
@@ -540,7 +565,7 @@ module.exports = class App {
       },
       lightning: {
         networks: ['cyphernodenet'],
-        docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
+        docker: 'cyphernode/clightning:'+this.config.docker_versions['cyphernode/clightning'],
         extra: {
           nodename: this.config.data.lightning_nodename,
           nodecolor: this.config.data.lightning_nodecolor,
@@ -552,9 +577,9 @@ module.exports = class App {
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
       }
-    }
+    };
 
-    for( let feature of this.features ) {
+    for ( let feature of this.features ) {
       const f = {
         active: feature.checked,
         name: feature.name,
@@ -564,8 +589,8 @@ module.exports = class App {
         docker: optional_features_data[feature.value].docker
       };
 
-      if( feature.checked ) {
-        f.extra = optional_features_data[feature.value].extra
+      if ( feature.checked ) {
+        f.extra = optional_features_data[feature.value].extra;
       }
 
       optional_features.push( f );
@@ -573,7 +598,7 @@ module.exports = class App {
 
     let bitcoin_version = this.config.docker_versions['cyphernode/bitcoin'];
 
-    if( bitcoin_version[0] === 'v' ) {
+    if ( bitcoin_version[0] === 'v' ) {
       bitcoin_version = bitcoin_version.substr(1);
     }
 
@@ -591,8 +616,9 @@ module.exports = class App {
   }
 
   async prompt( questions ) {
-    if( !questions ) {
-      return {};
+    if ( !questions ) {
+      return {
+      };
     }
 
     const r = await inquirer.prompt( questions );
@@ -606,96 +632,96 @@ module.exports = class App {
   }
 
   templatePath( relPath ) {
-    return path.join(__dirname, '..','templates',relPath );
+    return path.join(__dirname, '..', 'templates', relPath );
   }
 
   isChecked(name, value ) {
-    return this.config.data && this.config.data[name] && this.config.data[name].indexOf(value) != -1 ;
+    return this.config.data && this.config.data[name] && this.config.data[name].indexOf(value) !== -1 ;
   }
 
   getDefault(name) {
 
-    if( this.config && this.config.data && this.config.data.hasOwnProperty(name) ) {
+    if ( this.config && this.config.data && this.config.data.hasOwnProperty(name) ) {
       return this.config.data[name];
     }
 
-    if( this.sessionData && this.sessionData.hasOwnProperty(name) ) {
+    if ( this.sessionData && this.sessionData.hasOwnProperty(name) ) {
       return this.sessionData[name];
     }
 
   }
 
   optional(input, validator) {
-    if( input === undefined ||
-        input === null ||
-        input === '' ) {
+    if ( input === undefined ||
+      input === null ||
+      input === '' ) {
       return true;
     }
     return validator(input);
   }
 
   ipOrFQDNValidator(host ) {
-    host = (host+"").trim();
-    if( !(validator.isIP(host) ||
+    host = (host+'').trim();
+    if ( !(validator.isIP(host) ||
       validator.isFQDN(host)) ) {
-      throw new Error( 'No IP address or fully qualified domain name' )
+      throw new Error( 'No IP address or fully qualified domain name' );
     }
     return true;
   }
 
   xkeyValidator(xpub ) {
     // TOOD: check for version
-    if( !coinstring.isValid( xpub ) ) {
+    if ( !coinstring.isValid( xpub ) ) {
       throw new Error('Not an extended key.');
     }
     return true;
   }
 
-  pathValidator(p ) {
+  pathValidator() {
     return true;
   }
 
-  derivationPathValidator(path ) {
+  derivationPathValidator() {
     return true;
   }
 
   colorValidator(color) {
-    if( !validator.isHexadecimal(color) ) {
+    if ( !validator.isHexadecimal(color) ) {
       throw new Error('Not a hex color.');
     }
     return true;
   }
 
   lightningNodeNameValidator(name) {
-    if( !name || name.length > 32 ) {
+    if ( !name || name.length > 32 ) {
       throw new Error('Please enter anything shorter than 32 characters');
     }
     return true;
   }
 
   notEmptyValidator(path ) {
-    if( !path ) {
+    if ( !path ) {
       throw new Error('Please enter something');
     }
     return true;
   }
 
   usernameValidator(user ) {
-     if( !userRegexp.test( user ) ) {
+    if ( !userRegexp.test( user ) ) {
       throw new Error('Choose a valid username');
     }
     return true;
   }
 
   UACommentValidator(comment ) {
-    if( !uaCommentRegexp.test( comment ) ) {
+    if ( !uaCommentRegexp.test( comment ) ) {
       throw new Error('Unsafe characters in UA comment. Please use only a-z, A-Z, 0-9, SPACE and .,:_?@');
     }
     return true;
   }
 
   trimFilter(input ) {
-    return (input+"").trim();
+    return (input+'').trim();
   }
 
   featureChoices() {
@@ -715,17 +741,17 @@ module.exports = class App {
   }
 
   getHelp(topic ) {
-    if( !this.config.data.enablehelp || !this.help ) {
+    if ( !this.config.data.enablehelp || !this.help ) {
       return '';
     }
 
-    const helpText = this.help[topic] || this.help['__default__'];
+    const helpText = this.help[topic] || this.help['__default__'];
 
-    if( !helpText ||helpText === '' ) {
+    if ( !helpText ||helpText === '' ) {
       return '';
     }
 
-    return "\n\n"+wrap( html2ansi(helpText),maxWidth )+"\n\n";
+    return '\n\n'+wrap( html2ansi(helpText), maxWidth )+'\n\n';
   }
 
 };

@@ -14,30 +14,37 @@ start_apps() {
   local APP_START_SCRIPT_PATH
   local APP_ID
 
+  # trustzones are:
+  # * untrusted -> no access to most resources except safe ones, no access to other apps
+  # * trusted   -> access to trusted resources, no access to other apps
+  # * service   -> access to trusted resources, access to other apps
+
   for i in $current_path/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
-    if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
+    if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/IGNOREME" ]; then
       APP_START_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
       APP_ID=$(basename $APP_SCRIPT_PATH)
 
-      export SHARED_HTPASSWD_PATH
-      export GATEKEEPER_DATAPATH
-      export GATEKEEPER_PORT
-      export TOR_DATAPATH
-      export LIGHTNING_DATAPATH
-      export BITCOIN_DATAPATH
-      export LOGS_DATAPATH
-      export APP_SCRIPT_PATH
       export APP_ID
+      export APP_DATAPATH=${APP_SCRIPT_PATH}
+      export GATEKEEPER_CERTS_PATH
+      export GATEKEEPER_PORT
       export DOCKER_MODE
-      export NETWORK=<%= net %>
+      export BITCOIN_NETWORK=<%= net %>
+      export OTSCLIENT_DATAPATH
+      export TRUSTED__LIGHTNING_DATAPATH=${LIGHTNING_DATAPATH}
+      export SERVICE__LOGS_DATAPATH=${LOGS_DATAPATH}
+      export SERVICE__BITCOIN_DATAPATH=${BITCOIN_DATAPATH}
+      export SERVICE__TOR_DATAPATH=${TOR_DATAPATH}
+
+      printenv
 
       if [ -f "$APP_START_SCRIPT_PATH" ]; then
         . $APP_START_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
         if [ "$DOCKER_MODE" = "swarm" ]; then
-          docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
+          docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml "cypherapps_$APP_ID"
         elif [ "$DOCKER_MODE" = "compose" ]; then
           docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml up -d --remove-orphans
         fi

@@ -38,7 +38,11 @@
     "comma-spacing": "error",
     "eqeqeq": "error",
     "curly": "error",
+    "no-sync": "warn",
     "keyword-spacing": "error",
+    "no-console": "warn",
+    "no-nested-ternary": "warn",
+    "no-useless-escape": "warn",
     "object-curly-spacing": [
       "warn",
       "always"

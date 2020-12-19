@@ -1,20 +1,21 @@
+/* eslint-disable camelcase */
 const exec = require('child_process').exec;
 
 module.exports = async ( password ) => {
 
-  if( !password ) {
+  if ( !password ) {
     return null;
   }
 
-  password = password.replace(/'/g, `'\\''`);
+  password = password.replace(/'/g, '\'\\\'\'');
 
   return await new Promise( (resolve) => {
-    exec('htpasswd -bnB admin \''+password+'\' | cut -sd \':\' -f2', (error, stdout, stderr) => {
+    exec('htpasswd -bnB admin \''+password+'\' | cut -sd \':\' -f2', (error, stdout) => {
       if (error) {
         return resolve(null);
       }
       // remove newline at the end
-      resolve(stdout.substr(0,stdout.length-1));
+      resolve(stdout.substr(0, stdout.length-1));
     });
   });
 
