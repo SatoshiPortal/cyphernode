@@ -619,6 +619,7 @@ module.exports = class App {
       bitcoin_version: bitcoin_version,
       features: features,
       optional_features: optional_features,
+      docker_mode: this.config.data.docker_mode,
       devmode: this.sessionData.devmode,
 
     };
