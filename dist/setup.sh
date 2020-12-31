@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$ADMIN_DATAPATH" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +122,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$ADMIN_DATAPATH" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -467,6 +467,8 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
 
+  sudo_if_required mkdir -p $ADMIN_DATAPATH
+
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
@@ -788,47 +790,30 @@ sanity_checks_pre_install() {
 }
 
 install_apps() {
+  local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
+
   if [ ! -d "$current_path/.cam" ]; then
-    local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
 #    local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "     [32minit[0m cam"
     # initialise cam tool in dist
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION i > /dev/null 2>&1
-
-    # copy some files needed by cam
-    copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $current_path/.cam/keys.properties 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/cyphernode/info.json $current_path/.cam/cyphernode.json 1 $SUDO_REQUIRED
-
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION i #> /dev/null 2>&1
     # add local repo as a source
     echo "  [32minstall[0m local sources"
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s a file:///dist/cam/local > /dev/null 2>&1
-
-    # update cam cypherapp index
-    echo "   [32mupdate[0m local sources"
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s u > /dev/null 2>&1
-
-    # install default cypherapps: <trustzone>:<label or hash>@<version> <mount point>
-    echo "  [32minstall[0m default cypherapps"
-    echo "          * sparkwallet"
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i trusted:sparkwallet@latest sparkwallet > /dev/null 2>&1
-
-    sudo_if_required chown -R $user $current_path/apps
-    next
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s a file:///dist/cam/local #> /dev/null 2>&1
   fi
 
-  if [[ $FEATURE_LIGHTNING == true ]]; then
-    if [ -d "$current_path/apps/sparkwallet" ]; then
-      step "   [32mdelete[0m ignoreThisApp for enabled Sparkwallet"
-      sudo_if_required rm -f $current_path/apps/sparkwallet/ignoreThisApp
-      next
-    fi
-  else
-    if [ -d "$current_path/apps/sparkwallet" ]; then
-      step "   [32mcreate[0m ignoreThisApp for disabled Sparkwallet"
-      sudo_if_required touch $current_path/apps/sparkwallet/ignoreThisApp
-      next
-    fi
-  fi
+  # copy some files needed by cam
+  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $current_path/.cam/keys.properties 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/cyphernode/info.json $current_path/.cam/cyphernode.json 1 $SUDO_REQUIRED
+
+  # update cam cypherapp index
+  echo "   [32mupdate[0m local sources"
+  docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s u #> /dev/null 2>&1
+
+  # install default cypherapps: <trustzone>:<label or hash>@<version> <mount point>
+  echo "  [32minstall[0m default cypherapps"
+  echo "          * sparkwallet"
+  docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i trusted:sparkwallet@latest sparkwallet #> /dev/null 2>&1
 
   if [[ $FEATURE_BATCHER == true ]]; then
     if [ -d "$current_path/apps/batcher" ]; then
@@ -857,6 +842,9 @@ install_apps() {
       next
     fi
   fi
+
+  sudo_if_required chown -R $user $current_path/apps
+
 }
 
 install() {
@@ -888,7 +876,7 @@ PYCOIN_VERSION="v0.7.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v0.21.1"
 LIGHTNING_VERSION="v0.10.0"
-TRAEFIK_VERSION="v1.7.9-alpine"
+TRAEFIK_VERSION="v2.3.6"
 MOSQUITTO_VERSION="1.6"
 
 SETUP_DIR=$(dirname $(realpath $0))

@@ -38,13 +38,11 @@ start_apps() {
       export SERVICE__BITCOIN_DATAPATH=${BITCOIN_DATAPATH}
       export SERVICE__TOR_DATAPATH=${TOR_DATAPATH}
 
-      printenv
-
       if [ -f "$APP_START_SCRIPT_PATH" ]; then
         . $APP_START_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
         if [ "$DOCKER_MODE" = "swarm" ]; then
-          docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml "cypherapps_$APP_ID"
+          docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
         elif [ "$DOCKER_MODE" = "compose" ]; then
           docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml up -d --remove-orphans
         fi
@@ -67,6 +65,8 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
+export PWD=${current_path}
+
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
@@ -82,4 +82,5 @@ case "${ARCH}" in arm*)
 ;;
 esac
 
-. ./testdeployment.sh
+# TODO: uncomment
+# . ./testdeployment.sh

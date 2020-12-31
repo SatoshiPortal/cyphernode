@@ -33,6 +33,44 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
+      name: 'admin_datapath',
+      default: utils.getDefault( 'admin_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/admin",
+          value: utils.setupDir()+"/cyphernode/admin"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/admin",
+          value: utils.defaultDataDirBase()+"/cyphernode/admin"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/admin",
+          value: utils.defaultDataDirBase()+"/.cyphernode/admin"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/admin",
+          value: utils.defaultDataDirBase()+"/admin"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your administration database?'+utils.getHelp('admin_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.admin_datapath === '_custom') },
+      type: 'input',
+      name: 'admin_datapath_custom',
+      default: utils.getDefault( 'admin_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your administration database?'+utils.getHelp('admin_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
       name: 'logs_datapath',
       default: utils.getDefault( 'logs_datapath' ),
       choices: [

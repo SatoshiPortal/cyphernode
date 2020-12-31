@@ -382,6 +382,7 @@ module.exports = class App {
     }
 
     const pathProps = [
+      'admin_datapath',
       'gatekeeper_datapath',
       'logs_datapath',
       'traefik_datapath',

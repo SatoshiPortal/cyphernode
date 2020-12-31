@@ -33,8 +33,6 @@ stop_apps() {
       export SERVICE__BITCOIN_DATAPATH=${BITCOIN_DATAPATH}
       export SERVICE__TOR_DATAPATH=${TOR_DATAPATH}
 
-      printenv
-
       if [ -f "$APP_STOP_SCRIPT_PATH" ]; then
         . $APP_STOP_SCRIPT_PATH
       elif [ -f "$APP_SCRIPT_PATH/docker-compose.yaml" ]; then
