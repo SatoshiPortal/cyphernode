@@ -45,11 +45,24 @@ services:
     environment:
       # - GIN_MODE=release
       - CYPHERAPPS_INSTALL_DIR=/apps
+      - CYPHERNODE_KEYS_FILE=/keys.properties
+      - CYPHERNODE_CERT_FILE=/cert.pem
+      - CYPHERNODE_INFO_FILE=/info.json
+      - GATEKEEPER_HOST=gatekeeper
+      - GATEKEEPER_PORT=<%= gatekeeper_port %>
     networks:
       - cyphernodeappsnet
     volumes:
       - "${PWD}/apps:/apps"
       - "<%= admin_datapath %>:/data"
+      - "<%= gatekeeper_datapath %>/keys.properties:/keys.properties"
+      - "<%= gatekeeper_datapath %>/certs/cert.pem:/cert.pem"
+      - "<%= proxy_datapath %>/info.json:/info.json"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    depends_on:
+      - bitcoin
+      - gatekeeper
+      - proxy
 
   <% if ( features.indexOf('tor') !== -1 ) { %>
   ##########################
