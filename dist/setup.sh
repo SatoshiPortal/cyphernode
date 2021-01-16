@@ -184,7 +184,6 @@ configure() {
              -e DEFAULT_DATADIR_BASE=$HOME \
              -e SETUP_DIR=$SETUP_DIR \
              -e DEFAULT_CERT_HOSTNAME=$(hostname) \
-             -e GATEKEEPER_VERSION=$GATEKEEPER_VERSION \
              -e TRAEFIK_VERSION=$TRAEFIK_VERSION \
              -e MOSQUITTO_VERSION=$MOSQUITTO_VERSION \
              -e TOR_VERSION=$TOR_VERSION \
@@ -380,7 +379,7 @@ install_docker() {
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
 
-  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/traefik.toml $GATEKEEPER_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
   copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
@@ -929,7 +928,6 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     CONF_VERSION="$CONF_VERSION-local"
-    GATEKEEPER_VERSION="$GATEKEEPER_VERSION-local"
     TOR_VERSION="$TOR_VERSION-local"
     PROXY_VERSION="$PROXY_VERSION-local"
     NOTIFIER_VERSION="$NOTIFIER_VERSION-local"

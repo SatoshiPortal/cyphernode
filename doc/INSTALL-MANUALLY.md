@@ -84,10 +84,6 @@ debian@dev:~/dev/Cyphernode$ vi api_auth_docker/env.properties
 
 [See how to build clightning image](https://github.com/SatoshiPortal/dockers/tree/master/x86_64/LN/c-lightning)
 
-### Build the authenticated HTTP API image
-
-[See how to build authapi image](../api_auth_docker)
-
 ### Deploy
 
 **Edit docker-compose.yml to specify special deployment constraints or if you want to run the Bitcoin node on the same machine: uncomment corresponding lines.**

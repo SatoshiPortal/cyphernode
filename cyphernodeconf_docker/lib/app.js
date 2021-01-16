@@ -165,7 +165,6 @@ module.exports = class App {
       setup_version: this.sessionData.setup_version,
       docker_versions: {
         'cyphernode/bitcoin': this.sessionData.bitcoin_version,
-        'cyphernode/gatekeeper': this.sessionData.gatekeeper_version,
         'cyphernode/tor': this.sessionData.tor_version,
         'cyphernode/proxy': this.sessionData.proxy_version,
         'cyphernode/proxycron': this.sessionData.proxycron_version,
@@ -481,8 +480,8 @@ module.exports = class App {
         name: 'Gatekeeper',
         label: 'gatekeeper',
         host: 'gatekeeper',
-        networks: ['cyphernodenet'],
-        docker: 'cyphernode/gatekeeper:'+this.config.docker_versions['cyphernode/gatekeeper'],
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: 'traefik:'+this.config.docker_versions['traefik'],
         extra: {
           port: this.config.data.gatekeeper_port,
           cns: gatekeeper_cns
