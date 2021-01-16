@@ -15,7 +15,7 @@ services:
       # - traefik.http.routers.cyphernodeadmin.tls=false
       - traefik.http.routers.cyphernodeadmin.entrypoints=web
       - traefik.http.routers.cyphernodeadmin.service=cyphernodeadmin
-      - traefik.http.routers.cyphernodeadmin.middlewares=cyphernodeadmin-stripprefix@docker
+      - traefik.http.routers.cyphernodeadmin.middlewares=cyphernodeadmin-stripprefix@docker,forward-auth@file
       - traefik.http.services.cyphernodeadmin.loadbalancer.server.port=3030
       - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.prefixes=/admin,/admin/
       - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.forceSlash=true

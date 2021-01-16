@@ -1,64 +1,64 @@
 [global]
-checkNewVersion = false
-sendAnonymousUsage = false
+    checkNewVersion = false
+    sendAnonymousUsage = false
 
 # TODO: remove this later
 [log]
-level = "TRACE"
+    level = "TRACE"
 
 # TODO: remove this later
 [accessLog]
 
 # TODO: remove this later
 [api]
-insecure = true
+    insecure = true
 
 # add entry points from which services will be accessible
 [entryPoints]
-[entryPoints.web]
-address = ":<%= traefik_http_port %>"
-[entryPoints.websecure]
-address = ":<%= traefik_https_port %>"
+    [entryPoints.web]
+        address = ":<%= traefik_http_port %>"
+    [entryPoints.websecure]
+        address = ":<%= traefik_https_port %>"
 
 # add docker provider but do not auto expose all containers
 [providers.docker]
-exposedByDefault = false
+    exposedByDefault = false
 <% if (docker_mode === 'swarm') { -%>
-swarmMode = true
+    swarmMode = true
 <% } -%>
 
 # This file provider is used to read in the traefik.toml file
 # so routers and middlewares are available. This is strange
 [providers.file]
-filename = "/etc/traefik/traefik.toml"
+    filename = "/etc/traefik/traefik.toml"
 
 # This router is only used to run the root-to-admin-redirect
 # middleware. It does nothing else
 [http.routers]
-[http.routers.root-router]
-entrypoints = ["web"]
-middlewares = ["root-to-admin-redirect@file"]
-rule = "Path(`/`)"
-service = "noop@internal"
+    [http.routers.root-router]
+        entrypoints = ["web"]
+        middlewares = ["root-to-admin-redirect@file"]
+        rule = "Path(`/`)"
+        service = "noop@internal"
 
-[http.routers.auth-router]
-entrypoints = ["web"]
-middlewares = ["forward-auth@file"]
-rule = "PathPrefix(`/`)"
-service = "noop@internal"
+    [http.routers.auth-router]
+        entrypoints = ["web"]
+        middlewares = ["forward-auth@file"]
+        rule = "Path(`/.+`)"
+        service = "noop@internal"
 
 
 # This middleware redirects requests to / to the admin interface
 [http.middlewares]
-[http.middlewares.root-to-admin-redirect.redirectRegex]
-regex = "^(https{0,1}://[^/]+?)/{0,1}$"
-replacement = "${1}/admin/"
-permanent = true
+    [http.middlewares.root-to-admin-redirect.redirectRegex]
+        regex = "^(https{0,1}://[^/]+?)/{0,1}$"
+        replacement = "${1}/admin/"
+        permanent = true
 
-[http.middlewares.forward-auth.forwardauth]
-address = "http://cyphernodeadmin:3032/forwardauth"
-authResponseHeaders = ["X-Forwarded-User"]
-trustForwardHeader = true
+    [http.middlewares.forward-auth.forwardauth]
+        address = "http://cyphernodeadmin:3032/forwardauth"
+        authResponseHeaders = ["X-Forwarded-User"]
+        trustForwardHeader = true
 
 # [acme]
 # email = "letsencrypt@yourdomain.com"
