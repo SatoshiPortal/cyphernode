@@ -7,7 +7,7 @@ services:
   ##########################
   cyphernodeadmin:
     hostname: cyphernodeadmin
-    image: traefikauthtest/cyphernodeadmin:latest
+    image: cyphernode/cyphernodeadmin:<%= admin_version %>
     <% if (docker_mode == 'compose') { %>
     labels:
       - traefik.enable=true

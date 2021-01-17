@@ -195,6 +195,7 @@ configure() {
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
+             -e ADMIN_VERSION=$ADMIN_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
              --network none \
@@ -928,6 +929,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
 
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     CONF_VERSION="$CONF_VERSION-local"
+    ADMIN_VERSION="$ADMIN_VERSION-local"
     TOR_VERSION="$TOR_VERSION-local"
     PROXY_VERSION="$PROXY_VERSION-local"
     NOTIFIER_VERSION="$NOTIFIER_VERSION-local"

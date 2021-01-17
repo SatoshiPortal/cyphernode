@@ -94,6 +94,7 @@ module.exports = class App {
       lightning_version: process.env.LIGHTNING_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
+      admin_version: process.env.ADMIN_VERSION,
       setup_version: process.env.SETUP_VERSION,
       lightning_nodename: name.generate(),
       lightning_nodecolor: randomColor(),
