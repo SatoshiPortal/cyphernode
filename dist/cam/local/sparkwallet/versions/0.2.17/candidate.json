@@ -1,0 +1,46 @@
+{
+  "version": "0.2.17",
+  "dependencies": [
+    {
+      "label": "api",
+      "version": "v0"
+    },
+    {
+      "label": "lightning",
+      "version": "~0.9.0"
+    }
+  ],
+  "files": [
+    "cookie",
+    "docker-compose.yaml"
+  ],
+  "isExposed":true,
+  "port": 9737,
+  "availableRoles": [
+    {
+      "name": "user",
+      "description": "Standard user, can spend and receive",
+      "autoAssign": false
+    }
+  ],
+  "accessPolicies": [
+    {
+      "patterns": [".+"],
+      "roles": ["*"],
+      "actions": ["options"],
+      "effect": "allow"
+    },
+    {
+      "patterns": ["favicon.ico$"],
+      "roles": ["*"],
+      "actions": ["get"],
+      "effect": "allow"
+    },
+    {
+      "patterns": [".+"],
+      "roles": ["user"],
+      "actions": ["*"],
+      "effect": "allow"
+    }
+  ]
+}
