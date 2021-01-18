@@ -12,10 +12,16 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.cyphernodeadmin.rule=PathPrefix(`/admin`)
-      # - traefik.http.routers.cyphernodeadmin.tls=false
-      - traefik.http.routers.cyphernodeadmin.entrypoints=web
+      - traefik.http.routers.cyphernodeadmin.entrypoints=websecure
+      - traefik.http.routers.cyphernodeadmin.tls=true
       - traefik.http.routers.cyphernodeadmin.service=cyphernodeadmin
       - traefik.http.routers.cyphernodeadmin.middlewares=cyphernodeadmin-stripprefix@docker,forward-auth@file
+      <% if ( features.indexOf('tor') !== -1 ) { %>
+      - traefik.http.routers.cyphernodeadmin-onion.rule=PathPrefix(`/admin`)
+      - traefik.http.routers.cyphernodeadmin-onion.entrypoints=onion
+      - traefik.http.routers.cyphernodeadmin-onion.service=cyphernodeadmin
+      - traefik.http.routers.cyphernodeadmin-onion.middlewares=cyphernodeadmin-stripprefix@docker,forward-auth@file
+      <% } %>
       - traefik.http.services.cyphernodeadmin.loadbalancer.server.port=3030
       - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.prefixes=/admin,/admin/
       - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.forceSlash=true
@@ -26,10 +32,16 @@ services:
       labels:
         - traefik.enable=true
         - traefik.http.routers.cyphernodeadmin.rule=PathPrefix(`/admin`)
-        # - traefik.http.routers.cyphernodeadmin.tls=false
-        - traefik.http.routers.cyphernodeadmin.entrypoints=web
+        - traefik.http.routers.cyphernodeadmin.entrypoints=websecure
+        - traefik.http.routers.cyphernodeadmin.tls=true
         - traefik.http.routers.cyphernodeadmin.service=cyphernodeadmin
-        - traefik.http.routers.cyphernodeadmin.middlewares=cyphernodeadmin-stripprefix@docker
+        - traefik.http.routers.cyphernodeadmin.middlewares=cyphernodeadmin-stripprefix@docker,forward-auth@file
+        <% if ( features.indexOf('tor') !== -1 ) { %>
+        - traefik.http.routers.cyphernodeadmin-onion.rule=PathPrefix(`/admin`)
+        - traefik.http.routers.cyphernodeadmin-onion.entrypoints=onion
+        - traefik.http.routers.cyphernodeadmin-onion.service=cyphernodeadmin
+        - traefik.http.routers.cyphernodeadmin-onion.middlewares=cyphernodeadmin-stripprefix@docker,forward-auth@file
+        <% } %>
         - traefik.http.services.cyphernodeadmin.loadbalancer.server.port=3030
         - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.prefixes=/admin,/admin/
         - traefik.http.middlewares.cyphernodeadmin-stripprefix.stripprefix.forceSlash=true

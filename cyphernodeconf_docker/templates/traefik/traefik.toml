@@ -19,6 +19,8 @@
         address = ":<%= traefik_http_port %>"
     [entryPoints.websecure]
         address = ":<%= traefik_https_port %>"
+    [entryPoints.onion]
+        address = ":9876"
 
 # add docker provider but do not auto expose all containers
 [providers.docker]
@@ -35,18 +37,26 @@
 # This router is only used to run the root-to-admin-redirect
 # middleware. It does nothing else
 [http.routers]
-    [http.routers.root-router]
-        entrypoints = ["web"]
+    [http.routers.redirect-to-https]
+        entryPoints = ["web"]
+        middlewares = ["https-redirect"]
+        priority = 1
+        rule = "HostRegexp(`{host:.+}`)"
+        service = "noop@internal"
+
+[http.routers.root-router]
+        entrypoints = ["websecure","onion"]
         middlewares = ["root-to-admin-redirect@file"]
+        priority = 2
         rule = "Path(`/`)"
         service = "noop@internal"
 
     [http.routers.auth-router]
-        entrypoints = ["web"]
+        entrypoints = ["websecure","onion"]
         middlewares = ["forward-auth@file"]
+        priority = 3
         rule = "Path(`/.+`)"
         service = "noop@internal"
-
 
 # This middleware redirects requests to / to the admin interface
 [http.middlewares]
@@ -59,6 +69,9 @@
         address = "http://cyphernodeadmin:3032/forwardauth"
         authResponseHeaders = ["X-Forwarded-User"]
         trustForwardHeader = true
+
+    [http.middlewares.https-redirect.redirectScheme]
+        scheme = "https"
 
 # [acme]
 # email = "letsencrypt@yourdomain.com"
