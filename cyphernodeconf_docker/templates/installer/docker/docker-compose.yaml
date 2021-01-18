@@ -8,6 +8,13 @@ services:
   cyphernodeadmin:
     hostname: cyphernodeadmin
     image: cyphernode/cyphernodeadmin:<%= admin_version %>
+
+    <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1 ) { %>
+    command: sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ] || [ ! -f "/container_monitor/tor_ready" ]; do echo "waitng for core services" ; sleep 10 ; done ; echo "...ok" ; exec /app/cyphernode_admin'
+    <% } else { %>
+    command: sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "waitng for core services" ; sleep 10 ; done ; echo "...ok" ; exec /app/cyphernode_admin'
+    <% } %>
+
     <% if (docker_mode == 'compose') { %>
     labels:
       - traefik.enable=true
@@ -73,6 +80,8 @@ services:
       - "<%= gatekeeper_datapath %>/certs/cert.pem:/cert.pem"
       - "<%= proxy_datapath %>/info.json:/info.json"
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "container_monitor:/container_monitor"
+
     depends_on:
       - bitcoin
       - gatekeeper
