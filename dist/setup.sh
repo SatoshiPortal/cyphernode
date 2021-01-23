@@ -383,12 +383,10 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/gatekeeper/traefik.toml $GATEKEEPER_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/config.7z $ADMIN_DATAPATH/config.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/client.7z $ADMIN_DATAPATH/client.7z 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
-
 
   if [ ! -d $LOGS_DATAPATH ]; then
     step "   [32mcreate[0m $LOGS_DATAPATH"
