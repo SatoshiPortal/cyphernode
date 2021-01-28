@@ -473,7 +473,8 @@ module.exports = class App {
           uacomment: this.config.data.bitcoin_uacomment,
           torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_bitcoin'),
-          tor_hostname: this.sessionData.tor_bitcoin_hostname
+          tor_hostname: this.sessionData.tor_bitcoin_hostname,
+          port: (this.config.net === 'regtest') ? 18444 : ((this.config.net === 'testnet') ? 18333 : 8333)
         }
       },
       {
@@ -485,7 +486,9 @@ module.exports = class App {
         docker: 'traefik:'+this.config.docker_versions['traefik'],
         extra: {
           port: this.config.data.gatekeeper_port,
-          cns: gatekeeper_cns
+          cns: gatekeeper_cns,
+          https_port: this.config.gatekeeper_port,
+          exposed: !!this.config.gatekeeper_expose
         }
       },
       {
@@ -542,6 +545,9 @@ module.exports = class App {
         docker: 'traefik:'+this.config.docker_versions['traefik'],
         extra: {
           tor_hostname: this.sessionData.tor_traefik_hostname,
+          torified: this.torifyables.find(data => data.value === 'tor_traefik').checked,
+          http_port: this.config.traefik_http_port,
+          https_port: this.config.traefik_https_port
         }
       }
 
@@ -586,7 +592,8 @@ module.exports = class App {
           implementation: this.config.data.lightning_implementation,
           torified: this.torifyables.find(data => data.value === 'tor_lightning').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
-          tor_hostname: this.sessionData.tor_lightning_hostname
+          tor_hostname: this.sessionData.tor_lightning_hostname,
+          port: 9735
         }
       }
     };
