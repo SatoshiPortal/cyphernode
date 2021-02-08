@@ -13,6 +13,10 @@ level = "DEBUG"
 [api]
 insecure = true
 
+[[tls.certificates]]
+certFile = "/etc/ssl/certs/cert.pem"
+keyFile = "/etc/ssl/private/key.pem"
+
 # add entry points from which services will be accessible
 [entryPoints]
 [entryPoints.web]
@@ -21,6 +25,8 @@ address = ":<%= traefik_http_port %>"
 address = ":<%= traefik_https_port %>"
 [entryPoints.onion]
 address = ":9876"
+[entryPoints.gatekeeper]
+address = ":2009"
 
 # add docker provider but do not auto expose all containers
 [providers.docker]
@@ -33,6 +39,11 @@ swarmMode = true
 # so routers and middlewares are available. This is strange
 [providers.file]
 filename = "/etc/traefik/traefik.toml"
+
+[http.services]
+[http.services.proxy.loadBalancer]
+[[http.services.proxy.loadBalancer.servers]]
+url = "http://proxy:8888/"
 
 # This router is only used to run the root-to-admin-redirect
 # middleware. It does nothing else
@@ -74,6 +85,12 @@ priority = 5
 rule = "Path(`/.+`)"
 service = "noop@internal"
 
+[http.routers.auth-router-gatekeeper]
+entrypoints = ["gatekeeper"]
+middlewares = ["strip-proxy-api-versionprefix@file", "gatekeeper-forward-auth@file"]
+rule = "PathPrefix(`/v0`)"
+service = "proxy@file"
+tls = true
 
 # This middleware redirects requests to / to the admin interface
 [http.middlewares]
@@ -83,11 +100,22 @@ replacement = "$1/admin/"
 
 [http.middlewares.forward-auth.forwardauth]
 address = "http://cyphernodeadmin:3032/forwardauth"
+#address = "http://192.168.178.90:3032/forwardauth"
 authResponseHeaders = ["X-Auth-User-Claims"]
 trustForwardHeader = true
 
 [http.middlewares.https-redirect.redirectScheme]
 scheme = "https"
+
+[http.middlewares.gatekeeper-forward-auth.forwardauth]
+address = "http://cyphernodeadmin:3032/gatekeeper"
+#address = "http://192.168.178.90:3032/gatekeeper"
+authResponseHeaders = ["X-Forwarded-User"]
+trustForwardHeader = true
+
+[http.middlewares.strip-proxy-api-versionprefix.stripprefix]
+prefixes=["/v0","/v0/","/v1","/v1/"]
+forceSlash=true
 
 # [acme]
 # email = "letsencrypt@yourdomain.com"
