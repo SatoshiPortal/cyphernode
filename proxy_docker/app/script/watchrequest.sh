@@ -19,6 +19,10 @@ watchrequest() {
   local inserted
   local id_inserted
   local result
+
+  # Let's lowercase bech32 addresses
+  address=$(lowercase_if_bech32 "${address}")
+
   trace "[watchrequest] Watch request on address (\"${address}\"), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
 
   local isvalid

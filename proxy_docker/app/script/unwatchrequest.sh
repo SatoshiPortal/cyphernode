@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sql.sh
+. ./bitcoin.sh
 
 unwatchrequest() {
   trace "Entering unwatchrequest()..."
@@ -11,6 +12,10 @@ unwatchrequest() {
   local unconfirmedCallbackURL=${3}
   local confirmedCallbackURL=${4}
   local returncode
+
+  # Let's lowercase bech32 addresses
+  address=$(lowercase_if_bech32 "${address}")
+
   trace "[unwatchrequest] Unwatch request id ${watchid} on address ${address} with url0conf ${unconfirmedCallbackURL} and url1conf ${confirmedCallbackURL}"
 
   if [ "${watchid}" != "null" ]; then

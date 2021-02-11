@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sendtobitcoinnode.sh
+. ./bitcoin.sh
 
 spend() {
   trace "Entering spend()..."
@@ -18,6 +19,9 @@ spend() {
   trace "[spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+
+  # Let's lowercase bech32 addresses
+  address=$(lowercase_if_bech32 "${address}")
 
   local response
   local id_inserted

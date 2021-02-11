@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sendtobitcoinnode.sh
+. ./bitcoin.sh
 
 createbatcher() {
   trace "Entering createbatcher()..."
@@ -159,6 +160,9 @@ addtobatch() {
   local webhook_url=$(echo "${request}" | jq ".webhookUrl")
   trace "[addtobatch] webhook_url=${webhook_url}"
 
+  # Let's lowercase bech32 addresses
+  address=$(lowercase_if_bech32 "${address}")
+
   local isvalid
   isvalid=$(validateaddress "${address}" | jq ".result.isvalid")
   if [ "${isvalid}" != "true" ]; then
@@ -191,7 +195,7 @@ addtobatch() {
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
   else
     # Check if address already pending for this batcher...
-    inserted_id=$(sql "SELECT id FROM recipient WHERE address=\"${address}\" AND tx_id IS NULL AND batcher_id=${batcher_id}")
+    inserted_id=$(sql "SELECT id FROM recipient WHERE LOWER(address)=LOWER(\"${address}\") AND tx_id IS NULL AND batcher_id=${batcher_id}")
     if [ -n "${inserted_id}" ]; then
       response='{"result":null,"error":{"code":-32700,"message":"Duplicated address","data":'${request}'}}'
 
