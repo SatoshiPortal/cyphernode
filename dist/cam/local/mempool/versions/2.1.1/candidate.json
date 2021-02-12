@@ -1,0 +1,42 @@
+{
+  "version": "2.1.1",
+  "dependencies": [
+    {
+      "label": "bitcoin",
+      "version": "~0.20.0"
+    }
+  ],
+  "files": [
+    "mariadb-structure.sql",
+    "docker-compose.yaml"
+  ],
+  "isExposed":true,
+  "port": 3006,
+  "availableRoles": [
+    {
+      "name": "user",
+      "description": "Standard user",
+      "autoAssign": true
+    }
+  ],
+  "accessPolicies": [
+    {
+      "patterns": [".+"],
+      "roles": ["*"],
+      "actions": ["options"],
+      "effect": "allow"
+    },
+    {
+      "patterns": ["favicon.ico$"],
+      "roles": ["*"],
+      "actions": ["get"],
+      "effect": "allow"
+    },
+    {
+      "patterns": [".+"],
+      "roles": ["user"],
+      "actions": ["*"],
+      "effect": "allow"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+version: "3"
+
+services:
+  <%= APP_UPSTREAM_HOST %>:
+    image: mempool/frontend:v2.1.1@sha256:17e7fedcd27b6f99de2f159f0f6372b76dd5825f1a98c1b0114ea9564cab1c0e
+    user: "${USER}"
+    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    labels:
+      - traefik.http.middlewares.<%= APP_ID %>-addslash.redirectregex.regex=^(https{0,1}://[^/]+?)/<%= APP_MOUNTPOINT %>$$
+      - traefik.http.middlewares.<%= APP_ID %>-addslash.redirectregex.replacement=$$1/<%= APP_MOUNTPOINT %>/
+      - traefik.http.services.<%= APP_ID %>.loadbalancer.server.port=3006
+    environment:
+      FRONTEND_HTTP_PORT: 3006
+      BACKEND_MAINNET_HTTP_HOST: <%= APP_ID %>_api
+    networks:
+      - cyphernodeappsnet
+      - local
+  <%= APP_ID %>_api:
+    image: mempool/backend:v2.1.1@sha256:c15c3d1af0f9df4672f3760b0ff9b79d1dd60235cde7316a7860b1d650b31360
+    user: "${USER}"
+    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
+    volumes:
+      - ${APP_DATA}:/data:/backend/cache
+    environment:
+      RPC_HOST: bitoin
+      RPC_PORT: $BITCOIN_RPC_PORT # should be exported
+      RPC_USER: $BITCOIN_RPC_USER # should be exported
+      RPC_PASS: $BITCOIN_RPC_PASS # should be exported
+      ELECTRS_HOST: $ELECTRUM_IP  # will be a service... how to find out the hostname?!
+      ELECTRS_PORT: $ELECTRUM_PORT  # will be a service... how to find out the port?!
+      MYSQL_HOST: <%= APP_ID %>_db
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASS: "mempool"
+      CACHE_DIR: "/backend/cache/"
+    networks:
+      - local
+  <%= APP_ID %>_db:
+    image: mariadb:10.5.8
+    user: "1000:1000"
+    restart: on-failure
+    stop_grace_period: 1m
+    volumes:
+      - ${APP_DATA}/mysql/data:/var/lib/mysql
+      - ${APP_DATA}/mysql/db-scripts:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_DATABASE: "mempool"
+      MYSQL_USER: "mempool"
+      MYSQL_PASSWORD: "mempool"
+      MYSQL_ROOT_PASSWORD: "moneyprintergobrrr"
+    networks:
+      - local
+networks:
+  cyphernodeappsnet:
+    external: true
+  local:
+    external: false
