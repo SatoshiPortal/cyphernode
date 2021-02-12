@@ -1,13 +1,21 @@
 #!/bin/sh
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
+<% if (run_as_different_user) { %>
+OS=$(uname -s)
+if [ "$OS" = "Darwin" ]; then
+  printf "\r\n\033[0;91m'Run as another user' feature is not supported on OSX.  User <%= default_username %> will be used to run Cyphernode.\033[0m\r\n\r\n"
+  export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
+else
+  export USER=$(id -u <%= username %>):$(id -g <%= username %>)
+fi
+<% } else { %>
+export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
+<% } %>
 
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
-# be aware that randomly downloaded cyphernode apps will have access to
-# your configuration and filesystem.
-# !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
-# TODO: Test if we can mitigate this security issue by
-# running app dockers inside a docker container
+export PWD=${current_path}
 
 stop_apps() {
   local SCRIPT_NAME="stop.sh"

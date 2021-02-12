@@ -2,11 +2,21 @@
 
 . ./.cyphernodeconf/installer/config.sh
 
-# be aware that randomly downloaded cyphernode apps will have access to
-# your configuration and filesystem.
-# !!!!!!!!! DO NOT INCLUDE APPS WITHOUT REVIEW !!!!!!!!!!
-# TODO: Test if we can mitigate this security issue by
-# running app dockers inside a docker container
+<% if (run_as_different_user) { %>
+OS=$(uname -s)
+if [ "$OS" = "Darwin" ]; then
+  printf "\r\n\033[0;91m'Run as another user' feature is not supported on OSX.  User <%= default_username %> will be used to run Cyphernode.\033[0m\r\n\r\n"
+  export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
+else
+  export USER=$(id -u <%= username %>):$(id -g <%= username %>)
+fi
+<% } else { %>
+export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
+<% } %>
+
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
+
+export PWD=${current_path}
 
 start_apps() {
   local SCRIPT_NAME="start.sh"
@@ -51,31 +61,16 @@ start_apps() {
   done
 }
 
-<% if (run_as_different_user) { %>
-OS=$(uname -s)
-if [ "$OS" = "Darwin" ]; then
-  printf "\r\n\033[0;91m'Run as another user' feature is not supported on OSX.  User <%= default_username %> will be used to run Cyphernode.\033[0m\r\n\r\n"
-  export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
-else
-  export USER=$(id -u <%= username %>):$(id -g <%= username %>)
-fi
-<% } else { %>
-export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
-<% } %>
-
-current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
-export PWD=${current_path}
-
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
 docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 <% } %>
 
+export ARCH=$(uname -m)
+
 start_apps
 
-export ARCH=$(uname -m)
 case "${ARCH}" in arm*)
   printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
   sleep 60
