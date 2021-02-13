@@ -367,6 +367,12 @@ install_docker() {
     next
   fi
 
+  if [ ! -d $ADMIN_DATAPATH ]; then
+    step "   [32mcreate[0m $ADMIN_DATAPATH"
+    sudo_if_required mkdir -p $ADMIN_DATAPATH
+    next
+  fi
+
   if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
     # prevent mounting installation.json as a directory
     sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
@@ -379,6 +385,8 @@ install_docker() {
   if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
+
+
 
   copy_file $cyphernodeconf_filepath/gatekeeper/traefik.toml $GATEKEEPER_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
@@ -464,8 +472,6 @@ install_docker() {
 
   copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
-
-  sudo_if_required mkdir -p $ADMIN_DATAPATH
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
