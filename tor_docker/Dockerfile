@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.12 AS builder
 
 ARG TOR_VER=0.4.4.5
 ARG TORGZ=https://dist.torproject.org/tor-$TOR_VER.tar.gz
@@ -16,6 +16,15 @@ RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 0xFE43009C4607B1FB 0x6AF
  && gpg --verify tor-$TOR_VER.tar.gz.asc \
  && tar xfz tor-$TOR_VER.tar.gz && cd tor-$TOR_VER \
  && ./configure && make install
+
+FROM alpine:3.12
+
+RUN apk --no-cache add --update \
+  su-exec
+
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+COPY --from=builder /lib/ /lib/
+COPY --from=builder /usr/lib/ /usr/lib/
 
 ENTRYPOINT ["su-exec"]
 
