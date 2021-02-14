@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine as builder
+FROM golang:1.15-alpine3.12 as builder
 
 RUN apk --update add alpine-sdk bash curl yarn git
 
@@ -17,7 +17,7 @@ RUN go generate
 #RUN CGO_ENABLED=1 GOGC=off go build -ldflags "-s" -a
 RUN go build -ldflags "-s -w"
 
-FROM alpine
+FROM alpine:3.12
 
 RUN mkdir /app
 
