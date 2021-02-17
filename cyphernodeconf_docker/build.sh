@@ -1,5 +1,5 @@
 #!/bin/sh
 
-VERSION=v0.5.0-dev
+VERSION=v0.6.0
 
 docker build . -t cyphernode/cyphernodeconf:${VERSION}
