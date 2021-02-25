@@ -1,0 +1,11 @@
+{
+  "label": "batcher",
+  "name": "Batcher",
+  "url": "",
+  "latest": "0.1.1",
+  "defaultMountPoint": "batcher",
+  "meta": {
+    "color": "#ff0000",
+    "icon": ""
+  }
+}

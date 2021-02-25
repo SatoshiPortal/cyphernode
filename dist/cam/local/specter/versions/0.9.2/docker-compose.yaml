@@ -1,0 +1,36 @@
+version: "3"
+
+# <%= APP_UPSTREAM_HOST %>: Hostname for the upstream into cyphernodes reverse proxy to expose the app to the world
+# <%= APP_ID %> use this to avoid conflicts in hostname in case you have multiple services in your app
+# if you need those values inside your app, you can pass them in the environment
+# container names will be ignored
+# Prefix all container names you use with the <%= APP_ID %> to prevent unwanted namespace collision
+# between apps. It's very likely if you use a database like redis or mongo that you will name this
+# container 'mongo' or 'redis' like every other app developer, so there will be container name
+# collisions. Consider using '<%= APP_ID %>_redis' or '<%= APP_ID %>_mongo' instead.
+# container names will be checked and if they don't contain the unique part, the app won't be
+# able to be installed
+
+# NOTE
+# ${ RUNTIME_VAR }  <-  evaluated at start
+# <%= STATIC_VAR %> <-  evaluated at install
+
+services:
+  # This is the container which will be used as the reverse proxy upstream
+  <%= APP_UPSTREAM_HOST %>:
+    command: $USER /entrypoint.sh "0.0.0.0"
+    image: cyphernode/specter:v0.9.2
+    volumes:
+      - "${APP_DATAPATH}:/.specter"
+      - "${SERVICE__BITCOIN_DATAPATH}/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
+    labels:
+      - traefik.http.services.<%= APP_ID %>.loadbalancer.server.port=25441
+      - traefik.http.middlewares.<%= APP_ID %>-headers.headermods.headers.hostsProxyHeaders=X-Forwarded-For
+    networks:
+      - cyphernodeappsnet
+      - cyphernodenet
+networks:
+  cyphernodeappsnet:
+    external: true
+  cyphernodenet:
+    external: true

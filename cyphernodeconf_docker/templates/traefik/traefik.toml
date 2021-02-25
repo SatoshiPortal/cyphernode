@@ -110,7 +110,7 @@ scheme = "https"
 [http.middlewares.gatekeeper-forward-auth.forwardauth]
 address = "http://cyphernodeadmin:3032/gatekeeper"
 #address = "http://192.168.178.90:3032/gatekeeper"
-authResponseHeaders = ["X-Forwarded-User"]
+authResponseHeaders = ["X-Auth-User-Claims"]
 trustForwardHeader = true
 
 [http.middlewares.strip-proxy-api-versionprefix.stripprefix]

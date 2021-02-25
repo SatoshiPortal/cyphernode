@@ -816,35 +816,25 @@ install_apps() {
 
   # install default cypherapps: <trustzone>:<label or hash>@<version> <mount point>
   echo "  [32minstall[0m default cypherapps"
-  echo "          * sparkwallet"
+  echo "          * adding sparkwallet"
   docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i trusted:sparkwallet@latest sparkwallet #> /dev/null 2>&1
 
   if [[ $FEATURE_BATCHER == true ]]; then
-    if [ -d "$current_path/apps/batcher" ]; then
-      step "   [32mdelete[0m ignoreThisApp for enabled Batcher"
-      sudo_if_required rm -f $current_path/apps/batcher/ignoreThisApp
-      next
-    fi
+    echo "          * adding batcher"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i batcher@latest batcher #> /dev/null 2>&1
   else
-    if [ -d "$current_path/apps/batcher" ]; then
-      step "   [32mcreate[0m ignoreThisApp for disabled Batcher"
-      sudo_if_required touch $current_path/apps/batcher/ignoreThisApp
-      next
-    fi
+    echo "          * removing batcher"
+    # TODO: make sure cam does not delete data but only deactivate the app
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a d batcher #> /dev/null 2>&1
   fi
 
   if [[ $FEATURE_SPECTER == true ]]; then
-    if [ -d "$current_path/apps/specter" ]; then
-      step "   [32mdelete[0m ignoreThisApp for enabled Specter"
-      sudo_if_required rm -f $current_path/apps/specter/ignoreThisApp
-      next
-    fi
+    echo "          * adding specter"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i core:specter@latest specter #> /dev/null 2>&1
   else
-    if [ -d "$current_path/apps/specter" ]; then
-      step "   [32mcreate[0m ignoreThisApp for disabled Specter"
-      sudo_if_required touch $current_path/apps/specter/ignoreThisApp
-      next
-    fi
+    echo "          * removing specter"
+    # TODO: make sure cam does not delete data but only deactivate the app
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a d specter #> /dev/null 2>&1
   fi
 
   sudo_if_required chown -R $user $current_path/apps
@@ -870,6 +860,7 @@ AUTOSTART=0
 # CYPHERNODE VERSION "v0.7.0-dev"
 SETUP_VERSION="v0.7.0-dev"
 CONF_VERSION="v0.7.0-dev"
+ADMIN_VERSION="v0.7.0-dev"
 GATEKEEPER_VERSION="v0.7.0-dev"
 TOR_VERSION="v0.7.0-dev"
 PROXY_VERSION="v0.7.0-dev"

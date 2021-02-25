@@ -29,9 +29,9 @@ stop_apps() {
     if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
       APP_STOP_SCRIPT_PATH="$APP_SCRIPT_PATH/$SCRIPT_NAME"
       APP_ID=$(basename $APP_SCRIPT_PATH)
-      export APP_SCRIPT_PATH
       export APP_ID
-      export GATEKEEPER_CERTS_PATH
+      export APP_DATAPATH=${APP_SCRIPT_PATH}
+      export GATEKEEPER_CERTS_DATAPATH="${GATEKEEPER_DATAPATH}/certs"
       export GATEKEEPER_PORT
       export DOCKER_MODE
       export BITCOIN_NETWORK=<%= net %>

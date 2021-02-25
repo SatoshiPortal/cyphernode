@@ -1,21 +1,21 @@
 {
-  "version": "0.2.17",
+  "version": "0.1.1",
   "dependencies": [
     {
       "label": "api",
       "version": "v0"
-    },
-    {
-      "label": "lightning",
-      "version": "~0.9.0"
     }
   ],
+  "directories": [
+    "logs",
+    "data"
+  ],
   "files": {
-    "cookie":"cookie",
+    "config.json":"data/config.json",
     "docker-compose.yaml": "docker-compose.yaml"
   },
   "isExposed":true,
-  "port": 9737,
+  "port": 8000,
   "availableRoles": [
     {
       "name": "user",

@@ -38,7 +38,7 @@ start_apps() {
 
       export APP_ID
       export APP_DATAPATH=${APP_SCRIPT_PATH}
-      export GATEKEEPER_CERTS_PATH
+      export GATEKEEPER_CERTS_DATAPATH="${GATEKEEPER_DATAPATH}/certs"
       export GATEKEEPER_PORT
       export DOCKER_MODE
       export BITCOIN_NETWORK=<%= net %>
