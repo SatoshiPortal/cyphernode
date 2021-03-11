@@ -510,26 +510,20 @@ install_docker() {
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
     if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
-        local dockerfile="Dockerfile"
-        if [[ $archpath == "rpi" ]]; then
-          dockerfile="Dockerfile-alpine"
-        fi
+      if [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
+        step "   [32mcreate[0m $LIGHTNING_DATAPATH"
+        sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
+        next
+      fi
 
-        if [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
-          step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-          sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
-          next
-        fi
+      copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1 $SUDO_REQUIRED
 
-        copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1 $SUDO_REQUIRED
-
-        if [[ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]]; then
-          step "     [32mmake[0m entrypoint.sh executable"
-          sudo_if_required chmod +x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh
-          next
-        fi
-
+      if [[ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]]; then
+        step "     [32mmake[0m entrypoint.sh executable"
+        sudo_if_required chmod +x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh
+        next
+      fi
     fi
   fi
 
@@ -838,8 +832,8 @@ PROXYCRON_VERSION="v0.6.0-dev"
 OTSCLIENT_VERSION="v0.6.0-dev"
 PYCOIN_VERSION="v0.6.0-dev"
 CYPHERAPPS_VERSION="dev"
-BITCOIN_VERSION="v0.20.1"
-LIGHTNING_VERSION="v0.9.1"
+BITCOIN_VERSION="v0.21.0"
+LIGHTNING_VERSION="v0.9.3"
 TRAEFIK_VERSION="v1.7.9-alpine"
 MOSQUITTO_VERSION="1.6"
 

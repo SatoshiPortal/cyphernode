@@ -1,4 +1,4 @@
-FROM alpine:3.9 as builder
+FROM alpine:3.12.4 as builder
 
 RUN apk add --no-cache --update alpine-sdk bsd-compat-headers \
  && git clone https://github.com/Kexkey/proxychains-ng.git
@@ -9,18 +9,12 @@ RUN cd /proxychains-ng \
  && make install \
  && make install-config
 
-FROM node:11.1-alpine
+FROM node:15.11.0-alpine3.12
 
 RUN apk add --update --no-cache \
-    git \
     jq \
     su-exec \
- && git clone https://github.com/opentimestamps/javascript-opentimestamps.git \
- && cd javascript-opentimestamps \
-# Handle 'Error: could not get uid/gid'
-# See: https://github.com/npm/uid-number/issues/3
- && npm config set unsafe-perm true \
- && npm install -g
+ && npm install -g opentimestamps
 
 WORKDIR /script
 

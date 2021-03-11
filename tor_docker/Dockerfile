@@ -1,6 +1,6 @@
-FROM alpine:3.12 AS builder
+FROM alpine:3.12.4 AS builder
 
-ARG TOR_VER=0.4.4.5
+ARG TOR_VER=0.4.5.6
 ARG TORGZ=https://dist.torproject.org/tor-$TOR_VER.tar.gz
 
 RUN apk --no-cache add --update \
@@ -17,7 +17,7 @@ RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 0xFE43009C4607B1FB 0x6AF
  && tar xfz tor-$TOR_VER.tar.gz && cd tor-$TOR_VER \
  && ./configure && make install
 
-FROM alpine:3.12
+FROM alpine:3.12.4
 
 RUN apk --no-cache add --update \
   su-exec
