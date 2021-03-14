@@ -1,4 +1,4 @@
-FROM cyphernode/alpine-glibc-base:v3.12.4_2.33-0
+FROM cyphernode/alpine-glibc-base:v3.12.4_2.31-0
 
 ENV HOME /proxy
 
