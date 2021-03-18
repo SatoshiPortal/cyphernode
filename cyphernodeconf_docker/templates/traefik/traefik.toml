@@ -17,6 +17,7 @@ endpoint = "unix:///var/run/docker.sock"
 domain = "cyphernode.localhost"
 watch = true
 exposedByDefault = false
+swarmMode = <%= ( docker_mode === 'swarm' )?'true':'false' %>
 
 [acme]
 email = "letsencrypt@yourdomain.com"

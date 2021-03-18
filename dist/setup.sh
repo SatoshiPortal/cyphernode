@@ -538,10 +538,24 @@ install_docker() {
   docker swarm join-token worker > /dev/null 2>&1
   local noSwarm=$?;
 
-  if [[ $DOCKER_MODE == 'swarm' && $noSwarm == 1 ]]; then
-    step "     [32minit[0m docker swarm"
-    try docker swarm init --task-history-limit 1 > /dev/null 2>&1
-    next
+  if [[ $DOCKER_MODE == 'swarm' ]]; then
+    if [[ $noSwarm == 1 ]]; then
+      step "     [32minit[0m docker swarm"
+      try docker swarm init --task-history-limit 1 > /dev/null 2>&1
+      next
+    fi
+
+    local localnodeid
+    localnodeid=$(docker info -f '{{.Swarm.NodeID}}')
+
+    # we only support swarm in single host mode, so all labels needed to spawn containers in the swarm
+    # are given to the host setup is run on. Setup must be run on any manager, if swarm mode is enabled
+    # and a swarm was already initialised
+    if [[ $(docker node inspect ${localnodeid} --format '{{ index .Spec.Labels "io.cyphernode" }}') != "true" ]]; then
+      step "      [32madd[0m docker node label io.cyphernode"
+      try docker node update --label-add io.cyphernode=true ${localnodeid} > /dev/null 2>&1
+      next
+    fi
   fi
 
   local net_entry=$(docker network ls | grep cyphernodenet);
