@@ -2,7 +2,7 @@
 
 TRACING=1
 
-# CYPHERNODE VERSION "v0.6.0-dev"
+# CYPHERNODE VERSION "v0.6.0-dev", dev over v0.6.0
 CONF_VERSION="v0.6.0-dev-local"
 GATEKEEPER_VERSION="v0.6.0-dev-local"
 TOR_VERSION="v0.6.0-dev-local"
@@ -11,8 +11,6 @@ NOTIFIER_VERSION="v0.6.0-dev-local"
 PROXYCRON_VERSION="v0.6.0-dev-local"
 OTSCLIENT_VERSION="v0.6.0-dev-local"
 PYCOIN_VERSION="v0.6.0-dev-local"
-BITCOIN_VERSION="v0.20.1"
-LIGHTNING_VERSION="v0.9.1"
 
 trace()
 {
