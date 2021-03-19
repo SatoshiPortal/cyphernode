@@ -1,0 +1,761 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://cyphernode.io/config-v0.2.6.json",
+  "type": "object",
+  "title": "Cyphernode config file structure v0.2.6",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "setup_version",
+    "features",
+    "net",
+    "use_xpub",
+    "installer_mode",
+    "run_as_different_user",
+    "docker_mode",
+    "docker_versions",
+    "adminhash",
+    "admin_datapath",
+    "bitcoin_rpcuser",
+    "bitcoin_rpcpassword",
+    "bitcoin_prune",
+    "bitcoin_datapath",
+    "bitcoin_mode",
+    "bitcoin_expose",
+    "gatekeeper_expose",
+    "gatekeeper_keys",
+    "gatekeeper_sslcert",
+    "gatekeeper_sslkey",
+    "gatekeeper_cns",
+    "gatekeeper_clientkeyspassword",
+    "gatekeeper_datapath",
+    "gatekeeper_port",
+    "proxy_datapath",
+    "logs_datapath",
+    "traefik_datapath",
+    "traefik_use_letsencrypt",
+    "traefik_http_port",
+    "traefik_https_port"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "run_as_different_user": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "username"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "use_xpub": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "xpub",
+          "derivation_path"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "bitcoin_prune": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "bitcoin_prune_size"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "tor"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "tor_datapath",
+          "torifyables",
+          "clearnet"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "lightning"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "lightning_announce",
+          "lightning_expose",
+          "lightning_implementation",
+          "lightning_datapath",
+          "lightning_nodename",
+          "lightning_nodecolor"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "otsclient"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "otsclient_datapath"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "traefik_use_letsencrypt": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "traefik_external_hostname",
+          "traefik_letsencrypt_email"
+        ]
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "0.2.5"
+      ],
+      "default": "0.3.0",
+      "examples": [
+        "0.2.5"
+      ]
+    },
+    "setup_version": {
+      "type": "string",
+      "examples": [
+        "v0.2.0"
+      ]
+    },
+    "docker_versions": {
+      "$id": "#/properties/dockerVersions",
+      "type": "object",
+      "title": "All versions of the docker containers",
+      "default": {},
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "features": {
+      "$id": "#/properties/features",
+      "type": "array",
+      "title": "The optional features of this cyphernode",
+      "default": ["specter"],
+      "items": {
+        "$id": "#/properties/features/items",
+        "type": "string",
+        "enum": [
+          "tor",
+          "lightning",
+          "otsclient",
+          "batcher",
+          "specter"
+        ],
+        "title": "The feature",
+        "default": "",
+        "examples": [
+          "tor",
+          "lightning",
+          "otsclient",
+          "batcher",
+          "specter"
+        ]
+      }
+    },
+    "torifyables": {
+      "$id": "#/properties/torifyables",
+      "type": "array",
+      "title": "The Torified features of this cyphernode",
+      "default": [],
+      "items": {
+        "$id": "#/properties/torifyables/items",
+        "type": "string",
+        "enum": [
+          "tor_traefik",
+          "tor_bitcoin",
+          "tor_lightning",
+          "tor_otsoperations",
+          "tor_otswebhooks",
+          "tor_addrwatcheswebhooks",
+          "tor_txidwatcheswebhooks"
+        ],
+        "title": "The Torified feature",
+        "default": "",
+        "examples": [
+          "tor_traefik",
+          "tor_bitcoin",
+          "tor_lightning",
+          "tor_otsoperations",
+          "tor_otswebhooks",
+          "tor_addrwatcheswebhooks",
+          "tor_txidwatcheswebhooks"
+        ]
+      }
+    },
+    "clearnet": {
+      "$id": "#/properties/clearnet",
+      "type": "array",
+      "title": "The clearnet-allowed Torified features of this cyphernode",
+      "default": [],
+      "items": {
+        "$id": "#/properties/clearnet/items",
+        "type": "string",
+        "enum": [
+          "clearnet_bitcoin",
+          "clearnet_lightning"
+        ],
+        "title": "The clearnet-allowed Torified feature",
+        "default": "",
+        "examples": [
+          "clearnet_bitcoin",
+          "clearnet_lightning"
+        ]
+      }
+    },
+    "net": {
+      "$id": "#/properties/net",
+      "type": "string",
+      "enum": [
+        "testnet",
+        "mainnet",
+        "regtest"
+      ],
+      "title": "The net cyphernode is running on",
+      "default": "testnet",
+      "examples": [
+        "testnet"
+      ]
+    },
+    "use_xpub": {
+      "$id": "#/properties/use_xpub",
+      "type": "boolean",
+      "title": "Use xpub key?",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "xpub": {
+      "$id": "#/properties/xpub",
+      "type": "string",
+      "title": "Default xpub to derive addresses from",
+      "pattern": "^(\\w+)$"
+    },
+    "derivation_path": {
+      "$id": "#/properties/derivation_path",
+      "type": "string",
+      "title": "Default derivation path",
+      "default": "0/n",
+      "examples": [
+        "0/n"
+      ]
+    },
+    "installer_mode": {
+      "$id": "#/properties/installer_mode",
+      "type": "string",
+      "enum": [
+        "docker"
+      ],
+      "title": "Install mode",
+      "default": "docker",
+      "examples": [
+        "docker"
+      ]
+    },
+    "run_as_different_user": {
+      "$id": "#/properties/run_as_different_user",
+      "type": "boolean",
+      "title": "Run as different user",
+      "default": true,
+      "examples": [
+        true
+      ]
+    },
+    "username": {
+      "$id": "#/properties/username",
+      "type": "string",
+      "title": "Username to run under",
+      "default": "cyphernode",
+      "examples": [
+        "cyphernode"
+      ]
+    },
+    "docker_mode": {
+      "$id": "#/properties/docker_mode",
+      "type": "string",
+      "enum": [
+        "swarm",
+        "compose"
+      ],
+      "title": "How to run the containers",
+      "default": "swarm",
+      "examples": [
+        "compose"
+      ]
+    },
+    "bitcoin_rpcuser": {
+      "$id": "#/properties/bitcoin_rpcuser",
+      "type": "string",
+      "title": "Bitcoin rpc user",
+      "default": "bitcoin",
+      "examples": [
+        "bitcoin"
+      ]
+    },
+    "bitcoin_rpcpassword": {
+      "$id": "#/properties/bitcoin_rpcpassword",
+      "type": "string",
+      "title": "Bitcoin rpc password",
+      "default": "CHANGEME",
+      "examples": [
+        "CHANGEME"
+      ]
+    },
+    "bitcoin_uacomment": {
+      "$id": "#/properties/bitcoin_uacomment",
+      "type": "string",
+      "title": "Bitcoin user agent comment",
+      "examples": [
+        "cyphernode"
+      ]
+    },
+    "bitcoin_prune": {
+      "$id": "#/properties/bitcoin_prune",
+      "type": "boolean",
+      "title": "Bitcoin prune",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "bitcoin_prune_size": {
+      "$id": "#/properties/bitcoin_prune_size",
+      "type": "integer",
+      "title": "Bitcoin prune size",
+      "default": 550,
+      "examples": [
+        550
+      ]
+    },
+    "admin_datapath": {
+      "$id": "#/properties/admin_datapath",
+      "type": "string",
+      "title": "Admin interface datapath",
+      "examples": [
+        "/tmp/cyphernode/admin"
+      ]
+    },
+    "admin_datapath_custom": {
+      "$id": "#/properties/admin_datapath_custom",
+      "type": "string",
+      "title": "Admin interface custom datapath",
+      "examples": [
+        "/tmp/cyphernode/admin"
+      ]
+    },
+    "bitcoin_datapath": {
+      "$id": "#/properties/bitcoin_datapath",
+      "type": "string",
+      "title": "Bitcoin datapath",
+      "examples": [
+        "/tmp/cyphernode/bitcoin"
+      ]
+    },
+    "bitcoin_datapath_custom": {
+      "$id": "#/properties/bitcoin_datapath_custom",
+      "type": "string",
+      "title": "Bitcoin custom datapath",
+      "examples": [
+        "/tmp/cyphernode/bitcoin"
+      ]
+    },
+    "lightning_datapath": {
+      "$id": "#/properties/lightning_datapath",
+      "type": "string",
+      "title": "Lightning datapath",
+      "examples": [
+        "/tmp/cyphernode/lightning"
+      ]
+    },
+    "lightning_datapath_custom": {
+      "$id": "#/properties/lightning_datapath_custom",
+      "type": "string",
+      "title": "Lightning custom datapath",
+      "examples": [
+        "/tmp/cyphernode/lightning"
+      ]
+    },
+    "proxy_datapath": {
+      "$id": "#/properties/proxy_datapath",
+      "type": "string",
+      "title": "Proxy datapath",
+      "examples": [
+        "/tmp/cyphernode/proxy"
+      ]
+    },
+    "proxy_datapath_custom": {
+      "$id": "#/properties/proxy_datapath_custom",
+      "type": "string",
+      "title": "Proxy custom datapath",
+      "examples": [
+        "/tmp/cyphernode/proxy"
+      ]
+    },
+    "otsclient_datapath": {
+      "$id": "#/properties/otsclient_datapath",
+      "type": "string",
+      "title": "OTS Client datapath",
+      "examples": [
+        "/tmp/cyphernode/otsclient"
+      ]
+    },
+    "otsclient_datapath_custom": {
+      "$id": "#/properties/otsclient_datapath_custom",
+      "type": "string",
+      "title": "OTS Client custom datapath",
+      "examples": [
+        "/tmp/cyphernode/otsclient"
+      ]
+    },
+    "traefik_http_port": {
+      "$id": "#/properties/traefik_port",
+      "type": "integer",
+      "title": "Traefik HTTP port",
+      "default": 80,
+      "examples": [
+        80
+      ]
+    },
+    "traefik_https_port": {
+      "$id": "#/properties/traefik_https_port",
+      "type": "integer",
+      "title": "Traefik HTTPS port",
+      "default": 443,
+      "examples": [
+        443
+      ]
+    },
+    "traefik_use_letsencrypt": {
+      "$id": "#/properties/traefik_use_letsencrypt",
+      "type": "boolean",
+      "title": "Use letsencrypt",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "traefik_external_hostname": {
+      "$id": "#/properties/traefik_external_hostname",
+      "type": "string",
+      "title": "The hostname your cyphernode will be reachable at",
+      "default": 443,
+      "examples": [
+        "cyphernode.myawesomedomain.io"
+      ]
+    },
+    "traefik_letsencrypt_email": {
+      "$id": "#/properties/traefik_letsencrypt_email",
+      "type": "string",
+      "title": "The email address used for resolving letsencrypt certs",
+      "default": "",
+      "examples": [
+        "you@yourdomain.io"
+      ]
+    },
+    "traefik_datapath": {
+      "$id": "#/properties/traefik_datapath",
+      "type": "string",
+      "title": "Traefik datapath",
+      "examples": [
+        "/tmp/cyphernode/traefik"
+      ]
+    },
+    "traefik_datapath_custom": {
+      "$id": "#/properties/traefik_datapath_custom",
+      "type": "string",
+      "title": "Traefik custom datapath",
+      "examples": [
+        "/tmp/cyphernode/traefik"
+      ]
+    },
+    "logs_datapath": {
+      "$id": "#/properties/logs_datapath",
+      "type": "string",
+      "title": "Logs datapath",
+      "examples": [
+        "/tmp/cyphernode/logs"
+      ]
+    },
+    "logs_datapath_custom": {
+      "$id": "#/properties/logs_datapath_custom",
+      "type": "string",
+      "title": "Logs custom datapath",
+      "examples": [
+        "/tmp/cyphernode/logs"
+      ]
+    },
+    "tor_datapath": {
+      "$id": "#/properties/tor_datapath",
+      "type": "string",
+      "title": "Tor datapath",
+      "examples": [
+        "/tmp/cyphernode/tor"
+      ]
+    },
+    "tor_datapath_custom": {
+      "$id": "#/properties/tor_datapath_custom",
+      "type": "string",
+      "title": "Tor custom datapath",
+      "examples": [
+        "/tmp/cyphernode/tor"
+      ]
+    },
+    "lightning_announce": {
+      "$id": "#/properties/lightning_announce",
+      "type": "boolean",
+      "title": "Announce lightning ip",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "lightning_external_ip": {
+      "$id": "#/properties/lightning_external_ip",
+      "type": "string",
+      "format": "ipv4",
+      "title": "External lightning node ip",
+      "examples": [
+        "123.123.123.123"
+      ]
+    },
+    "bitcoin_mode": {
+      "$id": "#/properties/bitcoin_mode",
+      "type": "string",
+      "enum": [
+        "internal"
+      ],
+      "title": "Bitcoin mode",
+      "default": "internal",
+      "examples": [
+        "internal"
+      ]
+    },
+    "bitcoin_expose": {
+      "$id": "#/properties/bitcoin_expose",
+      "type": "boolean",
+      "title": "Expose bitcoin node",
+      "default": false,
+      "examples": [
+        true
+      ]
+    },
+    "lightning_expose": {
+      "$id": "#/properties/lightning_expose",
+      "type": "boolean",
+      "title": "Expose lightning node",
+      "default": true,
+      "examples": [
+        false
+      ]
+    },
+    "gatekeeper_expose": {
+      "$id": "#/properties/gatekeeper_expose",
+      "type": "boolean",
+      "title": "Expose gatekeeper port",
+      "default": false,
+      "examples": [
+        true
+      ]
+    },
+    "gatekeeper_datapath": {
+      "$id": "#/properties/gatekeeper_datapath",
+      "type": "string",
+      "title": "Gatekeeper datapath",
+      "examples": [
+        "/tmp/cyphernode/gatekeeper"
+      ]
+    },
+    "gatekeeper_datapath_custom": {
+      "$id": "#/properties/gatekeeper_datapath_custom",
+      "type": "string",
+      "title": "Gatekeeper custom datapath",
+      "examples": [
+        "/tmp/cyphernode/gatekeeper"
+      ]
+    },
+    "gatekeeper_port": {
+      "$id": "#/properties/gatekeeper_port",
+      "type": "integer",
+      "title": "Gatekeeper port",
+      "default": 2009,
+      "examples": [
+        2009
+      ]
+    },
+    "gatekeeper_keys": {
+      "$id": "#/properties/gatekeeper_keys",
+      "type": "object",
+      "title": "Gatekeeper keys",
+      "default": {
+        "configEntries": [],
+        "clientInformation": []
+      },
+      "required": [
+        "configEntries",
+        "clientInformation"
+      ],
+      "properties": {
+        "configEntries": {
+          "$id": "#/properties/gatekeeper_keys/configEntries",
+          "type": "array",
+          "items": {
+            "$id": "#/properties/gatekeeper_keys/configEntries/entry",
+            "type": "string",
+            "pattern": "^kapi_id=\".+\";kapi_key=\".+\";kapi_groups=\".+\";.+$"
+          },
+          "examples": [
+            [
+              "kapi_id=\"000\";kapi_key=\"a27f9e73fdde6a5005879c259c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a\";kapi_groups=\"stats\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+              "kapi_id=\"001\";kapi_key=\"a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a\";kapi_groups=\"stats,watcher\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+              "kapi_id=\"002\";kapi_key=\"fe58ddbb66d7302a7087af3242a98b6326c51a257f5eab1c06bb8cc02e25890d\";kapi_groups=\"stats,watcher,spender\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}",
+              "kapi_id=\"003\";kapi_key=\"f0b8bb52f4c7007938757bcdfc73b452d6ce08cc0c660ce57c5464ae95f35417\";kapi_groups=\"stats,watcher,spender,admin\";eval ugroups_${kapi_id}=${kapi_groups};eval ukey_${kapi_id}=${kapi_key}"
+            ]
+          ]
+        },
+        "clientInformation": {
+          "$id": "#/properties/gatekeeper_keys/clientInformation",
+          "type": "array",
+          "items": {
+            "$id": "#/properties/gatekeeper_keys/clientInformation/entry",
+            "type": "string",
+            "pattern": "^.+=.+$"
+          },
+          "examples": [
+            [
+              "000=a27f9e73fdde6a5005879c259c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a",
+              "001=a27f9e73fdde6a5005879c273c9aea5e8d917eec77bbdfd73272c0af9b4c6b7a",
+              "002=fe58ddbb66d7302a7087af3242a98b6326c51a257f5eab1c06bb8cc02e25890d",
+              "003=f0b8bb52f4c7007938757bcdfc73b452d6ce08cc0c660ce57c5464ae95f35417"
+            ]
+          ]
+        }
+      }
+    },
+    "gatekeeper_sslcert": {
+      "$id": "#/properties/gatekeeper_sslcert",
+      "type": "string",
+      "title": "Gatekeeper SSL Cert"
+    },
+    "gatekeeper_sslkey": {
+      "$id": "#/properties/gatekeeper_sslkey",
+      "type": "string",
+      "title": "Gatekeeper SSL Key"
+    },
+    "gatekeeper_cns": {
+      "$id": "#/properties/gatekeeper_cns",
+      "type": "string",
+      "title": "Gatekeeper cns",
+      "examples": [
+        "myhost.mydomain.com,*.myotherdomain.com,123.123.123.123"
+      ]
+    },
+    "gatekeeper_clientkeyspassword": {
+      "$id": "#/properties/gatekeeper_clientkeyspassword",
+      "type": "string",
+      "title": "Password for the encrypted client keys archive"
+    },
+    "adminhash": {
+      "$id": "#/properties/adminhash",
+      "type": "string",
+      "title": "Bcrypted hash of admin password"
+    },
+    "lightning_implementation": {
+      "$id": "#/properties/lightning_implementation",
+      "type": "string",
+      "enum": [
+        "c-lightning"
+      ],
+      "title": "The lightning implementation",
+      "default": "c-lightning",
+      "examples": [
+        "c-lightning"
+      ]
+    },
+    "lightning_nodename": {
+      "$id": "#/properties/lightning_nodename",
+      "type": "string",
+      "title": "The lightning node name",
+      "examples": [
+        "🚀 Mighty Moose 🚀"
+      ]
+    },
+    "lightning_nodecolor": {
+      "$id": "#/properties/lightning_nodecolor",
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{6}$",
+      "title": "The lightning node color",
+      "examples": [
+        "ff0000",
+        "00ff00",
+        "00ffff"
+      ]
+    }
+  }
+}

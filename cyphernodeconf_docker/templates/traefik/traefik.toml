@@ -52,29 +52,58 @@ url = "http://proxy:8888/"
 entryPoints = ["web"]
 middlewares = ["https-redirect"]
 priority = 1
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`)"
+<% } else { -%>
 rule = "HostRegexp(`{host:.+}`)"
+<% } -%>
 service = "noop@internal"
 
 [http.routers.root-router]
 entrypoints = ["websecure"]
 middlewares = ["root-to-admin-redirect@file"]
 priority = 2
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/`)"
+<% } else { -%>
 rule = "Path(`/`)"
+<% } -%>
 service = "noop@internal"
 tls = true
+
+<% if (traefik_use_letsencrypt) { -%>
+[http.routers.letsencrypt-router]
+entrypoints = ["websecure"]
+middlewares = ["root-to-admin-redirect@file"]
+priority = 3
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.well-known/acme-challenge/.+`)"
+service = "noop@internal"
+[http.routers.letsencrypt-router.tls]
+certResolver = "letsencrypt"
+[[http.routers.letsencrypt-router.tls.domains]]
+main = "<%- traefik_external_hostname %>"
+<% } -%>
 
 [http.routers.root-router-onion]
 entrypoints = ["onion"]
 middlewares = ["root-to-admin-redirect@file"]
-priority = 3
+priority = 4
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/`)"
+<% } else { -%>
 rule = "Path(`/`)"
+<% } -%>
 service = "noop@internal"
 
 [http.routers.auth-router]
 entrypoints = ["websecure"]
 middlewares = ["forward-auth@file"]
-priority = 4
+priority = 5
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.+`)"
+<% } else { -%>
 rule = "Path(`/.+`)"
+<% } -%>
 service = "noop@internal"
 tls = true
 
@@ -82,13 +111,21 @@ tls = true
 entrypoints = ["onion"]
 middlewares = ["forward-auth@file"]
 priority = 5
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.+`)"
+<% } else { -%>
 rule = "Path(`/.+`)"
+<% } -%>
 service = "noop@internal"
 
 [http.routers.auth-router-gatekeeper]
 entrypoints = ["gatekeeper"]
 middlewares = ["strip-proxy-api-versionprefix@file", "gatekeeper-forward-auth@file"]
+<% if (traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && PathPrefix(`/v0`)"
+<% } else { -%>
 rule = "PathPrefix(`/v0`)"
+<% } -%>
 service = "proxy@file"
 tls = true
 
@@ -116,6 +153,16 @@ trustForwardHeader = true
 [http.middlewares.strip-proxy-api-versionprefix.stripprefix]
 prefixes=["/v0","/v0/","/v1","/v1/"]
 forceSlash=true
+
+<% if (traefik_use_letsencrypt) { -%>
+# NOTE: letsencrypt resolver with httpChallenge only works on standard ports 80,443
+[certificatesResolvers.letsencrypt.acme]
+email = "<%= traefik_letsencrypt_email %>"
+storage = "/etc/traefik/acme.json"
+[certificatesResolvers.letsencrypt.acme.httpChallenge]
+entryPoint = "web"
+<% } -%>
+
 
 # [acme]
 # email = "letsencrypt@yourdomain.com"
