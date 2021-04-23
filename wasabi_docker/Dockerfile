@@ -37,6 +37,7 @@ RUN apk add --no-cache --update \
     tor \
     icu \
     curl \
+    jq \
  && mkdir -p ${APPDATA}/Wallets/
 
 COPY --from=builder /app /app

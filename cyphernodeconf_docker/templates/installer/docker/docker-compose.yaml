@@ -402,6 +402,10 @@ services:
     environment:
       - "WASABI_RPC_USER=<%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %>"
       - "WASABI_RPC_CFG=/tmp/wasabi_curlcfg.properties"
+    <% if ( features.indexOf('tor') !== -1 ) { %>
+      - "TOR_HOST=tor"
+      - "TOR_PORT=9050"
+    <% } %>
     volumes:
       - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
       - container_monitor:/container_monitor:ro
