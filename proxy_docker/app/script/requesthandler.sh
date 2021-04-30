@@ -851,6 +851,20 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        elements_getblockchaininfo)
+          # http://192.168.111.152:8080/elements_getblockchaininfo
+
+          response=$(elements_get_blockchain_info)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getmempoolinfo)
+          # curl GET http://192.168.111.152:8080/elements_getmempoolinfo
+
+          response=$(elements_get_mempool_info)
+          response_to_client "${response}" ${?}
+          break
+          ;;
         *)
           response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
           returncode=1
