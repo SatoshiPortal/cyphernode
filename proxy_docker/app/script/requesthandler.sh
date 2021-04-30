@@ -777,10 +777,6 @@ main() {
           response=$(serve_ots_info "${line}")
           returncode=$?
           ;;
-        *)
-          response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
-          returncode=1
-          ;;
         elements_getnewaddress)
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
@@ -847,6 +843,17 @@ main() {
           response=$(elements_get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
           response_to_client "${response}" ${?}
           break
+          ;;
+        elements_getbestblockhash)
+          # curl (GET) http://192.168.111.152:8080/elements_getbestblockhash
+
+          response=$(elements_get_best_block_hash)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        *)
+          response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
+          returncode=1
           ;;
       esac
       response=$(echo "${response}" | jq -Mc)
