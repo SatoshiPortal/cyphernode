@@ -495,13 +495,14 @@ wasabi_spend() {
 
   local amount
   amount=$(echo "${request}" | jq ".amount")
-  local spendingAmount
-  spendingAmount=$(awk "BEGIN { printf(\"%d\", ${amount}*100000000); exit }")
-  if [ "${spendingAmount}" = "null" ]; then
+  if [ "${amount}" = "null" ]; then
     # amount tag null but required
-    trace "[wasabi_spend] spendingAmount is required"
+    trace "[wasabi_spend] amount is required"
+    echo "{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"amount is required\"}"
     return 1
   fi
+  local spendingAmount
+  spendingAmount=$(awk "BEGIN { printf(\"%d\", ${amount}*100000000); exit }")
   trace "[wasabi_spend] spendingAmount=${spendingAmount}"
 
   local address
@@ -509,6 +510,7 @@ wasabi_spend() {
   if [ "${address}" = "null" ]; then
     # address tag null but required
     trace "[wasabi_spend] address is required"
+    echo "{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"address is required\"}"
     return 1
   fi
   trace "[wasabi_spend] address=${address}"
