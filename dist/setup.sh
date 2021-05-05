@@ -157,8 +157,7 @@ configure() {
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
   fi
 
-
-  if [[ $arch =~ ^arm ]]; then
+  if [[ $arch =~ ^arm ||  $arch == aarch64 ]]; then
     clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so tiny. :("
   else
     clear && echo "Thinking..."
