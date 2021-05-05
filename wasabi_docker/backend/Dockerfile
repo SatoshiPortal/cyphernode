@@ -3,10 +3,10 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 RUN apk add --no-cache git patch
 
-RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
-WORKDIR /WalletWasabi
+# Version v1.1.12.2
+RUN git clone -b v1.1.12.2 --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 
-RUN git checkout v1.1.12.2
+WORKDIR /WalletWasabi
 
 COPY patches/Program.patch .
 RUN patch WalletWasabi.Backend/Program.cs -i Program.patch
