@@ -73,17 +73,15 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_bitcoin') !== -1 ) { %>
-    command: $USER sh -c 'rm -f /container_monitor/bitcoin_ready ; while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done ; echo "tor ready" ; bitcoind'
-    <% } else { %>
-    command: $USER sh -c 'rm -f /container_monitor/bitcoin_ready ; bitcoind'
-    <% } %>
+    command:  $USER /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18444:18444' : ((net === 'testnet') ? '18333:18333' : '8333:8333') %>"
     <% } %>
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
+      - "<%= bitcoin_datapath %>/entrypoint.sh:/.bitcoin/entrypoint.sh:ro"
+      - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
       test: chown $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'

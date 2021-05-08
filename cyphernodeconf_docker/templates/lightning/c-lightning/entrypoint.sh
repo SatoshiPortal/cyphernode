@@ -16,6 +16,6 @@ echo "tor ready at IP ${TORIP}"
 lightningd --proxy=$TORIP:9050
 <% } else { %>
 
-lightningd
+exec lightningd
 
 <% } %>
