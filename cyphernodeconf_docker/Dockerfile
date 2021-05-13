@@ -1,4 +1,4 @@
-FROM golang:1.13-alpine3.10 as builder-torgen
+FROM golang:1.13.15-alpine3.12 as builder-torgen
 
 RUN apk add git build-base
 
@@ -13,7 +13,7 @@ RUN go get
 RUN go build torgen.go
 RUN chmod +x /go/src/torgen/torgen
 
-FROM alpine:3.11.0 as builder-qrencode
+FROM alpine:3.12.4 as builder-qrencode
 
 RUN apk add --update --no-cache \
     autoconf \
@@ -30,7 +30,7 @@ RUN git clone -b v4.1.0 https://github.com/fukuchi/libqrencode.git \
  && make \
  && make install
 
-FROM node:12.2.0-alpine
+FROM node:15.11.0-alpine3.12
 
 ENV EDITOR=/usr/bin/nano
 

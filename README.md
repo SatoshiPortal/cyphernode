@@ -66,7 +66,7 @@ Currently used to make sure callbacks have been called for missed transactions.
 
 # How to use cyphernode?
 
-The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an absctration layer between your apps and the open-source Bitcoin sofware you want to interact with.
+The core component of cyphernode is a request handler which exposes HTTP endpoints via REST API, acting as an abstraction layer between your apps and the open-source Bitcoin sofware you want to interact with.
 
 ## Documentation
 
