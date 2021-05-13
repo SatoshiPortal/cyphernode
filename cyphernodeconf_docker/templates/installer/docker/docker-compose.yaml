@@ -80,7 +80,6 @@ services:
     <% } %>
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
-      - "<%= bitcoin_datapath %>/entrypoint.sh:/.bitcoin/entrypoint.sh:ro"
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
