@@ -6,7 +6,7 @@ BITCOIN_CLI='bitcoin-cli'
 BITCOIN_CLI="$BITCOIN_CLI -regtest"
 <% } %>
 
-USER="`id -u -n`:`id -g -n`"
+USER="`id -u`:`id -g`"
 
 while [ true ];
 do
