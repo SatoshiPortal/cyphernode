@@ -6,14 +6,7 @@ BITCOIN_CLI='bitcoin-cli'
 BITCOIN_CLI="$BITCOIN_CLI -regtest"
 <% } %>
 
-USER="`id -u`:`id -g`"
-
-while [ true ];
-do
-    sleep 10;
-    echo "CYPHERNODE: bitcoind is starting"
-    chown $USER /container_monitor && ${BITCOIN_CLI} echo && touch /container_monitor/bitcoin_ready && chown $USER /container_monitor/bitcoin_ready && break || rm -f /container_monitor/bitcoin_ready
-done
+while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "CYPHERNODE: bitcoind not ready" ; sleep 10 ; done
 
 echo "CYPHERNODE: bitcoind is ready"
 
