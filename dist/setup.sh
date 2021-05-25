@@ -506,6 +506,20 @@ install_docker() {
         copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
       fi
     fi
+
+    copy_file $cyphernodeconf_filepath/bitcoin/entrypoint.sh $BITCOIN_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/bitcoin/createWallets.sh $BITCOIN_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
+
+    if [[ ! -x $BITCOIN_DATAPATH/entrypoint.sh ]]; then
+      step "     [32mmake[0m entrypoint.sh executable"
+      sudo_if_required chmod +x $BITCOIN_DATAPATH/entrypoint.sh
+      next
+    fi
+    if [[ ! -x $BITCOIN_DATAPATH/createWallets.sh ]]; then
+      step "     [32mmake[0m createWallets.sh executable"
+      sudo_if_required chmod +x $BITCOIN_DATAPATH/createWallets.sh
+      next
+    fi
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
