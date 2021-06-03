@@ -29,6 +29,7 @@
   "bitcoin_rpcpassword": "Bitcoin Core's <font underline='true'>RPC password</font> used by Cyphernode when calling the node.",
   "bitcoin_prune": "If you don't have at least 350GB of disk space, you should run Bitcoin Core in <font underline='true'>prune mode</font>. <font color='#00ff00'>NOTE</font>: when running Bitcoin Core in prune mode, the incoming transactions' fees cannot be computed by Cyphernode and won't be part of the addresses watching's callbacks payload.",
   "bitcoin_prune_size": "Minimum <font underline='true'>size</font> is <font color='#00ff00'>550</font>. This option specifies the maximum number in MB Bitcoin Core will allocate for raw block & undo data.",
+  "bitcoin_cbf": "Compact Block Filters serve filtered block data to neutrino clients and have a networking overhead.",
   "bitcoin_uacomment": "<font underline='true'>User Agent</font> string used by Bitcoin Core. (Optional)",
   "bitcoin_datapath": "<font underline='true'>Path name</font> to where Bitcoin Core's data files (blockchain data, wallets, configs, etc.) are stored. This directory will be mounted into the Bitcoin node's container. If you already have a sync'ed node, you can copy data there to be used by the node, instead of resyncing everything. <font color='#00ff00'>NOTE</font>: only copy chainstate/ and blocks/ contents. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
   "bitcoin_datapath_custom": " ",

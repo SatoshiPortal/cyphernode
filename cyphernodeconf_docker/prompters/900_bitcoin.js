@@ -91,6 +91,12 @@ module.exports = {
       }
     }, // TODO: ask for size of prune
     {
+      type: 'confirm',
+      name: 'bitcoin_cbf',
+      default: utils.getDefault( 'bitcoin_cbf' ),
+      message: prefix()+'Enable compact block filters?'+utils.getHelp('bitcoin_cbf')
+    },
+    {
       when: bitcoinInternal,
       type: 'input',
       name: 'bitcoin_uacomment',
