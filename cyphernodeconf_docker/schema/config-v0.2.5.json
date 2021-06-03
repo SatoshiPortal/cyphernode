@@ -19,6 +19,7 @@
     "bitcoin_rpcuser",
     "bitcoin_rpcpassword",
     "bitcoin_prune",
+    "bitcoin_cbf",
     "bitcoin_datapath",
     "bitcoin_mode",
     "bitcoin_expose",
@@ -373,6 +374,15 @@
       "default": 550,
       "examples": [
         550
+      ]
+    },
+    "bitcoin_cbf": {
+      "$id": "#/properties/bitcoin_cbf",
+      "type": "boolean",
+      "title": "Bitcoin serve compact block filters",
+      "default": false,
+      "examples": [
+        "false"
       ]
     },
     "bitcoin_datapath": {
