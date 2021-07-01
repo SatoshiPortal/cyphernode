@@ -342,6 +342,8 @@ watchtxidrequest() {
   trace "[watchtxidrequest] cbxconf_url=${cbxconf_url}"
   local nbxconf=$(echo "${request}" | jq ".nbxconf")
   trace "[watchtxidrequest] nbxconf=${nbxconf}"
+  local cb1cond
+  local cbxcond
   local inserted
   local id_inserted
   local result
@@ -353,7 +355,17 @@ watchtxidrequest() {
 
   if [ "${returncode}" -eq 0 ]; then
     inserted=1
-    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid=${txid} AND callback1conf=${cb1conf_url} AND callbackxconf=${cbxconf_url}")
+    if [ "${cb1conf_url}" = "null" ]; then
+      cb1cond=" IS NULL"
+    else
+      cb1cond="=${cb1conf_url}"
+    fi
+    if [ "${cbxconf_url}" = "null" ]; then
+      cbxcond=" IS NULL"
+    else
+      cbxcond="=${cbxconf_url}"
+    fi
+    id_inserted=$(sql "SELECT id FROM watching_by_txid WHERE txid=${txid} AND callback1conf${cb1cond} AND callbackxconf${cbxcond}")
     trace "[watchtxidrequest] id_inserted: ${id_inserted}"
   else
     inserted=0

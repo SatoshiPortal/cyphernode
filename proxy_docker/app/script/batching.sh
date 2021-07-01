@@ -264,7 +264,8 @@ removefrombatch() {
     trace "[removefrombatch] id missing"
     response='{"result":null,"error":{"code":-32700,"message":"outputId is required","data":'${request}'}}'
   else
-    batcher_id=$(sql "SELECT batcher_id FROM recipient WHERE id=${id}")
+    # We don't want to remove an already spent output
+    batcher_id=$(sql "SELECT batcher_id FROM recipient WHERE id=${id} AND tx_id IS NULL")
     returncode=$?
     trace_rc ${returncode}
 
