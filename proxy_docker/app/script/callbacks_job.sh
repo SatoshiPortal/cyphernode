@@ -97,6 +97,21 @@ ln_manage_callback() {
   trace "[ln_manage_callback] expires_at=${expires_at}"
   local returncode
 
+  # {
+  #   "id":"",
+  #   "label":"",
+  #   "bolt11":"",
+  #   "callback_url":"",
+  #   "payment_hash":"",
+  #   "msatoshi":,
+  #   "status":"",
+  #   "pay_index":,
+  #   "msatoshi_received":,
+  #   "paid_at":,
+  #   "description":"",
+  #   "expires_at":
+  # }
+
   data="{\"id\":\"${id}\","
   data="${data}\"label\":\"${label}\","
   data="${data}\"bolt11\":\"${bolt11}\","

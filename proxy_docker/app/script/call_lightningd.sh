@@ -66,6 +66,19 @@ ln_create_invoice() {
     id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
     trace_rc $?
 
+    # {
+    #   "id":"",
+    #   "label":"",
+    #   "bolt11":"",
+    #   "connectstring":"",
+    #   "callbackUrl":"",
+    #   "payment_hash":"",
+    #   "msatoshi":,
+    #   "status":"unpaid",
+    #   "description":"",
+    #   "expires_at":
+    # }
+
     data="{\"id\":\"${id}\","
     data="${data}\"label\":\"${label}\","
     data="${data}\"bolt11\":\"${bolt11}\","
@@ -308,7 +321,7 @@ ln_pay() {
   trace "[ln_pay] bolt11=${bolt11}"
   local expected_msatoshi=$(echo "${request}" | jq ".expected_msatoshi")
   trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
-  local expected_description=$(echo "${request}" | jq ".expected_description")
+  local expected_description=$(echo "${request}" | jq -r ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
@@ -321,7 +334,7 @@ ln_pay() {
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
     trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
-    local invoice_description=$(echo "${result}" | jq ".description")
+    local invoice_description=$(echo "${result}" | jq -r ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
     # The amount must match if not "any"
@@ -330,12 +343,14 @@ ln_pay() {
     if [ -n "${expected_msatoshi}" ] && [ "${expected_msatoshi}" != "null" ]  &&  [ "${expected_msatoshi}" != "${invoice_msatoshi}" ] && [ "${invoice_msatoshi}" != "null" ]; then
       # If invoice_msatoshi is null, that means "any" was supplied, so the amounts don't have to match!
       result="{\"result\":\"error\",\"expected_msatoshi\":${expected_msatoshi},\"invoice_msatoshi\":${invoice_msatoshi}}"
+      trace "[ln_pay] Expected msatoshi <> Invoice msatoshi"
       returncode=1
     elif [ -n "${expected_description}" ] && [ "${expected_description}" != "null" ] && [ "${expected_description}" != "${invoice_description}" ]; then
       # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
       # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
-      result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
+      result="{\"result\":\"error\",\"expected_description\":\"${expected_description}\",\"invoice_description\":\"${invoice_description}\"}"
+      trace "[ln_pay] Expected description <> Invoice description"
       returncode=1
     else
       # Amount and description are as expected (or empty description), let's pay!
