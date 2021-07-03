@@ -17,6 +17,7 @@
     "docker_versions",
     "adminhash",
     "admin_datapath",
+    "database_datapath",
     "bitcoin_rpcuser",
     "bitcoin_rpcpassword",
     "bitcoin_prune",
@@ -408,6 +409,22 @@
       "title": "Admin interface custom datapath",
       "examples": [
         "/tmp/cyphernode/admin"
+      ]
+    },
+    "database_datapath": {
+      "$id": "#/properties/database_datapath",
+      "type": "string",
+      "title": "Database datapath",
+      "examples": [
+        "/tmp/cyphernode/database"
+      ]
+    },
+    "database_datapath_custom": {
+      "$id": "#/properties/database_datapath_custom",
+      "type": "string",
+      "title": "Database custom datapath",
+      "examples": [
+        "/tmp/cyphernode/database"
       ]
     },
     "bitcoin_datapath": {

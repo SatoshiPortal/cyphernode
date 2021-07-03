@@ -5,6 +5,7 @@ TRACING=1
 # CYPHERNODE VERSION "v0.7.0-dev"
 CONF_VERSION="v0.7.0-dev-local"
 ADMIN_VERSION="v0.7.0-dev-local"
+FAUTH_VERSION="v0.7.0-dev-local"
 GATEKEEPER_VERSION="v0.7.0-dev-local"
 TOR_VERSION="v0.7.0-dev-local"
 PROXY_VERSION="v0.7.0-dev-local"
@@ -35,6 +36,9 @@ build_docker_images() {
 
   trace "Creating cyphernodeadmin image"
   docker build  cyphernodeadmin_docker/ -t cyphernode/cyphernodeadmin:$ADMIN_VERSION
+
+  trace "Creating cyphernode forward auth image"
+  docker build  cyphernodefauth_docker/ -t cyphernode/cyphernodefauth:$ADMIN_VERSION
 
   trace "Creating cyphernode images"
   docker build tor_docker/ -t cyphernode/tor:$TOR_VERSION \

@@ -34,3 +34,4 @@ OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } -%>
 ADMIN_DATAPATH=<%= admin_datapath %>
+DATABASE_DATAPATH=<%= database_datapath %>

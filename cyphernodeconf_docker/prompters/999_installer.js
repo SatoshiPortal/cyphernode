@@ -33,6 +33,44 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
+      name: 'database_datapath',
+      default: utils.getDefault( 'database_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/database",
+          value: utils.setupDir()+"/cyphernode/database"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/database",
+          value: utils.defaultDataDirBase()+"/cyphernode/database"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/database",
+          value: utils.defaultDataDirBase()+"/.cyphernode/database"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/database",
+          value: utils.defaultDataDirBase()+"/database"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your database?'+utils.getHelp('database_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.database_datapath === '_custom') },
+      type: 'input',
+      name: 'database_datapath_custom',
+      default: utils.getDefault( 'database_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your database?'+utils.getHelp('database_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
       name: 'admin_datapath',
       default: utils.getDefault( 'admin_datapath' ),
       choices: [
@@ -57,7 +95,7 @@ module.exports = {
           value: "_custom"
         }
       ],
-      message: prefix()+'Where do you want to store your administration database?'+utils.getHelp('admin_datapath'),
+      message: prefix()+'Where do you want to store your administration files?'+utils.getHelp('admin_datapath'),
     },
     {
       when: (props)=>{ return installerDocker(props) && (props.admin_datapath === '_custom') },
@@ -66,7 +104,7 @@ module.exports = {
       default: utils.getDefault( 'admin_datapath_custom' ),
       filter: utils.trimFilter,
       validate: utils.pathValidator,
-      message: prefix()+'Custom path for your administration database?'+utils.getHelp('admin_datapath_custom'),
+      message: prefix()+'Custom path for your administration files?'+utils.getHelp('admin_datapath_custom'),
     },
     {
       when: installerDocker,

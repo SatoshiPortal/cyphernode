@@ -8,17 +8,6 @@ services:
   cyphernodeadmin:
     hostname: cyphernodeadmin
     image: cyphernode/cyphernodeadmin:<%= admin_version %>
-
-    ### TODO: use su-exec $USER
-
-
-
-    <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1 ) { %>
-    command: sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ] || [ ! -f "/container_monitor/tor_ready" ]; do echo "waitng for core services" ; sleep 10 ; done ; echo "...ok" ; exec /app/cyphernode_admin'
-    <% } else { %>
-    command: sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "waitng for core services" ; sleep 10 ; done ; echo "...ok" ; exec /app/cyphernode_admin'
-    <% } %>
-
     <% if (docker_mode == 'compose') { %>
     labels:
       - traefik.enable=true
@@ -75,6 +64,7 @@ services:
       - GATEKEEPER_HOST=gatekeeper
       - GATEKEEPER_PORT=<%= gatekeeper_port %>
     networks:
+      - cyphernodenet
       - cyphernodeappsnet
     volumes:
       - "${PWD}/apps:/apps"
@@ -87,9 +77,78 @@ services:
       - "container_monitor:/container_monitor"
 
     depends_on:
-      - bitcoin
-#      - gatekeeper
+      - cyphernodefauth
       - proxy
+      - db
+
+
+  ###################################
+  # CYPHERNODE FORWARD AUTH SERVICE #
+  ###################################
+  cyphernodefauth:
+    hostname: cyphernodefauth
+    image: cyphernode/cyphernodefauth:<%= admin_version %>
+    environment:
+      # - GIN_MODE=release
+      - CYPHERAPPS_INSTALL_DIR=/apps
+      - CYPHERNODE_KEYS_FILE=/keys.properties
+      - CYPHERNODE_ACTIONS_FILE=/api.properties
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+
+    volumes:
+      - "${PWD}/apps:/apps"
+      - "<%= gatekeeper_datapath %>/keys.properties:/keys.properties"
+      - "<%= gatekeeper_datapath %>/api.properties:/api.properties"
+      - "container_monitor:/container_monitor"
+
+    depends_on:
+      - db
+
+  ##########################
+  # POSTGRES DB            #
+  ##########################
+  db:
+    hostname: db
+    image: postgres:13-alpine
+    environment:
+      - POSTGRES_USER=cnadmin
+      - POSTGRES_PASSWORD=cnadmin
+      - POSTGRES_DB=cnadmin
+    volumes:
+      - "<%= database_datapath %>:/var/lib/postgresql/data"
+
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
 
   <% if ( features.indexOf('tor') !== -1 ) { %>
   ##########################
@@ -467,6 +526,7 @@ services:
 
     networks:
       - cyphernodeappsnet
+      - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
       replicas: 1

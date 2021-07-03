@@ -136,8 +136,8 @@ regex = "^(https{0,1}://[^/]+?)/{0,1}$"
 replacement = "$1/admin/"
 
 [http.middlewares.forward-auth.forwardauth]
-address = "http://cyphernodeadmin:3032/forwardauth"
-#address = "http://192.168.178.90:3032/forwardauth"
+address = "http://cyphernodefauth:3032/public"
+#address = "http://192.168.178.90:3032/public"
 authResponseHeaders = ["X-Auth-User-Claims"]
 trustForwardHeader = true
 
@@ -145,7 +145,7 @@ trustForwardHeader = true
 scheme = "https"
 
 [http.middlewares.gatekeeper-forward-auth.forwardauth]
-address = "http://cyphernodeadmin:3032/gatekeeper"
+address = "http://cyphernodefauth:3032/gatekeeper"
 #address = "http://192.168.178.90:3032/gatekeeper"
 authResponseHeaders = ["X-Auth-User-Claims"]
 trustForwardHeader = true

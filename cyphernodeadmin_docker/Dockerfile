@@ -1,29 +1,21 @@
-FROM golang:1.15-alpine3.12 as builder
+FROM golang:1.16-alpine as builder
 
-RUN apk --update add alpine-sdk bash curl yarn git
+RUN apk --update add alpine-sdk yarn
 
 RUN git clone https://github.com/schulterklopfer/cyphernode_admin.git /src
-
-WORKDIR /src
 
 WORKDIR /src/ui-src
 RUN yarn install && yarn run build
 
 WORKDIR /src
+
 RUN go generate
-#ENV VERSION=0.1
-#ENV CODENAME=cyphernodeadmin
-#RUN export DATE=$(date)
-#RUN CGO_ENABLED=1 GOGC=off go build -ldflags "-s" -a
-RUN go build -ldflags "-s -w"
+ENV VERSION=0.1
+ENV CODENAME=cyphernode_admin
+RUN export DATE=$(date)
+RUN CGO_ENABLED=0 GOGC=off go build -ldflags "-s" -a
 
-FROM alpine:3.12
-
-RUN mkdir /app
-
-COPY --from=builder /src/cyphernode_admin /app/cyphernode_admin
+FROM scratch
+COPY --from=builder /src/cyphernode_admin /cyphernode_admin
 COPY --from=builder /src/ui-src/build /ui
-
-WORKDIR /data
-
-CMD ["/app/cyphernode_admin"]
+CMD ["/cyphernode_admin"]
