@@ -196,6 +196,7 @@ configure() {
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
              -e ADMIN_VERSION=$ADMIN_VERSION \
+             -e FAUTH_VERSION=$FAUTH_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
              --network none \
@@ -871,6 +872,7 @@ AUTOSTART=0
 SETUP_VERSION="v0.7.0-dev"
 CONF_VERSION="v0.7.0-dev"
 ADMIN_VERSION="v0.7.0-dev"
+FAUTH_VERSION="v0.7.0-dev"
 GATEKEEPER_VERSION="v0.7.0-dev"
 TOR_VERSION="v0.7.0-dev"
 PROXY_VERSION="v0.7.0-dev"
@@ -941,6 +943,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
     OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
     PYCOIN_VERSION="$PYCOIN_VERSION-local"
+    FAUTH_VERSION="$FAUTH_VERSION-local"
   fi
 fi
 

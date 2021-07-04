@@ -96,6 +96,7 @@ module.exports = class App {
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
       admin_version: process.env.ADMIN_VERSION,
+      fauth_version: process.env.FAUTH_VERSION,
       setup_version: process.env.SETUP_VERSION,
       lightning_nodename: name.generate(),
       lightning_nodecolor: randomColor(),
@@ -173,6 +174,7 @@ module.exports = class App {
         'cyphernode/proxycron': this.sessionData.proxycron_version,
         'cyphernode/pycoin': this.sessionData.pycoin_version,
         'cyphernode/otsclient': this.sessionData.otsclient_version,
+        'cyphernode/cyphernodefauth': this.sessionData.fauth_version,
         'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
@@ -498,6 +500,15 @@ module.exports = class App {
           https_port: this.config.gatekeeper_port,
           exposed: !!this.config.gatekeeper_expose
         }
+      },
+      {
+        active: true,
+        name: 'Forward auth service',
+        label: 'cyphernodefauth',
+        host: 'cyphernodefauthless',
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: 'cyphernode/cyphernodefauth:'+this.config.docker_versions['cyphernode/cyphernodefauth'],
+        extra: {}
       },
       {
         active: true,
