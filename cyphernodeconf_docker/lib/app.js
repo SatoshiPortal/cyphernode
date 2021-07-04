@@ -27,6 +27,7 @@ const ansi = require( './ansi.js' );
 
 const features = require('../features.json');
 const torifyables = require('../torifyables.json');
+const cypherapps = require('../cypherapps.json');
 
 const _000_cyphernode = require( '../prompters/000_cyphernode.js');
 const _010_gatekeeper = require( '../prompters/010_gatekeeper.js');
@@ -103,6 +104,7 @@ module.exports = class App {
     };
 
     this.features = features;
+    this.cypherapps = cypherapps;
     this.torifyables = torifyables;
 
     if ( fs.existsSync(path.join(this.workDir(), destinationDirName, 'exitStatus.sh')) ) {
@@ -401,6 +403,12 @@ module.exports = class App {
 
     this.sessionData.installationInfo = this.installationInfo();
 
+    const cypherappInfo = {};
+
+    for ( const cypherapp of this.cypherapps ) {
+      cypherappInfo[cypherapp.value] = cypherapp.version;
+    }
+
     for ( let m of prompters ) {
       const name = m.name();
       for ( let t of m.templates(this.config.data) ) {
@@ -414,7 +422,7 @@ module.exports = class App {
           });
         }
         const result = await ejsRenderFileAsync( this.templatePath(p), Object.assign({
-        }, this.sessionData, this.config.data), {
+        }, this.sessionData, this.config.data, { cypherappInfo }), {
         } );
 
         console.log( chalk.green( '   create' )+' '+p );
@@ -535,20 +543,6 @@ module.exports = class App {
         host: 'broker',
         networks: ['cyphernodenet', 'cyphernodeappsnet'],
         docker: 'eclipse-mosquitto:'+this.config.docker_versions['eclipse-mosquitto']
-      },
-      {
-        active: true,
-        name: 'Traefik',
-        label: 'traefik',
-        host: 'traefik',
-        networks: ['cyphernodeappsnet'],
-        docker: 'traefik:'+this.config.docker_versions['traefik'],
-        extra: {
-          tor_hostname: this.sessionData.tor_traefik_hostname,
-          torified: this.torifyables.find(data => data.value === 'tor_traefik').checked,
-          http_port: this.config.traefik_http_port,
-          https_port: this.config.traefik_https_port
-        }
       }
 
     ];
@@ -572,14 +566,6 @@ module.exports = class App {
           torified: this.torifyables.find(data => data.value === 'tor_otsoperations').checked,
           torified_webhooks: this.torifyables.find(data => data.value === 'tor_otswebhooks').checked
         }
-      },
-      batcher: {
-        networks: ['cyphernodeappsnet'],
-        docker: "cyphernode/batcher"
-      },
-      specter: {
-        networks: ['cyphernodeappsnet'],
-        docker: "cyphernode/specter"
       },
       lightning: {
         networks: ['cyphernodenet'],
@@ -746,6 +732,10 @@ module.exports = class App {
 
   featureChoices() {
     return this.features;
+  }
+
+  cypherappsChoices() {
+    return this.cypherapps;
   }
 
   torifyableChoices() {

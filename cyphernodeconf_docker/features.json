@@ -10,13 +10,5 @@
   {
     "name": "Opentimestamps client",
     "value": "otsclient"
-  },
-  {
-    "name": "Batcher Cypherapp",
-    "value": "batcher"
-  },
-  {
-    "name": "Specter Cypherapp",
-    "value": "specter"
   }
 ]

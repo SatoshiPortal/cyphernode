@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Batcher",
+    "value": "cypherapp_batcher",
+    "version": "batcher@latest",
+    "mount": "batcher"
+  },
+  {
+    "name": "Specter",
+    "value": "cypherapp_specter",
+    "version": "core:specter@latest",
+    "mount": "specter"
+  },
+  {
+    "name": "Spark wallet",
+    "value": "cypherapp_sparkwallet",
+    "version": "trusted:sparkwallet@latest",
+    "mount": "sparkwallet"
+  }
+]

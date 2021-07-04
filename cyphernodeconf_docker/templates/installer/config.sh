@@ -35,3 +35,15 @@ BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } -%>
 ADMIN_DATAPATH=<%= admin_datapath %>
 DATABASE_DATAPATH=<%= database_datapath %>
+
+<% if ( cypherapps && cypherapps.indexOf('cypherapp_specter') !== -1 ) { -%>
+CYPHERAPP_SPECTER=<%= cypherappInfo['cypherapp_specter'] %>
+<% } -%>
+
+<% if ( cypherapps && cypherapps.indexOf('cypherapp_batcher') !== -1 ) { -%>
+CYPHERAPP_BATCHER=<%= cypherappInfo['cypherapp_batcher'] %>
+<% } -%>
+
+<% if ( cypherapps && cypherapps.indexOf('cypherapp_sparkwallet') !== -1 ) { -%>
+CYPHERAPP_SPARKWALLET=<%= cypherappInfo['cypherapp_sparkwallet'] %>
+<% } -%>

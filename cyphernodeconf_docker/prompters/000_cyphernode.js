@@ -24,6 +24,14 @@ module.exports = {
       choices: utils.featureChoices()
     },
     {
+      // https://github.com/SBoudrias/Inquirer.js#question
+      // input, confirm, list, rawlist, expand, checkbox, password, editor
+      type: 'checkbox',
+      name: 'cypherapps',
+      message: prefix()+'What cypherapps do you want to add to your cyphernode?'+utils.getHelp('cypherapps'),
+      choices: utils.cypherappsChoices()
+    },
+    {
       type: 'list',
       name: 'net',
       default: utils.getDefault( 'net' ),

@@ -820,23 +820,27 @@ install_apps() {
   echo "   [32mupdate[0m local sources"
   docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION s u #> /dev/null 2>&1
 
-  # install default cypherapps: <trustzone>:<label or hash>@<version> <mount point>
-  echo "  [32minstall[0m default cypherapps"
-  echo "          * adding sparkwallet"
-  docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i trusted:sparkwallet@latest sparkwallet #> /dev/null 2>&1
+  if [[ ! -z $CYPHERAPP_SPARKWALLET ]]; then
+    echo "          * adding sparkwallet"
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i $CYPHERAPP_SPARKWALLET #> /dev/null 2>&1
+  else
+    echo "          * removing batcher"
+    # TODO: make sure cam does not delete data but only deactivate the app
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a d sparkwallet #> /dev/null 2>&1
+  fi
 
-  if [[ $FEATURE_BATCHER == true ]]; then
+  if [[ ! -z $CYPHERAPP_BATCHER ]]; then
     echo "          * adding batcher"
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i batcher@latest batcher #> /dev/null 2>&1
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i $CYPHERAPP_BATCHER #> /dev/null 2>&1
   else
     echo "          * removing batcher"
     # TODO: make sure cam does not delete data but only deactivate the app
     docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a d batcher #> /dev/null 2>&1
   fi
 
-  if [[ $FEATURE_SPECTER == true ]]; then
+  if [[ ! -z $CYPHERAPP_SPECTER ]]; then
     echo "          * adding specter"
-    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i core:specter@latest specter #> /dev/null 2>&1
+    docker run -t --rm -v "$current_path":/dist --workdir="/dist" --entrypoint /app/cam cyphernode/cyphernodeconf:$CONF_VERSION a i $CYPHERAPP_SPECTER #> /dev/null 2>&1
   else
     echo "          * removing specter"
     # TODO: make sure cam does not delete data but only deactivate the app
