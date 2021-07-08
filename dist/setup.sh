@@ -110,7 +110,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -341,11 +341,6 @@ compare_bitcoinconf() {
   if [[ $new_txindex == 1 && $old_txindex == 0 ]]; then
     # warn about reindexing
     status='reindex'
-  fi
-
-  if [[ ! $new_testnet == $old_testnet || ! $new_regtest == $old_regtest ]]; then
-    # warn about reindexing
-    status='incompatible'
   fi
 
   echo $status

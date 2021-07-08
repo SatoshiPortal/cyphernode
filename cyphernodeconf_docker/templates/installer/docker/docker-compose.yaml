@@ -330,7 +330,6 @@ services:
       - "<%= logs_datapath %>:/cnlogs"
       - "<%= otsclient_datapath %>:/otsfiles"
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
-    command: $USER /script/startotsclient.sh
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>
