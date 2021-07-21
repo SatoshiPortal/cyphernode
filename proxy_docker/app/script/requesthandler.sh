@@ -814,7 +814,7 @@ main() {
             instanceid=$(echo "${line}" | jq ".instanceId")
             filter_internal=$(echo "${line}" | jq ".txnFilterInternal")
           fi
-          response=$(wasabi_gettransactions "$instanceId" "$filter_internal")
+          response=$(wasabi_gettransactions "${instanceid}" "${filter_internal}")
           response_to_client "${response}" ${?}
           break
           ;;
