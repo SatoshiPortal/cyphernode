@@ -670,7 +670,7 @@ wasabi_gettransactions() {
 
   local instanceid=${1}
   local filter_no_label=${2}
-  trace "[wasabi_gettransactions] instanceId=${instanceid}, filter_no_label=${filter_no_label}"
+  trace "[wasabi_gettransactions] instanceid=${instanceid}, filter_no_label=${filter_no_label}"
 
   local first=true
   local result
@@ -678,12 +678,9 @@ wasabi_gettransactions() {
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
 
-  # check instance id is an integer or null it
-  if [[ "${instanceid}" =~ ^[0-9]+$ ]]; then
-    minInstanceIndex=$instanceid
-    maxInstanceIndex=$instanceid
-  else
-    instanceid="null"
+  if [ "${instanceid}" != "null" ]; then
+    minInstanceIndex=${instanceid}
+    maxInstanceIndex=${instanceid}
   fi
 
   trace "[wasabi_gettransactions] minInstanceIndex=${minInstanceIndex}"
