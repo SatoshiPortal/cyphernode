@@ -144,6 +144,7 @@ ln_getinvoice() {
   trace "Entering ln_getinvoice()..."
 
   local label=${1}
+  trace "[ln_getinvoice] label=${label}"
   local result
 
   result=$(./lightning-cli listinvoices ${label})
@@ -248,8 +249,8 @@ ln_connectfund() {
     trace "[ln_connectfund] nodeId=${nodeId}"
 
     # Now let's fund a channel with peer
-    trace "[ln_connectfund] ./lightning-cli fundchannel ${nodeId} ${msatoshi}"
-    result=$(./lightning-cli fundchannel ${nodeId} ${msatoshi})
+    trace "[ln_connectfund] ./lightning-cli fundchannel ${nodeId} $((${msatoshi}/1000))"
+    result=$(./lightning-cli fundchannel ${nodeId} $((${msatoshi}/1000)))
     returncode=$?
     trace_rc ${returncode}
     trace "[ln_connectfund] result=${result}"

@@ -158,14 +158,14 @@ main() {
         getactivewatchesbyxpub)
           # GET http://192.168.111.152:8080/getactivewatchesbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
 
-          response=$(getactivewatchesbyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(getactivewatchesbyxpub "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
         getactivewatchesbylabel)
           # GET http://192.168.111.152:8080/getactivewatchesbylabel/4421
 
-          response=$(getactivewatchesbylabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(getactivewatchesbylabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -216,13 +216,13 @@ main() {
           ;;
         get_txns_by_watchlabel)
           # curl (GET) 192.168.111.152:8080/get_txns_by_watchlabel/<label>/<count>
-          response=$(get_txns_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response=$(get_txns_by_watchlabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
           response_to_client "${response}" ${?}
           break
           ;;
         get_unused_addresses_by_watchlabel)
           # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
-          response=$(get_unused_addresses_by_watchlabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response=$(get_unused_addresses_by_watchlabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -250,14 +250,14 @@ main() {
         getblockhash)
           # curl (GET) http://192.168.111.152:8080/getblockhash/522322
 
-          response=$(get_blockhash $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(get_blockhash "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
         getblockinfo)
           # curl (GET) http://192.168.111.152:8080/getblockinfo/000000006f82a384c208ecfa04d05beea02d420f3f398ddda5c7f900de5718ea
 
-          response=$(get_block_info $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(get_block_info "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -270,7 +270,7 @@ main() {
         gettransaction)
           # curl (GET) http://192.168.111.152:8080/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
 
-          response=$(get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(get_rawtransaction "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -293,7 +293,7 @@ main() {
         get_txns_spending)
           # curl (GET) http://192.168.111.152:8080/get_txns_spending/20/10
 
-          response=$(get_txns_spending $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4))
+          response=$(get_txns_spending "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -314,14 +314,14 @@ main() {
         getbalancebyxpub)
           # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
 
-          response=$(getbalancebyxpub $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(getbalancebyxpub "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
         getbalancebyxpublabel)
           # curl (GET) http://192.168.111.152:8080/getbalancebyxpublabel/2219
 
-          response=$(getbalancebyxpublabel $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(getbalancebyxpublabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -329,7 +329,7 @@ main() {
           # curl (GET) http://192.168.111.152:8080/getnewaddress
           # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
 
-          response=$(getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(getnewaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -569,7 +569,7 @@ main() {
           # POST http://192.168.111.152:8080/bitcoin_estimatesmartfee
           # BODY {"confTarget":2}
 
-          response=$(bitcoin_estimatesmartfee $(echo "${line}" | jq -r ".confTarget"))
+          response=$(bitcoin_estimatesmartfee "$(echo "${line}" | jq -r ".confTarget")")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -577,7 +577,7 @@ main() {
           # curl GET http://192.168.111.152:8080/deriveindex/25-30
           # curl GET http://192.168.111.152:8080/deriveindex/34
 
-          response=$(deriveindex $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(deriveindex "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -648,7 +648,7 @@ main() {
           # GET http://192.168.111.152:8080/ln_getinvoice/label
           # GET http://192.168.111.152:8080/ln_getinvoice/koNCcrSvhX3dmyFhW
 
-          response=$(ln_getinvoice $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(ln_getinvoice "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -656,7 +656,7 @@ main() {
           # GET http://192.168.111.152:8080/ln_delinvoice/label
           # GET http://192.168.111.152:8080/ln_delinvoice/koNCcrSvhX3dmyFhW
 
-          response=$(ln_delinvoice $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(ln_delinvoice "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -664,7 +664,7 @@ main() {
           # GET http://192.168.111.152:8080/ln_decodebolt11/bolt11
           # GET http://192.168.111.152:8080/ln_decodebolt11/lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3
 
-          response=$(ln_decodebolt11 $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(ln_decodebolt11 "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -689,7 +689,7 @@ main() {
           ;;
         ln_getroute)
           # GET http://192.168.111.152:8080/ln_getroute/<node_id>/<msatoshi>/<riskfactor>
-          response=$(ln_getroute $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4) $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f5))
+          response=$(ln_getroute "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f5)")
           response_to_client "${response}" ${?}
           break
           ;;
@@ -720,7 +720,7 @@ main() {
         ots_getfile)
           # curl (GET) http://192.168.111.152:8080/ots_getfile/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
-          serve_ots_getfile $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          serve_ots_getfile "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)"
           break
           ;;
         ots_verify)

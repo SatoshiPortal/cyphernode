@@ -117,7 +117,9 @@ ln_manage_callback() {
   data="${data}\"bolt11\":\"${bolt11}\","
   data="${data}\"callback_url\":\"${callback_url}\","
   data="${data}\"payment_hash\":\"${payment_hash}\","
-  data="${data}\"msatoshi\":${msatoshi},"
+  if [ -n "${msatoshi}" ]; then
+    data="${data}\"msatoshi\":${msatoshi},"
+  fi
   data="${data}\"status\":\"${status}\","
   data="${data}\"pay_index\":${pay_index},"
   data="${data}\"msatoshi_received\":${msatoshi_received},"
