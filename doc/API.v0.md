@@ -9,7 +9,7 @@ Inserts the address, webhook URLs and eventMessage in the DB and imports the add
 ```http
 POST http://cyphernode:8888/watch
 with body...
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K","label":"myLabel"}
 ```
 
 Proxy response:
@@ -23,6 +23,7 @@ Proxy response:
     "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
     "unconfirmedCallbackURL": "192.168.133.233:1111/callback0conf",
     "confirmedCallbackURL": "192.168.133.233:1111/callback1conf",
+    "label": "myLabel",
     "estimatesmartfee2blocks": "0.000010",
     "estimatesmartfee6blocks": "0.000010",
     "estimatesmartfee36blocks": "0.000010",
@@ -721,6 +722,20 @@ GET http://cyphernode:8888/getnewaddress/legacy
 GET http://cyphernode:8888/getnewaddress/p2sh-segwit
 ```
 
+or
+
+```http
+POST http://cyphernode:8888/getnewaddress
+with body...
+{"address_type":"bech32","label":"myLabel"}
+or
+{"label":"myLabel"}
+or
+{"address_type":"p2sh-segwit"}
+or
+{}
+```
+
 Proxy response:
 
 ```json
@@ -731,7 +746,9 @@ Proxy response:
 
 ```json
 {
-  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj"
+  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj",
+  "label":"myLabel",
+  "address_type":"bech32"
 }
 ```
 

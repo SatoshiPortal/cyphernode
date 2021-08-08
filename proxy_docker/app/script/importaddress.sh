@@ -7,7 +7,12 @@ importaddress_rpc() {
   trace "[Entering importaddress_rpc()]"
 
   local address=${1}
-  local data="{\"method\":\"importaddress\",\"params\":[\"${address}\",\"\",false]}"
+  local label=${2}
+  if [ -z "${label}" ]; then
+    label="null"
+  fi
+  local data='{"method":"importaddress","params":{"address":"'${address}'","label":'${label}',"rescan":false}}'
+  # local data="{\"method\":\"importaddress\",\"params\":[\"${address}\",\"\",false]}"
   local result
   result=$(send_to_watcher_node ${data})
   local returncode=$?

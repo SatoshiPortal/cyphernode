@@ -270,13 +270,29 @@ getnewaddress() {
   local address_type=${1}
   trace "[getnewaddress] address_type=${address_type}"
 
+  local label=${2}
+  trace "[getnewaddress] label=${label}"
+
   local response
-  local data
-  if [ -z "${address_type}" ]; then
-    data='{"method":"getnewaddress"}'
-  else
-    data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${address_type}\"]}"
+  local jqop
+  local addedfields
+  local data='{"method":"getnewaddress"}'
+  if [ -n "${address_type}" ] || [ -n "${label}" ]; then
+    jqop='. += {"params":{}}'
+    if [ -n "${label}" ]; then
+      jqop=${jqop}' | .params += {"label":"'${label}'"}'
+      addedfields=' | . += {"label":"'${label}'"}'
+    fi
+    if [ -n "${address_type}" ]; then
+      jqop=${jqop}' | .params += {"address_type":"'${address_type}'"}'
+      addedfields=' | . += {"address_type":"'${address_type}'"}'
+    fi
+    trace "[getnewaddress] jqop=${jqop}"
+
+    data=$(echo "${data}" | jq -rc "${jqop}")
   fi
+  trace "[getnewaddress] data=${data}"
+
   response=$(send_to_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
@@ -286,7 +302,11 @@ getnewaddress() {
     local address=$(echo ${response} | jq ".result")
     trace "[getnewaddress] address=${address}"
 
-    data="{\"address\":${address}}"
+    data='{"address":'${address}'}'
+    if [ -n "${jqop}" ]; then
+      data=$(echo "${data}" | jq -rc "${data}${addedfields}")
+      trace "[getnewaddress] data=${data}"
+    fi
   else
     trace "[getnewaddress] Coudn't get a new address!"
     data=""

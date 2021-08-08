@@ -93,6 +93,7 @@ main() {
           # POST http://192.168.111.152:8080/watch
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K","label":"myLabel"}
 
           response=$(watchrequest "${line}")
           response_to_client "${response}" ${?}
@@ -328,8 +329,23 @@ main() {
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
           # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
+          #
+          # or...
+          # POST http://192.168.111.152:8080/getnewaddress
+          # BODY {"address_type":"bech32","label":"myLabel"}
+          # BODY {"label":"myLabel"}
+          # BODY {"address_type":"p2sh-segwit"}
+          # BODY {}
 
-          response=$(getnewaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address_type=$(echo "${line}" | jq -er ".addressType // empty")
+            label=$(echo "${line}" | jq -er ".label // empty")
+          else
+            address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(getnewaddress "${address_type}" "${label}")
           response_to_client "${response}" ${?}
           break
           ;;

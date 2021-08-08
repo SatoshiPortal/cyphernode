@@ -15,6 +15,7 @@ watchrequest() {
   local cb0conf_url=$(echo "${request}" | jq ".unconfirmedCallbackURL")
   local cb1conf_url=$(echo "${request}" | jq ".confirmedCallbackURL")
   local event_message=$(echo "${request}" | jq ".eventMessage")
+  local label=$(echo "${request}" | jq ".label")
   local imported
   local inserted
   local id_inserted
@@ -23,7 +24,7 @@ watchrequest() {
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
 
-  trace "[watchrequest] Watch request on address (\"${address}\"), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message}"
+  trace "[watchrequest] Watch request on address (\"${address}\"), cb 0-conf (${cb0conf_url}), cb 1-conf (${cb1conf_url}) with event_message=${event_message} and label=${label}"
 
   local isvalid
   isvalid=$(validateaddress "${address}" | jq ".result.isvalid")
@@ -38,6 +39,7 @@ watchrequest() {
       \"address\":\"${address}\",
       \"unconfirmedCallbackURL\":${cb0conf_url},
       \"confirmedCallbackURL\":${cb1conf_url},
+      \"label\":${label},
       \"eventMessage\":${event_message}}}}"
     trace "[watchrequest] Invalid address"
     trace "[watchrequest] responding=${result}"
@@ -47,7 +49,7 @@ watchrequest() {
     return 1
   fi
 
-  result=$(importaddress_rpc ${address})
+  result=$(importaddress_rpc "${address}" "${label}")
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
@@ -56,7 +58,7 @@ watchrequest() {
     imported=0
   fi
 
-  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}) ON CONFLICT(address,callback0conf,callback1conf) DO UPDATE SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0"
+  sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message, label) VALUES (\"${address}\", 1, ${cb0conf_url}, ${cb1conf_url}, ${imported}, ${event_message}, ${label}) ON CONFLICT(address,callback0conf,callback1conf) DO UPDATE SET watching=1, event_message=${event_message}, calledback0conf=0, calledback1conf=0, label=${label}"
   returncode=$?
   trace_rc ${returncode}
 
@@ -88,6 +90,7 @@ watchrequest() {
   \"address\":\"${address}\",
   \"unconfirmedCallbackURL\":${cb0conf_url},
   \"confirmedCallbackURL\":${cb1conf_url},
+  \"label\":${label},
   \"estimatesmartfee2blocks\":${fees2blocks},
   \"estimatesmartfee6blocks\":${fees6blocks},
   \"estimatesmartfee36blocks\":${fees36blocks},

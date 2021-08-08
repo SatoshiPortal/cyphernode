@@ -11,15 +11,17 @@ manage_not_imported() {
 
   trace "[Entering manage_not_imported()]"
 
-  local watches=$(sql 'SELECT address FROM watching WHERE watching AND NOT imported')
+  local watches=$(sql 'SELECT address, label FROM watching WHERE watching AND NOT imported')
   trace "[manage_not_imported] watches=${watches}"
 
   local result
   local returncode
   local IFS=$'\n'
-  for address in ${watches}
+  for row in ${watches}
   do
-    result=$(importaddress_rpc "${address}")
+    address=$(echo "${row}" | cut -d '|' -f1)
+    label=$(echo "${row}" | cut -d '|' -f2)
+    result=$(importaddress_rpc "${address}" "${label}")
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
