@@ -15,6 +15,7 @@ CREATE TABLE watching_by_pub32 (
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   address TEXT,
+  label TEXT,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,

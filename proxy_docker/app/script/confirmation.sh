@@ -29,6 +29,8 @@ confirmation() {
 
   local returncode
   local txid=${1}
+  local bypass_callbacks=${2}
+  trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
   local tx_details
   tx_details="$(get_transaction ${txid})"
   returncode=$?
@@ -196,7 +198,13 @@ confirmation() {
   ) 201>./.confirmation.lock
 
   # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
-  do_callbacks
+  # If this was called by missed_conf algo, we don't want to process all the callbacks now.  We wait
+  # for next cron.
+  if [ -z "${bypass_callbacks}" ]; then
+    trace "[confirmation] Let's do the callbacks!"
+    do_callbacks
+  fi
+
   echo '{"result":"confirmed"}'
 
   return 0

@@ -1,0 +1,140 @@
+#!/bin/sh
+
+. ./colors.sh
+. ./mine.sh
+
+trace() {
+  if [ "${1}" -le "${TRACING}" ]; then
+    echo "$(date -u +%FT%TZ) ${2}" 1>&2
+  fi
+}
+
+start_test_container() {
+  docker run -d --rm -it --name tests-manage-missed --network=cyphernodenet -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine
+}
+
+stop_test_container() {
+  docker stop tests-manage-missed
+}
+
+exec_in_test_container() {
+  docker exec -it tests-manage-missed $@
+}
+
+test_manage_missed_0_conf() {
+  # Missed 0-conf:
+  # 1. Get new address
+  # 2. Watch it
+  # 3. Stop proxy
+  # 4. sendtoaddress while proxy is offline
+  # 5. Start proxy
+  # 6. Call executecallbacks
+  # 7. Check if 0-conf callback is called
+
+  trace 1 "\n[test_manage_missed_0_conf] ${BCyan}Let's miss a 0-conf!...${Color_Off}"
+
+  trace 2 "[test_manage_missed_0_conf] getnewaddress..."
+  local response=$(exec_in_test_container curl -d '{"label":"missed0conftest"}' proxy:8888/getnewaddress)
+  trace 3 "[test_manage_missed_0_conf] response=${response}"
+  local address=$(echo "${response}" | jq -r ".address")
+  trace 3 "[test_manage_missed_0_conf] address=${address}"
+
+  trace 2 "[test_manage_missed_0_conf] watch it..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${url1}'","confirmedCallbackURL":"'${url2}'","label":"missed0conftest"}'
+  trace 3 "[test_manage_missed_0_conf] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_0_conf] response=${response}"
+
+  trace 3 "[test_manage_missed_0_conf] Shutting down the proxy..."
+  docker stop $(docker ps -q -f "name=proxy")
+
+  trace 3 "[test_manage_missed_0_conf] Sending coins to watched address while proxy is down..."
+  docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+
+  trace 3 "[test_manage_missed_0_conf] Sleeping for 10 seconds to let the proxy restart..."
+  sleep 10
+  
+  trace 3 "[test_manage_missed_0_conf] Calling executecallbacks..."
+  exec_in_test_container curl proxy:8888/executecallbacks
+
+}
+
+test_manage_missed_1_conf() {
+  # Missed 1-conf:
+  # 1. Get new address
+  # 2. Watch it
+  # 3. sendtoaddress
+  # 4. Check if 0-conf callback is called
+  # 5. Stop proxy
+  # 6. Mine a new block
+  # 7. Start proxy
+  # 8. Call executecallbacks
+  # 9. Check if 1-conf callback is called
+
+  trace 1 "\n[test_manage_missed_1_conf] ${BCyan}Let's miss a 1-conf!...${Color_Off}"
+
+  trace 2 "[test_manage_missed_1_conf] getnewaddress..."
+  local response=$(exec_in_test_container curl -d '{"label":"missed0conftest"}' proxy:8888/getnewaddress)
+  trace 3 "[test_manage_missed_1_conf] response=${response}"
+  local address=$(echo "${response}" | jq -r ".address")
+  trace 3 "[test_manage_missed_1_conf] address=${address}"
+
+  trace 2 "[test_manage_missed_1_conf] watch it..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${url3}'","confirmedCallbackURL":"'${url4}'","label":"missed0conftest"}'
+  trace 3 "[test_manage_missed_1_conf] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_1_conf] response=${response}"
+
+  trace 3 "[test_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
+  docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+
+  trace 3 "[test_manage_missed_1_conf] Sleeping for 10 seconds to let the 0-conf callbacks to happen..."
+  sleep 10
+
+  trace 3 "[test_manage_missed_1_conf] Shutting down the proxy..."
+  docker stop $(docker ps -q -f "name=proxy")
+
+  trace 3 "[test_manage_missed_1_conf] Mine a new block..."
+  mine
+
+  trace 3 "[test_manage_missed_1_conf] Sleeping for 10 seconds to let the proxy restart..."
+  sleep 10
+  
+  trace 3 "[test_manage_missed_1_conf] Calling executecallbacks..."
+  exec_in_test_container curl proxy:8888/executecallbacks
+}
+
+wait_for_callbacks() {
+  trace 1 "[wait_for_callbacks] ${BCyan}Let's start the callback servers!...${Color_Off}"
+
+  docker exec -t tests-manage-missed sh -c "nc -vlp1111 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1112 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1113 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1114 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
+
+}
+
+TRACING=3
+
+start_test_container
+wait_for_callbacks
+
+url1="tests-manage-missed:1111/callback0conf"
+url2="tests-manage-missed:1112/callback1conf"
+url3="tests-manage-missed:1113/callback0conf"
+url4="tests-manage-missed:1114/callback1conf"
+trace 2 "url1=${url1}"
+trace 2 "url2=${url2}"
+trace 2 "url3=${url3}"
+trace 2 "url4=${url4}"
+
+exec_in_test_container apk add curl
+# exec_in_test_container ping -c 5 tests-manage-missed
+# exec_in_test_container curl -vd 'toto' ${url1}/allo
+test_manage_missed_0_conf
+test_manage_missed_1_conf
+
+trace 3 "Waiting for the callbacks to happen..."
+wait
+
+stop_test_container

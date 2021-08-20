@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# docker exec -it $(docker ps -q -f "name=proxy\.") ./tests/test-batching.sh
+
 # curl localhost:8888/listbatchers | jq
 # curl -d '{}' localhost:8888/getbatcher | jq
 # curl -d '{}' localhost:8888/getbatchdetails | jq
