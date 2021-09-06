@@ -10,7 +10,7 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -it --name tests-manage-missed --network=cyphernodenet -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine
+  docker run -d --rm -it --name tests-manage-missed --network=cyphernodenet alpine
 }
 
 stop_test_container() {
@@ -55,7 +55,7 @@ test_manage_missed_0_conf() {
   sleep 10
   
   trace 3 "[test_manage_missed_0_conf] Calling executecallbacks..."
-  exec_in_test_container curl proxy:8888/executecallbacks
+  exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 
 }
 
@@ -101,7 +101,7 @@ test_manage_missed_1_conf() {
   sleep 10
   
   trace 3 "[test_manage_missed_1_conf] Calling executecallbacks..."
-  exec_in_test_container curl proxy:8888/executecallbacks
+  exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 }
 
 wait_for_callbacks() {

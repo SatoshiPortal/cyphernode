@@ -275,19 +275,20 @@ getnewaddress() {
 
   local response
   local jqop
-  local addedfields
+  local addedfieldstoresponse
   local data='{"method":"getnewaddress"}'
   if [ -n "${address_type}" ] || [ -n "${label}" ]; then
     jqop='. += {"params":{}}'
     if [ -n "${label}" ]; then
       jqop=${jqop}' | .params += {"label":"'${label}'"}'
-      addedfields=' | . += {"label":"'${label}'"}'
+      addedfieldstoresponse=' | . += {"label":"'${label}'"}'
     fi
     if [ -n "${address_type}" ]; then
-      jqop=${jqop}' | .params += {"address_type":"'${address_type}'"}'
-      addedfields=' | . += {"address_type":"'${address_type}'"}'
+      jqop=${jqop}' | .params += {"addressType":"'${address_type}'"}'
+      addedfieldstoresponse=' | . += {"addressType":"'${address_type}'"}'
     fi
     trace "[getnewaddress] jqop=${jqop}"
+    trace "[getnewaddress] addedfieldstoresponse=${addedfieldstoresponse}"
 
     data=$(echo "${data}" | jq -rc "${jqop}")
   fi
@@ -304,7 +305,7 @@ getnewaddress() {
 
     data='{"address":'${address}'}'
     if [ -n "${jqop}" ]; then
-      data=$(echo "${data}" | jq -rc "${data}${addedfields}")
+      data=$(echo "${data}" | jq -rc ".${addedfieldstoresponse}")
       trace "[getnewaddress] data=${data}"
     fi
   else

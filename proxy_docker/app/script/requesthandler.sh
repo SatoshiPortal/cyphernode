@@ -332,9 +332,9 @@ main() {
           #
           # or...
           # POST http://192.168.111.152:8080/getnewaddress
-          # BODY {"address_type":"bech32","label":"myLabel"}
+          # BODY {"addressType":"bech32","label":"myLabel"}
           # BODY {"label":"myLabel"}
-          # BODY {"address_type":"p2sh-segwit"}
+          # BODY {"addressType":"p2sh-segwit"}
           # BODY {}
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)

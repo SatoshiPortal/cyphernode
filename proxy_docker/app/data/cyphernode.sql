@@ -29,6 +29,7 @@ CREATE TABLE watching (
 );
 CREATE INDEX idx_watching_address ON watching (address);
 CREATE UNIQUE INDEX idx_watching_01 ON watching (address, callback0conf, callback1conf);
+CREATE INDEX idx_watching_label ON watching (label);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
