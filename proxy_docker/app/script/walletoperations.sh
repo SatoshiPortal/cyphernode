@@ -284,8 +284,8 @@ getnewaddress() {
       addedfieldstoresponse=' | . += {"label":"'${label}'"}'
     fi
     if [ -n "${address_type}" ]; then
-      jqop=${jqop}' | .params += {"addressType":"'${address_type}'"}'
-      addedfieldstoresponse=' | . += {"addressType":"'${address_type}'"}'
+      jqop=${jqop}' | .params += {"address_type":"'${address_type}'"}'
+      addedfieldstoresponse=' | . += {"address_type":"'${address_type}'"}'
     fi
     trace "[getnewaddress] jqop=${jqop}"
     trace "[getnewaddress] addedfieldstoresponse=${addedfieldstoresponse}"
