@@ -462,6 +462,23 @@ ln_pay() {
   return ${returncode}
 }
 
+ln_listpays() {
+  trace "Entering ln_listpays()..."
+
+  local result
+  local bolt11=${1}
+  trace "[ln_listpays] bolt11=${bolt11}"
+
+  result=$(./lightning-cli listpays ${bolt11})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_listpays] result=${result}"
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
 ln_newaddr() {
   trace "Entering ln_newaddr()..."
 
@@ -495,16 +512,6 @@ ln_listfunds() {
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_listfunds] result=${result}"
-  echo "${result}"
-  return ${returncode}
-}
-ln_listpays() {
-  trace "Entering ln_listpays()..."
-  local result
-  result=$(./lightning-cli listpays)
-  returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listpays] result=${result}"
   echo "${result}"
   return ${returncode}
 }
