@@ -307,9 +307,9 @@ ln_connectfund() {
 ln_pay() {
   trace "Entering ln_pay()..."
 
-  # We'll use pay that will manage the routing and waitsendpay to make sure a payment succeeded or failed.
-  # 1. pay
-  # 2. waitsendpay IF pay returned a status of "pending" (code 200)
+  # Let's try to pay (MPP enabled) for 30 seconds.
+  # If this doesn't work for a routing reason, let's try to legacypay (MPP disabled) for 30 seconds.
+  # If this doesn't work, return an error.
 
   local result
   local returncode
@@ -359,21 +359,46 @@ ln_pay() {
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15)
+        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
+        result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
       else
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=15"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=15)
+        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=30"
+        result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=30)
       fi
       returncode=$?
       trace_rc ${returncode}
       trace "[ln_pay] result=${result}"
 
-      # The result should contain a status field with value pending, complete or failed.
-      # If complete, we can return with success.
-      # If failed, we can return with failed.
-      # If pending, we should keep trying until complete or failed status, before responding to client.
-      # We'll use waitsendpay for that.
+      # Successful payment example:
+      #
+      # {
+      #    "destination": "029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb",
+      #    "payment_hash": "0d1e62210e7af9a4146258652fd4cfecd2638086850583e994a103884e2b4e78",
+      #    "created_at": 1631200188.550,
+      #    "parts": 1,
+      #    "msatoshi": 530114,
+      #    "amount_msat": "530114msat",
+      #    "msatoshi_sent": 530114,
+      #    "amount_sent_msat": "530114msat",
+      #    "payment_preimage": "2672c5fa280367222bf30db82566b78909927a67d5756d5ae0227b2ff8f3a907",
+      #    "status": "complete"
+      # }
+      #
+      #
+      # Failed payment example:
+      # {
+      #    "code": 210,
+      #    "message": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+      #    "attempts": [
+      #       {
+      #          "status": "failed",
+      #          "failreason": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+      #          "partid": 0,
+      #          "amount": "528214msat"
+      #       }
+      #    ]
+      # }
+      #
 
       if [ "${returncode}" -ne "0" ]; then
         trace "[ln_pay] payment not complete, let's see what's going on."
@@ -384,78 +409,46 @@ ln_pay() {
           # code tag not null, so there's an error
           trace "[ln_pay] Error code found, code=${code}"
 
-          if [ "${code}" -eq "200" ]; then
-            trace "[ln_pay] Code 200, let's fetch status in data, should be pending..."
-            status=$(echo "${result}" | jq -r ".data.status")
-            trace "[ln_pay] status=${status}"
-          else
+          # -1: Catchall nonspecific error.
+          # 201: Already paid with this hash using different amount or destination.
+          # 203: Permanent failure at destination. The data field of the error will be routing failure object.
+          # 205: Unable to find a route.
+          # 206: Route too expensive. Either the fee or the needed total locktime for the route exceeds your maxfeepercent or maxdelay settings, respectively. The data field of the error will indicate the actual fee as well as the feepercent percentage that the fee has of the destination payment amount. It will also indicate the actual delay along the route.
+          # 207: Invoice expired. Payment took too long before expiration, or already expired at the time you initiated payment. The data field of the error indicates now (the current time) and expiry (the invoice expiration) as UNIX epoch time in seconds.
+          # 210: Payment timed out without a payment in progress.
+
+          # Let's try legacypay if code NOT 207 or 201.
+
+          if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ]; then
             trace "[ln_pay] Failure code, response will be the cli result."
+          else
+            trace "[ln_pay] Ok let's deal with potential routing failures and retry without MPP..."
+
+            if [ "${invoice_msatoshi}" = "null" ]; then
+              # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
+              trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
+              result=$(./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
+            else
+              trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30"
+              result=$(./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30)
+            fi
+            returncode=$?
+            trace_rc ${returncode}
+            trace "[ln_pay] result=${result}"
+
+            if [ "${returncode}" -ne "0" ]; then
+              trace "[ln_pay] Failed!"
+            else
+              trace "[ln_pay] Successfully paid!"
+            fi
           fi
         else
           # code tag not found
-          trace "[ln_pay] No error code, getting the status..."
-          status=$(echo "${result}" | jq -r ".status")
-          trace "[ln_pay] status=${status}"
+          trace "[ln_pay] No error code..."
         fi
-
-        if [ "${status}" = "pending" ]; then
-          trace "[ln_pay] Ok let's deal with pending status with waitsendpay."
-
-          payment_hash=$(echo "${result}" | jq -r ".data.payment_hash")
-          trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash} 15"
-          result=$(./lightning-cli waitsendpay ${payment_hash} 15)
-          returncode=$?
-          trace_rc ${returncode}
-          trace "[ln_pay] result=${result}"
-
-          if [ "${returncode}" -ne "0" ]; then
-            trace "[ln_pay] Failed!"
-          else
-            trace "[ln_pay] Successfully paid!"
-          fi
-        fi
-      else
-        trace "[ln_pay] Successfully paid!"
       fi
     fi
   fi
-
-# Example of error result:
-#
-# { "code" : 204, "message" : "failed: WIRE_TEMPORARY_CHANNEL_FAILURE (Outgoing subdaemon died)", "data" :
-# {
-#   "erring_index": 0,
-#   "failcode": 4103,
-#   "erring_node": "031b867d9d6631a1352cc0f37bcea94bd5587a8d4f40416c4ce1a12511b1e68f56",
-#   "erring_channel": "1452982:62:0"
-# } }
-#
-#
-# Example of successful result:
-#
-# {
-#   "id": 44,
-#   "payment_hash": "de648062da7117903291dab2075881e49ddd78efbf82438e4a2f486a7ebe0f3a",
-#   "destination": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
-#   "msatoshi": 207000,
-#   "msatoshi_sent": 207747,
-#   "created_at": 1548380406,
-#   "status": "complete",
-#   "payment_preimage": "a7ef27e9a94d63e4028f35ca4213fd9008227ad86815cd40d3413287d819b145",
-#   "description": "Order 43012 - Satoshi Larrivee",
-#   "getroute_tries": 1,
-#   "sendpay_tries": 1,
-#   "route": [
-#     {
-#       "id": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
-#       "channel": "1452749:174:0",
-#       "msatoshi": 207747,
-#       "delay": 10
-#     }
-#   ],
-#   "failures": [
-#   ]
-# }
 
   echo "${result}"
 
