@@ -472,6 +472,23 @@ ln_listpays() {
   return ${returncode}
 }
 
+ln_paystatus() {
+  trace "Entering ln_paystatus()..."
+
+  local result
+  local bolt11=${1}
+  trace "[ln_paystatus] bolt11=${bolt11}"
+
+  result=$(./lightning-cli paystatus ${bolt11})
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[ln_paystatus] result=${result}"
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
 ln_newaddr() {
   trace "Entering ln_newaddr()..."
 

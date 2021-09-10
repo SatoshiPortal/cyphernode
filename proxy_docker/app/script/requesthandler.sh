@@ -661,6 +661,23 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        ln_paystatus)
+          # GET http://192.168.111.152:8080/ln_paystatus
+          # POST http://192.168.111.152:8080/ln_paystatus
+          # BODY {"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3"}
+          # BODY {}
+
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            bolt11=$(echo "${line}" | jq -r ".bolt11 // empty")
+          else
+            bolt11=
+          fi
+
+          response=$(ln_paystatus "${bolt11}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         ln_newaddr)
           # GET http://192.168.111.152:8080/ln_newaddr
 
