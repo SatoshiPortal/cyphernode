@@ -68,13 +68,37 @@ random_wasabi_index() {
 smallest_balance_wasabi_index() {
   trace "Entering smallest_balance_wasabi_index()..."
 
-  balances=$(wasabi_getbalances)
-  trace "[smallest_balance_wasabi_index] balances=${balances}"
+  local minInstanceIndex=0
+  local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
+  local minBalance=99999999999
+  local minBalanceInstanceId
+  local balance
 
-  instanceid=$(echo "$balances" | jq -r "to_entries | min_by(.value.total) | .key")
-  trace "[smallest_balance_wasabi_index] Using instance ${instanceid}"
+  for i in `seq ${minInstanceIndex} ${maxInstanceIndex}`
+  do
+    # wasabi rpc: getwalletinfo
+    balance=$(send_to_wasabi ${i} getwalletinfo "[]" | jq -e ".result.balance")
+    returncode=$?
+    trace_rc ${returncode}
 
-  echo ${instanceid}
+    # "jq -e" returns 1 when tag is null!
+    if [ "${returncode}" -eq "1" ]; then
+      # If this instance fails, skip it and ignore it
+      trace "[smallest_balance_wasabi_index] Instance $i is down or in error, skipping..."
+      continue
+    fi
+
+    trace "[smallest_balance_wasabi_index] Instance $i balance=${balance}"
+
+    if [ "${balance}" -lt "${minBalance}" ]; then
+      minBalanceInstanceId=${i}
+      minBalance=${balance}
+    fi
+  done
+
+  trace "[smallest_balance_wasabi_index] Smallest instance is ${minBalanceInstanceId} with balance=${minBalance}"
+
+  echo ${minBalanceInstanceId}
 }
 
 # wasabi_newaddr [requesthandler_request_string]
