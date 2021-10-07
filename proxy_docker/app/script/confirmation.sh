@@ -105,7 +105,9 @@ confirmation() {
       tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}-$$.blob'))"
+    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime})"
+    trace_rc $?
+    sql_rawtx "INSERT OR IGNORE INTO rawtx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}-$$.blob'))"
     trace_rc $?
 
     id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
@@ -124,6 +126,13 @@ confirmation() {
       local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
 
       sql "UPDATE tx SET
+        confirmations=${tx_nb_conf},
+        blockhash=${tx_blockhash},
+        blockheight=${tx_blockheight},
+        blocktime=${tx_blocktime}
+        WHERE txid=\"${txid}\""
+      trace_rc $?
+      sql_rawtx "UPDATE rawtx SET
         confirmations=${tx_nb_conf},
         blockhash=${tx_blockhash},
         blockheight=${tx_blockheight},

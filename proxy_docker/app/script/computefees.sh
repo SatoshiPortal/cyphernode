@@ -65,7 +65,8 @@ compute_vin_total_amount()
   do
     vin_txid=$(echo "${vin_txid_vout}" | tr -d '"' | cut -d '-' -f1)
     # Check if we already have the tx in our DB
-    vin_raw_tx=$(sql "SELECT raw_tx FROM tx WHERE txid=\"${vin_txid}\"")
+    vin_raw_tx=$(sql_rawtx "SELECT raw_tx FROM rawtx WHERE txid=\"${vin_txid}\"")
+    trace_rc $?
     if [ -z "${vin_raw_tx}" ]; then
       txid_already_inserted=false
       vin_raw_tx=$(get_rawtransaction "${vin_txid}" | tr -d '\n')
@@ -94,7 +95,9 @@ compute_vin_total_amount()
       # Sometimes raw tx are too long to be passed as paramater, so let's write
       # it to a temp file for it to be read by sqlite3 and then delete the file
       echo "${vin_raw_tx}" > vin-rawtx-${vin_txid}-$$.blob
-      sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime}, readfile('vin-rawtx-${vin_txid}-$$.blob'))"
+      sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime})"
+      trace_rc $?
+      sql_rawtx "INSERT OR IGNORE INTO rawtx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime}, readfile('vin-rawtx-${vin_txid}-$$.blob'))"
       trace_rc $?
       rm vin-rawtx-${vin_txid}-$$.blob
       txid_already_inserted=true

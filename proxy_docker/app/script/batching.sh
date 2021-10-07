@@ -196,6 +196,9 @@ addtobatch() {
   else
     # Check if address already pending for this batcher...
     inserted_id=$(sql "SELECT id FROM recipient WHERE LOWER(address)=LOWER(\"${address}\") AND tx_id IS NULL AND batcher_id=${batcher_id}")
+    returncode=$?
+    trace_rc ${returncode}
+
     if [ -n "${inserted_id}" ]; then
       response='{"result":null,"error":{"code":-32700,"message":"Duplicated address","data":'${request}'}}'
 
@@ -465,9 +468,13 @@ batchspend() {
 
       # Get the info on the batch before setting it to done
       row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
+      returncode=$?
+      trace_rc ${returncode}
 
       # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}-$$.blob')); SELECT LAST_INSERT_ROWID();")
+      sql_rawtx "INSERT OR IGNORE INTO rawtx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}-$$.blob'))"
+      trace_rc $?
+      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}); SELECT LAST_INSERT_ROWID();")
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -eq 0 ]; then
