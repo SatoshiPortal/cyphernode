@@ -355,15 +355,15 @@ ln_pay() {
       returncode=1
     else
       # Amount and description are as expected (or empty description), let's pay!
-      trace "[ln_pay] Amount and description are as expected, let's try to pay!"
+      trace "[ln_pay] Amount and description are as expected, let's try to pay without MPP!"
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
+        trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
+        result=$(./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
       else
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=30"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=30)
+        trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30"
+        result=$(./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30)
       fi
       returncode=$?
       trace_rc ${returncode}
@@ -372,31 +372,34 @@ ln_pay() {
       # Successful payment example:
       #
       # {
-      #    "destination": "029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb",
-      #    "payment_hash": "0d1e62210e7af9a4146258652fd4cfecd2638086850583e994a103884e2b4e78",
-      #    "created_at": 1631200188.550,
-      #    "parts": 1,
-      #    "msatoshi": 530114,
-      #    "amount_msat": "530114msat",
-      #    "msatoshi_sent": 530114,
-      #    "amount_sent_msat": "530114msat",
-      #    "payment_preimage": "2672c5fa280367222bf30db82566b78909927a67d5756d5ae0227b2ff8f3a907",
-      #    "status": "complete"
+      #    "id": 16,
+      #    "payment_hash": "f00877afeec4d771c2db68af80b8afa5dad3b495dad498828327e484c93f67d5",
+      #    "destination": "021ec6ccede19caa0bc7d7f9699c73e63cb2b79a4877529a60d7ac6a4ebb03487a",
+      #    "msatoshi": 1234,
+      #    "amount_msat": "1234msat",
+      #    "msatoshi_sent": 1235,
+      #    "amount_sent_msat": "1235msat",
+      #    "created_at": 1633373202,
+      #    "status": "complete",
+      #    "payment_preimage": "373cd9a0f83426506f1535f6ca1f08f279f0bd82d257fd3fc8cd49fbc25750f2",
+      #    "bolt11": "lntb1ps4kjlrpp57qy80tlwcnthrskmdzhcpw905hdd8dy4mt2f3q5ryljgfjflvl2sdq9u2d2zxqr3jscqp2sp5c2qykk0pdaeh2yrvn4cpkchsnyxwjnaptujggsd6ldqjfd8jhh3qrzjqwyx8nu2hygyvgc02cwdtvuxe0lcxz06qt3lpsldzcdr46my5epmj85hhvqqqtsqqqqqqqlgqqqqqqgq9q9qyyssqpnwtw6mzxu8pr5mrm8677ke8p5fjcu6dyrrvuy8j5f5p8mzv2phr2y0yx3z7mvgf5uqzzdytegg04u7hcu8ma50692cg69cdtsgw9hsph0xeha"
+      # }
+
+      # Failure response examples:
+      #
+      # {
+      #    "code": -32602,
+      #    "message": "03c05f973d9c7218e7aec4f52c2c8ab395f51f41d627c398237b5ff056f46faf09: unknown destination node_id (no public channels?)"
       # }
       #
-      #
-      # Failed payment example:
       # {
-      #    "code": 210,
-      #    "message": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
-      #    "attempts": [
-      #       {
-      #          "status": "failed",
-      #          "failreason": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
-      #          "partid": 0,
-      #          "amount": "528214msat"
-      #       }
-      #    ]
+      #    "code": 206,
+      #    "message": "Route wanted fee of 16101625msat"
+      # }
+      #
+      # {
+      #    "code": 207,
+      #    "message": "Invoice expired"
       # }
       #
 
@@ -419,28 +422,60 @@ ln_pay() {
 
           # Let's try legacypay if code NOT 207 or 201.
 
-          if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ]; then
+          if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ] || [ "${code}" -lt "0" ]; then
             trace "[ln_pay] Failure code, response will be the cli result."
           else
-            trace "[ln_pay] Ok let's deal with potential routing failures and retry without MPP..."
+            trace "[ln_pay] Ok let's deal with potential routing failures and retry with MPP..."
 
             if [ "${invoice_msatoshi}" = "null" ]; then
               # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-              trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
-              result=$(./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
+              trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
+              result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
             else
-              trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30"
-              result=$(./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30)
+              trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=30"
+              result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=30)
             fi
             returncode=$?
             trace_rc ${returncode}
             trace "[ln_pay] result=${result}"
-
+            
             if [ "${returncode}" -ne "0" ]; then
               trace "[ln_pay] Failed!"
             else
               trace "[ln_pay] Successfully paid!"
             fi
+
+            # Successful payment example:
+            #
+            # {
+            #    "destination": "029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb",
+            #    "payment_hash": "0d1e62210e7af9a4146258652fd4cfecd2638086850583e994a103884e2b4e78",
+            #    "created_at": 1631200188.550,
+            #    "parts": 1,
+            #    "msatoshi": 530114,
+            #    "amount_msat": "530114msat",
+            #    "msatoshi_sent": 530114,
+            #    "amount_sent_msat": "530114msat",
+            #    "payment_preimage": "2672c5fa280367222bf30db82566b78909927a67d5756d5ae0227b2ff8f3a907",
+            #    "status": "complete"
+            # }
+            #
+            #
+            # Failed payment example:
+            # {
+            #    "code": 210,
+            #    "message": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+            #    "attempts": [
+            #       {
+            #          "status": "failed",
+            #          "failreason": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+            #          "partid": 0,
+            #          "amount": "528214msat"
+            #       }
+            #    ]
+            # }
+            #
+
           fi
         else
           # code tag not found
@@ -516,7 +551,7 @@ ln_listpeers() {
   return ${returncode}
 }
 ln_listfunds() {
-  trace "Entering ln_listpeers()..."
+  trace "Entering ln_listfunds()..."
   local result
   result=$(./lightning-cli listfunds)
   returncode=$?
