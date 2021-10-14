@@ -85,6 +85,16 @@ test_derive() {
   echo -e "\nDeriving 500 addresses with derivepubpath_bitcoind (Bitcoin Core)..."
   time curl -s -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/0-499\"}" proxy:8888/derivepubpath_bitcoind  > /dev/null
 
+  # Deriving 500 addresses with derivepubpath (pycoin)...
+  # real	0m 18.15s
+  # user	0m 0.00s
+  # sys	0m 0.00s
+  # 
+  # Deriving 500 addresses with derivepubpath_bitcoind (Bitcoin Core)...
+  # real	0m 0.64s
+  # user	0m 0.00s
+  # sys	0m 0.00s
+
 }
 
 apk add curl jq

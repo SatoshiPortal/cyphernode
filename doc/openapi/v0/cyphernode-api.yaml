@@ -1867,6 +1867,81 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /deriveindex_bitcoind/{indexSpecifier}:
+    get:
+      parameters:
+        - in: "path"
+          name: "indexSpecifier"
+          description: "Index specifier. Either an integer or a range in the form n-m"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Fast address derivation using configured xpub key and derivation path"
+      description: "Fast address derivation for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
+      operationId: "deriveIndex"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TypeAddressString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /derivepubpath_bitcoind:
+    post:
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Fast address derivation using supplied xpub key and derivation path"
+      description: "Fast address derivation for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used."
+      operationId: "derivePubPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "pub32"
+                - "path"
+              properties:
+                pub32:
+                  description: "xpub/ypub/zpub/tpub/upub/vpub used to derive address(es)"
+                  type: "string"
+                path:
+                  description: "Derivation path including the index, in the form n or n-m (ex.: 0/44'/86 or 0/44'/62-77)"
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TypeAddressString'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /getmempoolinfo:
     get:
       tags:

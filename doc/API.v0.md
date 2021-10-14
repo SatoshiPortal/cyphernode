@@ -893,6 +893,59 @@ Proxy response:
 }
 ```
 
+### Fast address derivation using path in config and provided index (called by your application)
+
+Derives addresses for supplied index.  Must be used with derivation.pub32 and derivation.path properties in config.properties.
+
+```http
+GET http://cyphernode:8888/deriveindex_bitcoind/25-30
+GET http://cyphernode:8888/deriveindex_bitcoind/34
+```
+
+Proxy response:
+
+```json
+[
+  "2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8",
+  "2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV",
+  "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP",
+  "2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6",
+  "2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH",
+  "2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"
+]
+```
+
+### Fast address derivation using provided path and index (called by your application)
+
+Derives addresses for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used.
+
+```http
+POST http://cyphernode:8888/derivepubpath_bitcoind
+with body...
+{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+
+or
+
+{"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/34"}
+
+or
+
+{"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
+```
+
+Proxy response:
+
+```json
+[
+  "mz3bWMW3BWGT9YGDjJwS8TfhJMMtZ91Frm",
+  "mkjmKEX3KJrVpiqLSSxKB6jjgm3WhPnrv8",
+  "mk43Tmf6E5nsmETTaNMTZK9TikaeVJRJ4a",
+  "n1SEcVHHKpHyNr695JpXNdH6b9cWQ26qkt",
+  "mzWqwZkA31kYVy1kpMoZgvfzSDyGgEi7Yg",
+  "mp5jtEDNa88xfSQGs5yYQGk7guGWvaG4ci"
+]
+```
+
 ### Get info from Lightning Network node (called by your application)
 
 Calls getinfo from lightningd.  Useful to let your users know where to connect to.
