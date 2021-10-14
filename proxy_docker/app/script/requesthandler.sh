@@ -607,6 +607,24 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        deriveindex_bitcoind)
+          # curl GET http://192.168.111.152:8080/deriveindex_bitcoind/25-30
+          # curl GET http://192.168.111.152:8080/deriveindex_bitcoind/34
+
+          response=$(deriveindex_bitcoind "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        derivepubpath_bitcoind)
+          # POST http://192.168.111.152:8080/derivepubpath_bitcoind
+          # BODY {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+          # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
+          # BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
+
+          response=$(derivepubpath_bitcoind "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
         getmempoolinfo)
           # curl GET http://192.168.111.152:8080/getmempoolinfo
 

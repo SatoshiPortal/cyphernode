@@ -6,7 +6,9 @@ RUN apk add --update --no-cache \
     sqlite \
     jq \
     curl \
-    su-exec
+    su-exec \
+    py3-pip \
+    xxd
 
 WORKDIR ${HOME}
 
@@ -21,7 +23,8 @@ COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libssl* /usr/lib/
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh tests/* \
  && chmod o+w . \
- && mkdir db
+ && mkdir db \
+ && pip3 install base58
 
 VOLUME ["${HOME}/db", "/.lightning"]
 

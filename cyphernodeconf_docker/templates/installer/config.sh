@@ -33,3 +33,4 @@ OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } %>
+BITCOIN_NETWORK=<%= net %>
