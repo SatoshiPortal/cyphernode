@@ -62,7 +62,7 @@ send_to_bitcoin_node()
   result=$(curl -m 20 -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
   returncode=$?
   trace_rc ${returncode}
-  trace "[send_to_bitcoin_node] result=${result}"
+  # trace "[send_to_bitcoin_node] result=${result}"
 
   if [ "${returncode}" -eq 0 ]; then
     # Node responded, let's see if we got an error message from the node

@@ -2,6 +2,22 @@
 
 . ./trace.sh
 
+ln_call_lightningd() {
+  trace "Entering ln_call_lightningd()..."
+
+  local response
+  local returncode
+
+  trace "[ln_call_lightningd] ./lightning-cli $@"
+  response=$(./lightning-cli $@)
+  returncode=$?
+  trace_rc ${returncode}
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 ln_create_invoice() {
   trace "Entering ln_create_invoice()..."
 
@@ -34,11 +50,9 @@ ln_create_invoice() {
   #}
 
   if [ "${msatoshi}" = "null" ]; then
-    trace "[ln_create_invoice] ./lightning-cli invoice \"any\" \"${label}\" \"${description}\" ${expiry}"
-    result=$(./lightning-cli invoice "any" "${label}" "${description}" ${expiry})
+    result=$(ln_call_lightningd invoice "any" "${label}" "${description}" ${expiry})
   else
-    trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \"${description}\" ${expiry}"
-    result=$(./lightning-cli invoice ${msatoshi} "${label}" "${description}" ${expiry})
+    result=$(ln_call_lightningd invoice ${msatoshi} "${label}" "${description}" ${expiry})
   fi
   returncode=$?
   trace_rc ${returncode}
@@ -130,10 +144,8 @@ ln_getinfo() {
 
   local result
 
-  result=$(./lightning-cli getinfo)
+  result=$(ln_call_lightningd getinfo)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getinfo] result=${result}"
 
   echo "${result}"
 
@@ -147,10 +159,8 @@ ln_getinvoice() {
   trace "[ln_getinvoice] label=${label}"
   local result
 
-  result=$(./lightning-cli listinvoices ${label})
+  result=$(ln_call_lightningd listinvoices ${label})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getinvoice] result=${result}"
 
   echo "${result}"
 
@@ -165,11 +175,8 @@ ln_delinvoice() {
   local returncode
   local rc
 
-  trace "[ln_delinvoice] ./lightning-cli delinvoice ${label} \"unpaid\""
-  result=$(./lightning-cli delinvoice ${label} "unpaid")
+  result=$(ln_call_lightningd delinvoice ${label} "unpaid")
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_delinvoice] result=${result}"
 
   if [ "${returncode}" -ne "0" ]; then
     # Special case of error: if status is expired, we're ok
@@ -195,10 +202,8 @@ ln_decodebolt11() {
   local bolt11=${1}
   local result
 
-  result=$(./lightning-cli decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_decodebolt11] result=${result}"
 
   echo "${result}"
 
@@ -228,11 +233,8 @@ ln_connectfund() {
   trace "[ln_connectfund] callback_url=${callback_url}"
 
   # Let's first try to connect to peer
-  trace "[ln_connectfund] ./lightning-cli connect ${peer}"
-  result=$(./lightning-cli connect ${peer})
+  result=$(ln_call_lightningd connect ${peer})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_connectfund] result=${result}"
 
   if [ "${returncode}" -eq "0" ]; then
     # Connected
@@ -249,11 +251,8 @@ ln_connectfund() {
     trace "[ln_connectfund] nodeId=${nodeId}"
 
     # Now let's fund a channel with peer
-    trace "[ln_connectfund] ./lightning-cli fundchannel ${nodeId} $((${msatoshi}/1000))"
-    result=$(./lightning-cli fundchannel ${nodeId} $((${msatoshi}/1000)))
+    result=$(ln_call_lightningd fundchannel ${nodeId} $((${msatoshi}/1000)))
     returncode=$?
-    trace_rc ${returncode}
-    trace "[ln_connectfund] result=${result}"
 
     if [ "${returncode}" -eq "0" ]; then
       # funding succeeded
@@ -307,8 +306,8 @@ ln_connectfund() {
 ln_pay() {
   trace "Entering ln_pay()..."
 
-  # Let's try to pay (MPP enabled) for 30 seconds.
-  # If this doesn't work for a routing reason, let's try to legacypay (MPP disabled) for 30 seconds.
+  # Let's try to pay (MPP disabled) for 30 seconds.
+  # If this doesn't work for a routing reason, let's try to pay (MPP enabled) for 30 seconds.
   # If this doesn't work, return an error.
 
   local result
@@ -326,11 +325,8 @@ ln_pay() {
   trace "[ln_pay] expected_description=${expected_description}"
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
-  trace "[ln_pay] ./lightning-cli decodepay ${bolt11}"
-  result=$(./lightning-cli decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_pay] result=${result}"
 
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
@@ -359,11 +355,9 @@ ln_pay() {
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
-        result=$(./lightning-cli legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
+        result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
       else
-        trace "[ln_pay] ./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30"
-        result=$(./lightning-cli legacypay -k bolt11=${bolt11} retry_for=30)
+        result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} retry_for=30)
       fi
       returncode=$?
       trace_rc ${returncode}
@@ -429,15 +423,11 @@ ln_pay() {
 
             if [ "${invoice_msatoshi}" = "null" ]; then
               # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-              trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30"
-              result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
+              result=$(ln_call_lightningd pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=30)
             else
-              trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=30"
-              result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=30)
+              result=$(ln_call_lightningd pay -k bolt11=${bolt11} retry_for=30)
             fi
             returncode=$?
-            trace_rc ${returncode}
-            trace "[ln_pay] result=${result}"
             
             if [ "${returncode}" -ne "0" ]; then
               trace "[ln_pay] Failed!"
@@ -497,10 +487,8 @@ ln_listpays() {
   local bolt11=${1}
   trace "[ln_listpays] bolt11=${bolt11}"
 
-  result=$(./lightning-cli listpays ${bolt11})
+  result=$(ln_call_lightningd listpays ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listpays] result=${result}"
 
   echo "${result}"
 
@@ -514,10 +502,8 @@ ln_paystatus() {
   local bolt11=${1}
   trace "[ln_paystatus] bolt11=${bolt11}"
 
-  result=$(./lightning-cli paystatus ${bolt11})
+  result=$(ln_call_lightningd paystatus ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_paystatus] result=${result}"
 
   echo "${result}"
 
@@ -529,10 +515,8 @@ ln_newaddr() {
 
   local result
 
-  result=$(./lightning-cli newaddr)
+  result=$(ln_call_lightningd newaddr)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_newaddr] result=${result}"
 
   echo "${result}"
 
@@ -541,43 +525,50 @@ ln_newaddr() {
 
 ln_listpeers() {
   trace "Entering ln_listpeers()..."
+
   local id=${1}
   local result
-  result=$(./lightning-cli listpeers ${id})
+
+  result=$(ln_call_lightningd listpeers ${id})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listpeers] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 ln_listfunds() {
   trace "Entering ln_listfunds()..."
+
   local result
-  result=$(./lightning-cli listfunds)
+
+  result=$(ln_call_lightningd listfunds)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listfunds] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 ln_getroute() {
   trace "Entering ln_getroute()..."
   # Defaults used from c-lightning documentation
+
   local result 
   local id=${1}
   local msatoshi=${2}
   local riskfactor=${3}
-  result=$(./lightning-cli getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor}) 
+  
+  result=$(ln_call_lightningd getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor}) 
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getroute] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 
 ln_withdraw() {
   trace "Entering ln_withdraw()..."
   # Defaults used from c-lightning documentation
+
   local result 
   local request=${1}
   local destination=$(echo "${request}" | jq -r ".destination")
@@ -587,12 +578,13 @@ ln_withdraw() {
   if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
       satoshi="all"
   fi
-  result=$(./lightning-cli withdraw ${destination} ${satoshi} ${feerate}) 
+  
+  result=$(ln_call_lightningd withdraw ${destination} ${satoshi} ${feerate}) 
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_withdraw] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 
-case "${0}" in *call_lightningd.sh) ./lightning-cli $@;; esac
+case "${0}" in *call_lightningd.sh) ln_call_lightningd $@;; esac
