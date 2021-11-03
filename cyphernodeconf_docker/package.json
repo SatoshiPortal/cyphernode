@@ -25,7 +25,7 @@
     "lunicode": "^2.0.1",
     "parse5": "^5.1.0",
     "tmp": "^0.1.0",
-    "validator": "^10.11.0",
+    "validator": "^13.7.0",
     "wrap-ansi": "^5.1.0"
   },
   "devDependencies": {
