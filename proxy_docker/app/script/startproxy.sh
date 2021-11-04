@@ -47,7 +47,7 @@ chmod 0600 ${DB_FILE}_rawtx
 createCurlConfig ${WATCHER_BTC_NODE_RPC_CFG} ${WATCHER_BTC_NODE_RPC_USER}
 createCurlConfig ${SPENDER_BTC_NODE_RPC_CFG} ${SPENDER_BTC_NODE_RPC_USER}
 
-. ${DB_PATH}/config.sh
+#. ${DB_PATH}/config.sh
 if [ "${FEATURE_LIGHTNING}" = "true" ]; then
   ./waitanyinvoice.sh &
 fi

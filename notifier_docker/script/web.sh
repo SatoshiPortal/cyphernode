@@ -64,11 +64,11 @@ curl_it() {
   fi
 
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
-    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
+    trace "[curl_it] curl ${tor} -o webresponse-${rnd}\ -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl ${tor} -o \ webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
-    trace "[curl_it] curl ${tor} -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
+    trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -k ${url}"
     rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
     returncode=$?
   fi
@@ -76,10 +76,13 @@ curl_it() {
   trace_rc ${returncode}
 
   if [ "${returncode}" -eq "0" ]; then
-    response=$(cat webresponse-${rnd} | base64 | tr -d '\n' ; rm webresponse-${rnd})
+    response=$(cat webresponse-${rnd} | base64 | tr -d '\n')
   else
     response=
   fi
+
+  rm webresponse-${rnd}
+
   # When curl is unable to connect, http_code is "000" which is not a valid JSON number
   [ "${rc}" -eq "0" ] && rc=0
   response="{\"curl_code\":${returncode},\"http_code\":${rc},\"body\":\"${response}\"}"
