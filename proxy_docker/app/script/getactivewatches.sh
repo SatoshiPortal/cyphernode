@@ -65,7 +65,7 @@ getactivewatches() {
   trace "Entering getactivewatches()..."
 
   local watches
-  # Let's build the string directly with sqlite instead of manipulating multiple strings afterwards, it's faster.
+  # Let's build the string directly with dbms instead of manipulating multiple strings afterwards, it's faster.
   # {"id":"${id}","address":"${address}","imported":"${imported}","unconfirmedCallbackURL":"${cb0conf_url}","confirmedCallbackURL":"${cb1conf_url}","watching_since":"${timestamp}"}
   watches=$(sql "SELECT '{\"id\":' || id || ',\"address\":\"' || address || '\",\"imported\":' || imported || ',\"unconfirmedCallbackURL\":' || CASE WHEN callback0conf IS NULL THEN 'null' ELSE ('\"' || callback0conf || '\"') END || ',\"confirmedCallbackURL\":' || CASE WHEN callback1conf IS NULL THEN 'null' ELSE ('\"' || callback1conf || '\"') END || ',\"label\":\"' || COALESCE(label, '') || '\",\"watching_since\":\"' || inserted_ts || '\"}' FROM watching WHERE watching AND NOT calledback1conf ORDER BY id")
   returncode=$?
@@ -128,7 +128,7 @@ getactivewatchesxpub() {
   trace "[getactivewatchesxpub] value=${value}"
   local watches
 
-  # Let's build the string directly with sqlite instead of manipulating multiple strings afterwards, it's faster.
+  # Let's build the string directly with dbms instead of manipulating multiple strings afterwards, it's faster.
   # {"id":"${id}","address":"${address}","imported":"${imported}","unconfirmedCallbackURL":"${cb0conf_url}","confirmedCallbackURL":"${cb1conf_url}","watching_since":"${timestamp}","derivation_path":"${derivation_path}","pub32_index":"${pub32_index}"}
   watches=$(sql "SELECT '{\"id\":' || w.id || ',\"address\":\"' || address || '\",\"imported\":' || imported || ',\"unconfirmedCallbackURL\":' || CASE WHEN w.callback0conf IS NULL THEN 'null' ELSE ('\"' || w.callback0conf || '\"') END || ',\"confirmedCallbackURL\":' || CASE WHEN w.callback1conf IS NULL THEN 'null' ELSE ('\"' || w.callback1conf || '\"') END || ',\"watching_since\":\"' || w.inserted_ts || '\",\"derivation_path\":\"' || derivation_path || '\",\"pub32_index\":' || pub32_index || '}' FROM watching w, watching_by_pub32 w32 WHERE watching_by_pub32_id = w32.id AND w32.${where} = '${value}' AND w.watching AND NOT calledback1conf ORDER BY w.id")
   returncode=$?
@@ -160,7 +160,7 @@ getactivexpubwatches() {
   trace "Entering getactivexpubwatches()..."
 
   local watches
-  # Let's build the string directly with sqlite instead of manipulating multiple strings afterwards, it's faster.
+  # Let's build the string directly with dbms instead of manipulating multiple strings afterwards, it's faster.
   # {"id":"${id}","pub32":"${pub32}","label":"${label}","derivation_path":"${derivation_path}","last_imported_n":${last_imported_n},"unconfirmedCallbackURL":"${cb0conf_url}","confirmedCallbackURL":"${cb1conf_url}","watching_since":"${timestamp}"}
   watches=$(sql "SELECT '{\"id\":' || id || ',\"pub32\":\"' || pub32 || '\",\"label\":\"' || label || '\",\"derivation_path\":\"' || derivation_path || '\",\"last_imported_n\":' || last_imported_n || ',\"unconfirmedCallbackURL\":' || CASE WHEN callback0conf IS NULL THEN 'null' ELSE ('\"' || callback0conf || '\"') END || ',\"confirmedCallbackURL\":' || CASE WHEN callback1conf IS NULL THEN 'null' ELSE ('\"' || callback1conf || '\"') END || ',\"watching_since\":\"' || inserted_ts || '\"}' FROM watching_by_pub32 WHERE watching ORDER BY id")
   returncode=$?

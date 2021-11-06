@@ -394,8 +394,8 @@ install_docker() {
 
 
   if [ ! -d $LOGS_DATAPATH ]; then
-    step "   [32mcreate[0m $POSTGRES_DATAPATH"
-    sudo_if_required mkdir -p $POSTGRES_DATAPATH
+    step "   [32mcreate[0m $LOGS_DATAPATH"
+    sudo_if_required mkdir -p $LOGS_DATAPATH
     next
   fi
 
