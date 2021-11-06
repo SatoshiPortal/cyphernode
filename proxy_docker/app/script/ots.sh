@@ -39,7 +39,7 @@ serve_ots_stamp() {
     id_inserted=$(echo "${row}" | cut -d '|' -f1)
     trace "[serve_ots_stamp] id_inserted=${id_inserted}"
 
-    if [ "${requested}" -eq "1" ]; then
+    if [ "${requested}" = "t" ]; then
       # Stamp already requested
       trace "[serve_ots_stamp] Stamp already requested"
       errorstring="Duplicate stamping request, hash already exists in DB and been OTS requested"
@@ -176,12 +176,12 @@ serve_ots_backoffice() {
     id=$(echo "${row}" | cut -d '|' -f5)
     trace "[serve_ots_backoffice] id=${id}"
 
-    if [ "${requested}" -ne "1" ]; then
+    if [ "${requested}" != "t" ]; then
       # Re-request the unrequested calls to ots_stamp
       request_ots_stamp "${hash}" ${id}
       returncode=$?
     else
-      if [ "${upgraded}" -ne "1" ]; then
+      if [ "${upgraded}" != "t" ]; then
         # Upgrade requested calls to ots_stamp that have not been called back yet
         trace "[serve_ots_backoffice] curl -s ${OTSCLIENT_CONTAINER}/upgrade/${hash}"
         result=$(curl -s ${OTSCLIENT_CONTAINER}/upgrade/${hash})
@@ -196,18 +196,18 @@ serve_ots_backoffice() {
             # Error tag not null, so there's an error
             trace "[serve_ots_backoffice] not upgraded!"
 
-            upgraded=0
+            upgraded="f"
           else
             # No failure, upgraded
             trace "[serve_ots_backoffice] just upgraded!"
             sql "UPDATE stamp SET upgraded=true WHERE id=${id}"
             trace_rc $?
 
-            upgraded=1
+            upgraded="t"
           fi
         fi
       fi
-      if [ "${upgraded}" -eq "1" ]; then
+      if [ "${upgraded}" = "t" ]; then
         trace "[serve_ots_backoffice] upgraded!  Let's call the callback..."
         url=$(echo "${row}" | cut -d '|' -f2)
         trace "[serve_ots_backoffice] url=${url}"

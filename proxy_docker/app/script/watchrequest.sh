@@ -454,7 +454,6 @@ extend_watchers() {
 
   local last_imported_n
   local row
-  # row=$(sql "SELECT COALESCE('\"'||pub32||'\"', 'null'), COALESCE('\"'||label||'\"', 'null'), COALESCE('\"'||derivation_path||'\"', 'null'), COALESCE('\"'||callback0conf||'\"', 'null'), COALESCE('\"'||callback1conf||'\"', 'null'), last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
   row=$(sql "SELECT pub32, label, derivation_path, callback0conf, callback1conf, last_imported_n FROM watching_by_pub32 WHERE id=${watching_by_pub32_id} AND watching")
   returncode=$?
   trace_rc ${returncode}
