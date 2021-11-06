@@ -224,8 +224,6 @@ paths:
                 - "pub32"
                 - "path"
                 - "nstart"
-                - "unconfirmedCallbackURL"
-                - "confirmedCallbackURL"
               properties:
                 label:
                   description: "Label for that xpub.  Can be used, instead for xpub, for future references in xpub-related endpoints."

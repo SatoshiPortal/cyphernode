@@ -49,18 +49,20 @@ serve_ots_stamp() {
       returncode=$?
     fi
   else
-    sql "INSERT OR IGNORE INTO stamp (hash, callbackUrl) VALUES (\"${hash}\", \"${callbackUrl}\")"
+    id_inserted=$(sql "INSERT INTO stamp (hash, callbackUrl)"\
+" VALUES ('${hash}','${callbackUrl}')"\
+" RETURNING id" \
+    "SELECT id FROM stamp WHERE hash='${hash}'")
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
-      id_inserted=$(sql "SELECT id FROM stamp WHERE hash='${hash}'")
-      trace_rc $?
       errorstring=$(request_ots_stamp "${hash}" ${id_inserted})
       returncode=$?
       trace_rc ${returncode}
     else
       trace "[serve_ots_stamp] Stamp request could not be inserted in DB"
       errorstring="Stamp request could not be inserted in DB, please retry later"
+      id_inserted=null
       returncode=1
     fi
   fi
@@ -114,7 +116,7 @@ request_ots_stamp() {
       if [ "${returncode}" -eq "0" ]; then
         # "already exists" found, let's try updating DB again
         trace "[request_ots_stamp] was already requested to the OTS server... let's update the DB, looks like it didn't work on first try"
-        sql "UPDATE stamp SET requested=1 WHERE id=${id}"
+        sql "UPDATE stamp SET requested=true WHERE id=${id}"
         errorstring="Duplicate stamping request, hash already exists in DB and been OTS requested"
         returncode=1
       else
@@ -125,7 +127,7 @@ request_ots_stamp() {
       fi
     else
       trace "[request_ots_stamp] Stamping request sent successfully!"
-      sql "UPDATE stamp SET requested=1 WHERE id=${id}"
+      sql "UPDATE stamp SET requested=true WHERE id=${id}"
       errorstring=""
       returncode=0
     fi
@@ -198,7 +200,7 @@ serve_ots_backoffice() {
           else
             # No failure, upgraded
             trace "[serve_ots_backoffice] just upgraded!"
-            sql "UPDATE stamp SET upgraded=1 WHERE id=${id}"
+            sql "UPDATE stamp SET upgraded=true WHERE id=${id}"
             trace_rc $?
 
             upgraded=1
@@ -221,13 +223,13 @@ serve_ots_backoffice() {
           # Even if curl executed ok, we need to make sure the http return code is also ok
 
           if [ "${returncode}" -eq "0" ]; then
-            sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
+            sql "UPDATE stamp SET calledback=true WHERE id=${id}"
             trace_rc $?
           fi
         else
           trace "[serve_ots_backoffice] url is empty, obviously won't try to call it!"
 
-          sql "UPDATE stamp SET calledback=1 WHERE id=${id}"
+          sql "UPDATE stamp SET calledback=true WHERE id=${id}"
           trace_rc $?
         fi
       fi

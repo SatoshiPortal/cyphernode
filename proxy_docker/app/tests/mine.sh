@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# This needs to be run in regtest
+
+# This will mine n blocks.  If n is not supplied, will mine 1 block.
+
 # Mine
 mine() {
   local nbblocks=${1:-1}

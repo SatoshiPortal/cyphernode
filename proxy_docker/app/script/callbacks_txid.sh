@@ -9,8 +9,10 @@ do_callbacks_txid() {
 
   trace "Entering do_callbacks_txid()..."
 
+  # Let's check the 1-conf (newly mined) watched txid that are included in the new block...
+  
   # Let's fetch all the watching txid still being watched but not called back
-  local callbacks=$(sql 'SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf NOT NULL AND NOT calledback1conf')
+  local callbacks=$(sql "SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf IS NOT NULL AND NOT calledback1conf")
   trace "[do_callbacks_txid] callbacks1conf=${callbacks}"
 
   local returncode
@@ -25,14 +27,16 @@ do_callbacks_txid() {
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
       id=$(echo "${row}" | cut -d '|' -f1)
-      sql "UPDATE watching_by_txid SET calledback1conf=1 WHERE id=\"${id}\""
+      sql "UPDATE watching_by_txid SET calledback1conf=true WHERE id=${id}"
       trace_rc $?
     else
       trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
     fi
   done
 
-  local callbacks=$(sql 'SELECT id, txid, callbackxconf, nbxconf FROM watching_by_txid WHERE watching AND calledback1conf AND callbackxconf NOT NULL AND NOT calledbackxconf')
+  # For the n-conf, let's only check the watched txids that are already at least 1-conf...
+
+  local callbacks=$(sql "SELECT id, txid, callbackxconf, nbxconf FROM watching_by_txid WHERE watching AND calledback1conf AND callbackxconf IS NOT NULL AND NOT calledbackxconf")
   trace "[do_callbacks_txid] callbacksxconf=${callbacks}"
 
   for row in ${callbacks}
@@ -42,7 +46,7 @@ do_callbacks_txid() {
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
       id=$(echo "${row}" | cut -d '|' -f1)
-      sql "UPDATE watching_by_txid SET calledbackxconf=1, watching=0 WHERE id=\"${id}\""
+      sql "UPDATE watching_by_txid SET calledbackxconf=true, watching=false WHERE id=${id}"
       trace_rc $?
     else
       trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."

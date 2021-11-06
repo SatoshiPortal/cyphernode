@@ -3,6 +3,16 @@
 . ./colors.sh
 . ./mine.sh
 
+# This needs to be run in regtest
+
+# This will test the missed watched transactions mechanisms by broadcasting
+# transactions on watched addresses while the proxy is shut down...
+#
+# - getnewaddress
+# - watch
+# - executecallbacks
+#
+
 trace() {
   if [ "${1}" -le "${TRACING}" ]; then
     echo "$(date -u +%FT%TZ) ${2}" 1>&2
@@ -46,10 +56,11 @@ test_manage_missed_0_conf() {
   trace 3 "[test_manage_missed_0_conf] response=${response}"
 
   trace 3 "[test_manage_missed_0_conf] Shutting down the proxy..."
-  docker stop $(docker ps -q -f "name=proxy")
+  docker stop $(docker ps -q -f "name=proxy\.")
 
   trace 3 "[test_manage_missed_0_conf] Sending coins to watched address while proxy is down..."
   docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
   trace 3 "[test_manage_missed_0_conf] Sleeping for 10 seconds to let the proxy restart..."
   sleep 10
@@ -87,12 +98,13 @@ test_manage_missed_1_conf() {
 
   trace 3 "[test_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
   docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
   trace 3 "[test_manage_missed_1_conf] Sleeping for 10 seconds to let the 0-conf callbacks to happen..."
   sleep 10
 
   trace 3 "[test_manage_missed_1_conf] Shutting down the proxy..."
-  docker stop $(docker ps -q -f "name=proxy")
+  docker stop $(docker ps -q -f "name=proxy\.")
 
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
   mine
@@ -116,6 +128,7 @@ wait_for_callbacks() {
 
 TRACING=3
 
+stop_test_container
 start_test_container
 wait_for_callbacks
 

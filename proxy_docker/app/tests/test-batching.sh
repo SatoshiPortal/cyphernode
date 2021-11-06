@@ -2,6 +2,26 @@
 
 # docker exec -it $(docker ps -q -f "name=proxy\.") ./tests/test-batching.sh
 
+# This needs to be run in regtest
+
+# This will test:
+#
+# - listbatchers
+# - getbatcher
+# - getbatchdetails
+# - getnewaddress
+# - addtobatch
+# - batchspend
+# - removefrombatch
+# - createbatcher
+#
+
+
+
+
+
+
+# Notes:
 # curl localhost:8888/listbatchers | jq
 # curl -d '{}' localhost:8888/getbatcher | jq
 # curl -d '{}' localhost:8888/getbatchdetails | jq
@@ -316,6 +336,10 @@ testbatching() {
   # List batchers
   # Remove from batch
   # List batchers
+
+  echo
+  echo "Tests successful!"
+
 }
 
 wait_for_callbacks() {
