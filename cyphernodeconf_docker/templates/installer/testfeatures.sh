@@ -83,6 +83,19 @@ checkpycoin() {
   return 0
 }
 
+checkpostgres() {
+  echo -en "\r\n\e[1;36mTesting Postgres... " > /dev/console
+  local rc
+
+  # getbatcher needs the database to return correctly...
+  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbatcher)
+  [ "${rc}" -ne "200" ] && return 105
+
+  echo -e "\e[1;36mPostgres rocks!" > /dev/console
+
+  return 0
+}
+
 checkbroker() {
   echo -en "\r\n\e[1;36mTesting Broker... " > /dev/console
   local rc
@@ -173,12 +186,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -196,12 +209,13 @@ checkservice() {
   #    { "name": "proxy", "active":true },
   #    { "name": "proxycron", "active":true },
   #    { "name": "pycoin", "active":true },
+  #    { "name": "postgres", "active":true },
   #    { "name": "otsclient", "active":true },
   #    { "name": "tor", "active":true },
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
   #  ]
-  for container in gatekeeper proxy proxycron broker notifier pycoin <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -257,6 +271,7 @@ feature_status() {
 #    { "name": "proxy", "active":true },
 #    { "name": "proxycron", "active":true },
 #    { "name": "pycoin", "active":true },
+#    { "name": "postgres", "active":true },
 #    { "name": "otsclient", "active":true },
 #    { "name": "tor", "active":true },
 #    { "name": "bitcoin", "active":true },
@@ -265,6 +280,7 @@ feature_status() {
 #  "features": [
 #    { "name": "gatekeeper", "working":true },
 #    { "name": "pycoin", "working":true },
+#    { "name": "postgres", "working":true },
 #    { "name": "otsclient", "working":true },
 #    { "name": "tor", "working":true },
 #    { "name": "bitcoin", "working":true },
@@ -299,6 +315,7 @@ fi
 #  "features": [
 #    { "name": "gatekeeper", "working":true },
 #    { "name": "pycoin", "working":true },
+#    { "name": "postgres", "working":true },
 #    { "name": "otsclient", "working":true },
 #    { "name": "tor", "working":true },
 #    { "name": "bitcoin", "working":true },
@@ -364,6 +381,21 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
+
+#############################
+# POSTGRES                  #
+#############################
+
+result="${result},{\"coreFeature\":true, \"name\":\"postgres\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"postgres\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  timeout_feature checkpostgres
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Postgres error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
 #############################

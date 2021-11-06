@@ -8,7 +8,8 @@ RUN apk add --update --no-cache \
     curl \
     su-exec \
     py3-pip \
-    xxd
+    xxd \
+    postgresql
 
 WORKDIR ${HOME}
 

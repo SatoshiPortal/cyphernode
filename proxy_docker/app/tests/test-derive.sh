@@ -1,5 +1,17 @@
 #!/bin/sh
 
+# docker run -it --rm -it --name test-derive --network=cyphernodenet -v "$PWD/test-derive.sh:/test-derive.sh" alpine /test-derive.sh
+
+# This will test:
+#
+# - deriveindex
+# - derivepubpath
+# - deriveindex_bitcoind
+# - derivepubpath_bitcoind
+#
+# ...and it will compare performance between Pycoin et Bitcoin Core's address derivations...
+#
+
 test_derive() {
   local address
   local address1

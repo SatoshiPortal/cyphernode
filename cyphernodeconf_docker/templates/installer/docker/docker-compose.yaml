@@ -2,6 +2,36 @@ version: "3"
 
 services:
 
+  ##########################
+  # POSTGRESQL             #
+  ##########################
+
+  postgres:
+    image: postgres:<%= postgres_version %>
+    environment:
+      - "POSTGRES_USER=cyphernode"
+      - "POSTGRES_PASSWORD=<%= postgres_password %>"
+      - "POSTGRES_DB=cyphernode"
+      - "PGDATA=/var/lib/postgresql/data/pgdata"
+    volumes:
+      - "<%= postgres_datapath %>:/var/lib/postgresql/data"
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+
   <% if ( features.indexOf('tor') !== -1 ) { %>
   ##########################
   # TOR                    #
@@ -156,6 +186,7 @@ services:
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
+      - "PGPASSFILE=/proxy/db/pgpass"
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -174,6 +205,8 @@ services:
       <% } %>
     networks:
       - cyphernodenet
+    depends_on:
+      - postgres
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
       replicas: 1

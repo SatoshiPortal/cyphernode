@@ -42,14 +42,14 @@ ln_waitanyinvoice() {
     status=$(echo "${result}" | jq -r ".status")
     paid_at=$(echo "${result}" | jq -r ".paid_at")
 
-    sql "UPDATE ln_invoice SET status=\"${status}\", pay_index=${pay_index}, msatoshi_received=${msatoshi_received}, paid_at=${paid_at} WHERE bolt11=\"${bolt11}\""
-    row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE callback_url<>\"\" AND NOT calledback AND bolt11=\"${bolt11}\"")
+    sql "UPDATE ln_invoice SET status='${status}', pay_index=${pay_index}, msatoshi_received=${msatoshi_received}, paid_at=${paid_at} WHERE bolt11='${bolt11}'"
+    row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE callback_url<>'' AND NOT calledback AND bolt11='${bolt11}'")
 
     if [ -n "${row}" ]; then
       ln_manage_callback ${row}
     fi
 
-    sql "UPDATE cyphernode_props SET value="${pay_index}" WHERE property=\"pay_index\""
+    sql "UPDATE cyphernode_props SET value='${pay_index}' WHERE property='pay_index'"
   fi
 }
 

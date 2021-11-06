@@ -25,7 +25,7 @@ manage_not_imported() {
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
-      sql "UPDATE watching SET imported=1 WHERE address=\"${address}\""
+      sql "UPDATE watching SET imported=true WHERE address='${address}'"
     fi
   done
 
@@ -41,8 +41,8 @@ manage_missed_conf() {
 
   trace "[Entering manage_missed_conf()]"
 
-  local watches=$(sql 'SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0) ORDER BY address')
-  trace "[manage_missed_conf] watches=${watches}"
+  local watches=$(sql "SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0) ORDER BY address")
+  # trace "[manage_missed_conf] watches=${watches}"
   if [ ${#watches} -eq 0 ]; then
     trace "[manage_missed_conf] Nothing missed!"
     return 0
@@ -55,7 +55,7 @@ manage_missed_conf() {
   data='{"method":"listreceivedbyaddress","params":[0,false,true]}'
   received=$(send_to_watcher_node "${data}")
   received_addresses=$(echo "${received}" | jq -r ".result[].address" | sort)
-  trace "[manage_missed_conf] received_addresses=${received_addresses}"
+  # trace "[manage_missed_conf] received_addresses=${received_addresses}"
 
   # Let's extract addresses that are in the watches list as well as in the received_addresses list
   echo "${watches}" > watches-$$
@@ -81,7 +81,7 @@ manage_missed_conf() {
   local IFS=$'\n'
   for address in ${received_watches}
   do
-    watching=$(sql 'SELECT address, inserted_ts FROM watching WHERE address="'${address}'"')
+    watching=$(sql "SELECT address, inserted_ts FROM watching WHERE address='${address}'")
     trace "[manage_missed_conf] watching=${watching}"
     if [ ${#watching} -eq 0 ]; then
       trace "[manage_missed_conf] Nothing missed!"
@@ -90,7 +90,7 @@ manage_missed_conf() {
 
     # Let's get confirmed received txs for the address
     # address=$(echo "${watches}" | cut -d '|' -f1)
-    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" +"%s")
+    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" -D '%Y-%m-%d %H:%M:%S' +"%s")
     trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
 
     received_address=$(echo "${received}" | jq -Mc ".result | map(select(.address==\"${address}\" and .confirmations>0))[0]")

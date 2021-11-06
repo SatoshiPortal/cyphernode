@@ -33,6 +33,44 @@ module.exports = {
     {
       when: installerDocker,
       type: 'list',
+      name: 'postgres_datapath',
+      default: utils.getDefault( 'postgres_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/postgres",
+          value: utils.setupDir()+"/cyphernode/postgres"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/postgres",
+          value: utils.defaultDataDirBase()+"/cyphernode/postgres"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/postgres",
+          value: utils.defaultDataDirBase()+"/.cyphernode/postgres"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/postgres",
+          value: utils.defaultDataDirBase()+"/postgres"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your Postgres files?'+utils.getHelp('postgres_datapath'),
+    },
+    {
+      when: (props)=>{ return installerDocker(props) && (props.postgres_datapath === '_custom') },
+      type: 'input',
+      name: 'postgres_datapath_custom',
+      default: utils.getDefault( 'postgres_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for Postgres files?'+utils.getHelp('postgres_datapath_custom'),
+    },
+    {
+      when: installerDocker,
+      type: 'list',
       name: 'logs_datapath',
       default: utils.getDefault( 'logs_datapath' ),
       choices: [

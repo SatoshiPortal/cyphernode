@@ -33,7 +33,6 @@ createCurlConfig() {
 if [ ! -e ${DB_FILE} ]; then
   echo "DB not found, creating..."
   cat cyphernode.sql | sqlite3 $DB_FILE
-  cat rawtx.sql | sqlite3 ${DB_FILE}_rawtx
 else
   echo "DB found, migrating..."
   for script in sqlmigrate*.sh; do
@@ -42,7 +41,6 @@ else
 fi
 
 chmod 0600 $DB_FILE
-chmod 0600 ${DB_FILE}_rawtx
 
 createCurlConfig ${WATCHER_BTC_NODE_RPC_CFG} ${WATCHER_BTC_NODE_RPC_USER}
 createCurlConfig ${SPENDER_BTC_NODE_RPC_CFG} ${SPENDER_BTC_NODE_RPC_USER}
