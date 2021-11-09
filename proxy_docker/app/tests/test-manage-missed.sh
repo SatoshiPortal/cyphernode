@@ -4,6 +4,7 @@
 . ./mine.sh
 
 # This needs to be run in regtest
+# You need jq installed for these tests to run correctly
 
 # This will test the missed watched transactions mechanisms by broadcasting
 # transactions on watched addresses while the proxy is shut down...
@@ -141,7 +142,7 @@ trace 2 "url2=${url2}"
 trace 2 "url3=${url3}"
 trace 2 "url4=${url4}"
 
-exec_in_test_container apk add curl
+exec_in_test_container apk add --update curl
 # exec_in_test_container ping -c 5 tests-manage-missed
 # exec_in_test_container curl -vd 'toto' ${url1}/allo
 test_manage_missed_0_conf
