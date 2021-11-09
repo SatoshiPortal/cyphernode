@@ -88,9 +88,7 @@ compute_vin_total_amount()
     sql "INSERT INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime)"\
 " VALUES ('${vin_txid}', '${vin_hash}', ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, '${vin_blockhash}', ${vin_blockheight}, ${vin_blocktime})"\
 " ON CONFLICT (txid) DO"\
-" UPDATE SET blockhash='${vin_blockhash}', blockheight=${vin_blockheight}, blocktime=${vin_blocktime}, confirmations=${vin_confirmations}"\
-" RETURNING id" \
-    "SELECT id FROM tx WHERE txid='${vin_txid}'"
+" UPDATE SET blockhash='${vin_blockhash}', blockheight=${vin_blockheight}, blocktime=${vin_blocktime}, confirmations=${vin_confirmations}"
     trace_rc $?
   done
 

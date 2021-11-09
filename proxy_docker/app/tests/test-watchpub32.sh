@@ -4,6 +4,7 @@
 . ./mine.sh
 
 # This needs to be run in regtest
+# You need jq installed for these tests to run correctly
 
 # This will test:
 #
@@ -30,7 +31,7 @@ start_test_container() {
 }
 
 stop_test_container() {
-  trace 1 "\n\n[test_watch_pub32] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
+  trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
   docker stop tests-watch-pub32
   docker stop tests-watch-pub32-cb
@@ -433,7 +434,7 @@ callbackserverport="1111"
 callbackservername="tests-watch-pub32-cb"
 
 trace 1 "\n\n[test_watch_pub32] ${BCyan}Installing needed packages...${Color_Off}\n"
-exec_in_test_container apk add curl
+exec_in_test_container apk add --update curl
 
 test_watch_pub32
 
