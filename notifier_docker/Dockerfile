@@ -8,7 +8,7 @@ WORKDIR ${HOME}
 
 COPY script/* ./
 
-RUN chmod +x startnotifier.sh requesthandler.sh \
+RUN chmod +x startnotifier.sh requesthandler.sh config.sh \
  && chmod o+w .
 
 ENTRYPOINT ["su-exec"]

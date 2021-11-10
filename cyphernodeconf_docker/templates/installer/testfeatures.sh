@@ -111,6 +111,23 @@ checknotifier() {
   return 0
 }
 
+checknotifiertelegram() {
+  echo -en "\r\n\e[1;36mTesting Notifier Telegram... " > /dev/console
+  local response
+  local returncode
+  local body=$(echo "{\"text\":\"Hello world in Telegram at `date -u +"%FT%H%MZ"`\"}" | base64)
+
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
+  returncode=$?
+  [ "${returncode}" -ne "0" ] && return 115
+  http_code=$(echo "${response}" | jq -r ".http_code")
+  [ "${http_code}" -ge "400" ] && return 118
+
+  echo -e "\e[1;36mNotifier Telegram rocks!" > /dev/console
+
+  return 0
+}
+
 checkots() {
   echo -en "\r\n\e[1;36mTesting OTSclient... " > /dev/console
   local rc
@@ -349,6 +366,23 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Notifier error!')}"
+
+<% if (features.indexOf('telegram') != -1) { %>
+#############################
+# NOTIFIER TELEGRAM         #
+#############################
+
+result="${result},{\"coreFeature\":true, \"name\":\"notifier telegram\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  timeout_feature checknotifiertelegram
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Notifier Telegram error!')}"
+<% } %>
 
 #############################
 # PYCOIN                    #

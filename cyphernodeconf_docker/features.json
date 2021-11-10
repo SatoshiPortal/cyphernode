@@ -18,5 +18,9 @@
   {
     "name": "Specter Cypherapp",
     "value": "specter"
+  },
+  {
+    "name": "Telegram notifications",
+    "value": "telegram"
   }
 ]

@@ -1,0 +1,15 @@
+FROM eclipse-mosquitto:1.6-openssl
+
+RUN apk --no-cache --update add jq curl su-exec
+
+ENV HOME /testnotifier
+
+WORKDIR ${HOME}
+
+COPY test/notify-telegram/script/test.sh ./
+COPY app/script/* ./
+
+RUN chmod +x test.sh \ 
+ && chmod o+w .
+
+ENTRYPOINT ["su-exec"]

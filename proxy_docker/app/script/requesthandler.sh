@@ -1,10 +1,5 @@
 #!/bin/sh
 #
-#
-#
-#
-
-#. ./db/config.sh
 . ./sendtobitcoinnode.sh
 . ./callbacks_job.sh
 . ./watchrequest.sh
@@ -76,6 +71,7 @@ main() {
       case "${cmd}" in
         helloworld)
           # GET http://192.168.111.152:8080/helloworld
+
           response_to_client "Hello, world!" 0
           break
           ;;
@@ -814,14 +810,6 @@ main() {
           # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
 
           response=$(serve_ots_info "${line}")
-          response_to_client "${response}" ${?}
-          break
-          ;;
-        notify_telegram)
-          # BODY {"text":"Proxy text in POST data"}
-          #
-          # curl -X POST http://localhost:8888/notify_telegram -H 'Content-Type: application/json' -d '{"text":"Proxy text in POST data"}'
-          response=$(notify_telegram "${line}")
           response_to_client "${response}" ${?}
           break
           ;;

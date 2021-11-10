@@ -156,6 +156,13 @@ services:
       - "OTSCLIENT_CONTAINER=otsclient:6666"
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
+      <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
+      - "FEATURE_LIGHTNING=true"
+      <% } %>
+      <% if ( features.indexOf('telegram') !== -1 ) { %>
+      - "FEATURE_TELEGRAM=true"
+      <% } %>
+
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -248,11 +255,15 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
-    <% if ( features.indexOf('tor') !== -1 ) { %>
     environment:
+      - "TRACING=1"
+      <% if ( features.indexOf('tor') !== -1 ) { %>
       - "TOR_HOST=tor"
       - "TOR_PORT=9050"
-    <% } %>
+      <% } %>
+      <% if ( features.indexOf('telegram') !== -1 ) { %>
+      - "FEATURE_TELEGRAM=true"
+      <% } %>
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:

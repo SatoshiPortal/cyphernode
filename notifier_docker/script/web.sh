@@ -64,8 +64,8 @@ curl_it() {
   fi
 
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl ${tor} -o webresponse-${rnd}\ -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
-    rc=$(curl ${tor} -o \ webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
+    trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
     trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -k ${url}"

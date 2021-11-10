@@ -187,7 +187,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ],
         "title": "The feature",
         "default": "",
@@ -196,7 +197,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ]
       }
     },

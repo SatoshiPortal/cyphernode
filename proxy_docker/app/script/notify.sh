@@ -51,6 +51,10 @@ notify_web() {
 
 }
 
+#
+# call notify_telegram "JSON data".  See https://core.telegram.org/bots/api#sendmessage
+# ex in shell script: notify_telegram "{\"text\":\"Unit testing notify_telegram at `date -u +"%FT%H%MZ"`\"}"
+#
 notify_telegram() {
   trace "Entering notify_telegram()..."
 

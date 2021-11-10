@@ -551,6 +551,10 @@ module.exports = class App {
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
+      },
+      telegram: {
+        networks: ['no-network'],
+        docker: "no-docker"
       }
     }
 
