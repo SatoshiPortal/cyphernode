@@ -71,7 +71,6 @@ main() {
       case "${cmd}" in
         helloworld)
           # GET http://192.168.111.152:8080/helloworld
-
           response_to_client "Hello, world!" 0
           break
           ;;
