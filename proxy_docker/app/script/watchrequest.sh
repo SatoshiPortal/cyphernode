@@ -276,6 +276,8 @@ watchpub32() {
   trace "[watchpub32] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}"
 
   # upto_n is used when extending the watching window
+  # If this is supplied, it means we will not INSERT into watching_by_pub32, just add
+  # corresponding rows into watching
   local upto_n=${7}
   trace "[watchpub32] upto_n=${upto_n}"
 
@@ -289,68 +291,84 @@ watchpub32() {
   if [ -n "${upto_n}" ]; then
     # If upto_n provided, then we create from nstart to upto_n (instead of + GAP)
     last_n=${upto_n}
-  fi
-  local subspath=$(echo -e $path | sed -En "s/n/${nstart}-${last_n}/p")
-  trace "[watchpub32] subspath=${subspath}"
-  local addresses
-  addresses=$(derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
-  returncode=$?
-  trace_rc ${returncode}
-#  trace "[watchpub32] addresses=${addresses}"
+  else
+    # If upto_n is not provided, it means it's a new watching_by_pub32 to insert,
+    # so let's make sure the label is not already in the table since label must
+    # be unique... but the key driver is pub32.
+    local row
+    row=$(sql "SELECT id, pub32, derivation_path, callback0conf, callback1conf, last_imported_n, watching, inserted_ts FROM watching_by_pub32 WHERE label=${label_pg}")
+    returncode=$?
+    trace_rc ${returncode}
 
-  if [ "${returncode}" -eq 0 ]; then
-#    result=$(create_wallet "${pub32}")
-#    returncode=$?
-#    trace_rc ${returncode}
-#    trace "[watchpub32request] result=${result}"
-    trace "[watchpub32] Skipping create_wallet"
+    if [ ${#row} -ne 0 ]; then
+      trace "[watchpub32] This label already exists in watching_by_pub32, must be unique."
+      error_msg="This label already exists in watching_by_pub32, must be unique."
+    fi
+  fi
+
+  if [ -z "${error_msg}" ]; then
+    local subspath=$(echo -e $path | sed -En "s/n/${nstart}-${last_n}/p")
+    trace "[watchpub32] subspath=${subspath}"
+    local addresses
+    addresses=$(derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
+    returncode=$?
+    trace_rc ${returncode}
+  #  trace "[watchpub32] addresses=${addresses}"
 
     if [ "${returncode}" -eq 0 ]; then
-      # Importmulti in Bitcoin Core...
-      result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" "${pub32}" "${addresses}")
-      returncode=$?
-      trace_rc ${returncode}
-      trace "[watchpub32] result=${result}"
+  #    result=$(create_wallet "${pub32}")
+  #    returncode=$?
+  #    trace_rc ${returncode}
+  #    trace "[watchpub32request] result=${result}"
+      trace "[watchpub32] Skipping create_wallet"
 
       if [ "${returncode}" -eq 0 ]; then
-        if [ -n "${upto_n}" ]; then
-          # Update existing row, we are extending the watching window
-          id_inserted=$(sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=${pub32_pg} RETURNING id")
-          returncode=$?
-          trace_rc ${returncode}
-        else
-          # Insert in our DB...
-          id_inserted=$(sql "INSERT INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n)"\
+        # Importmulti in Bitcoin Core...
+        result=$(importmulti_rpc "${WATCHER_BTC_NODE_XPUB_WALLET}" "${pub32}" "${addresses}")
+        returncode=$?
+        trace_rc ${returncode}
+        trace "[watchpub32] result=${result}"
+
+        if [ "${returncode}" -eq 0 ]; then
+          if [ -n "${upto_n}" ]; then
+            # Update existing row, we are extending the watching window
+            id_inserted=$(sql "UPDATE watching_by_pub32 set last_imported_n=${upto_n} WHERE pub32=${pub32_pg} RETURNING id")
+            returncode=$?
+            trace_rc ${returncode}
+          else
+            # Insert in our DB...
+            id_inserted=$(sql "INSERT INTO watching_by_pub32 (pub32, label, derivation_path, watching, callback0conf, callback1conf, last_imported_n)"\
 " VALUES (${pub32_pg}, ${label_pg}, ${path_pg}, true, ${cb0conf_url_pg}, ${cb1conf_url_pg}, ${last_n})"\
 " ON CONFLICT (pub32) DO"\
 " UPDATE SET watching=true, label=${label_pg}, callback0conf=${cb0conf_url_pg}, callback1conf=${cb1conf_url_pg}, derivation_path=${path_pg}, last_imported_n=${last_n}"\
 " RETURNING id" \
-          "SELECT id FROM watching_by_pub32 WHERE pub32=${pub32_pg}")
-          returncode=$?
-          trace_rc ${returncode}
-        fi
+            "SELECT id FROM watching_by_pub32 WHERE pub32=${pub32_pg}")
+            returncode=$?
+            trace_rc ${returncode}
+          fi
 
-        if [ "${returncode}" -eq 0 ]; then
-          trace "[watchpub32] id_inserted: ${id_inserted}"
+          if [ -n "${id_inserted}" ] && [ "${returncode}" -eq 0 ]; then
+            trace "[watchpub32] id_inserted: ${id_inserted}"
 
-          addresses=$(echo ${addresses} | jq -r ".addresses[].address")
-          insert_watches "${addresses}" "${label}" "${cb0conf_url}" "${cb1conf_url}" "${id_inserted}" "${nstart}"
-          returncode=$?
-          trace_rc ${returncode}
-          if [ "${returncode}" -ne 0 ]; then
-            error_msg="Can't insert xpub watches in DB"
+            addresses=$(echo ${addresses} | jq -r ".addresses[].address")
+            insert_watches "${addresses}" "${label}" "${cb0conf_url}" "${cb1conf_url}" "${id_inserted}" "${nstart}"
+            returncode=$?
+            trace_rc ${returncode}
+            if [ "${returncode}" -ne 0 ]; then
+              error_msg="Can't insert xpub watches in DB"
+            fi
+          else
+            error_msg="Can't insert xpub watcher in DB"
           fi
         else
-          error_msg="Can't insert xpub watcher in DB"
+          error_msg="Can't import addresses"
         fi
       else
-        error_msg="Can't import addresses"
+        error_msg="Can't create wallet"
       fi
     else
-      error_msg="Can't create wallet"
+      error_msg="Can't derive addresses"
     fi
-  else
-    error_msg="Can't derive addresses"
   fi
 
   if [ -z "${error_msg}" ]; then
@@ -367,10 +385,10 @@ watchpub32() {
   else
     data='{"error":"'${error_msg}'",'\
 '"event":"watchxpub",'\
-'"pub32":"'${pub32}'",'
+'"pub32":"'${pub32}'",'\
 '"label":"'${label}'",'\
 '"path":"'${path}'",'\
-'"nstart":${nstart},'\
+'"nstart":'${nstart}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}'}'
 

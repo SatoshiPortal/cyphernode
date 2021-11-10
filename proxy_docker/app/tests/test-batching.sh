@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./colors.sh
 
@@ -42,7 +42,7 @@
 
 trace() {
   if [ "${1}" -le "${TRACING}" ]; then
-    echo "$(date -u +%FT%TZ) ${2}" 1>&2
+    echo -e "$(date -u +%FT%TZ) ${2}" 1>&2
   fi
 }
 
@@ -230,7 +230,7 @@ testbatching() {
   fi
 
   # List batchers (should show at least default and testbatcher batchers)
-  trace 2 "\n\n[testbatching] ${BCyan}Testing listbatches...${Color_Off}\n"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing listbatchers...${Color_Off}\n"
   response=$(exec_in_test_container curl -s proxy:8888/listbatchers)
   trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq '.result[] | select(.batcherLabel == "testbatcher") | .batcherId')

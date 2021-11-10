@@ -8,6 +8,7 @@ services:
 
   postgres:
     image: postgres:<%= postgres_version %>
+    user: $USER
     environment:
       - "POSTGRES_USER=cyphernode"
       - "POSTGRES_PASSWORD=<%= postgres_password %>"

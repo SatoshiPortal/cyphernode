@@ -9,6 +9,8 @@ createbatcher() {
 
   # POST http://192.168.111.152:8080/createbatcher
   #
+  # Will UPDATE the batcher is it already exists (as per label)
+  #
   # args:
   # - batcherLabel, optional, id can be used to reference the batcher
   # - confTarget, optional, overriden by batchspend's confTarget, default Bitcoin Core conf_target will be used if not supplied
@@ -40,16 +42,18 @@ createbatcher() {
 
   batcher_id=$(sql "INSERT INTO batcher (label, conf_target, feerate)"\
 " VALUES ('${label}', ${conf_target}, ${feerate})"\
+" ON CONFLICT (label) DO"\
+" UPDATE SET conf_target=${conf_target}, feerate=${feerate}"\
 " RETURNING id" \
   "SELECT id FROM batcher WHERE label='${label}'")
   returncode=$?
   trace_rc ${returncode}
 
-  if ("${returncode}" -ne "0"); then
+  if [ "${returncode}" -ne "0" ]; then
     trace "[createbatcher] Could not insert"
-    response='{"result":null,"error":{"code":-32700,"message":"Could not create batcher, label probably already exists","data":'${request}'}}'
+    response='{"result":null,"error":{"code":-32700,"message":"Could not create/update batcher","data":'${request}'}}'
   else
-    trace "[createbatcher] Inserted, response=${batcher_id}"
+    trace "[createbatcher] Inserted or updated, response=${batcher_id}"
     response='{"result":{"batcherId":'${batcher_id}'},"error":null}'
   fi
 
@@ -653,8 +657,13 @@ batch_webhooks() {
     fi
   done
 
-  sql "UPDATE recipient SET calledback=true, calledback_ts=CURRENT_TIMESTAMP WHERE id IN (${successful_recipient_ids})"
-  trace_rc $?
+  if [ -n "${successful_recipient_ids}" ]; then
+    trace "[batch_webhooks] We have successful callbacks, let's update the db..."
+    sql "UPDATE recipient SET calledback=true, calledback_ts=CURRENT_TIMESTAMP WHERE id IN (${successful_recipient_ids})"
+    trace_rc $?
+  else
+    trace "[batch_webhooks] We don't have successful callbacks, no need to update the db!"
+  fi
 }
 
 listbatchers() {

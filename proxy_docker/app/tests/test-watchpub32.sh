@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./colors.sh
 . ./mine.sh
@@ -22,7 +22,7 @@
 
 trace() {
   if [ "${1}" -le "${TRACING}" ]; then
-    echo "$(date -u +%FT%TZ) ${2}" 1>&2
+    echo -e "$(date -u +%FT%TZ) ${2}" 1>&2
   fi
 }
 
@@ -113,9 +113,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] data=${data}"
   response=$(exec_in_test_container curl -d "${data}" proxy:8888/watchxpub)
   trace 3 "[test_watch_pub32] response=${response}"
-  data=$(echo "${response}" | jq -re ".label")
-  if [ "${label1}" != "${data}" ]; then
-    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 1. watchxpub 1 failed!                                           ${Color_Off}\n"
+  data=$(echo "${response}" | jq -re ".error")
+  if [ "${?}" -eq "0" ]; then
+    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 1. watchxpub 1 failed: ${data}!                                           ${Color_Off}\n"
     return 10
   fi
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./colors.sh
 . ./mine.sh
@@ -16,7 +16,7 @@
 
 trace() {
   if [ "${1}" -le "${TRACING}" ]; then
-    echo "$(date -u +%FT%TZ) ${2}" 1>&2
+    echo -e "$(date -u +%FT%TZ) ${2}" 1>&2
   fi
 }
 

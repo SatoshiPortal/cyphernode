@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This needs to be run in regtest
 
