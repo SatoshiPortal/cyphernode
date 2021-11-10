@@ -388,7 +388,7 @@ install_docker() {
 
   if [ ! -d $POSTGRES_DATAPATH ]; then
     step "   [32mcreate[0m $POSTGRES_DATAPATH"
-    sudo_if_required mkdir -p $POSTGRES_DATAPATH
+    sudo_if_required mkdir -p $POSTGRES_DATAPATH/pgdata
     next
   fi
 
@@ -869,7 +869,7 @@ BITCOIN_VERSION="v22.0"
 LIGHTNING_VERSION="v0.10.2"
 TRAEFIK_VERSION="v1.7.9-alpine"
 MOSQUITTO_VERSION="1.6-openssl"
-POSTGRES_VERSION="14.0-alpine"
+POSTGRES_VERSION="14.0-bullseye"
 
 SETUP_DIR=$(dirname $(realpath $0))
 

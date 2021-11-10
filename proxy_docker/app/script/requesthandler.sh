@@ -487,6 +487,10 @@ main() {
           # BODY {}
           # BODY {"batcherId":34}
 
+          if [ "$http_method" = "GET" ]; then
+            line='{}'
+          fi
+
           response=$(getbatcher "${line}")
           returncode=$?
           ;;

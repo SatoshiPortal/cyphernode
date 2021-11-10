@@ -1,4 +1,3 @@
-#!/bin/sh
 
 # Reset
 Color_Off='\033[0m'       # Text Reset
