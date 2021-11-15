@@ -349,6 +349,13 @@ main() {
           response_to_client "${response}" ${?}
           break
           ;;
+        validateaddress)
+          # GET http://192.168.111.152:8080/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
+
+          response=$(validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
         spend)
           # POST http://192.168.111.152:8080/spend
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
