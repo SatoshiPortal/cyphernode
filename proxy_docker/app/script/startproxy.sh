@@ -33,6 +33,7 @@ createCurlConfig() {
 if [ ! -e ${DB_FILE} ]; then
   echo "DB not found, creating..."
   cat cyphernode.sql | sqlite3 $DB_FILE
+  psql -h postgres -f cyphernode.postgresql -U cyphernode
 else
   echo "DB found, migrating..."
   for script in sqlmigrate*.sh; do

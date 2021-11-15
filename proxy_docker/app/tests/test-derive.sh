@@ -54,11 +54,11 @@ tests_derive() {
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
   trace 3 "[tests_derive] nbaddr=${nbaddr}"
   if [ "${nbaddr}" -ne "6" ]; then
-    exit 130
+    return 130
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
   if [ "${address}" != "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP" ]; then
-    exit 140
+    return 140
   fi
   trace 2 "\n\n[tests_derive] ${BCyan}Tested deriveindex.${Color_Off}\n"
 
@@ -72,11 +72,11 @@ tests_derive() {
   trace 3 "[tests_derive] response=${response}"
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
   if [ "${nbaddr}" -ne "6" ]; then
-    exit 150
+    return 150
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
   if [ "${address}" != "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP" ]; then
-    exit 160
+    return 160
   fi
   trace 2 "\n\n[tests_derive] ${BCyan}Tested derivepubpath.${Color_Off}\n"
 
@@ -89,11 +89,11 @@ tests_derive() {
   trace 3 "[tests_derive] response=${response}"
   local nbaddr=$(echo "${response}" | jq ". | length")
   if [ "${nbaddr}" -ne "6" ]; then
-    exit 130
+    return 130
   fi
   address=$(echo "${response}" | jq ".[2]" | tr -d '\"')
   if [ "${address}" != "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP" ]; then
-    exit 140
+    return 140
   fi
   trace 2 "\n\n[tests_derive] ${BCyan}Tested deriveindex_bitcoind.${Color_Off}\n"
 
@@ -107,20 +107,20 @@ tests_derive() {
   trace 3 "[tests_derive] response=${response}"
   local nbaddr=$(echo "${response}" | jq ". | length")
   if [ "${nbaddr}" -ne "6" ]; then
-    exit 150
+    return 150
   fi
   address=$(echo "${response}" | jq ".[2]" | tr -d '\"')
   if [ "${address}" != "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP" ]; then
-    exit 160
+    return 160
   fi
   trace 2 "\n\n[tests_derive] ${BCyan}Tested derivepubpath_bitcoind.${Color_Off}\n"
 
   # deriveindex_bitcoind and derivepubpath_bitcoind faster derivation?
   trace 2 "\n\n[tests_derive] ${BCyan}Deriving 500 addresses with derivepubpath (Pycoin)...${Color_Off}\n"
-  exec_in_test_container sh -c 'time curl -s -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/0-499\"}" proxy:8888/derivepubpath > /dev/null'
+  time exec_in_test_container sh -c 'curl -s -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/0-499\"}" proxy:8888/derivepubpath > /dev/null'
 
   trace 2 "\n\n[tests_derive] ${BCyan}Deriving 500 addresses with derivepubpath_bitcoind (Bitcoin Core)...${Color_Off}\n"
-  exec_in_test_container sh -c 'time curl -s -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/0-499\"}" proxy:8888/derivepubpath_bitcoind > /dev/null'
+  time exec_in_test_container sh -c 'curl -s -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/0-499\"}" proxy:8888/derivepubpath_bitcoind > /dev/null'
 
   # Deriving 500 addresses with derivepubpath (pycoin)...
   # real	0m 18.15s
@@ -137,6 +137,7 @@ tests_derive() {
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -144,7 +145,7 @@ start_test_container
 trace 1 "\n\n[test-derive] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-tests_derive
+returncode=$(tests_derive)
 
 trace 1 "\n\n[test-derive] ${BCyan}Tearing down...${Color_Off}\n"
 wait
@@ -152,3 +153,5 @@ wait
 stop_test_container
 
 trace 1 "\n\n[test-derive] ${BCyan}See ya!${Color_Off}\n"
+
+exit ${returncode}
