@@ -239,11 +239,39 @@ tests()
   response=$(curl -s proxy:8888/gettransaction/${transaction})
   echo "response=${response}"
   local txid=$(echo ${response} | jq ".result.txid" | tr -d '\"')
+  local blockhash=$(echo ${response} | jq ".result.blockhash" | tr -d '\"')
+
   echo "txid=${txid}"
   if [ "${txid}" != "${transaction}" ]; then
     exit 8
   fi
   echo "Tested gettransaction."
+
+  echo "Testing bitcoin_gettxoutproof txid..."
+  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\"})
+
+  response=$(curl -s -H "Content-Type: application/json" -d "${transaction}" proxy:8888/bitcoin_gettxoutproof)
+
+  echo "bitcoin_gettxoutproof response=${response}"
+    echo "bitcoin_gettxoutproof response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 9
+  fi
+
+  echo "Testing bitcoin_gettxoutproof txid+blockhash..."
+  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"})
+
+  response=$(curl -s -H "Content-Type: application/json" -d "${transaction}" proxy:8888/bitcoin_gettxoutproof)
+
+  echo "bitcoin_gettxoutproof response=${response}"
+    echo "bitcoin_gettxoutproof response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 10
+  fi
+
+  echo "Tested bitcoin_gettxoutproof."
 
   # addtobatch
   # POST http://proxy:8888/addtobatch

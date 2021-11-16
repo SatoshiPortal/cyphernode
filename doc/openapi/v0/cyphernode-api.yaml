@@ -1776,6 +1776,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bitcoin_gettxoutproof:
+    post:
+      tags:
+        - "core features"
+        - "bitcoin"
+      summary: "Returns a hex-encoded proof that 'list of txid' was included in a block"
+      description: "Returns a hex-encoded proof that 'list of txid' was included in a block as returned by Bitcoin Core RPC call to gettxoutproof"
+      operationId: "gettxoutproof"
+      requestBody:
+        description: "(string) A json array of txids to filter"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              propreties:
+                txids:
+                  required: true
+                  type: "array"
+                  items: 
+                    $ref: '#/components/schemas/TypeHashString'
+                blockhash:
+                  required: false
+                  type: "string"
+                  $ref: '#/components/schemas/TypeHexString'
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result: 
+                    type: "object"
+                    properties:
+                      data:
+                        type: "string"
+                  error:
+                    type: "object"
+                  id:
+                    type: "number"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /deriveindex/{indexSpecifier}:
     get:
       parameters:
