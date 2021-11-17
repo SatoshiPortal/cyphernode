@@ -196,7 +196,6 @@ generate_token() {
   trace 3 "[generate_token] d=${d}\n"
   local p64=$(exec_in_test_container sh -c "echo -n '{\"id\":\"${id}\",\"exp\":${d}}' | basenc --base64url | tr -d '='")
   trace 3 "[generate_token] p64=${p64}\n"
-  # local s=$(echo -n "${h64}.${p64}" | openssl dgst -hmac "${key}" -sha256 -r | cut -sd ' ' -f1)
   local sig=$(exec_in_test_container sh -c "echo -n \"${h64}.${p64}\" | openssl dgst -hmac \"${key}\" -sha256 -r -binary | basenc --base64url | tr -d '='")
   trace 3 "[generate_token] sig=${sig}\n"
   local token="${h64}.${p64}.${sig}"

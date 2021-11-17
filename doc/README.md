@@ -79,7 +79,7 @@ Currently, basic LN functionalities is offered by Cyphernode.  You can:
 If you need the authorization header to copy/paste in another tool, put your API ID (id=) and API key (k=) in the following command:
 
 ```shell
-id="003";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+60))}" | base64);k="b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";echo "Bearer $token"
+id="003";key="b9b8d527a1a27af2ad1697db3521f883760c342fc386dbc42c4efbb1a4d5e0af";h64=$(echo -n '{"alg":"HS256","typ":"JWT"}' | basenc --base64url | tr -d '=');p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+10))'}' | basenc --base64url | tr -d '=');sig=$(echo -n "${h64}.${p64}" | openssl dgst -hmac "${key}" -sha256 -r -binary | basenc --base64url | tr -d '=');token="${h64}.${p64}.${sig}";echo "Bearer $token"
 ```
 
 Directly using curl on command line, put your API ID (id=) and API key (k=) in the following commands:
