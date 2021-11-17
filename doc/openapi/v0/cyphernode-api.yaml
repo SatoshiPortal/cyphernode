@@ -1813,7 +1813,9 @@ paths:
                     type: "object"
                     properties:
                       data:
+                        description: A string that is a serialized, hex-encoded data for the proof
                         type: "string"
+                        $ref: '#/components/schemas/TypeHexString'
                   error:
                     type: "object"
                   id:
