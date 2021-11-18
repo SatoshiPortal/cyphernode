@@ -345,7 +345,7 @@ module.exports = {
       type: 'confirm',
       name: 'bitcoin_expose',
       default: utils.getDefault( 'bitcoin_expose' ),
-      message: prefix()+'Expose bitcoin full node outside of the docker network?'+utils.getHelp('bitcoin_expose'),
+      message: prefix()+'Expose bitcoin full node P2P port outside of the docker network?'+utils.getHelp('bitcoin_expose'),
     },
     {
       when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1  },
