@@ -1184,6 +1184,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /validateaddress/{address}:
+    get:
+      parameters:
+        - in: "path"
+          name: "address"
+          description: "address string to validate"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "bitcoin"
+        - "core features"
+      summary: "Get the detailed information about the given address"
+      description: "Returns the detailed information about the given address"
+      operationId: "validateAddress"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "isvalid"
+                properties:
+                  isvalid:
+                    type: "boolean"
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+                  scriptPubKey:
+                    type: "string"
+                  isscript:
+                    type: "boolean"
+                  iswitness:
+                    type: "boolean"
+                  witness_version:
+                    type: "number"
+                  witness_program:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+
   /spend:
     post:
       tags:
@@ -3052,9 +3100,9 @@ components:
       type: "string"
       pattern: "^[a-fA-F0-9]+$"
     TypeAddressString:
-      description: "base58 check encoded address"
+      description: "base58 or base32 check encoded address"
       type: "string"
-      pattern: "^[a-km-zA-HJ-NP-Z1-9]{26,35}$"
+      pattern: "^(bc1|tb1|bcrt1)[ac-hj-np-z02-9]{9,71}|[123mn][a-km-zA-HJ-NP-Z1-9]{26,33}$"
     TypeXpubString:
       description: "base58 check encoded xpub"
       type: "string"
