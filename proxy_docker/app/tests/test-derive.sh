@@ -21,17 +21,21 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -it --name test-derive --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-derive --network=cyphernodenet alpine
 }
 
 stop_test_container() {
   trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
-  docker stop test-derive
+  # docker stop test-derive
+  local containers=$(docker ps -q -f "name=tests-derive")
+  if [ -n "${containers}" ]; then
+    docker stop ${containers}
+  fi
 }
 
 exec_in_test_container() {
-  docker exec -it test-derive "$@"
+  docker exec -it tests-derive "$@"
 }
 
 tests_derive() {

@@ -47,14 +47,18 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -it --name tests-batching --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-batching --network=cyphernodenet alpine
 }
 
 stop_test_container() {
   trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
-  docker stop tests-batching
-  docker stop tests-batching-cb
+  # docker stop tests-batching
+  # docker stop tests-batching-cb
+  local containers=$(docker ps -q -f "name=tests-batching")
+  if [ -n "${containers}" ]; then
+    docker stop ${containers}
+  fi
 }
 
 exec_in_test_container() {

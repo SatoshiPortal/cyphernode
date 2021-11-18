@@ -21,11 +21,17 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -it --name tests-manage-missed --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-manage-missed --network=cyphernodenet alpine
 }
 
 stop_test_container() {
-  docker stop tests-manage-missed
+  trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
+
+  # docker stop tests-manage-missed
+  local containers=$(docker ps -q -f "name=tests-manage-missed")
+  if [ -n "${containers}" ]; then
+    docker stop ${containers}
+  fi
 }
 
 exec_in_test_container() {

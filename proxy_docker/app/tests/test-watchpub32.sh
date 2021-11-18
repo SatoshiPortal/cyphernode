@@ -27,14 +27,18 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -it --name tests-watch-pub32 --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-watch-pub32 --network=cyphernodenet alpine
 }
 
 stop_test_container() {
   trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
-  docker stop tests-watch-pub32
-  docker stop tests-watch-pub32-cb
+  # docker stop tests-watch-pub32
+  # docker stop tests-watch-pub32-cb
+  local containers=$(docker ps -q -f "name=tests-watch-pub32")
+  if [ -n "${containers}" ]; then
+    docker stop ${containers}
+  fi
 }
 
 exec_in_test_container() {
