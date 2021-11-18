@@ -761,7 +761,7 @@ GET http://cyphernode:8888/validateaddress/address
 GET http://cyphernode:8888/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
 ```
 
-Proxy response:
+Proxy response for a valid address:
 
 ```json
 {
@@ -771,6 +771,14 @@ Proxy response:
   "iswitness": true,
   "witness_version": 1,
   "witness_program": "a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c"
+}
+```
+
+Proxy response for an invalid address:
+
+```json
+{
+  "isvalid": false
 }
 ```
 
