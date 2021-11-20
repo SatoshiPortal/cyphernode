@@ -1166,7 +1166,7 @@ paths:
                 type: "object"
               required:
                 - "address"
-                properties:
+              properties:
                   address:
                     $ref: '#/components/schemas/TypeAddressString'
                   address_type:
