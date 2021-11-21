@@ -11,7 +11,7 @@ const prefix = function() {
 };
 
 const featureCondition = function(props) {
-  return true; //props.features && props.features.indexOf( 'telegram' ) != -1;
+  return props.features && props.features.indexOf( 'telegram' ) != -1;
 };
 
 module.exports = {
