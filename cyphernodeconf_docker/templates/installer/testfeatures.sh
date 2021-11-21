@@ -115,9 +115,8 @@ checknotifiertelegram() {
   echo -en "\r\n\e[1;36mTesting Notifier Telegram... " > /dev/console
   local response
   local returncode
-  local body=$(echo "{\"text\":\"Hello world in Telegram at `date -u +"%FT%H%MZ"`\"}" | base64)
-
-  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
+  
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\"}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")

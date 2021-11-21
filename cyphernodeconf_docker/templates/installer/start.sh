@@ -27,6 +27,7 @@ start_apps() {
       export TOR_DATAPATH
       export LIGHTNING_DATAPATH
       export BITCOIN_DATAPATH
+      export NOTIFIER_DATAPATH
       export LOGS_DATAPATH
       export APP_SCRIPT_PATH
       export APP_ID

@@ -255,15 +255,8 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
-    environment:
-      - "TRACING=1"
-      <% if ( features.indexOf('tor') !== -1 ) { %>
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-      <% } %>
-      <% if ( features.indexOf('telegram') !== -1 ) { %>
-      - "FEATURE_TELEGRAM=true"
-      <% } %>
+    env_file:
+      - <%= notifier_datapath %>/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:

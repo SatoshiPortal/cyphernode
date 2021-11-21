@@ -30,6 +30,7 @@
     "gatekeeper_clientkeyspassword",
     "gatekeeper_datapath",
     "gatekeeper_port",
+    "notifier_datapath",
     "proxy_datapath",
     "logs_datapath",
     "traefik_datapath",
@@ -146,8 +147,29 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "telegram"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "telegram_bot_url",
+          "telegram_api_key",
+          "telegram_chat_id"
+        ]
+      }
     }
   ],
+  
   "properties": {
     "schema_version": {
       "type": "string",
@@ -425,6 +447,22 @@
         "/tmp/cyphernode/proxy"
       ]
     },
+    "notifier_datapath": {
+      "$id": "#/properties/notifier_datapath",
+      "type": "string",
+      "title": "Notifier datapath",
+      "examples": [
+        "/tmp/cyphernode/notifier"
+      ]
+    },
+    "notifier_datapath_custom": {
+      "$id": "#/properties/notifier_datapath_custom",
+      "type": "string",
+      "title": "Notifier custom datapath",
+      "examples": [
+        "/tmp/cyphernode/notifier"
+      ]
+    },
     "otsclient_datapath": {
       "$id": "#/properties/otsclient_datapath",
       "type": "string",
@@ -695,6 +733,32 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "telegram_bot_url": {
+      "$id": "#/properties/telegram_bot_url",
+      "type": "string",
+      "pattern": "string",
+      "title": "The Telegram bot URL",
+      "default": "https://api.telegram.org/bot",
+      "examples": [
+        "https://api.telegram.org/bot"
+      ]
+    },
+    "telegram_api_key": {
+      "$id": "#/properties/telegram_api_key",
+      "type": "string",
+      "title": "The Telegram bot API key",
+      "examples": [
+        "2014591315:AAGAE9cZp6Of60ljpFC3VpSwi0yLyu5V2Go"
+      ]
+    },
+    "telegram_chat_id": {
+      "$id": "#/properties/telegram_chat_id",
+      "type": "integer",
+      "title": "The Telegram chat id",
+      "examples": [
+        "-658390821"
       ]
     }
   }

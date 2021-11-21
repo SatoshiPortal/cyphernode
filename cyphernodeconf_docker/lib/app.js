@@ -365,7 +365,8 @@ module.exports = class App {
       'proxy_datapath',
       'bitcoin_datapath',
       'lightning_datapath',
-      'otsclient_datapath'
+      'otsclient_datapath',
+      'notifier_datapath'
     ];
 
     for( let pathProp of pathProps ) {
@@ -553,8 +554,13 @@ module.exports = class App {
         }
       },
       telegram: {
-        networks: ['no-network'],
-        docker: "no-docker"
+        networks: ['cyphernodenet'],
+        docker: "cypernode/notifier",
+        extra: {
+          bot_url: this.config.data.telegram_bot_url,
+          api_key: this.config.data.telegram_api_key,
+          chat_id: this.config.data.telegram_chat_id
+        }
       }
     }
 

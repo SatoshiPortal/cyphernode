@@ -3,7 +3,6 @@
 . ./trace.sh
 . ./web.sh
 . ./response.sh
-. ./config.sh
 
 main() {
   trace "Entering main()..."
@@ -38,8 +37,25 @@ main() {
         publish_response "${response}" "${response_topic}" ${?}
         ;;
       sendToTelegramGroup)
+        # example:
+        #   local body=$(echo "{\"text\":\"Hello world in Telegram at `date -u +"%FT%H%MZ"`\"}" | base64)
+        #   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
         if [ "${FEATURE_TELEGRAM}" = "true" ]; then
           url=$(echo ${TELEGRAM_BOT_URL}${TELEGRAM_API_KEY}/sendMessage?chat_id=${TELEGRAM_CHAT_ID})
+          trace "[main] telegram-url=${url}"
+
+          msg=$(echo ${msg} | jq --arg url ${url} '. += {"url":$url}' )
+          trace "[main] web-msg=${msg}"
+
+          response=$(web "${msg}")
+          publish_response "${response}" "${response_topic}" ${?}
+        else
+          trace "[main] Telegram is NOT enabled - message not sent"
+        fi
+        ;;
+      sendToTelegramNoop)
+        if [ "${FEATURE_TELEGRAM}" = "true" ]; then
+          url=$(echo ${TELEGRAM_BOT_URL}${TELEGRAM_API_KEY}/getMe)
           trace "[main] telegram-url=${url}"
 
           msg=$(echo ${msg} | jq --arg url ${url} '. += {"url":$url}' )
