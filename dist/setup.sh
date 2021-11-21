@@ -836,7 +836,7 @@ install_apps() {
   fi
 
   if [[ $FEATURE_TELEGRAM == true ]]; then
-    step "   [32menabled[0m Telegram - Manual configuration needed before first time use (Bot and Group creation, API key) - see notifier_docker/script/sample-env.properties"
+    step "   [32menabled[0m Telegram - Manual configuration needed before first time use (Bot and Group creation, API key) - see doc/TELEGRAM.md"
   else
     step "   [32mdisabled[0m Telegram"
   fi

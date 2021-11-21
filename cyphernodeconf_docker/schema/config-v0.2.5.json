@@ -738,7 +738,6 @@
     "telegram_bot_url": {
       "$id": "#/properties/telegram_bot_url",
       "type": "string",
-      "pattern": "string",
       "title": "The Telegram bot URL",
       "default": "https://api.telegram.org/bot",
       "examples": [
