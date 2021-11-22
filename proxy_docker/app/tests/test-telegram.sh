@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Tests the notify_telegram (in notify.sh) function by calling it directly - not going through the proxy, there is no endpoint.
+
 cd ..
 . ./notify.sh
 

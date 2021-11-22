@@ -14,9 +14,9 @@ main() {
   local url
 
   if [ "${FEATURE_TELEGRAM}" = "true" ]; then
-      trace "[notifier] FEATURE_TELEGRAM is ENABLED"
+      trace "[main] FEATURE_TELEGRAM is ENABLED"
   else
-      trace "[notifier] FEATURE_TELEGRAM is DISABLED"
+      trace "[main] FEATURE_TELEGRAM is DISABLED"
   fi
 
   # Messages should have this form:
