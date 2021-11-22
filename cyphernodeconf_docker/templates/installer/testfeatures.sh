@@ -1,6 +1,6 @@
 #!/bin/sh
 
-apk add --update --no-cache openssl curl jq > /dev/null
+apk add --update --no-cache openssl curl jq coreutils > /dev/null
 
 . /gatekeeper/keys.properties
 
@@ -12,16 +12,13 @@ checkgatekeeper() {
   local k
   eval k='$ukey_'$id
 
-  local h64=$(echo "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
+  local h64=$(echo -n '{"alg":"HS256","typ":"JWT"}' | basenc --base64url | tr -d '=')
 
   # Let's test expiration: 1 second in payload, request 2 seconds later
 
-  local p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+1))}" | base64)
-  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+  local p64=$(echo -n '{"id":"'${id}'","exp":'$(date +"%s")'}' | basenc --base64url | tr -d '=')
+  local s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r -binary | basenc --base64url | tr -d '=')
   local token="$h64.$p64.$s"
-
-  echo -e "  Sleeping 2 seconds... " > /dev/console
-  sleep 2
 
   echo "  Testing expired request... " > /dev/console
   rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper:<%= gatekeeper_port %>/v0/getblockinfo)
@@ -29,13 +26,13 @@ checkgatekeeper() {
 
   # Let's test authentication (signature)
 
-  p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+  p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+10))'}' | basenc --base64url | tr -d '=')
+  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r -binary | basenc --base64url | tr -d '=')
   token="$h64.$p64.a$s"
 
   echo "  Testing bad signature... " > /dev/console
   rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $token" --cacert /gatekeeper/certs/cert.pem https://gatekeeper:<%= gatekeeper_port %>/v0/getblockinfo)
-  [ "${rc}" -ne "403" ] && return 30
+  [ "${rc}" -ne "401" ] && return 30
 
   # Let's test authorization (action access for groups)
 
@@ -47,8 +44,8 @@ checkgatekeeper() {
 
   id="002"
   eval k='$ukey_'$id
-  p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+  p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+10))'}' | basenc --base64url | tr -d '=')
+  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r -binary | basenc --base64url | tr -d '=')
   token="$h64.$p64.$s"
 
   echo "  Testing spender trying to do an internal action call... " > /dev/console
@@ -58,8 +55,8 @@ checkgatekeeper() {
 
   id="003"
   eval k='$ukey_'$id
-  p64=$(echo "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64)
-  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
+  p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+10))'}' | basenc --base64url | tr -d '=')
+  s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r -binary | basenc --base64url | tr -d '=')
   token="$h64.$p64.$s"
 
   echo "  Testing admin trying to do an internal action call... " > /dev/console
