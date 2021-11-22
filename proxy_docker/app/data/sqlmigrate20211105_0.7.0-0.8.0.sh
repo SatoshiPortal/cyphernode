@@ -1,5 +1,6 @@
 #!/bin/sh
 
+date
 echo "Waiting for postgres to be ready..."
 (while true ; do psql -h postgres -U cyphernode -c "select 1;" ; [ "$?" -eq "0" ] && break ; sleep 10; done) &
 wait
@@ -11,10 +12,14 @@ if [ "$?" -eq "1" ]; then
   echo "Creating postgres database..."
   psql -h postgres -f cyphernode.postgresql -U cyphernode
 
+  date
   echo "Extracting and converting sqlite3 data..."
+  date
   cat sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extract.sql | sqlite3 $DB_FILE
-  sed -ie 's/^\(INSERT.*\);$/\1 ON CONFLICT DO NOTHING;/g' sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
+  mv sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql ${DB_PATH}/
+  sed -ie 's/^\(INSERT.*\);$/\1 ON CONFLICT DO NOTHING;/g' ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
+  date
   echo "...appending postgresql sequences..."
   echo "
   select setval('cyphernode_props_id_seq',  (SELECT MAX(id) FROM cyphernode_props));
@@ -27,10 +32,12 @@ if [ "$?" -eq "1" ]; then
   select setval('watching_id_seq',  (SELECT MAX(id) FROM watching));
   select setval('batcher_id_seq',  (SELECT MAX(id) FROM batcher));
   commit;
-  " >> sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
+  " >> ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
+  date
   echo "Importing sqlite3 data into postgresql..."
-  psql -h postgres -f sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql -U cyphernode
+  psql -h postgres -f ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql -U cyphernode
+  date
 else
   echo "New indexes migration already done, skipping!"
 fi

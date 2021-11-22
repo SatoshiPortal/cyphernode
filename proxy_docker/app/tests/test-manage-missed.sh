@@ -126,11 +126,10 @@ test_manage_missed_1_conf() {
 wait_for_callbacks() {
   trace 1 "[wait_for_callbacks] ${BCyan}Let's start the callback servers!...${Color_Off}"
 
-  docker exec -t tests-manage-missed sh -c "nc -vlp1111 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
-  docker exec -t tests-manage-missed sh -c "nc -vlp1112 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
-  docker exec -t tests-manage-missed sh -c "nc -vlp1113 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
-  docker exec -t tests-manage-missed sh -c "nc -vlp1114 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo 1>&2'" &
-
+  docker exec -t tests-manage-missed sh -c "nc -vlp1111 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1112 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1113 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker exec -t tests-manage-missed sh -c "nc -vlp1114 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 }
 
 TRACING=3
