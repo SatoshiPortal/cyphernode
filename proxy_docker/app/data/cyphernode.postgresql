@@ -43,7 +43,7 @@ CREATE TABLE tx (
   fee REAL,
   size INTEGER,
   vsize INTEGER,
-	is_replaceable BOOLEAN,
+  is_replaceable BOOLEAN,
   blockhash VARCHAR,
   blockheight INTEGER,
   blocktime BIGINT,

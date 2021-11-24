@@ -9,7 +9,7 @@ createbatcher() {
 
   # POST http://192.168.111.152:8080/createbatcher
   #
-  # Will UPDATE the batcher is it already exists (as per label)
+  # Will UPDATE the batcher if it already exists (as per label)
   #
   # args:
   # - batcherLabel, optional, id can be used to reference the batcher

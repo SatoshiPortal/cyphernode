@@ -51,6 +51,8 @@ ln_waitanyinvoice() {
 
     sql "UPDATE cyphernode_props SET value='${pay_index}' WHERE property='pay_index'"
   fi
+
+  return ${returncode}
 }
 
 while :
@@ -58,5 +60,12 @@ do
   pay_index=$(sql "SELECT value FROM cyphernode_props WHERE property='pay_index'")
   trace "[waitanyinvoice] pay_index=${pay_index}"
   ln_waitanyinvoice ${pay_index}
-  sleep 5
+
+  if [ "$?" -eq "0" ]; then
+    # lightning is ready, let's wait 1 sec to fetch next pay_index...
+    sleep 1
+  else
+    # lightning is not ready, let's wait a little more...
+    sleep 5
+  fi
 done

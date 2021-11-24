@@ -17,8 +17,11 @@ select id,address,amount,tx_id,inserted_ts,webhook_url,case when calledback=1 th
 select id,txid,case when watching=1 then 'TRUE' else 'FALSE' end as watching,callback1conf,case when calledback1conf=1 then 'TRUE' else 'FALSE' end as calledback1conf,callbackxconf,case when calledbackxconf=1 then 'TRUE' else 'FALSE' end as calledbackxconf,nbxconf,inserted_ts from watching_by_txid;
 .mode insert stamp
 select id,hash,callbackUrl,case when requested=1 then 'TRUE' else 'FALSE' end as requested,case when upgraded=1 then 'TRUE' else 'FALSE' end as upgraded,case when calledback=1 then 'TRUE' else 'FALSE' end as calledback,inserted_ts from stamp;
-.mode insert cyphernode_props
-select * from cyphernode_props;
+-- cyphernode_props rows were already inserted in db creation, let's update them here
+.headers off
+.mode list cyphernode_props
+select 'update cyphernode_props set value=''' || value || ''', inserted_ts=''' || inserted_ts || ''' where id=' || id || ';' from cyphernode_props;
+.headers on
 .mode insert ln_invoice
 select id,label,bolt11,payment_hash,msatoshi,status,pay_index,msatoshi_received,paid_at,description,expires_at,callback_url,case when calledback=1 then 'TRUE' else 'FALSE' end as calledback,case when callback_failed=1 then 'TRUE' else 'FALSE' end as callback_failed,inserted_ts from ln_invoice;
 .quit

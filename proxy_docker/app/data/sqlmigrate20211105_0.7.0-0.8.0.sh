@@ -22,17 +22,17 @@ if [ "$?" -eq "1" ]; then
   date
   echo "...appending postgresql sequences..."
   echo "
-  select setval('cyphernode_props_id_seq',  (SELECT MAX(id) FROM cyphernode_props));
-  select setval('ln_invoice_id_seq',  (SELECT MAX(id) FROM ln_invoice));
-  select setval('recipient_id_seq',  (SELECT MAX(id) FROM recipient));
-  select setval('stamp_id_seq',  (SELECT MAX(id) FROM stamp));
-  select setval('tx_id_seq',  (SELECT MAX(id) FROM tx));
-  select setval('watching_by_pub32_id_seq',  (SELECT MAX(id) FROM watching_by_pub32));
-  select setval('watching_by_txid_id_seq',  (SELECT MAX(id) FROM watching_by_txid));
-  select setval('watching_id_seq',  (SELECT MAX(id) FROM watching));
-  select setval('batcher_id_seq',  (SELECT MAX(id) FROM batcher));
-  commit;
-  " >> ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
+select setval('cyphernode_props_id_seq',  (SELECT MAX(id) FROM cyphernode_props));
+select setval('ln_invoice_id_seq',  (SELECT MAX(id) FROM ln_invoice));
+select setval('recipient_id_seq',  (SELECT MAX(id) FROM recipient));
+select setval('stamp_id_seq',  (SELECT MAX(id) FROM stamp));
+select setval('tx_id_seq',  (SELECT MAX(id) FROM tx));
+select setval('watching_by_pub32_id_seq',  (SELECT MAX(id) FROM watching_by_pub32));
+select setval('watching_by_txid_id_seq',  (SELECT MAX(id) FROM watching_by_txid));
+select setval('watching_id_seq',  (SELECT MAX(id) FROM watching));
+select setval('batcher_id_seq',  (SELECT MAX(id) FROM batcher));
+commit;
+" >> ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
   date
   echo "Importing sqlite3 data into postgresql..."
