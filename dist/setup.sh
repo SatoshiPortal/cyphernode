@@ -1,17 +1,20 @@
 #!/bin/bash
 
-### Execute this on a freshly install ubuntu luna node
-# curl -fsSL get.docker.com -o get-docker.sh
-# sh get-docker.sh
-# sudo usermod -aG docker $USER
-## logout and relogin
-# git clone --branch features/install --recursive https://github.com/schulterklopfer/cyphernode.git
-# sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-# sudo chmod +x /usr/local/bin/docker-compose
-# cd cyphernode
-# ./setup.sh -ci
-# docker-compose -f docker-compose.yaml up [-d]
+# This is where everything is configured.
 
+# To determine speed of machine...
+#
+# bash -c ' : {1..500000} ; echo $SECONDS'
+#
+# MBP M1: 0
+# MBP Intel: 0
+# x86_64 avg machine: 0
+# RockPi Debian 64-bits: 1
+# RPi4 RaspiOS 64-bits: 1
+# RPi3 RaspiOS 32-bits: 4
+# RPi2 RaspiOS 32-bits: 7
+#
+# Let's say if timer > 2, we're on a slow machine.
 
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 # Use step(), try(), and next() to perform a series of commands and print
@@ -142,9 +145,6 @@ configure() {
     recreate=" recreate"
   fi
 
-
-
-  local arch=$(uname -m)
   local pw_env=''
   local interactive=''
   local gen_options=''
@@ -157,11 +157,12 @@ configure() {
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
   fi
 
-
-  if [[ $arch =~ ^arm ]]; then
-    clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so tiny. :("
+  echo "\nDetermining the speed of your machine..."
+  local speedseconds=$(bash -c ' : {1..500000} ; echo $SECONDS')
+  if [[ $speedseconds > 2 ]]; then
+    clear && echo "This may take a while, since it seems we're running on a slow machine."
   else
-    clear && echo "Thinking..."
+    clear && echo "Fast machine..."
   fi
 
   # before starting a new cyphernodeconf, kill all the others
@@ -349,14 +350,6 @@ compare_bitcoinconf() {
 }
 
 install_docker() {
-  local archpath=$(uname -m)
-
-  # compat mode for SatoshiPortal repo
-  # TODO: add more mappings?
-  if [[ $archpath == 'armv7l' ]]; then
-    archpath="rpi"
-  fi
-
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH

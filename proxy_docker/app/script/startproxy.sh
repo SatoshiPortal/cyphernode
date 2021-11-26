@@ -1,14 +1,5 @@
 #!/bin/sh
 
-export PROXY_LISTENING_PORT
-export WATCHER_NODE_RPC_URL=$WATCHER_BTC_NODE_RPC_URL
-export SPENDER_NODE_RPC_URL=$SPENDER_BTC_NODE_RPC_URL
-export WATCHER_NODE_RPC_CFG=$WATCHER_BTC_NODE_RPC_CFG
-export SPENDER_NODE_RPC_CFG=$SPENDER_BTC_NODE_RPC_CFG
-export TRACING
-export DB_PATH
-export DB_FILE
-
 trim() {
   echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
@@ -51,4 +42,4 @@ if [ "${FEATURE_LIGHTNING}" = "true" ]; then
   ./waitanyinvoice.sh &
 fi
 
-nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh
+exec nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh

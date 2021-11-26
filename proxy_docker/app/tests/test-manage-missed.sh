@@ -38,6 +38,16 @@ exec_in_test_container() {
   docker exec -it tests-manage-missed $@
 }
 
+wait_for_proxy() {
+  trace 1 "\n\n[wait_for_proxy] ${BCyan}Waiting for the proxy to be ready...${Color_Off}\n"
+
+  # First ping the containers to make sure they're up...
+  docker exec -t tests-manage-missed sh -c 'while true ; do ping -c 1 proxy ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+
+  # Now check if the lightning nodes are ready to accept requests...
+  docker exec -t tests-manage-missed sh -c 'while true ; do curl proxy:8888/helloworld ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+}
+
 test_manage_missed_0_conf() {
   # Missed 0-conf:
   # 1. Get new address
@@ -69,9 +79,8 @@ test_manage_missed_0_conf() {
   docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
-  trace 3 "[test_manage_missed_0_conf] Sleeping for 10 seconds to let the proxy restart..."
-  sleep 10
-  
+  wait_for_proxy
+
   trace 3 "[test_manage_missed_0_conf] Calling executecallbacks..."
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 
@@ -116,9 +125,8 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
   mine
 
-  trace 3 "[test_manage_missed_1_conf] Sleeping for 10 seconds to let the proxy restart..."
-  sleep 10
-  
+  wait_for_proxy
+
   trace 3 "[test_manage_missed_1_conf] Calling executecallbacks..."
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 }
@@ -148,8 +156,7 @@ trace 2 "url3=${url3}"
 trace 2 "url4=${url4}"
 
 exec_in_test_container apk add --update curl
-# exec_in_test_container ping -c 5 tests-manage-missed
-# exec_in_test_container curl -vd 'toto' ${url1}/allo
+
 test_manage_missed_0_conf
 test_manage_missed_1_conf
 

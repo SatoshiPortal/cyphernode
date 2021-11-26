@@ -34,8 +34,6 @@ main() {
   done
 }
 
-export TRACING=1
-
 main
 trace "[requesthandler] exiting"
 exit $?

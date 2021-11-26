@@ -232,7 +232,7 @@ checkservice() {
 
 timeout_feature() {
   local interval=15
-  local totaltime=120
+  local totaltime=${2:-120}
   local testwhat=${1}
   local returncode
   local endtime=$(($(date +%s) + ${totaltime}))
@@ -320,6 +320,28 @@ fi
 #  ]
 
 #############################
+# PROXY                     #
+#############################
+
+echo -e "\r\n\e[1;36mWaiting for Proxy to be ready... " > /dev/console
+timeout_feature '[ -f "/container_monitor/proxy_ready" ]' 300
+
+#############################
+# POSTGRES                  #
+#############################
+
+result="${result},{\"coreFeature\":true, \"name\":\"postgres\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"postgres\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  timeout_feature checkpostgres
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Postgres error!')}"
+
+#############################
 # GATEKEEPER                #
 #############################
 
@@ -378,21 +400,6 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
-
-#############################
-# POSTGRES                  #
-#############################
-
-result="${result},{\"coreFeature\":true, \"name\":\"postgres\",\"working\":"
-status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"postgres\") | .active")
-if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
-  timeout_feature checkpostgres
-  returncode=$?
-else
-  returncode=1
-fi
-finalreturncode=$((${returncode} | ${finalreturncode}))
-result="${result}$(feature_status ${returncode} 'Postgres error!')}"
 
 <% if (features.indexOf('otsclient') != -1) { %>
 #############################
@@ -469,6 +476,8 @@ finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
 
 <% } %>
+
+#############################
 
 result="{${result}]}"
 

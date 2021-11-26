@@ -46,8 +46,8 @@ services:
       - "<%= tor_datapath %>:/tor"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready && chown $USER /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     networks:
@@ -86,8 +86,8 @@ services:
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready && chown $USER /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s
@@ -130,8 +130,8 @@ services:
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s
@@ -204,6 +204,13 @@ services:
       <% if ( features.indexOf('tor') !== -1 ) { %>
       - "<%= tor_datapath %>:/proxy/tor"
       <% } %>
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
     depends_on:
@@ -284,6 +291,7 @@ services:
     command: $USER ./startnotifier.sh
     <% if ( features.indexOf('tor') !== -1 ) { %>
     environment:
+      - "TRACING=1"
       - "TOR_HOST=tor"
       - "TOR_PORT=9050"
     <% } %>
@@ -407,6 +415,7 @@ services:
       - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
       - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
       - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
+      - container_monitor:/container_monitor
     networks:
       - cyphernodenet
       - cyphernodeappsnet

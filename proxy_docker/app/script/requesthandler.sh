@@ -76,7 +76,7 @@ main() {
       case "${cmd}" in
         helloworld)
           # GET http://192.168.111.152:8080/helloworld
-          response="Hello, world!"
+          response='{"hello":"world"}'
           returncode=0
           # response_to_client "Hello, world!" 0
           # break
@@ -773,11 +773,6 @@ main() {
   trace "[main] exiting"
   return 0
 }
-
-export NODE_RPC_URL=$BTC_NODE_RPC_URL
-export TRACING
-export DB_PATH
-export DB_FILE
 
 main
 trace "[requesthandler] exiting"
