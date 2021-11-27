@@ -771,9 +771,10 @@ main() {
     fi
   done
   trace "[main] exiting"
-  return 0
+  return ${returncode}
 }
 
 main
+returncode=$?
 trace "[requesthandler] exiting"
-exit $?
+exit ${returncode}

@@ -136,8 +136,8 @@ CREATE TABLE cyphernode_props (
 CREATE INDEX idx_cp_property ON cyphernode_props (property);
 CREATE UNIQUE INDEX idx_cp_propval ON cyphernode_props (property, value);
 
-INSERT INTO cyphernode_props (property, value) VALUES ('version', '0.1');
-INSERT INTO cyphernode_props (property, value) VALUES ('pay_index', '0');
+INSERT INTO cyphernode_props (id, property, value) VALUES (1, 'version', '0.1');
+INSERT INTO cyphernode_props (id, property, value) VALUES (2, 'pay_index', '0');
 
 CREATE TABLE ln_invoice (
   id SERIAL PRIMARY KEY,

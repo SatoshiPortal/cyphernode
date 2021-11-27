@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 while [ ! -f "/container_monitor/proxy_ready" ]; do echo "proxy not ready" ; sleep 10 ; done
 
 echo "proxy ready"
 
-if [[ $1 ]]; then
-	user=$(echo $1 | cut -d ':' -f 1)
+if [ -n "$1" ]; then
+	user=$(echo "$1" | cut -d ':' -f 1)
 else
 	user='nginx'
 fi

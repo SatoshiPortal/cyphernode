@@ -9,6 +9,7 @@ services:
   postgres:
     image: postgres:<%= postgres_version %>
     user: $USER
+    command: -c logging_collector=true -c log_directory=/cnlogs/
     environment:
       - "POSTGRES_USER=cyphernode"
       - "POSTGRES_PASSWORD=<%= postgres_password %>"
@@ -16,6 +17,7 @@ services:
       - "PGDATA=/var/lib/postgresql/data/pgdata"
     volumes:
       - "<%= postgres_datapath %>:/var/lib/postgresql/data"
+      - "<%= logs_datapath %>:/cnlogs"
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>

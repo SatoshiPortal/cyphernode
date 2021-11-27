@@ -1,6 +1,6 @@
 #!/bin/sh
 
-apk add --update --no-cache openssl curl jq coreutils > /dev/null
+apk add --update --no-cache openssl curl jq coreutils postgresql > /dev/null
 
 . /gatekeeper/keys.properties
 
@@ -72,7 +72,7 @@ checkpycoin() {
   echo -en "\r\n\e[1;36mTesting Pycoin... " > /dev/console
   local rc
 
-  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" http://proxy:8888/derivepubpath)
+  rc=$(curl -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" -s -o /dev/null -w "%{http_code}" http://pycoin:7777/derive)
   [ "${rc}" -ne "200" ] && return 100
 
   echo -e "\e[1;36mPycoin rocks!" > /dev/console
@@ -85,8 +85,9 @@ checkpostgres() {
   local rc
 
   # getbatcher needs the database to return correctly...
-  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbatcher)
-  [ "${rc}" -ne "200" ] && return 105
+#  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbatcher)
+  pg_isready -h postgres
+  [ "${?}" -ne "0" ] && return 105
 
   echo -e "\e[1;36mPostgres rocks!" > /dev/console
 
@@ -110,7 +111,9 @@ checknotifier() {
   local response
   local returncode
 
-  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\",\"tor\":false}")
+  nc -vlp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\\r\\n\\r\\n" ; date >&2 ; timeout 1 tee /dev/tty | cat ; ' &
+  # response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\",\"tor\":false}")
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://$(hostname):1111/notifiertest\",\"tor\":false}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")
@@ -125,7 +128,8 @@ checkots() {
   echo -en "\r\n\e[1;36mTesting OTSclient... " > /dev/console
   local rc
 
-  rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' http://proxy:8888/ots_stamp)
+  # rc=$(curl -s -H "Content-Type: application/json" -d '{"hash":"123","callbackUrl":"http://callback"}' http://proxy:8888/ots_stamp)
+  rc=$(curl -s otsclient:6666/stamp/123)
   echo "${rc}" | grep "Invalid hash 123 for sha256" > /dev/null
   [ "$?" -ne "0" ] && return 200
 
@@ -301,7 +305,7 @@ if [ "${returncode}" -ne "0" ]; then
   echo -e "\e[1;31mCyphernode could not fully start properly within delay." > /dev/console
   status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"proxy\") | .active")
   if [ "${status}" = "false" ]; then
-    echo -e "\e[1;31mThe Proxy, the main Cyphernode's component, is not responding.  We will only test the gatekeeper if its container is up, but you'll see errors for the other components.  Please check the logs." > /dev/console
+    echo -e "\r\n\e[1;31mThe Proxy, the main Cyphernode's component, is not responding.  You'll see errors for the other components.  Please check the logs." > /dev/console
     workingproxy="false"
   fi
 else
@@ -323,14 +327,32 @@ fi
 # PROXY                     #
 #############################
 
-echo -e "\r\n\e[1;36mWaiting for Proxy to be ready... " > /dev/console
-timeout_feature '[ -f "/container_monitor/proxy_ready" ]' 300
+if [ ! -f /container_monitor/proxy_dbfailed ]; then
+  echo -e "\r\n\e[1;36mWaiting for Proxy to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/proxy_ready" ]' 300
+  returncode=$?
+  if [ "${returncode}" -ne "0" ]; then
+    echo -e "\r\n\e[1;31mThe proxy is still not ready.  It may be migrating large quantity of data?  Please check the logs for more details." > /dev/console
+    workingproxy="false"
+  fi
+fi
+if [ -f /container_monitor/proxy_dbfailed ]; then
+  echo -e "\r\n\e[1;31mThe proxy's database migration failed.  Please check proxy.log for more details." > /dev/console
+  workingproxy="false"
+fi
+
+if [ "${workingproxy}" = "false" ]; then
+  echo -e "\r\n\e[1;31mThe Proxy, the main Cyphernode's component, is not ready.  Cyphernode can't be run without the proxy component." > /dev/console
+  echo -e "\r\n\e[1;31mThe other components will fail next, this is normal." > /dev/console
+fi
+
+result="${containers},\"features\":[{\"coreFeature\":true,\"name\":\"proxy\",\"working\":${workingproxy}}"
 
 #############################
 # POSTGRES                  #
 #############################
 
-result="${result},{\"coreFeature\":true, \"name\":\"postgres\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"postgres\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"postgres\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checkpostgres
@@ -345,9 +367,9 @@ result="${result}$(feature_status ${returncode} 'Postgres error!')}"
 # GATEKEEPER                #
 #############################
 
-result="${containers},\"features\":[{\"coreFeature\":true, \"name\":\"proxy\",\"working\":${workingproxy}}, {\"coreFeature\":true, \"name\":\"gatekeeper\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"gatekeeper\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"gatekeeper\") | .active")
-if [ "${status}" = "true" ]; then
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checkgatekeeper
   returncode=$?
 else
@@ -360,7 +382,7 @@ result="${result}$(feature_status ${returncode} 'Gatekeeper error!')}"
 # BROKER                    #
 #############################
 
-result="${result},{\"coreFeature\":true, \"name\":\"broker\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"broker\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"broker\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checkbroker
@@ -375,7 +397,7 @@ result="${result}$(feature_status ${returncode} 'Broker error!')}"
 # NOTIFIER                  #
 #############################
 
-result="${result},{\"coreFeature\":true, \"name\":\"notifier\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"notifier\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checknotifier
@@ -390,7 +412,7 @@ result="${result}$(feature_status ${returncode} 'Notifier error!')}"
 # PYCOIN                    #
 #############################
 
-result="${result},{\"coreFeature\":true, \"name\":\"pycoin\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"pycoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"pycoin\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checkpycoin
@@ -406,7 +428,7 @@ result="${result}$(feature_status ${returncode} 'Pycoin error!')}"
 # OTSCLIENT                 #
 #############################
 
-result="${result},{\"coreFeature\":false, \"name\":\"otsclient\",\"working\":"
+result="${result},{\"coreFeature\":false,\"name\":\"otsclient\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"otsclient\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   timeout_feature checkots
@@ -423,12 +445,11 @@ result="${result}$(feature_status ${returncode} 'OTSclient error!')}"
 # TOR                       #
 #############################
 
-echo -e "\r\n\e[1;36mWaiting for Tor to be ready... " > /dev/console
-timeout_feature '[ -f "/container_monitor/tor_ready" ]'
-
-result="${result},{\"coreFeature\":false, \"name\":\"tor\",\"working\":"
+result="${result},{\"coreFeature\":false,\"name\":\"tor\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"tor\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  echo -e "\r\n\e[1;36mWaiting for Tor to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/tor_ready" ]'
   timeout_feature checktor
   returncode=$?
 else
@@ -442,12 +463,11 @@ result="${result}$(feature_status ${returncode} 'Tor error!')}"
 # BITCOIN                   #
 #############################
 
-echo -e "\r\n\e[1;36mWaiting for Bitcoin Core to be ready... " > /dev/console
-timeout_feature '[ -f "/container_monitor/bitcoin_ready" ]'
-
-result="${result},{\"coreFeature\":true, \"name\":\"bitcoin\",\"working\":"
+result="${result},{\"coreFeature\":true,\"name\":\"bitcoin\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"bitcoin\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  echo -e "\r\n\e[1;36mWaiting for Bitcoin Core to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/bitcoin_ready" ]'
   timeout_feature checkbitcoinnode
   returncode=$?
 else
@@ -461,12 +481,11 @@ result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
 # LIGHTNING                 #
 #############################
 
-echo -e "\r\n\e[1;36mWaiting for C-Lightning to be ready... " > /dev/console
-timeout_feature '[ -f "/container_monitor/lightning_ready" ]'
-
-result="${result},{\"coreFeature\":false, \"name\":\"lightning\",\"working\":"
+result="${result},{\"coreFeature\":false,\"name\":\"lightning\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"lightning\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  echo -e "\r\n\e[1;36mWaiting for C-Lightning to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/lightning_ready" ]'
   timeout_feature checklnnode
   returncode=$?
 else

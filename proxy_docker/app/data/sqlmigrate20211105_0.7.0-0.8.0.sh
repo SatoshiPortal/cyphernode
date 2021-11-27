@@ -1,26 +1,39 @@
 #!/bin/sh
 
-date
-echo "Waiting for postgres to be ready..."
-(while true ; do psql -h postgres -U cyphernode -c "select 1;" ; [ "$?" -eq "0" ] && break ; sleep 10; done) &
-wait
+. ./trace.sh
 
-echo "Checking if postgres is setup..."
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Waiting for postgres to be ready..."
+while true ; do psql -h postgres -U cyphernode -c "select 1;" ; [ "$?" -eq "0" ] && break ; sleep 10; done
+
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is setup..."
 psql -h postgres -U cyphernode -c "\d" | grep "cyphernode_props" > /dev/null
 if [ "$?" -eq "1" ]; then
   # if cyphernode_props table doesn't exist, it's probably because database hasn't been setup yet
-  echo "Creating postgres database..."
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Creating postgres database..."
   psql -h postgres -f cyphernode.postgresql -U cyphernode
+  returncode=$?
+  trace_rc ${returncode}
+  [ "${returncode}" -eq "0" ] || exit ${returncode}
+else
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] PostgreSQL database already created, skipping!"
+fi
 
-  date
-  echo "Extracting and converting sqlite3 data..."
-  date
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is loaded/imported..."
+lastval=$(psql -qAtX -h postgres -U cyphernode -c "select last_value from pg_sequences where sequencename='cyphernode_props_id_seq'")
+returncode=$?
+if [ -z "${lastval}" ] || [ "${lastval}" -lt "2" ]; then
+  # if cyphernode_props_id_seq isn't set, it's probably because database hasn't been loaded/imported yet
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Extracting and converting sqlite3 data..."
   cat sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extract.sql | sqlite3 $DB_FILE
+  returncode=$?
+  trace_rc ${returncode}
+  [ "${returncode}" -eq "0" ] || exit ${returncode}
+
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Creating import file for postgres..."
   mv sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql ${DB_PATH}/
   sed -ie 's/^\(INSERT.*\);$/\1 ON CONFLICT DO NOTHING;/g' ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
-  date
-  echo "...appending postgresql sequences..."
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Appending postgresql sequence creation..."
   echo "
 select setval('cyphernode_props_id_seq',  (SELECT MAX(id) FROM cyphernode_props));
 select setval('ln_invoice_id_seq',  (SELECT MAX(id) FROM ln_invoice));
@@ -34,10 +47,11 @@ select setval('batcher_id_seq',  (SELECT MAX(id) FROM batcher));
 commit;
 " >> ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
-  date
-  echo "Importing sqlite3 data into postgresql..."
-  psql -h postgres -f ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql -U cyphernode
-  date
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Importing sqlite3 data into postgresql..."
+  psql -v ON_ERROR_STOP=on -h postgres -f ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql -U cyphernode
+  returncode=$?
+  trace_rc ${returncode}
+  [ "${returncode}" -eq "0" ] || exit ${returncode}
 else
-  echo "New indexes migration already done, skipping!"
+  trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] PostgreSQL database already loaded, skipping!"
 fi

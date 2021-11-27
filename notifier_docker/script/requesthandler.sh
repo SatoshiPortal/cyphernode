@@ -35,5 +35,6 @@ main() {
 }
 
 main
+returncode=$?
 trace "[requesthandler] exiting"
-exit $?
+exit ${returncode}

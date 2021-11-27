@@ -16,6 +16,20 @@
 #
 # Let's say if timer > 2, we're on a slow machine.
 
+# At first we tried using uname -m te determine slow devices, but:
+#
+# uname -m result:
+# RPi2: armv7l
+# RPi3: armv7l
+# RPi4 on 32-bit OS: armv7l
+# RPi4 on 64-bit OS: aarch64
+# RockPi: aarch64
+# Apple M1: arm64
+# Intel 64: x86_64#
+#
+# There are a ton of other possible values... and can't rely on them to detect
+# a slow device.
+
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 # Use step(), try(), and next() to perform a series of commands and print
 # [  OK  ] or [FAILED] at the end. The step as a whole fails if any individual

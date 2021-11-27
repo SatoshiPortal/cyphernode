@@ -97,8 +97,10 @@ main()
     fi
   done
   trace "[main] exiting"
-  return 0
+  return ${returncode}
 }
 
 main
-exit $?
+returncode=$?
+trace "[requesthandler] exiting"
+exit ${returncode}

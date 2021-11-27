@@ -11,7 +11,7 @@ compute_fees() {
     trace "[compute_fees]  pruned=${pruned}"
     # We want null instead of 0.00000000 in this case.
     echo "null"
-    exit 0
+    return
   fi
 
   local txid=${1}
