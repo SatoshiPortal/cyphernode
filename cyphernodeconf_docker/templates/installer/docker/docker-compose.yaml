@@ -9,7 +9,8 @@ services:
   postgres:
     image: postgres:<%= postgres_version %>
     user: $USER
-    command: -c logging_collector=true -c log_directory=/cnlogs/
+    entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
+    # command: -c logging_collector=true -c log_directory=/cnlogs/
     environment:
       - "POSTGRES_USER=cyphernode"
       - "POSTGRES_PASSWORD=<%= postgres_password %>"

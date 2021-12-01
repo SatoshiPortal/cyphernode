@@ -66,6 +66,8 @@ if [ "${returncode}" -ne "0" ]; then
   exit ${returncode}
 fi
 
+rm -f /container_monitor/proxy_ready
+
 chmod 0600 $DB_FILE
 
 createCurlConfig ${WATCHER_BTC_NODE_RPC_CFG} ${WATCHER_BTC_NODE_RPC_USER}
