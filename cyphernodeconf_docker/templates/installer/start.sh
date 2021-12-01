@@ -60,6 +60,9 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
+# Let's make sure the container readyness files are deleted before starting the stack
+docker run --rm -v cyphernode_container_monitor:/container_monitor alpine sh -c 'rm -f /container_monitor/*_ready'
+
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>

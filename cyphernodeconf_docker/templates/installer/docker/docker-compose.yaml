@@ -10,7 +10,6 @@ services:
     image: postgres:<%= postgres_version %>
     user: $USER
     entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
-    # command: -c logging_collector=true -c log_directory=/cnlogs/
     environment:
       - "POSTGRES_USER=cyphernode"
       - "POSTGRES_PASSWORD=<%= postgres_password %>"
@@ -25,7 +24,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
-    stop_grace_period: 30s
+    stop_grace_period: 90s
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>
