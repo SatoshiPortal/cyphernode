@@ -18,6 +18,13 @@ services:
     volumes:
       - "<%= postgres_datapath %>:/var/lib/postgresql/data"
       - "<%= logs_datapath %>:/cnlogs"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: sh -c 'psql -U cyphernode -c "select 1;" && touch /container_monitor/postgres_ready && chown $USER /container_monitor/postgres_ready || rm -f /container_monitor/postgres_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>

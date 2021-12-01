@@ -2,10 +2,11 @@
 
 . ./trace.sh
 
-trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Waiting for postgres to be ready..."
-while true ; do psql -h postgres -U cyphernode -c "select 1;" ; [ "$?" -eq "0" ] && break ; sleep 10; done
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Waiting for PostgreSQL to be ready..."
+while [ ! -f "/container_monitor/postgres_ready" ]; do echo "PostgreSQL not ready" ; sleep 10 ; done
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] PostgreSQL ready!"
 
-trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is setup..."
+trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is set up..."
 psql -h postgres -U cyphernode -c "\d" | grep "cyphernode_props" > /dev/null
 if [ "$?" -eq "1" ]; then
   # if cyphernode_props table doesn't exist, it's probably because database hasn't been setup yet
