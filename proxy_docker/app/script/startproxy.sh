@@ -34,13 +34,13 @@ else
   rm -f /container_monitor/proxy_dbfailed
 fi
 
+trace "[startproxy] Waiting for PostgreSQL to be ready..."
+while [ ! -f "/container_monitor/postgres_ready" ]; do echo "PostgreSQL not ready" ; sleep 10 ; done
+trace "[startproxy] PostgreSQL ready!"
+
 if [ ! -e ${DB_FILE} ]; then
   trace "[startproxy] DB not found, creating..."
   cat cyphernode.sql | sqlite3 $DB_FILE
-
-  trace "[startproxy] Waiting for PostgreSQL to be ready..."
-  while [ ! -f "/container_monitor/postgres_ready" ]; do echo "PostgreSQL not ready" ; sleep 10 ; done
-  trace "[startproxy] PostgreSQL ready!"
   psql -h postgres -f cyphernode.postgresql -U cyphernode
   returncode=$?
   trace_rc ${returncode}

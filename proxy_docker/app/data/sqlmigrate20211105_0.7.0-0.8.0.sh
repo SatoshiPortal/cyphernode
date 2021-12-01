@@ -2,10 +2,6 @@
 
 . ./trace.sh
 
-trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Waiting for PostgreSQL to be ready..."
-while [ ! -f "/container_monitor/postgres_ready" ]; do echo "PostgreSQL not ready" ; sleep 10 ; done
-trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] PostgreSQL ready!"
-
 trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is set up..."
 psql -h postgres -U cyphernode -c "\d" | grep "cyphernode_props" > /dev/null
 if [ "$?" -eq "1" ]; then
