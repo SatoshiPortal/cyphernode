@@ -35,7 +35,7 @@ else
 fi
 
 trace "[startproxy] Waiting for PostgreSQL to be ready..."
-while [ ! -f "/container_monitor/postgres_ready" ]; do echo "PostgreSQL not ready" ; sleep 10 ; done
+while [ ! -f "/container_monitor/postgres_ready" ]; do trace "[startproxy] PostgreSQL not ready" ; sleep 10 ; done
 trace "[startproxy] PostgreSQL ready!"
 
 if [ ! -e ${DB_FILE} ]; then

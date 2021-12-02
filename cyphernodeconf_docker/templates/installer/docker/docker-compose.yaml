@@ -9,7 +9,7 @@ services:
   postgres:
     image: postgres:<%= postgres_version %>
     user: $USER
-    entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
+    entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
     environment:
       - "POSTGRES_USER=cyphernode"
       - "POSTGRES_PASSWORD=<%= postgres_password %>"
@@ -49,8 +49,8 @@ services:
 
   tor:
     image: cyphernode/tor:<%= tor_version %>
-    # Sleeping 7 seconds to let lightning and traefik start
-    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; tor -f /tor/torrc'
+    # Sleeping 10 seconds to let lightning and traefik start
+    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; exec tor -f /tor/torrc'
     volumes:
       - "<%= tor_datapath %>:/tor"
       - container_monitor:/container_monitor
@@ -129,7 +129,7 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command:  $USER /.bitcoin/entrypoint.sh
+    command: $USER /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18444:18444' : ((net === 'testnet') ? '18333:18333' : '8333:8333') %>"

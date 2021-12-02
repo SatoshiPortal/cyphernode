@@ -20,7 +20,7 @@ do_callbacks() {
   fi
 
   # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w32.label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON w.watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
+  local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON w.watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
   trace "[do_callbacks] callbacks0conf=${callbacks}"
 
   local returncode
@@ -39,7 +39,7 @@ do_callbacks() {
     fi
   done
 
-  callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w32.label, derivation_path, event_message, hash FROM watching w JOIN watching_tx wt ON w.id = wt.watching_id JOIN tx t ON wt.tx_id = t.id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
+  callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w JOIN watching_tx wt ON w.id = wt.watching_id JOIN tx t ON wt.tx_id = t.id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
   trace "[do_callbacks] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}

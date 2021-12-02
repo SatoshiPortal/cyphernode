@@ -84,9 +84,7 @@ checkpostgres() {
   echo -en "\r\n\e[1;36mTesting Postgres... " > /dev/console
   local rc
 
-  # getbatcher needs the database to return correctly...
-#  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbatcher)
-  pg_isready -h postgres
+  pg_isready -h postgres -U cyphernode
   [ "${?}" -ne "0" ] && return 105
 
   echo -e "\e[1;36mPostgres rocks!" > /dev/console
@@ -112,7 +110,6 @@ checknotifier() {
   local returncode
 
   nc -vlp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\\r\\n\\r\\n" ; date >&2 ; timeout 1 tee /dev/tty | cat ; ' &
-  # response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://proxy:8888/helloworld\",\"tor\":false}")
   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://$(hostname):1111/notifiertest\",\"tor\":false}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
