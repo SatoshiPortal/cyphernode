@@ -41,7 +41,7 @@ manage_missed_conf() {
 
   trace "[Entering manage_missed_conf()]"
 
-  local watches=$(sql "SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0) ORDER BY address")
+  local watches=$(sql "SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported ORDER BY address")
   trace "[manage_missed_conf] watches=${watches}"
   if [ ${#watches} -eq 0 ]; then
     trace "[manage_missed_conf] Nothing missed!"
@@ -122,8 +122,10 @@ manage_missed_conf() {
       trace "[manage_missed_conf] confirmations=${confirmations}"
 
       if [ "${txtime}" -ge "${inserted_ts}" ]; then
-        # Broadcast after watch, we missed it!
-        trace "[manage_missed_conf] Mined after watch, we missed it!"
+        # Broadcast or mined after watch, we missed it!
+        trace "[manage_missed_conf] Broadcast or mined after watch, we missed it!"
+        # We skip the callbacks because do_callbacks is called right after in
+        # requesthandler.executecallbacks (where we're from)
         confirmation "${latesttxid}" "true"
       fi
     fi

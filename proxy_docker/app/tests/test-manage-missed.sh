@@ -116,8 +116,8 @@ test_manage_missed_1_conf() {
   docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
-  trace 3 "[test_manage_missed_1_conf] Sleeping for 10 seconds to let the 0-conf callbacks to happen..."
-  sleep 10
+  trace 3 "[test_manage_missed_1_conf] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
+  sleep 20
 
   trace 3 "[test_manage_missed_1_conf] Shutting down the proxy..."
   docker stop $(docker ps -q -f "name=proxy\.")
