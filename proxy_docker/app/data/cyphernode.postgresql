@@ -77,6 +77,7 @@ CREATE TABLE batcher (
   inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 INSERT INTO batcher (id, label, conf_target, feerate) VALUES (1, 'default', 6, NULL);
+SELECT SETVAL('batcher_id_seq',  1);
 
 CREATE TABLE recipient (
   id SERIAL PRIMARY KEY,
@@ -138,6 +139,7 @@ CREATE UNIQUE INDEX idx_cp_propval ON cyphernode_props (property, value);
 
 INSERT INTO cyphernode_props (id, property, value) VALUES (1, 'version', '0.1');
 INSERT INTO cyphernode_props (id, property, value) VALUES (2, 'pay_index', '0');
+SELECT SETVAL('cyphernode_props_id_seq',  2);
 
 CREATE TABLE ln_invoice (
   id SERIAL PRIMARY KEY,
