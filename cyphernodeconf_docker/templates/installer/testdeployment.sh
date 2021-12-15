@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./.cyphernodeconf/installer/config.sh
 

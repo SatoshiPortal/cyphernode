@@ -16,9 +16,9 @@ else
 fi
 
 trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Checking if postgres is loaded/imported..."
-lastval=$(psql -qAtX -h postgres -U cyphernode -c "select last_value from pg_sequences where sequencename='cyphernode_props_id_seq'")
+version=$(psql -qAtX -h postgres -U cyphernode -c "select value from cyphernode_props where property='version'")
 returncode=$?
-if [ -z "${lastval}" ] || [ "${lastval}" -lt "2" ]; then
+if [ "${version}" != "0.2" ]; then
   # if cyphernode_props_id_seq isn't set, it's probably because database hasn't been loaded/imported yet
   trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Extracting and converting sqlite3 data..."
   cat sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extract.sql | sqlite3 $DB_FILE
@@ -32,15 +32,16 @@ if [ -z "${lastval}" ] || [ "${lastval}" -lt "2" ]; then
 
   trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Appending postgresql sequence creation..."
   echo "
-select setval('cyphernode_props_id_seq',  (SELECT MAX(id) FROM cyphernode_props));
-select setval('ln_invoice_id_seq',  (SELECT MAX(id) FROM ln_invoice));
-select setval('recipient_id_seq',  (SELECT MAX(id) FROM recipient));
-select setval('stamp_id_seq',  (SELECT MAX(id) FROM stamp));
-select setval('tx_id_seq',  (SELECT MAX(id) FROM tx));
-select setval('watching_by_pub32_id_seq',  (SELECT MAX(id) FROM watching_by_pub32));
-select setval('watching_by_txid_id_seq',  (SELECT MAX(id) FROM watching_by_txid));
-select setval('watching_id_seq',  (SELECT MAX(id) FROM watching));
-select setval('batcher_id_seq',  (SELECT MAX(id) FROM batcher));
+select setval('cyphernode_props_id_seq', (SELECT MAX(id) FROM cyphernode_props));
+select setval('ln_invoice_id_seq', (SELECT MAX(id) FROM ln_invoice));
+select setval('recipient_id_seq', (SELECT MAX(id) FROM recipient));
+select setval('stamp_id_seq', (SELECT MAX(id) FROM stamp));
+select setval('tx_id_seq', (SELECT MAX(id) FROM tx));
+select setval('watching_by_pub32_id_seq', (SELECT MAX(id) FROM watching_by_pub32));
+select setval('watching_by_txid_id_seq', (SELECT MAX(id) FROM watching_by_txid));
+select setval('watching_id_seq', (SELECT MAX(id) FROM watching));
+select setval('batcher_id_seq', (SELECT MAX(id) FROM batcher));
+update cyphernode_props set value='0.2' where property='version';
 commit;
 " >> ${DB_PATH}/sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extracted-data.sql
 
