@@ -8,18 +8,18 @@ RUN apk add --update --no-cache \
     curl \
     su-exec \
     py3-pip \
-    xxd
+    xxd \
+    postgresql
 
 WORKDIR ${HOME}
 
 COPY app/data/* ./
 COPY app/script/* ./
 COPY app/tests/* ./tests/
-COPY --from=cyphernode/clightning:v0.10.1 /usr/local/bin/lightning-cli ./
+COPY --from=cyphernode/clightning:v0.10.2 /usr/local/bin/lightning-cli ./
 COPY --from=eclipse-mosquitto:1.6-openssl /usr/bin/mosquitto_rr /usr/bin/mosquitto_sub /usr/bin/mosquitto_pub /usr/bin/
 COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libmosquitto* /usr/lib/
-COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libcrypto* /usr/lib/
-COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libssl* /usr/lib/
+COPY --from=eclipse-mosquitto:1.6-openssl /lib/ld-musl-* /lib/
 
 RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh tests/* \
  && chmod o+w . \

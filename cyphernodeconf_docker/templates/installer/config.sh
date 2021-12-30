@@ -8,6 +8,7 @@ LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
 GATEKEEPER_PORT=<%= gatekeeper_port %>
+POSTGRES_DATAPATH=<%= postgres_datapath %>
 LOGS_DATAPATH=<%= logs_datapath %>
 TRAEFIK_DATAPATH=<%= traefik_datapath %>
 FEATURE_TOR=<%= (features.indexOf('tor') != -1)?'true':'false' %>

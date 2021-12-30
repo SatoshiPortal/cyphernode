@@ -1,7 +1,6 @@
 FROM nginx:1.18.0-alpine
 
 RUN apk add --update --no-cache \
-    bash \
     git \
     openssl \
     fcgiwrap \

@@ -78,6 +78,14 @@ convert_pub32() {
   local checksum
   local pub32_dest
 
+  case "${pub32_from}" in
+    ${to_type}*)
+      trace "[convert_pub32] Already in the right format, exiting"
+      echo "${pub32_from}"
+      return
+      ;;
+  esac
+
   case "${to_type}" in
     tpub)
       versionbytes="043587cf"

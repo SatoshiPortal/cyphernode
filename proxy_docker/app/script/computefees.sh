@@ -11,7 +11,7 @@ compute_fees() {
     trace "[compute_fees]  pruned=${pruned}"
     # We want null instead of 0.00000000 in this case.
     echo "null"
-    exit 0
+    return
   fi
 
   local txid=${1}
@@ -64,16 +64,10 @@ compute_vin_total_amount()
   for vin_txid_vout in ${vin_txids_vout}
   do
     vin_txid=$(echo "${vin_txid_vout}" | tr -d '"' | cut -d '-' -f1)
-    # Check if we already have the tx in our DB
-    vin_raw_tx=$(sql_rawtx "SELECT raw_tx FROM rawtx WHERE txid=\"${vin_txid}\"")
-    trace_rc $?
-    if [ -z "${vin_raw_tx}" ]; then
-      txid_already_inserted=false
-      vin_raw_tx=$(get_rawtransaction "${vin_txid}" | tr -d '\n')
-      returncode=$?
-      if [ "${returncode}" -ne 0 ]; then
-        return ${returncode}
-      fi
+    vin_raw_tx=$(get_rawtransaction "${vin_txid}" | tr -d '\n')
+    returncode=$?
+    if [ "${returncode}" -ne 0 ]; then
+      return ${returncode}
     fi
     vout=$(echo "${vin_txid_vout}" | tr -d '"' | cut -d '-' -f2)
     trace "[compute_vin_total_amount] vout=${vout}"
@@ -81,27 +75,21 @@ compute_vin_total_amount()
     trace "[compute_vin_total_amount] vin_vout_amount=${vin_vout_amount}"
     vin_total_amount=$(awk "BEGIN { printf(\"%.8f\", ${vin_total_amount}+${vin_vout_amount}); exit}")
     trace "[compute_vin_total_amount] vin_total_amount=${vin_total_amount}"
-    vin_hash=$(echo "${vin_raw_tx}" | jq ".result.hash")
+    vin_hash=$(echo "${vin_raw_tx}" | jq -r ".result.hash")
     vin_confirmations=$(echo "${vin_raw_tx}" | jq ".result.confirmations")
     vin_timereceived=$(echo "${vin_raw_tx}" | jq ".result.time")
     vin_size=$(echo "${vin_raw_tx}" | jq ".result.size")
     vin_vsize=$(echo "${vin_raw_tx}" | jq ".result.vsize")
-    vin_blockhash=$(echo "${vin_raw_tx}" | jq ".result.blockhash")
+    vin_blockhash=$(echo "${vin_raw_tx}" | jq -r ".result.blockhash")
     vin_blockheight=$(echo "${vin_raw_tx}" | jq ".result.blockheight")
     vin_blocktime=$(echo "${vin_raw_tx}" | jq ".result.blocktime")
 
     # Let's insert the vin tx in the DB just in case it would be useful
-    if ! ${txid_already_inserted}; then
-      # Sometimes raw tx are too long to be passed as paramater, so let's write
-      # it to a temp file for it to be read by sqlite3 and then delete the file
-      echo "${vin_raw_tx}" > vin-rawtx-${vin_txid}-$$.blob
-      sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime})"
-      trace_rc $?
-      sql_rawtx "INSERT OR IGNORE INTO rawtx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${vin_txid}\", ${vin_hash}, ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, ${vin_blockhash}, ${vin_blockheight}, ${vin_blocktime}, readfile('vin-rawtx-${vin_txid}-$$.blob'))"
-      trace_rc $?
-      rm vin-rawtx-${vin_txid}-$$.blob
-      txid_already_inserted=true
-    fi
+    sql "INSERT INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime)"\
+" VALUES ('${vin_txid}', '${vin_hash}', ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, '${vin_blockhash}', ${vin_blockheight}, ${vin_blocktime})"\
+" ON CONFLICT (txid) DO"\
+" UPDATE SET blockhash='${vin_blockhash}', blockheight=${vin_blockheight}, blocktime=${vin_blocktime}, confirmations=${vin_confirmations}"
+    trace_rc $?
   done
 
   echo "${vin_total_amount}"

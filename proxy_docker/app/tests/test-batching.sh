@@ -1,24 +1,74 @@
-#!/bin/sh
+#!/bin/bash
 
-# docker exec -it $(docker ps -q -f "name=proxy\.") ./tests/test-batching.sh
+. ./colors.sh
 
-# curl localhost:8888/listbatchers | jq
-# curl -d '{}' localhost:8888/getbatcher | jq
-# curl -d '{}' localhost:8888/getbatchdetails | jq
-# curl -d '{"outputLabel":"test002","address":"1abd","amount":0.0002}' localhost:8888/addtobatch | jq
-# curl -d '{}' localhost:8888/batchspend | jq
-# curl -d '{"outputId":1}' localhost:8888/removefrombatch | jq
+# This needs to be run in regtest
+# You need jq installed for these tests to run correctly
 
-# curl -d '{"batcherLabel":"lowfees","confTarget":32}' localhost:8888/createbatcher | jq
-# curl localhost:8888/listbatchers | jq
+# This will test:
+#
+# - listbatchers
+# - getbatcher
+# - getbatchdetails
+# - getnewaddress
+# - addtobatch
+# - batchspend
+# - removefrombatch
+# - createbatcher
+#
 
-# curl -d '{"batcherLabel":"lowfees"}' localhost:8888/getbatcher | jq
-# curl -d '{"batcherLabel":"lowfees"}' localhost:8888/getbatchdetails | jq
-# curl -d '{"batcherLabel":"lowfees","outputLabel":"test002","address":"1abd","amount":0.0002}' localhost:8888/addtobatch | jq
-# curl -d '{"batcherLabel":"lowfees"}' localhost:8888/batchspend | jq
-# curl -d '{"batcherLabel":"lowfees","outputId":9}' localhost:8888/removefrombatch | jq
+
+
+
+
+
+# Notes:
+# curl proxy:8888/listbatchers | jq
+# curl -d '{}' proxy:8888/getbatcher | jq
+# curl -d '{}' proxy:8888/getbatchdetails | jq
+# curl -d '{"outputLabel":"test002","address":"1abd","amount":0.0002}' proxy:8888/addtobatch | jq
+# curl -d '{}' proxy:8888/batchspend | jq
+# curl -d '{"outputId":1}' proxy:8888/removefrombatch | jq
+
+# curl -d '{"batcherLabel":"lowfees","confTarget":32}' proxy:8888/createbatcher | jq
+# curl proxy:8888/listbatchers | jq
+
+# curl -d '{"batcherLabel":"lowfees"}' proxy:8888/getbatcher | jq
+# curl -d '{"batcherLabel":"lowfees"}' proxy:8888/getbatchdetails | jq
+# curl -d '{"batcherLabel":"lowfees","outputLabel":"test002","address":"1abd","amount":0.0002}' proxy:8888/addtobatch | jq
+# curl -d '{"batcherLabel":"lowfees"}' proxy:8888/batchspend | jq
+# curl -d '{"batcherLabel":"lowfees","outputId":9}' proxy:8888/removefrombatch | jq
+
+
+trace() {
+  if [ "${1}" -le "${TRACING}" ]; then
+    echo -e "$(date -u +%FT%TZ) ${2}" 1>&2
+  fi
+}
+
+start_test_container() {
+  docker run -d --rm -t --name tests-batching --network=cyphernodenet alpine
+}
+
+stop_test_container() {
+  trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
+
+  # docker stop tests-batching
+  # docker stop tests-batching-cb
+  local containers=$(docker ps -q -f "name=tests-batching")
+  if [ -n "${containers}" ]; then
+    docker stop ${containers}
+  fi
+}
+
+exec_in_test_container() {
+  docker exec -it tests-batching "$@"
+}
+
 
 testbatching() {
+  trace 1 "\n\n[testbatching] ${BCyan}Let's test batching features!...${Color_Off}\n"
+
   local response
   local id
   local id2
@@ -35,41 +85,41 @@ testbatching() {
   echo "url2=${url2}"
 
   # List batchers (should show at least empty default batcher)
-  echo "Testing listbatchers..."
-  response=$(curl -s proxy:8888/listbatchers)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing listbatchers...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s proxy:8888/listbatchers)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq ".result[0].batcherId")
-  echo "batcherId=${id}"
+  trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
     exit 10
   fi
-  echo "Tested listbatchers."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested listbatchers.${Color_Off}\n"
 
   # getbatcher the default batcher
-  echo "Testing getbatcher..."
-  response=$(curl -sd '{}' localhost:8888/getbatcher)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatcher...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{}' proxy:8888/getbatcher)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
     exit 20
   fi
 
-  response=$(curl -sd '{"batcherId":1}' localhost:8888/getbatcher)
-  echo "response=${response}"
+  response=$(exec_in_test_container curl -sd '{"batcherId":1}' proxy:8888/getbatcher)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
     exit 25
   fi
-  echo "Tested getbatcher."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatcher.${Color_Off}\n"
 
   # getbatchdetails the default batcher
-  echo "Testing getbatchdetails..."
-  response=$(curl -sd '{}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
     exit 30
   fi
@@ -78,10 +128,10 @@ testbatching() {
     exit 32
   fi
 
-  response=$(curl -sd '{"batcherId":1}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  response=$(exec_in_test_container curl -sd '{"batcherId":1}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
     exit 35
   fi
@@ -89,16 +139,16 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 37
   fi
-  echo "Tested getbatchdetails."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
 
   # addtobatch to default batcher
-  echo "Testing addtobatch..."
-  address1=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
-  echo "address1=${address1}"
-  response=$(curl -sd '{"outputLabel":"test001","address":"'${address1}'","amount":0.001}' localhost:8888/addtobatch)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing addtobatch...${Color_Off}\n"
+  address1=$(exec_in_test_container curl -s proxy:8888/getnewaddress | jq -r ".address")
+  trace 3 "[testbatching] address1=${address1}"
+  response=$(exec_in_test_container curl -sd '{"outputLabel":"test001","address":"'${address1}'","amount":0.001}' proxy:8888/addtobatch)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${id}"
+  trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
     exit 40
   fi
@@ -106,14 +156,14 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 42
   fi
-  echo "outputId=${id}"
+  trace 3 "[testbatching] outputId=${id}"
 
-  address2=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
-  echo "address2=${address2}"
-  response=$(curl -sd '{"batcherId":1,"outputLabel":"test002","address":"'${address2}'","amount":22000000}' localhost:8888/addtobatch)
-  echo "response=${response}"
+  address2=$(exec_in_test_container curl -s proxy:8888/getnewaddress | jq -r ".address")
+  trace 3 "[testbatching] address2=${address2}"
+  response=$(exec_in_test_container curl -sd '{"batcherId":1,"outputLabel":"test002","address":"'${address2}'","amount":22000000}' proxy:8888/addtobatch)
+  trace 3 "[testbatching] response=${response}"
   id2=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${id2}"
+  trace 3 "[testbatching] batcherId=${id2}"
   if [ "${id2}" -ne "1" ]; then
     exit 47
   fi
@@ -121,115 +171,104 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 50
   fi
-  echo "outputId=${id2}"
-  echo "Tested addtobatch."
+  trace 3 "[testbatching] outputId=${id2}"
+  trace 2 "\n\n[testbatching] ${BCyan}Tested addtobatch.${Color_Off}\n"
 
   # batchspend default batcher
-  echo "Testing batchspend..."
-  response=$(curl -sd '{}' localhost:8888/batchspend)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing batchspend...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{}' proxy:8888/batchspend)
+  trace 3 "[testbatching] response=${response}"
   echo "${response}" | jq -e ".error"
   if [ "$?" -ne 0 ]; then
     exit 55
   fi
-  echo "Tested batchspend."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
 
   # getbatchdetails the default batcher
-  echo "Testing getbatchdetails..."
-  response=$(curl -sd '{}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq ".result.nbOutputs")
-  echo "nbOutputs=${data}"
-  echo "Tested getbatchdetails."
+  trace 3 "[testbatching] nbOutputs=${data}"
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
 
   # removefrombatch from default batcher
-  echo "Testing removefrombatch..."
-  response=$(curl -sd '{"outputId":'${id}'}' localhost:8888/removefrombatch)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing removefrombatch...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{"outputId":'${id}'}' proxy:8888/removefrombatch)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${id}"
+  trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
     exit 60
   fi
 
-  response=$(curl -sd '{"outputId":'${id2}'}' localhost:8888/removefrombatch)
-  echo "response=${response}"
+  response=$(exec_in_test_container curl -sd '{"outputId":'${id2}'}' proxy:8888/removefrombatch)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${id}"
+  trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
     exit 64
   fi
-  echo "Tested removefrombatch."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested removefrombatch.${Color_Off}\n"
 
   # getbatchdetails the default batcher
-  echo "Testing getbatchdetails..."
-  response=$(curl -sd '{"batcherId":1}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{"batcherId":1}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data2=$(echo "${response}" | jq ".result.nbOutputs")
-  echo "nbOutputs=${data2}"
+  trace 3 "[testbatching] nbOutputs=${data2}"
   if [ "${data2}" -ne "$((${data}-2))" ]; then
     exit 68
   fi
-  echo "Tested getbatchdetails."
-
-
-
-
-
-
-
-
-
-
-
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
 
 
 
   # Create a batcher
-  echo "Testing createbatcher..."
-  response=$(curl -s -H 'Content-Type: application/json' -d '{"batcherLabel":"testbatcher","confTarget":32}' proxy:8888/createbatcher)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing createbatcher...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H 'Content-Type: application/json' -d '{"batcherLabel":"testbatcher","confTarget":32}' proxy:8888/createbatcher)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq -e ".result.batcherId")
   if [ "$?" -ne "0" ]; then
     exit 70
   fi
 
   # List batchers (should show at least default and testbatcher batchers)
-  echo "Testing listbatches..."
-  response=$(curl -s proxy:8888/listbatchers)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing listbatchers...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s proxy:8888/listbatchers)
+  trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq '.result[] | select(.batcherLabel == "testbatcher") | .batcherId')
-  echo "batcherId=${id}"
+  trace 3 "[testbatching] batcherId=${id}"
   if [ -z "${id}" ]; then
     exit 75
   fi
-  echo "Tested listbatchers."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested listbatchers.${Color_Off}\n"
 
   # getbatcher the testbatcher batcher
-  echo "Testing getbatcher..."
-  response=$(curl -sd '{"batcherId":'${id}'}' localhost:8888/getbatcher)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatcher...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{"batcherId":'${id}'}' proxy:8888/getbatcher)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "testbatcher" ]; then
     exit 80
   fi
 
-  response=$(curl -sd '{"batcherLabel":"testbatcher"}' localhost:8888/getbatcher)
-  echo "response=${response}"
+  response=$(exec_in_test_container curl -sd '{"batcherLabel":"testbatcher"}' proxy:8888/getbatcher)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherId")
-  echo "batcherId=${data}"
+  trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" != "${id}" ]; then
     exit 90
   fi
-  echo "Tested getbatcher."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatcher.${Color_Off}\n"
 
   # getbatchdetails the testbatcher batcher
-  echo "Testing getbatchdetails..."
-  response=$(curl -sd '{"batcherLabel":"testbatcher"}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{"batcherLabel":"testbatcher"}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherId")
-  echo "batcherId=${data}"
+  trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" != "${id}" ]; then
     exit 100
   fi
@@ -238,10 +277,10 @@ testbatching() {
     exit 110
   fi
 
-  response=$(curl -sd '{"batcherId":'${id}'}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  response=$(exec_in_test_container curl -sd '{"batcherId":'${id}'}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
-  echo "batcherLabel=${data}"
+  trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "testbatcher" ]; then
     exit 120
   fi
@@ -249,16 +288,16 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 130
   fi
-  echo "Tested getbatchdetails."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
 
   # addtobatch to testbatcher batcher
-  echo "Testing addtobatch..."
-  address1=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
-  echo "address1=${address1}"
-  response=$(curl -sd '{"batcherId":'${id}',"outputLabel":"test001","address":"'${address1}'","amount":0.001,"webhookUrl":"'${url1}'/'${address1}'"}' localhost:8888/addtobatch)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing addtobatch...${Color_Off}\n"
+  address1=$(exec_in_test_container curl -s proxy:8888/getnewaddress | jq -r ".address")
+  trace 3 "[testbatching] address1=${address1}"
+  response=$(exec_in_test_container curl -sd '{"batcherId":'${id}',"outputLabel":"test001","address":"'${address1}'","amount":0.001,"webhookUrl":"'${url1}'/'${address1}'"}' proxy:8888/addtobatch)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${data}"
+  trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
     exit 140
   fi
@@ -266,14 +305,14 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 142
   fi
-  echo "outputId=${id2}"
+  trace 3 "[testbatching] outputId=${id2}"
 
-  address2=$(curl -s localhost:8888/getnewaddress | jq -r ".address")
-  echo "address2=${address2}"
-  response=$(curl -sd '{"batcherLabel":"testbatcher","outputLabel":"test002","address":"'${address2}'","amount":0.002,"webhookUrl":"'${url2}'/'${address2}'"}' localhost:8888/addtobatch)
-  echo "response=${response}"
+  address2=$(exec_in_test_container curl -s proxy:8888/getnewaddress | jq -r ".address")
+  trace 3 "[testbatching] address2=${address2}"
+  response=$(exec_in_test_container curl -sd '{"batcherLabel":"testbatcher","outputLabel":"test002","address":"'${address2}'","amount":0.002,"webhookUrl":"'${url2}'/'${address2}'"}' proxy:8888/addtobatch)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq ".result.batcherId")
-  echo "batcherId=${data}"
+  trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
     exit 150
   fi
@@ -281,48 +320,69 @@ testbatching() {
   if [ "$?" -ne 0 ]; then
     exit 152
   fi
-  echo "outputId=${id2}"
-  echo "Tested addtobatch."
+  trace 3 "[testbatching] outputId=${id2}"
+  trace 2 "\n\n[testbatching] ${BCyan}Tested addtobatch.${Color_Off}\n"
 
   # batchspend testbatcher batcher
-  echo "Testing batchspend..."
-  response=$(curl -sd '{"batcherLabel":"testbatcher"}' localhost:8888/batchspend)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing batchspend...${Color_Off}\n"
+  response=$(exec_in_test_container curl -sd '{"batcherLabel":"testbatcher"}' proxy:8888/batchspend)
+  trace 3 "[testbatching] response=${response}"
   data2=$(echo "${response}" | jq -e ".result.txid")
   if [ "$?" -ne 0 ]; then
     exit 160
   fi
-  echo "txid=${data2}"
+  trace 3 "[testbatching] txid=${data2}"
   data=$(echo "${response}" | jq ".result.outputs | length")
   if [ "${data}" -ne "2" ]; then
     exit 162
   fi
-  echo "Tested batchspend."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
 
   # getbatchdetails the testbatcher batcher
-  echo "Testing getbatchdetails..."
-  echo "txid=${data2}"
-  response=$(curl -sd '{"batcherLabel":"testbatcher","txid":'${data2}'}' localhost:8888/getbatchdetails)
-  echo "response=${response}"
+  trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
+  trace 3 "[testbatching] txid=${data2}"
+  response=$(exec_in_test_container curl -sd '{"batcherLabel":"testbatcher","txid":'${data2}'}' proxy:8888/getbatchdetails)
+  trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq ".result.nbOutputs")
-  echo "nbOutputs=${data}"
+  trace 3 "[testbatching] nbOutputs=${data}"
   if [ "${data}" -ne "2" ]; then
     exit 170
   fi
-  echo "Tested getbatchdetails."
+  trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
 
   # List batchers
   # Add to batch
   # List batchers
   # Remove from batch
   # List batchers
+
+  trace 1 "\n\n[testbatching] ${On_IGreen}${BBlack} ALL GOOD!  Yayyyy!                                           ${Color_Off}\n"
+
 }
 
-wait_for_callbacks() {
-  nc -vlp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\r\n\r\n" ; timeout 1 tee /dev/tty | cat ; echo 1>&2' &
-  nc -vlp1112 -e sh -c 'echo -en "HTTP/1.1 200 OK\r\n\r\n" ; timeout 1 tee /dev/tty | cat ; echo 1>&2' &
+start_callback_server() {
+  trace 1 "\n\n[start_callback_server] ${BCyan}Let's start a callback server!...${Color_Off}\n"
+
+  port=${1:-${callbackserverport}}
+  docker run --rm -t --name tests-batching-cb --network=cyphernodenet alpine sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 }
 
-wait_for_callbacks
+TRACING=3
+
+stop_test_container
+start_test_container
+
+callbackserverport="1111"
+callbackservername="tests-batching-cb"
+
+trace 1 "\n\n[test-batching] ${BCyan}Installing needed packages...${Color_Off}\n"
+exec_in_test_container apk add --update curl
+
 testbatching
+
+trace 1 "\n\n[test-batching] ${BCyan}Tearing down...${Color_Off}\n"
 wait
+
+stop_test_container
+
+trace 1 "\n\n[test-batching] ${BCyan}See ya!${Color_Off}\n"

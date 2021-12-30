@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./.cyphernodeconf/installer/config.sh
 
@@ -65,14 +65,21 @@ if [ -f $current_path/exitStatus.sh ]; then
   rm -f $current_path/exitStatus.sh
 fi
 
-test_apps
+if [ "$EXIT_STATUS" -ne "0" ]; then
+  printf "\r\n\033[1;31mSkipping cypherapps deployment because of previous errors.\r\n\r\n\033[0m"
+else
+  test_apps
+fi
 
 EXIT_STATUS=$(($? | ${EXIT_STATUS}))
 
 printf "\r\n\e[1;32mTests finished.\e[0m\n"
 
 if [ "$EXIT_STATUS" -ne "0" ]; then
-  printf "\r\n\033[1;31mThere was an error during cyphernode installation.  full logs:  docker ps -q | xargs -L 1 docker logs , Containers logs:  docker logs <containerid> , list containers: docker ps  .Please see Docker's logs for more information.  Run ./testdeployment.sh to rerun the tests.  Run ./stop.sh to stop cyphernode.\r\n\r\n\033[0m"
+  printf "\r\n\033[1;31mThere was an error during cyphernode installation.\r\n\033[0m"
+  printf "\r\n\033[1;31mCheck logs in your logs directory (${LOGS_DATAPATH}).\r\n\033[0m"
+  printf "\r\n\033[1;31mRun ./testdeployment.sh to rerun the tests.\033[0m"
+  printf "\r\n\033[1;31mRun ./stop.sh to stop cyphernode.\r\n\033[0m"
   exit 1
 fi
 

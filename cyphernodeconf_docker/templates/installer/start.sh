@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 . ./.cyphernodeconf/installer/config.sh
 
@@ -60,6 +60,9 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
+# Let's make sure the container readyness files are deleted before starting the stack
+docker run --rm -v cyphernode_container_monitor:/container_monitor alpine sh -c 'rm -f /container_monitor/*_ready'
+
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
@@ -68,11 +71,13 @@ docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
 
 start_apps
 
-export ARCH=$(uname -m)
-case "${ARCH}" in arm*)
-  printf "\r\n\033[1;31mSince we're on a slow RPi, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
+printf "\r\nDetermining the speed of your machine..."
+speedseconds=$(bash -c ' : {1..500000} ; echo $SECONDS')
+if [ "${speedseconds}" -gt "2" ]; then
+  printf "\r\n\033[1;31mSince we're on a slow computer, let's give Docker 60 more seconds before performing our tests...\033[0m\r\n\r\n"
   sleep 60
-;;
-esac
+else
+  printf " It's pretty fast!\r\n"
+fi
 
 . ./testdeployment.sh
