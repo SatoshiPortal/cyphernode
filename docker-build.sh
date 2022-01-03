@@ -62,12 +62,12 @@ aarch64_docker="arm64"
 # Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
 
 #arch_docker=${arm_docker}
-#arch_docker=${aarch64_docker}
-arch_docker=${x86_docker}
+arch_docker=${aarch64_docker}
+#arch_docker=${x86_docker}
 
-v1="v0"
-v2="v0.7"
-v3="v0.7.0"
+v1="v0-rc.1"
+v2="v0.8-rc.1"
+v3="v0.8.0-rc.1"
 
 echo "\nBuilding Cyphernode Core containers\n"
 echo "arch_docker=$arch_docker\n"
