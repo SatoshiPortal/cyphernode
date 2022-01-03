@@ -72,14 +72,14 @@ v3="v0.8.0-rc.1"
 echo "\nBuilding Cyphernode Core containers\n"
 echo "arch_docker=$arch_docker\n"
 
-image "gatekeeper" "api_auth_docker/" ${arch_docker} \
-&& image "proxycron" "cron_docker/" ${arch_docker} \
-&& image "otsclient" "otsclient_docker/" ${arch_docker} \
-&& image "tor" "tor_docker/" ${arch_docker} \
-&& image "proxy" "proxy_docker/" ${arch_docker} \
-&& image "notifier" "notifier_docker/" ${arch_docker} \
-&& image "pycoin" "pycoin_docker/" ${arch_docker} \
-&& image "cyphernodeconf" "cyphernodeconf_docker/" ${arch_docker}
+#image "gatekeeper" "api_auth_docker/" ${arch_docker} \
+#&& image "proxycron" "cron_docker/" ${arch_docker} \
+#&& image "otsclient" "otsclient_docker/" ${arch_docker} \
+#&& image "tor" "tor_docker/" ${arch_docker} \
+#&& image "proxy" "proxy_docker/" ${arch_docker} \
+#&& image "notifier" "notifier_docker/" ${arch_docker} \
+#&& image "pycoin" "pycoin_docker/" ${arch_docker} \
+image "cyphernodeconf" "cyphernodeconf_docker/" ${arch_docker}
 
 [ $? -ne 0 ] && echo "Error" && exit 1
 
