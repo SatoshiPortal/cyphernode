@@ -3,6 +3,7 @@
 . ./colors.sh
 
 # You need jq installed for these tests to run correctly
+# You need to configure cyphernode with a default xpub for these tests to work.
 
 # This will test:
 #
@@ -130,7 +131,7 @@ tests_derive() {
   # real	0m 18.15s
   # user	0m 0.00s
   # sys	0m 0.00s
-  # 
+  #
   # Deriving 500 addresses with derivepubpath_bitcoind (Bitcoin Core)...
   # real	0m 0.64s
   # user	0m 0.00s

@@ -91,6 +91,7 @@ testbatching() {
   id=$(echo "${response}" | jq ".result[0].batcherId")
   trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 10
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested listbatchers.${Color_Off}\n"
@@ -102,6 +103,7 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 20
   fi
 
@@ -110,6 +112,7 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 25
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatcher.${Color_Off}\n"
@@ -121,10 +124,12 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 30
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 32
   fi
 
@@ -133,10 +138,12 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "default" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 35
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 37
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
@@ -150,10 +157,12 @@ testbatching() {
   id=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 40
   fi
   id=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 42
   fi
   trace 3 "[testbatching] outputId=${id}"
@@ -165,10 +174,12 @@ testbatching() {
   id2=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${id2}"
   if [ "${id2}" -ne "1" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 47
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 50
   fi
   trace 3 "[testbatching] outputId=${id2}"
@@ -180,6 +191,7 @@ testbatching() {
   trace 3 "[testbatching] response=${response}"
   echo "${response}" | jq -e ".error"
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 55
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
@@ -199,6 +211,7 @@ testbatching() {
   id=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 60
   fi
 
@@ -207,6 +220,7 @@ testbatching() {
   id=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${id}"
   if [ "${id}" -ne "1" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 64
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested removefrombatch.${Color_Off}\n"
@@ -218,6 +232,7 @@ testbatching() {
   data2=$(echo "${response}" | jq ".result.nbOutputs")
   trace 3 "[testbatching] nbOutputs=${data2}"
   if [ "${data2}" -ne "$((${data}-2))" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 68
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
@@ -230,6 +245,7 @@ testbatching() {
   trace 3 "[testbatching] response=${response}"
   id=$(echo "${response}" | jq -e ".result.batcherId")
   if [ "$?" -ne "0" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 70
   fi
 
@@ -240,6 +256,7 @@ testbatching() {
   id=$(echo "${response}" | jq '.result[] | select(.batcherLabel == "testbatcher") | .batcherId')
   trace 3 "[testbatching] batcherId=${id}"
   if [ -z "${id}" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 75
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested listbatchers.${Color_Off}\n"
@@ -251,6 +268,7 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "testbatcher" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 80
   fi
 
@@ -259,6 +277,7 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherId")
   trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" != "${id}" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 90
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatcher.${Color_Off}\n"
@@ -270,10 +289,12 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherId")
   trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" != "${id}" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 100
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 110
   fi
 
@@ -282,10 +303,12 @@ testbatching() {
   data=$(echo "${response}" | jq -r ".result.batcherLabel")
   trace 3 "[testbatching] batcherLabel=${data}"
   if [ "${data}" != "testbatcher" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 120
   fi
   echo "${response}" | jq -e ".result.outputs"
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 130
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
@@ -299,10 +322,12 @@ testbatching() {
   data=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 140
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 142
   fi
   trace 3 "[testbatching] outputId=${id2}"
@@ -314,10 +339,12 @@ testbatching() {
   data=$(echo "${response}" | jq ".result.batcherId")
   trace 3 "[testbatching] batcherId=${data}"
   if [ "${data}" -ne "${id}" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 150
   fi
   id2=$(echo "${response}" | jq -e ".result.outputId")
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 152
   fi
   trace 3 "[testbatching] outputId=${id2}"
@@ -329,11 +356,13 @@ testbatching() {
   trace 3 "[testbatching] response=${response}"
   data2=$(echo "${response}" | jq -e ".result.txid")
   if [ "$?" -ne 0 ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 160
   fi
   trace 3 "[testbatching] txid=${data2}"
   data=$(echo "${response}" | jq ".result.outputs | length")
-  if [ "${data}" -ne "2" ]; then
+  if [ "${data}" -lt "2" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 162
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
@@ -345,7 +374,8 @@ testbatching() {
   trace 3 "[testbatching] response=${response}"
   data=$(echo "${response}" | jq ".result.nbOutputs")
   trace 3 "[testbatching] nbOutputs=${data}"
-  if [ "${data}" -ne "2" ]; then
+  if [ "${data}" -lt "2" ]; then
+    trace 1 "\n\n[testbatching] ${On_IRed}${BBlack} Failed!                                           ${Color_Off}\n"
     exit 170
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested getbatchdetails.${Color_Off}\n"
