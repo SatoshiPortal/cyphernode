@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
 
