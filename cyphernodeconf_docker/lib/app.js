@@ -369,7 +369,6 @@ module.exports = class App {
       'bitcoin_datapath',
       'lightning_datapath',
       'otsclient_datapath',
-      'notifier_datapath'
     ];
 
     for( let pathProp of pathProps ) {

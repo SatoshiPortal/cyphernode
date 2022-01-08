@@ -373,44 +373,6 @@ module.exports = {
       message: prefix()+'Where is your otsclient data?'+utils.getHelp('otsclient_datapath_custom'),
     },
     {
-      when: function(props) { return true },
-      type: 'list',
-      name: 'notifier_datapath',
-      default: utils.getDefault( 'notifier_datapath' ),
-      choices: [
-        {
-          name: utils.setupDir()+"/cyphernode/notifier",
-          value: utils.setupDir()+"/cyphernode/notifier"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/cyphernode/notifier",
-          value: utils.defaultDataDirBase()+"/cyphernode/notifier"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/.cyphernode/notifier",
-          value: utils.defaultDataDirBase()+"/.cyphernode/notifier"
-        },
-        {
-          name: utils.defaultDataDirBase()+"/notifier",
-          value: utils.defaultDataDirBase()+"/notifier"
-        },
-        {
-          name: "Custom path",
-          value: "_custom"
-        }
-      ],
-      message: prefix()+'Where do you want to store your Notifier data?'+utils.getHelp('notifier_datapath'),
-    },
-    {
-      when: function(props) { return props.notifier_datapath === '_custom' },
-      type: 'input',
-      name: 'notifier_datapath_custom',
-      default: utils.getDefault( 'notifier_datapath_custom' ),
-      filter: utils.trimFilter,
-      validate: utils.pathValidator,
-      message: prefix()+'Where is your Notifier data?'+utils.getHelp('notifier_datapath_custom'),
-    },
-    {
       type: 'confirm',
       name: 'gatekeeper_expose',
       default: utils.getDefault( 'gatekeeper_expose' ),

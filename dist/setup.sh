@@ -127,7 +127,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("$current_path/apps" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$NOTIFIER_DATAPATH")
+  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -139,7 +139,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$current_path/apps" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$NOTIFIER_DATAPATH")
+  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -479,13 +479,7 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1 $SUDO_REQUIRED
   sudo_if_required chmod 0600 $PROXY_DATAPATH/pgpass
 
-  if [ ! -d $NOTIFIER_DATAPATH ]; then
-    step "   [32mcreate[0m $NOTIFIER_DATAPATH"
-    sudo_if_required mkdir -p $NOTIFIER_DATAPATH
-    next
-  fi
-
-  copy_file $cyphernodeconf_filepath/notifier/notifier.env $NOTIFIER_DATAPATH/notifier.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/notifier/notifier.env $current_path/.env/notifier.env 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -677,7 +671,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$current_path/apps" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$NOTIFIER_DATAPATH")
+  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -781,7 +775,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$current_path/apps" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$NOTIFIER_DATAPATH")
+        local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -853,8 +847,10 @@ install_apps() {
 
   if [[ $FEATURE_TELEGRAM == true ]]; then
     step "   [32menabled[0m Telegram - Manual configuration needed before first time use (Bot and Group creation, API key) - see doc/TELEGRAM.md"
+    next
   else
     step "   [32mdisabled[0m Telegram"
+    next
   fi
 
 }

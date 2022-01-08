@@ -148,6 +148,26 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "telegram"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "telegram_bot_url",
+          "telegram_api_key",
+          "telegram_chat_id"
+        ]
+      }
     }
   ],
   "properties": {
@@ -189,7 +209,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ],
         "title": "The feature",
         "default": "",
@@ -198,7 +219,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ]
       }
     },
@@ -720,6 +742,31 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "telegram_bot_url": {
+      "$id": "#/properties/telegram_bot_url",
+      "type": "string",
+      "title": "The Telegram bot URL",
+      "default": "https://api.telegram.org/bot",
+      "examples": [
+        "https://api.telegram.org/bot"
+      ]
+    },
+    "telegram_api_key": {
+      "$id": "#/properties/telegram_api_key",
+      "type": "string",
+      "title": "The Telegram bot API key",
+      "examples": [
+        "2014591315:AAGAE9cZp6Of60ljpFC3VpSwi0yLyu5V2Go"
+      ]
+    },
+    "telegram_chat_id": {
+      "$id": "#/properties/telegram_chat_id",
+      "type": "integer",
+      "title": "The Telegram chat id",
+      "examples": [
+        "-658390821"
       ]
     }
   }

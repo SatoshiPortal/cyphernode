@@ -305,7 +305,7 @@ services:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
     env_file:
-      - <%= notifier_datapath %>/notifier.env
+      - ./.env/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:

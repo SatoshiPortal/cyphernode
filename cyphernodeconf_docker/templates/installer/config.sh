@@ -22,7 +22,6 @@ TOR_TRAEFIK=<%= (torifyables && torifyables.indexOf('tor_traefik') !== -1)?'true
 TOR_BITCOIN=<%= (torifyables && torifyables.indexOf('tor_bitcoin') !== -1)?'true':'false' %>
 TOR_LIGHTNING=<%= (torifyables && torifyables.indexOf('tor_lightning') !== -1)?'true':'false' %>
 <% } %>
-NOTIFIER_DATAPATH=<%= notifier_datapath %>
 DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>
 CLEANUP=<%= installer_cleanup?'true':'false' %>
