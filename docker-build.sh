@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Must be logged to docker hub:
 # docker login -u cyphernode
@@ -59,27 +59,42 @@ x86_docker="amd64"
 arm_docker="arm"
 aarch64_docker="arm64"
 
-# Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
-
-#arch_docker=${arm_docker}
-arch_docker=${aarch64_docker}
-#arch_docker=${x86_docker}
-
 v1="v0-rc.2"
 v2="v0.8-rc.2"
 v3="v0.8.0-rc.2"
 
+# Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
+
+echo -e "\nBuild ${v3} for:\n"
+echo "1) AMD 64 bits (Most PCs)"
+echo "2) ARM 64 bits (RPi4, Mac M1)"
+echo "3) ARM 32 bits (RPi2-3)"
+echo -en "\nYour choice (1, 2, 3): "
+read arch_input
+
+case "${arch_input}" in
+  1)
+    arch_docker=${x86_docker}
+    ;;
+  2)
+    arch_docker=${aarch64_docker}
+    ;;
+  3)
+    arch_docker=${arm_docker}
+    ;;
+esac
+
 echo "\nBuilding Cyphernode Core containers\n"
 echo "arch_docker=$arch_docker\n"
 
-#image "gatekeeper" "api_auth_docker/" ${arch_docker} \
-#&& image "proxycron" "cron_docker/" ${arch_docker} \
-#&& image "otsclient" "otsclient_docker/" ${arch_docker} \
-#&& image "tor" "tor_docker/" ${arch_docker} \
-#&& image "proxy" "proxy_docker/" ${arch_docker} \
-#&& image "notifier" "notifier_docker/" ${arch_docker} \
-#&& image "pycoin" "pycoin_docker/" ${arch_docker} \
-image "cyphernodeconf" "cyphernodeconf_docker/" ${arch_docker}
+image "gatekeeper" "api_auth_docker/" ${arch_docker} \
+&& image "proxycron" "cron_docker/" ${arch_docker} \
+&& image "otsclient" "otsclient_docker/" ${arch_docker} \
+&& image "tor" "tor_docker/" ${arch_docker} \
+&& image "proxy" "proxy_docker/" ${arch_docker} \
+&& image "notifier" "notifier_docker/" ${arch_docker} \
+&& image "pycoin" "pycoin_docker/" ${arch_docker} \
+&& image "cyphernodeconf" "cyphernodeconf_docker/" ${arch_docker}
 
 [ $? -ne 0 ] && echo "Error" && exit 1
 
