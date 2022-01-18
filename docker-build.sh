@@ -82,10 +82,14 @@ case "${arch_input}" in
   3)
     arch_docker=${arm_docker}
     ;;
+  *)
+    echo "Not a valid choice."
+    exit 1
+    ;;
 esac
 
-echo "\nBuilding Cyphernode Core containers\n"
-echo "arch_docker=$arch_docker\n"
+echo -e "\nBuilding Cyphernode Core containers\n"
+echo -e "arch_docker=$arch_docker\n"
 
 image "gatekeeper" "api_auth_docker/" ${arch_docker} \
 && image "proxycron" "cron_docker/" ${arch_docker} \
