@@ -16,7 +16,7 @@
   ],
   "dependencies": {
     "@rauschma/stringio": "^1.4.0",
-    "ajv": "^6.10.0",
+    "ajv": "^6.12.3",
     "chalk": "^2.4.2",
     "coinstring": "^2.3.0",
     "colorsys": "^1.0.22",
