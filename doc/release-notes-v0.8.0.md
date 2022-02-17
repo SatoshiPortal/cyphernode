@@ -56,6 +56,7 @@ There are also several improvements and new features in this release.  Thanks go
   - proxy_docker/app/tests/test-batching.sh
   - proxy_docker/app/tests/test-derive.sh
   - proxy_docker/app/tests/test-watchpub32.sh
+  - proxy_docker/app/tests/test-watches.sh
 - Fixed typos and improved clarity in messages
 - Bump ws from 5.2.2 to 5.2.3 in /cyphernodeconf_docker
 - Bump path-parse from 1.0.6 to 1.0.7 in /cyphernodeconf_docker
