@@ -528,7 +528,7 @@ watchtxidrequest() {
 
     return 1
   else
-    txid_pg="'${address}'"
+    txid_pg="'${txid}'"
   fi
   trace "[watchtxidrequest] txid=${txid}, txid_pg=${txid_pg}"
 
@@ -547,7 +547,7 @@ watchtxidrequest() {
   trace "[watchtxidrequest] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}, cb1conf_url_pg_where=${cb1conf_url_pg_where}, cb1conf_url_json=${cb1conf_url_json}"
 
   local cbxconf_url cbxconf_url_pg cbxconf_url_pg_where
-  cbxconf_url=$(echo "${request}" | jq -e ".xconfCallbackURL")
+  cbxconf_url=$(echo "${request}" | jq -re ".xconfCallbackURL")
   if [ "$?" -ne "0" ]; then
     # cbxconf_url not found or null
     cbxconf_url_json="null"

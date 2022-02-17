@@ -303,7 +303,7 @@ ln_connectfund() {
 ln_pay() {
   trace "Entering ln_pay()..."
 
-  # Let's try to pay (MPP disabled) for 30 seconds.
+  # Let's try to legacypay (MPP disabled) for 30 seconds.
   # If this doesn't work for a routing reason, let's try to pay (MPP enabled) for 30 seconds.
   # If this doesn't work, return an error.
 
@@ -411,7 +411,7 @@ ln_pay() {
           # 207: Invoice expired. Payment took too long before expiration, or already expired at the time you initiated payment. The data field of the error indicates now (the current time) and expiry (the invoice expiration) as UNIX epoch time in seconds.
           # 210: Payment timed out without a payment in progress.
 
-          # Let's try legacypay if code NOT 207 or 201.
+          # Let's try pay if code NOT 207 or 201.
 
           if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ] || [ "${code}" -lt "0" ]; then
             trace "[ln_pay] Failure code, response will be the cli result."
@@ -425,7 +425,7 @@ ln_pay() {
               result=$(ln_call_lightningd pay -k bolt11=${bolt11} retry_for=30)
             fi
             returncode=$?
-            
+
             if [ "${returncode}" -ne "0" ]; then
               trace "[ln_pay] Failed!"
             else
@@ -549,12 +549,12 @@ ln_getroute() {
   trace "Entering ln_getroute()..."
   # Defaults used from c-lightning documentation
 
-  local result 
+  local result
   local id=${1}
   local msatoshi=${2}
   local riskfactor=${3}
-  
-  result=$(ln_call_lightningd getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor}) 
+
+  result=$(ln_call_lightningd getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor})
   returncode=$?
 
   echo "${result}"
@@ -566,7 +566,7 @@ ln_withdraw() {
   trace "Entering ln_withdraw()..."
   # Defaults used from c-lightning documentation
 
-  local result 
+  local result
   local request=${1}
   local destination=$(echo "${request}" | jq -r ".destination")
   local satoshi=$(echo "${request}" | jq -r ".satoshi")
@@ -575,8 +575,8 @@ ln_withdraw() {
   if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
       satoshi="all"
   fi
-  
-  result=$(ln_call_lightningd withdraw ${destination} ${satoshi} ${feerate}) 
+
+  result=$(ln_call_lightningd withdraw ${destination} ${satoshi} ${feerate})
   returncode=$?
 
   echo "${result}"
