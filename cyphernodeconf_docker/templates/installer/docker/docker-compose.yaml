@@ -1,4 +1,7 @@
 version: "3"
+<% if ( docker_mode !== 'swarm' ) { %>
+name: cyphernode
+<% } %>
 
 services:
 
