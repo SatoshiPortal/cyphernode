@@ -52,13 +52,12 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-dist_dir=${current_path##/*/}
 
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
--v ${dist_dir}_container_monitor:/container_monitor:ro \
+-v cyphernode_container_monitor:/container_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
 
 if [ -f $current_path/exitStatus.sh ]; then

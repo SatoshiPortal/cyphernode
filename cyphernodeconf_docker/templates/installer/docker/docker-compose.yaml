@@ -1,5 +1,7 @@
 version: "3"
 
+name: cyphernode
+
 services:
 
   ##########################
