@@ -272,7 +272,7 @@ test_watch_pub32() {
   trace 2 "\n\n[test_watch_pub32] ${BCyan}12. Send coins to address1...${Color_Off}\n"
   start_callback_server 1111
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid1=$(docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
+  txid1=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid1=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watch_pub32] txid1=${txid1}"
   trace 3 "[test_watch_pub32] Waiting for 0-conf callback on address1..."
@@ -282,7 +282,7 @@ test_watch_pub32() {
   trace 2 "\n\n[test_watch_pub32] ${BCyan}13. Send coins to address2...${Color_Off}\n"
   start_callback_server 1113
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid2=$(docker exec -it $(docker ps -q -f "name=cyphernode_bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address2} 0.0001 | tr -d "\r\n")
+  txid2=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address2} 0.0001 | tr -d "\r\n")
 #  txid2=$(exec_in_test_container curl -d '{"address":"'${address2}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watch_pub32] txid2=${txid2}"
   trace 3 "[test_watch_pub32] Waiting for 0-conf callback on address2..."
