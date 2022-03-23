@@ -66,7 +66,7 @@ docker run --rm -v cyphernode_container_monitor:/container_monitor alpine sh -c 
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
-docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
+docker-compose -p cyphernode -f $current_path/docker-compose.yaml up -d --remove-orphans
 <% } %>
 
 start_apps
