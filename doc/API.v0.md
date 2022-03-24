@@ -368,12 +368,16 @@ GET http://cyphernode:8888/getmininginfo
 Proxy response:
 ```json
 {
-  "blocks": 697264,
-  "difficulty": 15556093717702.55,
-  "networkhashps": 1.657879694896906e+20,
-  "pooledtx": 136,
-  "chain": "main",
-  "warnings": ""
+  "result": {
+    "blocks": 2191222,
+    "difficulty": 1,
+    "networkhashps": 118625307084442.9,
+    "pooledtx": 0,
+    "chain": "test",
+    "warnings": ""
+  },
+  "error": null,
+  "id": null
 }
 ```
 ### Get Bitcoin estimated hashrare per seconds. Optional block parameters. (called by your application)
@@ -385,15 +389,20 @@ POST http://cyphernode:8888/getnetworkhashps
 with body...
 {"height":-1, "nblocks":120}
 ```
+height: default(-1) since last difficulty adjustent.
+
+nblocks: default(120) number of block average.
+
 
 Proxy response:
 
 ```json
 {
-  "height": -1,
-  "nblocks": 120,
-  "hashps": 127647856311107400000
-}```
+  "result": 97145748652669.34,
+  "error": null,
+  "id": null
+}
+```
 
 ### Get mempool information
 
