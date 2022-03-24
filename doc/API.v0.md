@@ -357,6 +357,43 @@ When cyphernode receives a transaction confirmation (/conf endpoint) on a watche
   "blockheight":""
 }
 ```
+### Get the mining information (called by your application)
+
+Returns the mining informations of the current block.
+
+```http
+GET http://cyphernode:8888/getmininginfo
+```
+
+Proxy response:
+```json
+{
+  "blocks": 697264,
+  "difficulty": 15556093717702.55,
+  "networkhashps": 1.657879694896906e+20,
+  "pooledtx": 136,
+  "chain": "main",
+  "warnings": ""
+}
+```
+### Get Bitcoin estimated hashrare per seconds. Optional block parameters. (called by your application)
+
+Return the estimated hashrate per seconds of block(s). Default is the blocks since the last difficulty adjustement(-1), but can specify block height and number of blocks.
+
+```http
+POST http://cyphernode:8888/getnetworkhashps
+with body...
+{"height":-1, "nblocks":120}
+```
+
+Proxy response:
+
+```json
+{
+  "height": -1,
+  "nblocks": 120,
+  "hashps": 127647856311107400000
+}```
 
 ### Get mempool information
 
