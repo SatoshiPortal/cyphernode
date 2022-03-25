@@ -297,6 +297,44 @@ module.exports = {
       message: prefix()+'Custom path for your bitcoin full node data?'+utils.getHelp('bitcoin_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1 },
+      type: 'list',
+      name: 'elements_datapath',
+      default: utils.getDefault( 'elements_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/elements",
+          value: utils.setupDir()+"/cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/elements",
+          value: utils.defaultDataDirBase()+"/cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/elements",
+          value: utils.defaultDataDirBase()+"/.cyphernode/elements"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/elements",
+          value: utils.defaultDataDirBase()+"/elements"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your elements node data?'+utils.getHelp('elements_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1 && props.elements_datapath === '_custom'},
+      type: 'input',
+      name: 'elements_datapath_custom',
+      default: utils.getDefault( 'elements_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your elements node data?'+utils.getHelp('elements_datapath_custom'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('lightning') !== -1 },
       type: 'list',
       name: 'lightning_datapath',
@@ -391,6 +429,13 @@ module.exports = {
       name: 'lightning_expose',
       default: utils.getDefault( 'lightning_expose' ),
       message: prefix()+'Expose lightning node outside of the docker network?'+utils.getHelp('lightning_expose'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('elements') !== -1  },
+      type: 'confirm',
+      name: 'elements_expose',
+      default: utils.getDefault( 'elements_expose' ),
+      message: prefix()+'Expose elements node outside of the docker network?'+utils.getHelp('elements_expose'),
     },
     {
       when: installerDocker,

@@ -20,6 +20,14 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./newblock.sh
+. ./elements_callbacks_job.sh
+. ./elements_watchrequest.sh
+. ./elements_unwatchrequest.sh
+. ./elements_confirmation.sh
+. ./elements_blockchainrpc.sh
+. ./elements_manage_missed_conf.sh
+. ./elements_walletoperations.sh
+. ./elements_newblock.sh
 . ./batching.sh
 
 main() {
@@ -714,6 +722,94 @@ main() {
           # BODY {"destination":"segwitAddress","satoshi":"100000","feerate":0,all: false}
           response=$(ln_withdraw "${line}")
           returncode=$?
+          ;;
+        elements_getnewaddress)
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
+
+          response=$(elements_getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_spend)
+          # POST http://192.168.111.152:8080/elements_spend
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+
+          response=$(elements_spend "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getwalletinfo)
+          # curl (GET) 192.168.111.152:8080/elements_getwalletinfo
+
+          response=$(elements_getwalletinfo)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_validateaddress)
+          # GET http://192.168.111.152:8080/elements_validateaddress/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+
+          response=$(elements_validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_watch)
+          # POST http://192.168.111.152:8080/elements_watch
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
+          # eventMessage={"bounceAddress":"Azpr3WH7nX2p3Q6vGk34wuCpyFifpxvTCxTRPgZPYfBnjW5NJ6DP2odKbaeHBdRCCyYMW3XtveciLSpe","nbConf":0}
+          response=$(elements_watchrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_unwatch)
+          # curl (GET) 192.168.111.152:8080/elements_unwatch/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+
+          response=$(elements_unwatchrequest "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_conf)
+          # curl (GET) 192.168.111.152:8080/elements_conf/59e23a15fad777453819702ca432e7c01096c18314ccba90cf3436541f7f1f1a
+
+          response=$(elements_confirmation_request "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_newblock)
+          # curl (GET) 192.168.111.152:8080/elements_newblock/c7168456b69248e166a0a39ed61dbb19623de0d65789a20d5b39bc6b4371dfbb
+
+          response=$(elements_newblock "${line}")
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_gettransaction)
+          # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
+
+          response=$(elements_get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getbestblockhash)
+          # curl (GET) http://192.168.111.152:8080/elements_getbestblockhash
+
+          response=$(elements_get_best_block_hash)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getblockchaininfo)
+          # http://192.168.111.152:8080/elements_getblockchaininfo
+
+          response=$(elements_get_blockchain_info)
+          response_to_client "${response}" ${?}
+          break
+          ;;
+        elements_getmempoolinfo)
+          # curl GET http://192.168.111.152:8080/elements_getmempoolinfo
+
+          response=$(elements_get_mempool_info)
+          response_to_client "${response}" ${?}
+          break
           ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
