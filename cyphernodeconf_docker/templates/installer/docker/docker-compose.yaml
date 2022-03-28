@@ -246,7 +246,7 @@ services:
   proxycron:
     image: cyphernode/proxycron:<%= proxycron_version %>
     env_file:
-      - ./.env/proxycron.env
+      - .env/proxycron.env
     networks:
       - cyphernodenet
     depends_on:

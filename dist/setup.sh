@@ -474,6 +474,12 @@ install_docker() {
     next
   fi
 
+  if [ ! -d $current_path/.env ]; then
+    step "   �[32mcreate�[0m $current_path/.env"
+    sudo_if_required mkdir -p $current_path/.env
+    next
+  fi
+
   copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1 $SUDO_REQUIRED
