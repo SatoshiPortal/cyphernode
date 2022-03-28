@@ -1,6 +1,8 @@
 #!/bin/bash
 
-. ./.cyphernodeconf/installer/config.sh
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
+
+. ${current_path}/.cyphernodeconf/installer/config.sh
 
 # be aware that randomly downloaded cyphernode apps will have access to
 # your configuration and filesystem.
@@ -17,7 +19,7 @@ test_apps() {
   local TRAEFIK_HTTP_PORT=<%= traefik_http_port %>
   local TRAEFIK_HTTPS_PORT=<%= traefik_https_port %>
 
-  for i in $current_path/apps/*
+  for i in ${current_path}/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
     if [ -d "$APP_SCRIPT_PATH" ]; then
@@ -37,7 +39,7 @@ test_apps() {
       fi
     fi
   done
-  return $returncode
+  return ${returncode}
 }
 
 <% if (run_as_different_user) { %>
@@ -51,8 +53,6 @@ fi
 export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
-current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
@@ -60,9 +60,9 @@ docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v cyphernode_container_monitor:/container_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
 
-if [ -f $current_path/exitStatus.sh ]; then
-  . $current_path/exitStatus.sh
-  rm -f $current_path/exitStatus.sh
+if [ -f ${current_path}/exitStatus.sh ]; then
+  . ${current_path}/exitStatus.sh
+  rm -f ${current_path}/exitStatus.sh
 fi
 
 if [ "$EXIT_STATUS" -ne "0" ]; then

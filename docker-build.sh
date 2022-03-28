@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Must be logged to docker hub:
 # docker login -u cyphernode
@@ -59,18 +59,37 @@ x86_docker="amd64"
 arm_docker="arm"
 aarch64_docker="arm64"
 
+v1="v0"
+v2="v0.8"
+v3="v0.8.0"
+
 # Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
 
-#arch_docker=${arm_docker}
-#arch_docker=${aarch64_docker}
-arch_docker=${x86_docker}
+echo -e "\nBuild ${v3} for:\n"
+echo "1) AMD 64 bits (Most PCs)"
+echo "2) ARM 64 bits (RPi4, Mac M1)"
+echo "3) ARM 32 bits (RPi2-3)"
+echo -en "\nYour choice (1, 2, 3): "
+read arch_input
 
-v1="v0"
-v2="v0.7"
-v3="v0.7.0"
+case "${arch_input}" in
+  1)
+    arch_docker=${x86_docker}
+    ;;
+  2)
+    arch_docker=${aarch64_docker}
+    ;;
+  3)
+    arch_docker=${arm_docker}
+    ;;
+  *)
+    echo "Not a valid choice."
+    exit 1
+    ;;
+esac
 
-echo "\nBuilding Cyphernode Core containers\n"
-echo "arch_docker=$arch_docker\n"
+echo -e "\nBuilding Cyphernode Core containers\n"
+echo -e "arch_docker=$arch_docker\n"
 
 image "gatekeeper" "api_auth_docker/" ${arch_docker} \
 && image "proxycron" "cron_docker/" ${arch_docker} \

@@ -127,7 +127,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -139,7 +139,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -676,7 +676,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -780,7 +780,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$current_path/apps" "$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+        local directories=("$current_path/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -804,8 +804,7 @@ install_apps() {
     local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
     local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "   [32mclone[0m $apps_repo into apps"
-    docker run --rm -u $user -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
-    next
+    docker run --rm -v "$current_path":/git --entrypoint sh cyphernode/cyphernodeconf:$CONF_VERSION -c "git clone --single-branch -b ${CYPHERAPPS_VERSION} \"$apps_repo\" /git/apps > /dev/null 2>&1 ; chown -R $user /git/apps"
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
@@ -867,16 +866,16 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.7.0-dev"
-SETUP_VERSION="v0.7.0-dev"
-CONF_VERSION="v0.7.0-dev"
-GATEKEEPER_VERSION="v0.7.0-dev"
-TOR_VERSION="v0.7.0-dev"
-PROXY_VERSION="v0.7.0-dev"
-NOTIFIER_VERSION="v0.7.0-dev"
-PROXYCRON_VERSION="v0.7.0-dev"
-OTSCLIENT_VERSION="v0.7.0-dev"
-PYCOIN_VERSION="v0.7.0-dev"
+# CYPHERNODE VERSION "v0.9.0-dev"
+SETUP_VERSION="v0.9.0-dev"
+CONF_VERSION="v0.9.0-dev"
+GATEKEEPER_VERSION="v0.9.0-dev"
+TOR_VERSION="v0.9.0-dev"
+PROXY_VERSION="v0.9.0-dev"
+NOTIFIER_VERSION="v0.9.0-dev"
+PROXYCRON_VERSION="v0.9.0-dev"
+OTSCLIENT_VERSION="v0.9.0-dev"
+PYCOIN_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v22.0"
 LIGHTNING_VERSION="v0.10.2"
