@@ -475,7 +475,7 @@ install_docker() {
   fi
 
   if [ ! -d $current_path/.env ]; then
-    step "   �[32mcreate�[0m $current_path/.env"
+    step "   [32mcreate[0m $current_path/.env"
     sudo_if_required mkdir -p $current_path/.env
     next
   fi
