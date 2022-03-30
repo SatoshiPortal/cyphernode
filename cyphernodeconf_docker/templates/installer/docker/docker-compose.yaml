@@ -199,9 +199,20 @@ services:
     <% if ( features.indexOf('tor') !== -1 ) { %>
       - tor
     <% } %>
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
   <% } %>
 
   ##########################

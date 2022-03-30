@@ -6,6 +6,8 @@ while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ;
 
 echo "bitcoin ready"
 
+/.elements/createWallets.sh &
+
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_elements') !== -1 ) { %>
 #while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done
 while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | awk '{ print $1 }') ; sleep 10 ; done

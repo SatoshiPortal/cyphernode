@@ -554,16 +554,48 @@ install_docker() {
       sudo_if_required mkdir -p $ELEMENTS_DATAPATH
       next
     fi
+    if [ -d $ELEMENTS_DATAPATH ]; then
 
-    copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+      local cmpStatus=$(compare_bitcoinconf $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf)
+
+      if [[ $cmpStatus == 'dataloss' ]]; then
+        if [[ $ALWAYSYES == 1 ]]; then
+          copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+        else
+          while true; do
+            echo "          [31mReally copy elements.conf with pruning option?[0m"
+            read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
+            case $yn in
+              [Yy]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+                      break;;
+              [Nn]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf.cyphernode 0 $SUDO_REQUIRED
+                      echo "          [31mYour cyphernode installation is most likely broken.[0m"
+                      echo "          [31mPlease check elements.conf.cyphernode on how to repair it manually.[0m";
+                      break;;
+              * ) echo "Please answer yes or no.";;
+            esac
+          done
+        fi
+      else
+        if [[ $cmpStatus == 'reindex' ]]; then
+          echo "  [33mWarning[0m Reindexing will take some time."
+        fi
+        copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+      fi
+    fi
     copy_file $cyphernodeconf_filepath/elements/entrypoint.sh $ELEMENTS_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/elements/createWallets.sh $ELEMENTS_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
 
     if [[ ! -x $ELEMENTS_DATAPATH/entrypoint.sh ]]; then
       step "     [32mmake[0m entrypoint.sh executable"
       sudo_if_required chmod +x $ELEMENTS_DATAPATH/entrypoint.sh
       next
     fi
-
+    if [[ ! -x $ELEMENTS_DATAPATH/createWallets.sh ]]; then
+      step "     [32mmake[0m createWallets.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/createWallets.sh
+      next
+    fi
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then

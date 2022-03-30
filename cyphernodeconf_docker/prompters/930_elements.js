@@ -21,6 +21,6 @@ module.exports = {
     return 'VAR0=VALUE0\nVAR1=VALUE1'
   },
   templates: function( props ) {
-    return ['elements.conf', 'entrypoint.sh']
+    return ['elements.conf', 'createWallets.sh', 'entrypoint.sh']
   }
 };
