@@ -59,9 +59,9 @@ x86_docker="amd64"
 arm_docker="arm"
 aarch64_docker="arm64"
 
-v1="v0"
-v2="v0.8"
-v3="v0.8.1"
+v1="v0-rc.1"
+v2="v0.9-rc.1"
+v3="v0.9.0-rc.1"
 
 # Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
 
