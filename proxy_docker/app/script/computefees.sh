@@ -52,14 +52,6 @@ compute_vin_total_amount()
   local vin_vout_amount=0
   local vout
   local vin_total_amount=0
-  local vin_hash
-  local vin_confirmations
-  local vin_timereceived
-  local vin_vsize
-  local vin_blockhash
-  local vin_blockheight
-  local vin_blocktime
-  local txid_already_inserted=true
 
   for vin_txid_vout in ${vin_txids_vout}
   do
@@ -75,21 +67,6 @@ compute_vin_total_amount()
     trace "[compute_vin_total_amount] vin_vout_amount=${vin_vout_amount}"
     vin_total_amount=$(awk "BEGIN { printf(\"%.8f\", ${vin_total_amount}+${vin_vout_amount}); exit}")
     trace "[compute_vin_total_amount] vin_total_amount=${vin_total_amount}"
-    vin_hash=$(echo "${vin_raw_tx}" | jq -r ".result.hash")
-    vin_confirmations=$(echo "${vin_raw_tx}" | jq ".result.confirmations")
-    vin_timereceived=$(echo "${vin_raw_tx}" | jq ".result.time")
-    vin_size=$(echo "${vin_raw_tx}" | jq ".result.size")
-    vin_vsize=$(echo "${vin_raw_tx}" | jq ".result.vsize")
-    vin_blockhash=$(echo "${vin_raw_tx}" | jq -r ".result.blockhash")
-    vin_blockheight=$(echo "${vin_raw_tx}" | jq ".result.blockheight")
-    vin_blocktime=$(echo "${vin_raw_tx}" | jq ".result.blocktime")
-
-    # Let's insert the vin tx in the DB just in case it would be useful
-    sql "INSERT INTO tx (txid, hash, confirmations, timereceived, size, vsize, blockhash, blockheight, blocktime)"\
-" VALUES ('${vin_txid}', '${vin_hash}', ${vin_confirmations}, ${vin_timereceived}, ${vin_size}, ${vin_vsize}, '${vin_blockhash}', ${vin_blockheight}, ${vin_blocktime})"\
-" ON CONFLICT (txid) DO"\
-" UPDATE SET blockhash='${vin_blockhash}', blockheight=${vin_blockheight}, blocktime=${vin_blocktime}, confirmations=${vin_confirmations}"
-    trace_rc $?
   done
 
   echo "${vin_total_amount}"
