@@ -1,14 +1,14 @@
 #!/bin/sh
 
-ELEMENTS_CLI='bitcoin-cli'
+ELEMENTS_CLI='elements-cli'
 
 <% if( net === 'regtest' ) { %>
 ELEMENTS_CLI="$ELEMENTS_CLI -regtest"
 <% } %>
 
-while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "CYPHERNODE: bitcoind not ready" ; sleep 10 ; done
+while [ ! -f "/container_monitor/elements_ready" ]; do echo "CYPHERNODE: elementsd not ready" ; sleep 10 ; done
 
-echo "CYPHERNODE: bitcoind is ready"
+echo "CYPHERNODE: elementsd is ready"
 
 # Check for the basic wallets.  If not present, create.
 BASIC_WALLETS='"watching01.dat" "xpubwatching01.dat" "spending01.dat"'
