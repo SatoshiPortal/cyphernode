@@ -16,10 +16,10 @@ unwatchrequest() {
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
 
-  trace "[unwatchrequest] Unwatch request id ${watchid} on address ${address} with url0conf ${unconfirmedCallbackURL} and url1conf ${confirmedCallbackURL}"
+  trace "[unwatchrequest] Unwatch request id ${watchid} on address \"${address}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\""
 
   if [ "${watchid}" != "null" ]; then
-    sql "UPDATE watching SET watching=0 WHERE id=${watchid}"
+    sql "UPDATE watching SET watching=false WHERE id=${watchid}"
     returncode=$?
     trace_rc ${returncode}
 
@@ -35,11 +35,11 @@ unwatchrequest() {
       cb1_where=" AND callback1conf='${confirmedCallbackURL}'"
     fi
 
-    sql "UPDATE watching SET watching=0 WHERE address='${address}'${cb0_where}${cb1_where}"
+    sql "UPDATE watching SET watching=false WHERE address='${address}'${cb0_where}${cb1_where}"
     returncode=$?
     trace_rc ${returncode}
 
-    data="{\"event\":\"unwatch\",\"address\":\"${address}\",\"unconfirmedCallbackURL\":${unconfirmedCallbackURL},\"confirmedCallbackURL\":${confirmedCallbackURL}}"
+    data="{\"event\":\"unwatch\",\"address\":\"${address}\",\"unconfirmedCallbackURL\":\"${unconfirmedCallbackURL}\",\"confirmedCallbackURL\":\"${confirmedCallbackURL}\"}"
   fi
 
   trace "[unwatchrequest] responding=${data}"
@@ -52,20 +52,19 @@ unwatchrequest() {
 unwatchpub32request() {
   trace "Entering unwatchpub32request()..."
 
+  # GET http://192.168.111.152:8080/unwatchxpubbyxpub/tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk
+
   local request=${1}
   local pub32=$(echo "${request}" | cut -d ' ' -f2 | cut -d '/' -f3)
   local id
   local returncode
   trace "[unwatchpub32request] Unwatch pub32 ${pub32}"
 
-  id=$(sql "SELECT id FROM watching_by_pub32 WHERE pub32='${pub32}'")
-  trace "[unwatchpub32request] id: ${id}"
-
-  sql "UPDATE watching_by_pub32 SET watching=0 WHERE id=${id}"
+  sql "UPDATE watching w SET watching=false FROM watching_by_pub32 w32 WHERE w.watching_by_pub32_id=w32.id AND pub32='${pub32}'"
   returncode=$?
   trace_rc ${returncode}
 
-  sql "UPDATE watching SET watching=0 WHERE watching_by_pub32_id=\"${id}\""
+  sql "UPDATE watching_by_pub32 SET watching=false WHERE pub32='${pub32}'"
   returncode=$?
   trace_rc ${returncode}
 
@@ -86,16 +85,11 @@ unwatchpub32labelrequest() {
   local returncode
   trace "[unwatchpub32labelrequest] Unwatch xpub label ${label}"
 
-  id=$(sql "SELECT id FROM watching_by_pub32 WHERE label='${label}'")
-  returncode=$?
-  trace_rc ${returncode}
-  trace "[unwatchpub32labelrequest] id: ${id}"
-
-  sql "UPDATE watching_by_pub32 SET watching=0 WHERE id=${id}"
+  sql "UPDATE watching w SET watching=false FROM watching_by_pub32 w32 WHERE w.watching_by_pub32_id=w32.id AND w32.label='${label}'"
   returncode=$?
   trace_rc ${returncode}
 
-  sql "UPDATE watching SET watching=0 WHERE watching_by_pub32_id=\"${id}\""
+  sql "UPDATE watching_by_pub32 SET watching=false WHERE label='${label}'"
   returncode=$?
   trace_rc ${returncode}
 
@@ -112,23 +106,30 @@ unwatchtxidrequest() {
 
   local watchid=${1}
   local txid=${2}
+
   local unconfirmedCallbackURL=${3}
+  local uc_pg uc_json
+  [ "${unconfirmedCallbackURL}" = "null" ] && uc_pg=" IS NULL" && uc_json="null" || uc_pg="='${unconfirmedCallbackURL}'" && uc_json="\"${unconfirmedCallbackURL}\""
+
   local confirmedCallbackURL=${4}
+  local c_pg c_json
+  [ "${confirmedCallbackURL}" = "null" ] && c_pg=" IS NULL" && c_json="null" || c_pg="='${confirmedCallbackURL}'" && c_json="\"${confirmedCallbackURL}\""
+
   local returncode
-  trace "[unwatchtxidrequest] Unwatch request id ${watchid} on txid ${txid} with url0conf ${unconfirmedCallbackURL} and url1conf ${confirmedCallbackURL}"
+  trace "[unwatchtxidrequest] Unwatch request id ${watchid} on txid \"${txid}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\""
 
   if [ "${watchid}" != "null" ]; then
-    sql "UPDATE watching_by_txid SET watching=0 WHERE id=${watchid}"
+    sql "UPDATE watching_by_txid SET watching=false WHERE id=${watchid}"
     returncode=$?
     trace_rc ${returncode}
 
     data="{\"event\":\"unwatchtxid\",\"id\":${watchid}}"
   else
-    sql "UPDATE watching_by_txid SET watching=0 WHERE txid='${txid}' AND callback0conf=${unconfirmedCallbackURL} AND callback1conf=${confirmedCallbackURL}"
+    sql "UPDATE watching_by_txid SET watching=false WHERE txid='${txid}' AND callback0conf${uc_pg} AND callback1conf${c_pg}"
     returncode=$?
     trace_rc ${returncode}
 
-    data="{\"event\":\"unwatchtxid\",\"txid\":\"${txid}\",\"unconfirmedCallbackURL\":${unconfirmedCallbackURL},\"confirmedCallbackURL\":${confirmedCallbackURL}}"
+    data="{\"event\":\"unwatchtxid\",\"txid\":\"${txid}\",\"unconfirmedCallbackURL\":${uc_json},\"confirmedCallbackURL\":${c_json}}"
   fi
 
   trace "[unwatchtxidrequest] responding=${data}"

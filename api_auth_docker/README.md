@@ -88,7 +88,7 @@ If you don't want to use HTTPS, just copy default.conf instead of default-ssl.co
 docker build -t authapi .
 ```
 
-If you are using it independantly from the Docker stack (docker-compose.yml), you can run it like that:
+If you are using it independently from the Docker stack (docker-compose.yml), you can run it like this:
 
 ```shell
 docker run -d --rm --name authapi -p 80:80 -p 443:443 --network cyphernodenet -v "~/cyphernode-ssl/certs:/etc/ssl/certs" -v "~/cyphernode-ssl/private:/etc/ssl/private" authapi
@@ -108,16 +108,16 @@ Authorization: Bearer <token>
 token = hhh.ppp.sss
 ```
 
-...where hhh is the header in base64, ppp is the payload in base64 and sss is the signature.  Here are the expected formats and contents:
+...where hhh is the header in unpadded base64url, ppp is the payload in unpadded base64url and sss is the signature in unpadded base64url.  Here are the expected formats and contents:
 
 ```shell
 header = {"alg":"HS256","typ":"JWT"}
-header64 = base64(header) = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg==
+header64 = unpad(base64url(header)) = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 ```
 
 ```shell
 payload = {"id":"001","exp":1538528077}
-payload64 = base64(payload) = eyJpZCI6IjAwMSIsImV4cCI6MTUzODUyODA3N30K
+payload64 = unpad(base64url(payload)) = eyJpZCI6IjAwMSIsImV4cCI6MTUzODUyODA3N30
 ```
 
 The "id" property is the client id and the "exp" property should be current epoch time + 10 seconds, like:
@@ -129,7 +129,7 @@ $((`date +"%s"`+10))
 ...so that the request will be expired in 10 seconds.  That should take care of most Replay attacks if any.  You should run nginx with TLS so that the replay attack can't be possible.
 
 ```shell
-signature = hmacsha256(header64.payload64, key)
+signature = unpad(base64url(hmacsha256(header64.payload64, key)))
 ```
 
 ```shell
@@ -147,21 +147,21 @@ curl -v -H "Authorization: Bearer hhh.ppp.sss" localhost
 10 seconds request expiration:
 
 ```shell
-id="001";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+10))}" | base64);k="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -v -H "Authorization: Bearer $token" -k https://localhost/getbestblockhash
+id="003";key="926c4cced4efd969ea9e40e1666b985319af842a4b0b641c157713959ebd49cb";h64=$(echo -n '{"alg":"HS256","typ":"JWT"}' | basenc --base64url | tr -d '=');p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+10))'}' | basenc --base64url | tr -d '=');sig=$(echo -n "${h64}.${p64}" | openssl dgst -hmac "${key}" -sha256 -r -binary | basenc --base64url | tr -d '=');token="${h64}.${p64}.${sig}";curl -v -H "Authorization: Bearer ${token}" -k https://localhost:2009/v0/getbestblockhash
 ```
 
 60 seconds request expiration:
 
 ```shell
-id="001";h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64);p64=$(echo -n "{\"id\":\"$id\",\"exp\":$((`date +"%s"`+60))}" | base64);k="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36";s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1);token="$h64.$p64.$s";curl -v -H "Authorization: Bearer $token" -k https://localhost/getbestblockhash
+id="003";key="926c4cced4efd969ea9e40e1666b985319af842a4b0b641c157713959ebd49cb";h64=$(echo -n '{"alg":"HS256","typ":"JWT"}' | basenc --base64url | tr -d '=');p64=$(echo -n '{"id":"'${id}'","exp":'$((`date +"%s"`+60))'}' | basenc --base64url | tr -d '=');sig=$(echo -n "${h64}.${p64}" | openssl dgst -hmac "${key}" -sha256 -r -binary | basenc --base64url | tr -d '=');token="${h64}.${p64}.${sig}";curl -v -H "Authorization: Bearer ${token}" -k https://localhost:2009/v0/getbestblockhash
 ```
 
 ## Technicalities
 
 ```shell
-h64=$(echo -n "{\"alg\":\"HS256\",\"typ\":\"JWT\"}" | base64)
-p64=$(echo -n "{\"id\":\"001\",\"exp\":$((`date +"%s"`+10))}" | base64)
-k="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36"
-s=$(echo -n "$h64.$p64" | openssl dgst -hmac "$k" -sha256 -r | cut -sd ' ' -f1)
-token="$h64.$p64.$s"
+h64=$(echo -n '{"alg":"HS256","typ":"JWT"}' | basenc --base64url | tr -d '=')
+p64=$(echo -n '{"id":"001","exp":1637032766}' | basenc --base64url | tr -d '=')
+key="2df1eeea370eacdc5cf7e96c2d82140d1568079a5d4d87006ec8718a98883b36"
+sig=$(echo -n "${h64}.${p64}" | openssl dgst -hmac "${key}" -sha256 -r -binary | basenc --base64url | tr -d '=')
+token="${h64}.${p64}.${sig}"
 ```

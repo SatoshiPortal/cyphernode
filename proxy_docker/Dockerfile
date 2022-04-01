@@ -6,21 +6,25 @@ RUN apk add --update --no-cache \
     sqlite \
     jq \
     curl \
-    su-exec
+    su-exec \
+    py3-pip \
+    xxd \
+    postgresql
 
 WORKDIR ${HOME}
 
 COPY app/data/* ./
 COPY app/script/* ./
-COPY --from=cyphernode/clightning:v0.10.0 /usr/local/bin/lightning-cli ./
-COPY --from=eclipse-mosquitto:1.6 /usr/bin/mosquitto_rr /usr/bin/mosquitto_sub /usr/bin/mosquitto_pub /usr/bin/
-COPY --from=eclipse-mosquitto:1.6 /usr/lib/libmosquitto* /usr/lib/
-COPY --from=eclipse-mosquitto:1.6 /usr/lib/libcrypto* /usr/lib/
-COPY --from=eclipse-mosquitto:1.6 /usr/lib/libssl* /usr/lib/
+COPY app/tests/* ./tests/
+COPY --from=cyphernode/clightning:v0.10.2 /usr/local/bin/lightning-cli ./
+COPY --from=eclipse-mosquitto:1.6-openssl /usr/bin/mosquitto_rr /usr/bin/mosquitto_sub /usr/bin/mosquitto_pub /usr/bin/
+COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libmosquitto* /usr/lib/
+COPY --from=eclipse-mosquitto:1.6-openssl /lib/ld-musl-* /lib/
 
-RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh tests* \
+RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh tests/* \
  && chmod o+w . \
- && mkdir db
+ && mkdir db \
+ && pip3 install base58
 
 VOLUME ["${HOME}/db", "/.lightning"]
 

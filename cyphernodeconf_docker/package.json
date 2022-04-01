@@ -16,7 +16,7 @@
   ],
   "dependencies": {
     "@rauschma/stringio": "^1.4.0",
-    "ajv": "^6.10.0",
+    "ajv": "^6.12.3",
     "chalk": "^2.4.2",
     "coinstring": "^2.3.0",
     "colorsys": "^1.0.22",
@@ -25,7 +25,7 @@
     "lunicode": "^2.0.1",
     "parse5": "^5.1.0",
     "tmp": "^0.1.0",
-    "validator": "^10.11.0",
+    "validator": "^13.7.0",
     "wrap-ansi": "^5.1.0"
   },
   "devDependencies": {

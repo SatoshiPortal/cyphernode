@@ -9,7 +9,7 @@ Inserts the address, webhook URLs and eventMessage in the DB and imports the add
 ```http
 POST http://cyphernode:8888/watch
 with body...
-{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
+{"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K","label":"myLabel"}
 ```
 
 Proxy response:
@@ -23,6 +23,7 @@ Proxy response:
     "address": "2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp",
     "unconfirmedCallbackURL": "192.168.133.233:1111/callback0conf",
     "confirmedCallbackURL": "192.168.133.233:1111/callback1conf",
+    "label": "myLabel",
     "estimatesmartfee2blocks": "0.000010",
     "estimatesmartfee6blocks": "0.000010",
     "estimatesmartfee36blocks": "0.000010",
@@ -721,6 +722,20 @@ GET http://cyphernode:8888/getnewaddress/legacy
 GET http://cyphernode:8888/getnewaddress/p2sh-segwit
 ```
 
+or
+
+```http
+POST http://cyphernode:8888/getnewaddress
+with body...
+{"address_type":"bech32","label":"myLabel"}
+or
+{"label":"myLabel"}
+or
+{"address_type":"p2sh-segwit"}
+or
+{}
+```
+
 Proxy response:
 
 ```json
@@ -731,7 +746,39 @@ Proxy response:
 
 ```json
 {
-  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj"
+  "address":"tb1ql7yvh3lmajxmaljsnsu3w8lhwczu963tvjfzpj",
+  "label":"myLabel",
+  "address_type":"bech32"
+}
+```
+
+### Validate a Bitcoin address
+
+Returns the detailed information about the given address.
+
+```http
+GET http://cyphernode:8888/validateaddress/address
+GET http://cyphernode:8888/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
+```
+
+Proxy response for a valid address:
+
+```json
+{
+  "isvalid": true,
+  "address": "tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv",
+  "scriptPubKey": "5120a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c",
+  "iswitness": true,
+  "witness_version": 1,
+  "witness_program": "a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c"
+}
+```
+
+Proxy response for an invalid address:
+
+```json
+{
+  "isvalid": false
 }
 ```
 
@@ -874,6 +921,59 @@ Proxy response:
   {"address":"mp5jtEDNa88xfSQGs5yYQGk7guGWvaG4ci"}
   ]
 }
+```
+
+### Fast address derivation using path in config and provided index (called by your application)
+
+Derives addresses for supplied index.  Must be used with derivation.pub32 and derivation.path properties in config.properties.
+
+```http
+GET http://cyphernode:8888/deriveindex_bitcoind/25-30
+GET http://cyphernode:8888/deriveindex_bitcoind/34
+```
+
+Proxy response:
+
+```json
+[
+  "2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8",
+  "2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV",
+  "2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP",
+  "2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6",
+  "2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH",
+  "2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"
+]
+```
+
+### Fast address derivation using provided path and index (called by your application)
+
+Derives addresses for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used.
+
+```http
+POST http://cyphernode:8888/derivepubpath_bitcoind
+with body...
+{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+
+or
+
+{"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/34"}
+
+or
+
+{"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
+```
+
+Proxy response:
+
+```json
+[
+  "mz3bWMW3BWGT9YGDjJwS8TfhJMMtZ91Frm",
+  "mkjmKEX3KJrVpiqLSSxKB6jjgm3WhPnrv8",
+  "mk43Tmf6E5nsmETTaNMTZK9TikaeVJRJ4a",
+  "n1SEcVHHKpHyNr695JpXNdH6b9cWQ26qkt",
+  "mzWqwZkA31kYVy1kpMoZgvfzSDyGgEi7Yg",
+  "mp5jtEDNa88xfSQGs5yYQGk7guGWvaG4ci"
+]
 ```
 
 ### Get info from Lightning Network node (called by your application)

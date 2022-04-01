@@ -64,41 +64,43 @@ main()
           # GET http://192.168.111.152:8080/stamp/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
           response=$(stamp $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         upgrade)
           # GET http://192.168.111.152:8080/upgrade/1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7
 
           response=$(upgrade $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         verify)
           # POST http://192.168.111.152:8080/verify
           # BODY {"hash":"1ddfb769eb0b8876bc570e25580e6a53afcf973362ee1ee4b54a807da2e5eed7","base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
 
           response=$(verify "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         info)
           # POST http://192.168.111.152:8080/info
           # BODY {"base64otsfile":"AE9wZW5UaW1lc3RhbXBzAABQcm9vZ...gABYiWDXPXGQEDxNch"}
 
           response=$(info "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
+          ;;
+        *)
+          response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
+          returncode=1
           ;;
       esac
+      response=$(echo "${response}" | jq -Mc)
+      response_to_client "${response}" ${returncode}
       break
     fi
   done
   trace "[main] exiting"
-  return 0
+  return ${returncode}
 }
 
-export TRACING
-
 main
-exit $?
+returncode=$?
+trace "[requesthandler] exiting"
+exit ${returncode}

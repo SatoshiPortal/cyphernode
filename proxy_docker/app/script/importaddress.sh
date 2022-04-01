@@ -7,7 +7,12 @@ importaddress_rpc() {
   trace "[Entering importaddress_rpc()]"
 
   local address=${1}
-  local data="{\"method\":\"importaddress\",\"params\":[\"${address}\",\"\",false]}"
+  local label=${2}
+  if [ -z "${label}" ]; then
+    label="null"
+  fi
+  local data='{"method":"importaddress","params":{"address":"'${address}'","label":"'${label}'","rescan":false}}'
+  # local data="{\"method\":\"importaddress\",\"params\":[\"${address}\",\"\",false]}"
   local result
   result=$(send_to_watcher_node ${data})
   local returncode=$?
@@ -34,7 +39,7 @@ importmulti_rpc() {
   # {"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},
   # {"scriptPubKey":{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},"timestamp":"now","watchonly":true,"label":"xpub"},
 
-  addresses=$(echo "${addresses}" | sed "s/\"address\"/\"scriptPubKey\":\{\"address\"/g" | sed "s/}/},\"timestamp\":\"now\",\"watchonly\":true,\"label\":${label}}/g")
+  addresses=$(echo "${addresses}" | sed "s/\"address\"/\"scriptPubKey\":\{\"address\"/g" | sed "s/}/},\"timestamp\":\"now\",\"watchonly\":true,\"label\":\"${label}\"}/g")
 #  trace "[importmulti_rpc] addresses=${addresses}"
 
   # Now we use that in the RPC string

@@ -1,6 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
-. ./.cyphernodeconf/installer/config.sh
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
+
+. ${current_path}/.cyphernodeconf/installer/config.sh
 
 # be aware that randomly downloaded cyphernode apps will have access to
 # your configuration and filesystem.
@@ -17,7 +19,7 @@ test_apps() {
   local TRAEFIK_HTTP_PORT=<%= traefik_http_port %>
   local TRAEFIK_HTTPS_PORT=<%= traefik_https_port %>
 
-  for i in $current_path/apps/*
+  for i in ${current_path}/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
     if [ -d "$APP_SCRIPT_PATH" ]; then
@@ -37,7 +39,7 @@ test_apps() {
       fi
     fi
   done
-  return $returncode
+  return ${returncode}
 }
 
 <% if (run_as_different_user) { %>
@@ -51,8 +53,6 @@ fi
 export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
-current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
@@ -60,19 +60,26 @@ docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v cyphernode_container_monitor:/container_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
 
-if [ -f $current_path/exitStatus.sh ]; then
-  . $current_path/exitStatus.sh
-  rm -f $current_path/exitStatus.sh
+if [ -f ${current_path}/exitStatus.sh ]; then
+  . ${current_path}/exitStatus.sh
+  rm -f ${current_path}/exitStatus.sh
 fi
 
-test_apps
+if [ "$EXIT_STATUS" -ne "0" ]; then
+  printf "\r\n\033[1;31mSkipping cypherapps deployment because of previous errors.\r\n\r\n\033[0m"
+else
+  test_apps
+fi
 
 EXIT_STATUS=$(($? | ${EXIT_STATUS}))
 
 printf "\r\n\e[1;32mTests finished.\e[0m\n"
 
 if [ "$EXIT_STATUS" -ne "0" ]; then
-  printf "\r\n\033[1;31mThere was an error during cyphernode installation.  full logs:  docker ps -q | xargs -L 1 docker logs , Containers logs:  docker logs <containerid> , list containers: docker ps  .Please see Docker's logs for more information.  Run ./testdeployment.sh to rerun the tests.  Run ./stop.sh to stop cyphernode.\r\n\r\n\033[0m"
+  printf "\r\n\033[1;31mThere was an error during cyphernode installation.\r\n\033[0m"
+  printf "\r\n\033[1;31mCheck logs in your logs directory (${LOGS_DATAPATH}).\r\n\033[0m"
+  printf "\r\n\033[1;31mRun ./testdeployment.sh to rerun the tests.\033[0m"
+  printf "\r\n\033[1;31mRun ./stop.sh to stop cyphernode.\r\n\033[0m"
   exit 1
 fi
 

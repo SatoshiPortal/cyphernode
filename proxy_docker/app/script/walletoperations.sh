@@ -42,7 +42,7 @@ spend() {
     tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
-    local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+    local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
     local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
@@ -50,9 +50,6 @@ spend() {
     local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
     local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-    # Sometimes raw tx are too long to be passed as paramater, so let's write
-    # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > spend-rawtx-${txid}-$$.blob
 
     ########################################################################################################
     # Let's publish the event if needed
@@ -73,18 +70,17 @@ spend() {
     ########################################################################################################
 
     # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('spend-rawtx-${txid}-$$.blob'))"
+    id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target)"\
+" VALUES ('${txid}', '${tx_hash}', 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target})"\
+" RETURNING id" \
+    "SELECT id FROM tx WHERE txid='${txid}'")
     trace_rc $?
-    id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
-    trace_rc $?
-    sql "INSERT OR IGNORE INTO recipient (address, amount, tx_id) VALUES (\"${address}\", ${amount}, ${id_inserted})"
+    sql "INSERT INTO recipient (address, amount, tx_id) VALUES ('${address}', ${amount}, ${id_inserted})"\
+" ON CONFLICT DO NOTHING"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
-
-    # Delete the temp file containing the raw tx (see above)
-    rm spend-rawtx-${txid}-$$.blob
+    data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
@@ -220,7 +216,7 @@ getbalancebyxpublabel() {
   trace "[getbalancebyxpublabel] label=${label}"
   local xpub
 
-  xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label=\"${label}\"")
+  xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label='${label}'")
   trace "[getbalancebyxpublabel] xpub=${xpub}"
 
   getbalancebyxpub ${xpub} "getbalancebyxpublabel"
@@ -270,13 +266,30 @@ getnewaddress() {
   local address_type=${1}
   trace "[getnewaddress] address_type=${address_type}"
 
+  local label=${2}
+  trace "[getnewaddress] label=${label}"
+
   local response
-  local data
-  if [ -z "${address_type}" ]; then
-    data='{"method":"getnewaddress"}'
-  else
-    data="{\"method\":\"getnewaddress\",\"params\":[\"\",\"${address_type}\"]}"
+  local jqop
+  local addedfieldstoresponse
+  local data='{"method":"getnewaddress"}'
+  if [ -n "${address_type}" ] || [ -n "${label}" ]; then
+    jqop='. += {"params":{}}'
+    if [ -n "${label}" ]; then
+      jqop=${jqop}' | .params += {"label":"'${label}'"}'
+      addedfieldstoresponse=' | . += {"label":"'${label}'"}'
+    fi
+    if [ -n "${address_type}" ]; then
+      jqop=${jqop}' | .params += {"address_type":"'${address_type}'"}'
+      addedfieldstoresponse=' | . += {"address_type":"'${address_type}'"}'
+    fi
+    trace "[getnewaddress] jqop=${jqop}"
+    trace "[getnewaddress] addedfieldstoresponse=${addedfieldstoresponse}"
+
+    data=$(echo "${data}" | jq -rc "${jqop}")
   fi
+  trace "[getnewaddress] data=${data}"
+
   response=$(send_to_spender_node "${data}")
   local returncode=$?
   trace_rc ${returncode}
@@ -286,7 +299,11 @@ getnewaddress() {
     local address=$(echo ${response} | jq ".result")
     trace "[getnewaddress] address=${address}"
 
-    data="{\"address\":${address}}"
+    data='{"address":'${address}'}'
+    if [ -n "${jqop}" ]; then
+      data=$(echo "${data}" | jq -rc ".${addedfieldstoresponse}")
+      trace "[getnewaddress] data=${data}"
+    fi
   else
     trace "[getnewaddress] Coudn't get a new address!"
     data=""
