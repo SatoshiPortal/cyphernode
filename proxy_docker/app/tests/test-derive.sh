@@ -4,6 +4,7 @@
 
 # You need jq installed for these tests to run correctly
 # You need to configure cyphernode with a default xpub for these tests to work.
+# upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
 
 # This will test:
 #

@@ -186,8 +186,8 @@ services:
       - "<%= elements_datapath %>:/.elements"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s
@@ -236,15 +236,15 @@ services:
       - "XPUB_DERIVATION_GAP=100"
       - "PGPASSFILE=/proxy/db/pgpass"
       <% if ( features.indexOf('elements') !== -1 ) { %>
-      - "SPENDING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
-      - "SPENDING_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
-      - "SPENDING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "SPENDING_ELEMENTS_NODE_RPC_CFG=/tmp/spending_elementsnode_curlcfg.properties"
-      - "WATCHING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
-      - "WATCHING_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
-      - "WATCHING_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat"
-      - "WATCHING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "WATCHING_ELEMENTS_NODE_RPC_CFG=/tmp/watching_elementsnode_curlcfg.properties"
+      - "SPENDER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
+      - "SPENDER_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
+      - "SPENDER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "SPENDER_ELEMENTS_NODE_RPC_CFG=/tmp/spender_elementsnode_curlcfg.properties"
+      - "WATCHER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
+      - "WATCHER_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
+      - "WATCHER_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat"
+      - "WATCHER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "WATCHER_ELEMENTS_NODE_RPC_CFG=/tmp/watcher_elementsnode_curlcfg.properties"
       <% } %>
     <% if ( devmode ) { %>
     ports:
