@@ -25,6 +25,7 @@ newblock() {
   returncode=$?
   trace_rc ${returncode}
 
+  # do_callbacks_txid "$(echo "${blockinfo}" | jq ".result.tx[]")"
   do_callbacks_txid
   batch_check_webhooks
   if [ "$(( $(od -An -N2 < /dev/urandom) % 10 ))" = "0" ]; then

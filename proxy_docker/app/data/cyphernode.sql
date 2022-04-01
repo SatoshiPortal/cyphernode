@@ -15,6 +15,7 @@ CREATE TABLE watching_by_pub32 (
 CREATE TABLE watching (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   address TEXT,
+  label TEXT,
   watching INTEGER DEFAULT FALSE,
   callback0conf TEXT,
   calledback0conf INTEGER DEFAULT FALSE,
@@ -28,6 +29,10 @@ CREATE TABLE watching (
 );
 CREATE INDEX idx_watching_address ON watching (address);
 CREATE UNIQUE INDEX idx_watching_01 ON watching (address, callback0conf, callback1conf);
+CREATE INDEX idx_watching_label ON watching (label);
+CREATE INDEX idx_watching_watching ON watching (watching);
+CREATE INDEX idx_watching_imported ON watching (imported);
+CREATE INDEX idx_watching_watching_by_pub32_id ON watching (watching_by_pub32_id);
 
 CREATE TABLE watching_tx (
   watching_id INTEGER REFERENCES watching,
@@ -36,6 +41,8 @@ CREATE TABLE watching_tx (
   amount REAL
 );
 CREATE UNIQUE INDEX idx_watching_tx ON watching_tx (watching_id, tx_id);
+CREATE INDEX idx_watching_tx_watching_id ON watching_tx (watching_id);
+CREATE INDEX idx_watching_tx_tx_id ON watching_tx (tx_id);
 
 CREATE TABLE tx (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +53,7 @@ CREATE TABLE tx (
   fee REAL,
   size INTEGER,
   vsize INTEGER,
-	is_replaceable INTEGER,
+  is_replaceable INTEGER,
   blockhash TEXT,
   blockheight INTEGER,
   blocktime INTEGER,
@@ -61,6 +68,7 @@ CREATE INDEX idx_tx_vsize ON tx (vsize);
 CREATE INDEX idx_tx_blockhash ON tx (blockhash);
 CREATE INDEX idx_tx_blockheight ON tx (blockheight);
 CREATE INDEX idx_tx_blocktime ON tx (blocktime);
+CREATE INDEX idx_tx_confirmations ON tx (confirmations);
 
 CREATE TABLE recipient (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +84,10 @@ CREATE TABLE recipient (
 );
 CREATE INDEX idx_recipient_address ON recipient (address);
 CREATE INDEX idx_recipient_label ON recipient (label);
+CREATE INDEX idx_recipient_calledback ON recipient (calledback);
+CREATE INDEX idx_recipient_webhook_url ON recipient (webhook_url);
+CREATE INDEX idx_recipient_tx_id ON recipient (tx_id);
+CREATE INDEX idx_recipient_batcher_id ON recipient (batcher_id);
 
 CREATE TABLE batcher (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,6 +111,11 @@ CREATE TABLE watching_by_txid (
 );
 CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
 CREATE UNIQUE INDEX idx_watching_by_txid_1x ON watching_by_txid (txid, callback1conf, callbackxconf);
+CREATE INDEX idx_watching_by_txid_watching ON watching_by_txid (watching);
+CREATE INDEX idx_watching_by_txid_callback1conf ON watching_by_txid (callback1conf);
+CREATE INDEX idx_watching_by_txid_calledback1conf ON watching_by_txid (calledback1conf);
+CREATE INDEX idx_watching_by_txid_callbackxconf ON watching_by_txid (callbackxconf);
+CREATE INDEX idx_watching_by_txid_calledbackxconf ON watching_by_txid (calledbackxconf);
 
 CREATE TABLE stamp (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,3 +158,5 @@ CREATE TABLE ln_invoice (
 );
 CREATE INDEX idx_lninvoice_label ON ln_invoice (label);
 CREATE INDEX idx_lninvoice_bolt11 ON ln_invoice (bolt11);
+CREATE INDEX idx_lninvoice_calledback ON ln_invoice (calledback);
+CREATE INDEX idx_lninvoice_callback_failed ON ln_invoice (callback_failed);

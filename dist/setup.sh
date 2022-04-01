@@ -1,17 +1,34 @@
 #!/bin/bash
 
-### Execute this on a freshly install ubuntu luna node
-# curl -fsSL get.docker.com -o get-docker.sh
-# sh get-docker.sh
-# sudo usermod -aG docker $USER
-## logout and relogin
-# git clone --branch features/install --recursive https://github.com/schulterklopfer/cyphernode.git
-# sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-# sudo chmod +x /usr/local/bin/docker-compose
-# cd cyphernode
-# ./setup.sh -ci
-# docker-compose -f docker-compose.yaml up [-d]
+# This is where everything is configured.
 
+# To determine speed of machine...
+#
+# bash -c ' : {1..500000} ; echo $SECONDS'
+#
+# MBP M1: 0
+# MBP Intel: 0
+# x86_64 avg machine: 0
+# RockPi Debian 64-bits: 1
+# RPi4 RaspiOS 64-bits: 1
+# RPi3 RaspiOS 32-bits: 4
+# RPi2 RaspiOS 32-bits: 7
+#
+# Let's say if timer > 2, we're on a slow machine.
+
+# At first we tried using uname -m te determine slow devices, but:
+#
+# uname -m result:
+# RPi2: armv7l
+# RPi3: armv7l
+# RPi4 on 32-bit OS: armv7l
+# RPi4 on 64-bit OS: aarch64
+# RockPi: aarch64
+# Apple M1: arm64
+# Intel 64: x86_64#
+#
+# There are a ton of other possible values... and can't rely on them to detect
+# a slow device.
 
 # FROM: https://stackoverflow.com/questions/5195607/checking-bash-exit-status-of-several-commands-efficiently
 # Use step(), try(), and next() to perform a series of commands and print
@@ -110,7 +127,7 @@ sudo_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -122,7 +139,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
+  local directories=("${current_path}/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -142,9 +159,6 @@ configure() {
     recreate=" recreate"
   fi
 
-
-
-  local arch=$(uname -m)
   local pw_env=''
   local interactive=''
   local gen_options=''
@@ -157,11 +171,12 @@ configure() {
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
   fi
 
-
-  if [[ $arch =~ ^arm ]]; then
-    clear && echo "Thinking. This may take a while, since I'm a Raspberry PI and my brain is so tiny. :("
+  echo "\nDetermining the speed of your machine..."
+  local speedseconds=$(bash -c ' : {1..500000} ; echo $SECONDS')
+  if [[ $speedseconds > 2 ]]; then
+    clear && echo "This may take a while, since it seems we're running on a slow machine."
   else
-    clear && echo "Thinking..."
+    clear && echo "Fast machine..."
   fi
 
   # before starting a new cyphernodeconf, kill all the others
@@ -193,6 +208,7 @@ configure() {
              -e PROXYCRON_VERSION=$PROXYCRON_VERSION \
              -e OTSCLIENT_VERSION=$OTSCLIENT_VERSION \
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
+             -e POSTGRES_VERSION=$POSTGRES_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
@@ -349,14 +365,6 @@ compare_bitcoinconf() {
 }
 
 install_docker() {
-  local archpath=$(uname -m)
-
-  # compat mode for SatoshiPortal repo
-  # TODO: add more mappings?
-  if [[ $archpath == 'armv7l' ]]; then
-    archpath="rpi"
-  fi
-
   if [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
@@ -384,6 +392,13 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+
+
+  if [ ! -d $POSTGRES_DATAPATH ]; then
+    step "   [32mcreate[0m $POSTGRES_DATAPATH"
+    sudo_if_required mkdir -p $POSTGRES_DATAPATH/pgdata
+    next
+  fi
 
 
   if [ ! -d $LOGS_DATAPATH ]; then
@@ -460,8 +475,17 @@ install_docker() {
     next
   fi
 
+  if [ ! -d $current_path/.env ]; then
+    step "   [32mcreate[0m ${current_path}/.env"
+    sudo_if_required mkdir -p ${current_path}/.env
+    next
+  fi
+
   copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1 $SUDO_REQUIRED
+  sudo_if_required chmod 0600 $PROXY_DATAPATH/pgpass
+  copy_file $cyphernodeconf_filepath/proxycron/proxycron.env ${current_path}/.env/proxycron.env 1 $SUDO_REQUIRED
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -675,7 +699,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
+  local directories=("${current_path}/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -779,7 +803,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -787,8 +811,8 @@ sanity_checks_pre_install() {
               echo "          [31m$d[0m"
             fi
           done
-
       fi
+
       exit
     else
       SUDO_REQUIRED=1
@@ -803,9 +827,7 @@ install_apps() {
     local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
     local apps_repo="https://github.com/SatoshiPortal/cypherapps.git"
     echo "   [32mclone[0m $apps_repo into apps"
-    docker run --rm -v "$current_path":/git --entrypoint git cyphernode/cyphernodeconf:$CONF_VERSION clone --single-branch -b ${CYPHERAPPS_VERSION} "$apps_repo" /git/apps > /dev/null 2>&1
-    sudo_if_required chown -R $user $current_path/apps
-    next
+    docker run --rm -v "$current_path":/git --entrypoint sh cyphernode/cyphernodeconf:$CONF_VERSION -c "git clone --single-branch -b ${CYPHERAPPS_VERSION} \"$apps_repo\" /git/apps > /dev/null 2>&1 ; chown -R $user /git/apps"
   fi
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
@@ -867,21 +889,22 @@ ALWAYSYES=0
 SUDO_REQUIRED=0
 AUTOSTART=0
 
-# CYPHERNODE VERSION "v0.7.0-dev"
-SETUP_VERSION="v0.7.0-dev"
-CONF_VERSION="v0.7.0-dev"
-GATEKEEPER_VERSION="v0.7.0-dev"
-TOR_VERSION="v0.7.0-dev"
-PROXY_VERSION="v0.7.0-dev"
-NOTIFIER_VERSION="v0.7.0-dev"
-PROXYCRON_VERSION="v0.7.0-dev"
-OTSCLIENT_VERSION="v0.7.0-dev"
-PYCOIN_VERSION="v0.7.0-dev"
+# CYPHERNODE VERSION "v0.9.0-dev"
+SETUP_VERSION="v0.9.0-dev"
+CONF_VERSION="v0.9.0-dev"
+GATEKEEPER_VERSION="v0.9.0-dev"
+TOR_VERSION="v0.9.0-dev"
+PROXY_VERSION="v0.9.0-dev"
+NOTIFIER_VERSION="v0.9.0-dev"
+PROXYCRON_VERSION="v0.9.0-dev"
+OTSCLIENT_VERSION="v0.9.0-dev"
+PYCOIN_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
-BITCOIN_VERSION="v0.21.1"
-LIGHTNING_VERSION="v0.10.0"
+BITCOIN_VERSION="v22.0"
+LIGHTNING_VERSION="v0.10.2"
 TRAEFIK_VERSION="v1.7.9-alpine"
-MOSQUITTO_VERSION="1.6"
+MOSQUITTO_VERSION="1.6-openssl"
+POSTGRES_VERSION="14.0-bullseye"
 WASABI_VERSION="v0.3.1"
 
 SETUP_DIR=$(dirname $(realpath $0))
@@ -969,9 +992,9 @@ if [[ $INSTALL == 1 ]]; then
   sanity_checks_pre_install
   create_user
   install
+  install_apps
   modify_owner
   modify_permissions
-  install_apps
   if [[ ! $AUTOSTART == 1 ]]; then
     cowsay
   fi

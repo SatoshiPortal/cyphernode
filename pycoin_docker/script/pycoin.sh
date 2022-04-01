@@ -28,7 +28,7 @@ derive() {
   for address in ${result}
   do
     if ${notfirst}; then
-      echo ","
+      echo -n ","
     else
       notfirst=true
     fi

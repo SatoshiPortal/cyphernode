@@ -1,7 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
 current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
 
 # be aware that randomly downloaded cyphernode apps will have access to
 # your configuration and filesystem.
@@ -15,7 +14,7 @@ stop_apps() {
   local APP_START_SCRIPT_PATH
   local APP_ID
 
-  for i in $current_path/apps/*
+  for i in ${current_path}/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
     if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
@@ -38,7 +37,7 @@ stop_apps() {
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack rm $APP_ID
         elif [ "$DOCKER_MODE" = "compose" ]; then
-          docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml down
+          docker-compose -p $APP_ID -f $APP_SCRIPT_PATH/docker-compose.yaml down
         fi
 
       fi
@@ -46,7 +45,7 @@ stop_apps() {
   done
 }
 
-. ./.cyphernodeconf/installer/config.sh
+. ${current_path}/.cyphernodeconf/installer/config.sh
 stop_apps
 
 export USER=$(id -u):$(id -g)
@@ -54,5 +53,5 @@ export USER=$(id -u):$(id -g)
 <% if (docker_mode == 'swarm') { %>
 docker stack rm cyphernode
 <% } else if(docker_mode == 'compose') { %>
-docker-compose -f $current_path/docker-compose.yaml down
+docker-compose -p cyphernode -f ${current_path}/docker-compose.yaml down
 <% } %>

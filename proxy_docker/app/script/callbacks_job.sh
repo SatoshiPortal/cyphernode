@@ -10,8 +10,17 @@ do_callbacks() {
 
   trace "Entering do_callbacks()..."
 
+  # If called because we received a confirmation for a specific txid, let's only
+  # process that txid-related callbacks...
+  local txid=${1}
+  local txid_where
+  if [ -n "${txid}" ]; then
+    trace "[do_callbacks] txid=${txid}"
+    txid_where=" AND txid='${txid}'"
+  fi
+
   # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql 'SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id NOT NULL AND w.callback0conf NOT NULL AND w.watching')
+  local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON w.watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
   trace "[do_callbacks] callbacks0conf=${callbacks}"
 
   local returncode
@@ -25,12 +34,12 @@ do_callbacks() {
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
       address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching SET calledback0conf=1 WHERE address=\"${address}\""
+      sql "UPDATE watching SET calledback0conf=true WHERE address='${address}'"
       trace_rc $?
     fi
   done
 
-  callbacks=$(sql 'SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message, hash FROM watching w, watching_tx wt, tx t LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE w.id = watching_id AND tx_id = t.id AND NOT calledback1conf AND confirmations>0 AND w.callback1conf NOT NULL AND w.watching')
+  callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w JOIN watching_tx wt ON w.id = wt.watching_id JOIN tx t ON wt.tx_id = t.id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
   trace "[do_callbacks] callbacks1conf=${callbacks}"
 
   for row in ${callbacks}
@@ -39,19 +48,25 @@ do_callbacks() {
     returncode=$?
     if [ "${returncode}" -eq 0 ]; then
       address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching SET calledback1conf=1, watching=0 WHERE address=\"${address}\""
+      sql "UPDATE watching SET calledback1conf=true, watching=false WHERE address='${address}'"
       trace_rc $?
     fi
   done
 
-  callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
-  trace "[do_callbacks] ln_callbacks=${callbacks}"
+  if [ -z "${txid}" ]; then
+    trace "[do_callbacks] Processing LN callbacks..."
 
-  for row in ${callbacks}
-  do
-    ln_manage_callback ${row}
-    trace_rc $?
-  done
+    callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
+    trace "[do_callbacks] ln_callbacks=${callbacks}"
+
+    for row in ${callbacks}
+    do
+      ln_manage_callback ${row}
+      trace_rc $?
+    done
+  else
+    trace "[do_callbacks] called for a specific txid, skipping LN callbacks"
+  fi
 
   ) 200>./.callbacks.lock
 }
@@ -70,7 +85,7 @@ ln_manage_callback() {
   if [ -z "${callback_url}" ]; then
     # No callback url provided for that invoice
     trace "[ln_manage_callback] No callback url provided for that invoice"
-    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
+    sql "UPDATE ln_invoice SET calledback=true WHERE id=${id}"
     trace_rc $?
     return
   fi
@@ -112,12 +127,14 @@ ln_manage_callback() {
   #   "expires_at":
   # }
 
-  data="{\"id\":\"${id}\","
+  data="{\"id\":${id},"
   data="${data}\"label\":\"${label}\","
   data="${data}\"bolt11\":\"${bolt11}\","
   data="${data}\"callback_url\":\"${callback_url}\","
   data="${data}\"payment_hash\":\"${payment_hash}\","
-  data="${data}\"msatoshi\":${msatoshi},"
+  if [ -n "${msatoshi}" ]; then
+    data="${data}\"msatoshi\":${msatoshi},"
+  fi
   data="${data}\"status\":\"${status}\","
   data="${data}\"pay_index\":${pay_index},"
   data="${data}\"msatoshi_received\":${msatoshi_received},"
@@ -130,11 +147,11 @@ ln_manage_callback() {
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -eq 0 ]; then
-    sql "UPDATE ln_invoice SET calledback=1 WHERE id=\"${id}\""
+    sql "UPDATE ln_invoice SET calledback=true WHERE id=${id}"
     trace_rc $?
   else
     trace "[ln_manage_callback] callback failed: ${callback_url}"
-    sql "UPDATE ln_invoice SET callback_failed=1 WHERE id=\"${id}\""
+    sql "UPDATE ln_invoice SET callback_failed=true WHERE id=${id}"
     trace_rc $?
   fi
 
@@ -210,7 +227,6 @@ build_callback() {
   vsize=$(echo "${row}" | cut -d '|' -f10)
   trace "[build_callback] vsize=${vsize}"
   is_replaceable=$(echo "${row}" | cut -d '|' -f15)
-  is_replaceable=$([ "${is_replaceable}" -eq "1" ] && echo "true" || echo "false")
   trace "[build_callback] is_replaceable=${is_replaceable}"
   blockhash=$(echo "${row}" | cut -d '|' -f11)
   trace "[build_callback] blockhash=${blockhash}"
@@ -232,7 +248,7 @@ build_callback() {
   event_message=$(echo "${row}" | cut -d '|' -f20)
   trace "[build_callback] event_message=${event_message}"
 
-  data="{\"id\":\"${id}\","
+  data="{\"id\":${id},"
   data="${data}\"address\":\"${address}\","
   data="${data}\"txid\":\"${txid}\","
   data="${data}\"hash\":\"${hash}\","

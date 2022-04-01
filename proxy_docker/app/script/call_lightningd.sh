@@ -2,6 +2,22 @@
 
 . ./trace.sh
 
+ln_call_lightningd() {
+  trace "Entering ln_call_lightningd()..."
+
+  local response
+  local returncode
+
+  trace "[ln_call_lightningd] ./lightning-cli $(printf " \"%s\"" "$@")"
+  response=$(./lightning-cli "$@")
+  returncode=$?
+  trace_rc ${returncode}
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 ln_create_invoice() {
   trace "Entering ln_create_invoice()..."
 
@@ -23,7 +39,7 @@ ln_create_invoice() {
   if [ "${callback_url}" != "null" ]; then
     # If not null, let's add double-quotes so we don't need to add the double-quotes in the sql insert,
     # so if it's null, it will insert the actual sql NULL value.
-    callback_url="\"${callback_url}\""
+    callback_url="'${callback_url}'"
   fi
 
   #/proxy $ ./lightning-cli invoice 10000 "t1" "t1d" 60
@@ -34,11 +50,9 @@ ln_create_invoice() {
   #}
 
   if [ "${msatoshi}" = "null" ]; then
-    trace "[ln_create_invoice] ./lightning-cli invoice \"any\" \"${label}\" \"${description}\" ${expiry}"
-    result=$(./lightning-cli invoice "any" "${label}" "${description}" ${expiry})
+    result=$(ln_call_lightningd invoice "any" "${label}" "${description}" ${expiry})
   else
-    trace "[ln_create_invoice] ./lightning-cli invoice ${msatoshi} \"${label}\" \"${description}\" ${expiry}"
-    result=$(./lightning-cli invoice ${msatoshi} "${label}" "${description}" ${expiry})
+    result=$(ln_call_lightningd invoice ${msatoshi} "${label}" "${description}" ${expiry})
   fi
   returncode=$?
   trace_rc ${returncode}
@@ -57,36 +71,33 @@ ln_create_invoice() {
     # Let's get the connect string if provided in configuration
     local connectstring=$(get_connection_string)
 
-    if [ "${msatoshi}" = "null" ]; then
-      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, \"${description}\", \"unpaid\")"
-    else
-      sql "INSERT OR IGNORE INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status) VALUES (\"${label}\", \"${bolt11}\", ${callback_url}, \"${payment_hash}\", ${expires_at}, ${msatoshi}, \"${description}\", \"unpaid\")"
-    fi
-    trace_rc $?
-    id=$(sql "SELECT id FROM ln_invoice WHERE bolt11=\"${bolt11}\"")
+    id=$(sql "INSERT INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status)"\
+" VALUES ('${label}','${bolt11}', ${callback_url},'${payment_hash}', ${expires_at}, ${msatoshi}, '${description}', 'unpaid')"\
+" RETURNING id" \
+    "SELECT id FROM ln_invoice WHERE bolt11='${bolt11}'")
     trace_rc $?
 
     # {
-    #   "id":"",
+    #   "id":123,
     #   "label":"",
     #   "bolt11":"",
     #   "connectstring":"",
     #   "callbackUrl":"",
     #   "payment_hash":"",
-    #   "msatoshi":,
+    #   "msatoshi":123456,
     #   "status":"unpaid",
     #   "description":"",
-    #   "expires_at":
+    #   "expires_at":21312312
     # }
 
-    data="{\"id\":\"${id}\","
+    data="{\"id\":${id},"
     data="${data}\"label\":\"${label}\","
     data="${data}\"bolt11\":\"${bolt11}\","
     if [ -n "${connectstring}" ]; then
       data="${data}\"connectstring\":\"${connectstring}\","
     fi
     if [ "${callback_url}" != "null" ]; then
-      data="${data}\"callbackUrl\":${callback_url},"
+      data="${data}\"callbackUrl\":\"${callback_url}\","
     fi
     data="${data}\"payment_hash\":\"${payment_hash}\","
     if [ "${msatoshi}" != "null" ]; then
@@ -130,10 +141,8 @@ ln_getinfo() {
 
   local result
 
-  result=$(./lightning-cli getinfo)
+  result=$(ln_call_lightningd getinfo)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getinfo] result=${result}"
 
   echo "${result}"
 
@@ -144,12 +153,11 @@ ln_getinvoice() {
   trace "Entering ln_getinvoice()..."
 
   local label=${1}
+  trace "[ln_getinvoice] label=${label}"
   local result
 
-  result=$(./lightning-cli listinvoices ${label})
+  result=$(ln_call_lightningd listinvoices ${label})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getinvoice] result=${result}"
 
   echo "${result}"
 
@@ -164,11 +172,8 @@ ln_delinvoice() {
   local returncode
   local rc
 
-  trace "[ln_delinvoice] ./lightning-cli delinvoice ${label} \"unpaid\""
-  result=$(./lightning-cli delinvoice ${label} "unpaid")
+  result=$(ln_call_lightningd delinvoice ${label} "unpaid")
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_delinvoice] result=${result}"
 
   if [ "${returncode}" -ne "0" ]; then
     # Special case of error: if status is expired, we're ok
@@ -194,10 +199,8 @@ ln_decodebolt11() {
   local bolt11=${1}
   local result
 
-  result=$(./lightning-cli decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_decodebolt11] result=${result}"
 
   echo "${result}"
 
@@ -227,11 +230,8 @@ ln_connectfund() {
   trace "[ln_connectfund] callback_url=${callback_url}"
 
   # Let's first try to connect to peer
-  trace "[ln_connectfund] ./lightning-cli connect ${peer}"
-  result=$(./lightning-cli connect ${peer})
+  result=$(ln_call_lightningd connect ${peer})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_connectfund] result=${result}"
 
   if [ "${returncode}" -eq "0" ]; then
     # Connected
@@ -248,11 +248,8 @@ ln_connectfund() {
     trace "[ln_connectfund] nodeId=${nodeId}"
 
     # Now let's fund a channel with peer
-    trace "[ln_connectfund] ./lightning-cli fundchannel ${nodeId} ${msatoshi}"
-    result=$(./lightning-cli fundchannel ${nodeId} ${msatoshi})
+    result=$(ln_call_lightningd fundchannel ${nodeId} $((${msatoshi}/1000)))
     returncode=$?
-    trace_rc ${returncode}
-    trace "[ln_connectfund] result=${result}"
 
     if [ "${returncode}" -eq "0" ]; then
       # funding succeeded
@@ -306,9 +303,9 @@ ln_connectfund() {
 ln_pay() {
   trace "Entering ln_pay()..."
 
-  # We'll use pay that will manage the routing and waitsendpay to make sure a payment succeeded or failed.
-  # 1. pay
-  # 2. waitsendpay IF pay returned a status of "pending" (code 200)
+  # Let's try to pay (MPP enabled) for 85 seconds.
+  # If this doesn't work for a routing reason, let's try to legacypay (MPP disabled) for 85 seconds.
+  # If this doesn't work, return an error.
 
   local result
   local returncode
@@ -325,11 +322,8 @@ ln_pay() {
   trace "[ln_pay] expected_description=${expected_description}"
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
-  trace "[ln_pay] ./lightning-cli decodepay ${bolt11}"
-  result=$(./lightning-cli decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay ${bolt11})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_pay] result=${result}"
 
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
@@ -353,26 +347,74 @@ ln_pay() {
       trace "[ln_pay] Expected description <> Invoice description"
       returncode=1
     else
-      # Amount and description are as expected (or empty description), let's pay!
-      trace "[ln_pay] Amount and description are as expected, let's try to pay!"
+      # Amount and description are as expected (or empty description), let's see if already paid
+      trace "[ln_pay] Amount and description are as expected, let's see if already paid"
+      result=$(ln_listpays "${bolt11}")
+      returncode=$?
+      trace_rc ${returncode}
+      trace "[ln_pay] result=${result}"
+      local complete pending failed
+      complete=$(echo "${result}" | jq -er '.pays | map(select(.status == "complete")) | last')
+      trace "[ln_pay] complete=${complete}"
+      pending=$(echo "${result}" | jq -er '.pays | map(select(.status == "pending")) | last')
+      trace "[ln_pay] pending=${pending}"
+      failed=$(echo "${result}" | jq -er '.pays | map(select(.status == "failed")) | last')
+      trace "[ln_pay] failed=${failed}"
+
+      if [ "${complete}" != "null" ]; then
+        trace "[ln_pay] responding complete"
+        echo "${complete}"
+        return 0
+      fi
+      if [ "${pending}" != "null" ]; then
+        trace "[ln_pay] responding pending"
+        echo "${pending}"
+        return 1
+      fi
+
+      # Payment not previously done, let's pay!
+      trace "[ln_pay] Payment not previously done, let's try to pay with MPP!"
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=15)
+        result=$(ln_call_lightningd pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=85)
       else
-        trace "[ln_pay] ./lightning-cli pay -k bolt11=${bolt11} retry_for=15"
-        result=$(./lightning-cli pay -k bolt11=${bolt11} retry_for=15)
+        result=$(ln_call_lightningd pay -k bolt11=${bolt11} retry_for=85)
       fi
       returncode=$?
       trace_rc ${returncode}
       trace "[ln_pay] result=${result}"
 
-      # The result should contain a status field with value pending, complete or failed.
-      # If complete, we can return with success.
-      # If failed, we can return with failed.
-      # If pending, we should keep trying until complete or failed status, before responding to client.
-      # We'll use waitsendpay for that.
+      # Successful payment example:
+      #
+      # {
+      #    "destination": "029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb",
+      #    "payment_hash": "0d1e62210e7af9a4146258652fd4cfecd2638086850583e994a103884e2b4e78",
+      #    "created_at": 1631200188.550,
+      #    "parts": 1,
+      #    "msatoshi": 530114,
+      #    "amount_msat": "530114msat",
+      #    "msatoshi_sent": 530114,
+      #    "amount_sent_msat": "530114msat",
+      #    "payment_preimage": "2672c5fa280367222bf30db82566b78909927a67d5756d5ae0227b2ff8f3a907",
+      #    "status": "complete"
+      # }
+      #
+      #
+      # Failed payment example:
+      # {
+      #    "code": 210,
+      #    "message": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+      #    "attempts": [
+      #       {
+      #          "status": "failed",
+      #          "failreason": "Destination 029b26c73b2c19ec9bdddeeec97c313670c96b6414ceacae0fb1b3502e490a6cbb is not reachable directly and all routehints were unusable.",
+      #          "partid": 0,
+      #          "amount": "528214msat"
+      #       }
+      #    ]
+      # }
+      #
 
       if [ "${returncode}" -ne "0" ]; then
         trace "[ln_pay] payment not complete, let's see what's going on."
@@ -383,78 +425,108 @@ ln_pay() {
           # code tag not null, so there's an error
           trace "[ln_pay] Error code found, code=${code}"
 
-          if [ "${code}" -eq "200" ]; then
-            trace "[ln_pay] Code 200, let's fetch status in data, should be pending..."
-            status=$(echo "${result}" | jq -r ".data.status")
-            trace "[ln_pay] status=${status}"
-          else
+          # -1: Catchall nonspecific error.
+          # 201: Already paid with this hash using different amount or destination.
+          # 203: Permanent failure at destination. The data field of the error will be routing failure object.
+          # 205: Unable to find a route.
+          # 206: Route too expensive. Either the fee or the needed total locktime for the route exceeds your maxfeepercent or maxdelay settings, respectively. The data field of the error will indicate the actual fee as well as the feepercent percentage that the fee has of the destination payment amount. It will also indicate the actual delay along the route.
+          # 207: Invoice expired. Payment took too long before expiration, or already expired at the time you initiated payment. The data field of the error indicates now (the current time) and expiry (the invoice expiration) as UNIX epoch time in seconds.
+          # 210: Payment timed out without a payment in progress.
+
+          # Let's try pay if code NOT 207 or 201.
+
+          if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ]; then
             trace "[ln_pay] Failure code, response will be the cli result."
+          else
+            trace "[ln_pay] Ok let's deal with potential routing failures and retry without MPP..."
+
+            if [ "${invoice_msatoshi}" = "null" ]; then
+              # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
+              result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=85)
+            else
+              result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} retry_for=85)
+            fi
+            returncode=$?
+            trace_rc ${returncode}
+            trace "[ln_pay] result=${result}"
+
+            if [ "${returncode}" -ne "0" ]; then
+              trace "[ln_pay] Failed!"
+            else
+              trace "[ln_pay] Successfully paid!"
+            fi
+
+            # Successful payment example:
+            #
+            # {
+            #    "id": 16,
+            #    "payment_hash": "f00877afeec4d771c2db68af80b8afa5dad3b495dad498828327e484c93f67d5",
+            #    "destination": "021ec6ccede19caa0bc7d7f9699c73e63cb2b79a4877529a60d7ac6a4ebb03487a",
+            #    "msatoshi": 1234,
+            #    "amount_msat": "1234msat",
+            #    "msatoshi_sent": 1235,
+            #    "amount_sent_msat": "1235msat",
+            #    "created_at": 1633373202,
+            #    "status": "complete",
+            #    "payment_preimage": "373cd9a0f83426506f1535f6ca1f08f279f0bd82d257fd3fc8cd49fbc25750f2",
+            #    "bolt11": "lntb1ps4kjlrpp57qy80tlwcnthrskmdzhcpw905hdd8dy4mt2f3q5ryljgfjflvl2sdq9u2d2zxqr3jscqp2sp5c2qykk0pdaeh2yrvn4cpkchsnyxwjnaptujggsd6ldqjfd8jhh3qrzjqwyx8nu2hygyvgc02cwdtvuxe0lcxz06qt3lpsldzcdr46my5epmj85hhvqqqtsqqqqqqqlgqqqqqqgq9q9qyyssqpnwtw6mzxu8pr5mrm8677ke8p5fjcu6dyrrvuy8j5f5p8mzv2phr2y0yx3z7mvgf5uqzzdytegg04u7hcu8ma50692cg69cdtsgw9hsph0xeha"
+            # }
+
+            # Failure response examples:
+            #
+            # {
+            #    "code": -32602,
+            #    "message": "03c05f973d9c7218e7aec4f52c2c8ab395f51f41d627c398237b5ff056f46faf09: unknown destination node_id (no public channels?)"
+            # }
+            #
+            # {
+            #    "code": 206,
+            #    "message": "Route wanted fee of 16101625msat"
+            # }
+            #
+            # {
+            #    "code": 207,
+            #    "message": "Invoice expired"
+            # }
+            #
           fi
         else
           # code tag not found
-          trace "[ln_pay] No error code, getting the status..."
-          status=$(echo "${result}" | jq -r ".status")
-          trace "[ln_pay] status=${status}"
+          trace "[ln_pay] No error code..."
         fi
-
-        if [ "${status}" = "pending" ]; then
-          trace "[ln_pay] Ok let's deal with pending status with waitsendpay."
-
-          payment_hash=$(echo "${result}" | jq -r ".data.payment_hash")
-          trace "[ln_pay] ./lightning-cli waitsendpay ${payment_hash} 15"
-          result=$(./lightning-cli waitsendpay ${payment_hash} 15)
-          returncode=$?
-          trace_rc ${returncode}
-          trace "[ln_pay] result=${result}"
-
-          if [ "${returncode}" -ne "0" ]; then
-            trace "[ln_pay] Failed!"
-          else
-            trace "[ln_pay] Successfully paid!"
-          fi
-        fi
-      else
-        trace "[ln_pay] Successfully paid!"
       fi
     fi
   fi
 
-# Example of error result:
-#
-# { "code" : 204, "message" : "failed: WIRE_TEMPORARY_CHANNEL_FAILURE (Outgoing subdaemon died)", "data" :
-# {
-#   "erring_index": 0,
-#   "failcode": 4103,
-#   "erring_node": "031b867d9d6631a1352cc0f37bcea94bd5587a8d4f40416c4ce1a12511b1e68f56",
-#   "erring_channel": "1452982:62:0"
-# } }
-#
-#
-# Example of successful result:
-#
-# {
-#   "id": 44,
-#   "payment_hash": "de648062da7117903291dab2075881e49ddd78efbf82438e4a2f486a7ebe0f3a",
-#   "destination": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
-#   "msatoshi": 207000,
-#   "msatoshi_sent": 207747,
-#   "created_at": 1548380406,
-#   "status": "complete",
-#   "payment_preimage": "a7ef27e9a94d63e4028f35ca4213fd9008227ad86815cd40d3413287d819b145",
-#   "description": "Order 43012 - Satoshi Larrivee",
-#   "getroute_tries": 1,
-#   "sendpay_tries": 1,
-#   "route": [
-#     {
-#       "id": "02be93d1dad1ccae7beea7b42f8dbcfbdafb4d342335c603125ef518200290b450",
-#       "channel": "1452749:174:0",
-#       "msatoshi": 207747,
-#       "delay": 10
-#     }
-#   ],
-#   "failures": [
-#   ]
-# }
+  echo "${result}"
+
+  return ${returncode}
+}
+
+ln_listpays() {
+  trace "Entering ln_listpays()..."
+
+  local result
+  local bolt11=${1}
+  trace "[ln_listpays] bolt11=${bolt11}"
+
+  result=$(ln_call_lightningd listpays ${bolt11})
+  returncode=$?
+
+  echo "${result}"
+
+  return ${returncode}
+}
+
+ln_paystatus() {
+  trace "Entering ln_paystatus()..."
+
+  local result
+  local bolt11=${1}
+  trace "[ln_paystatus] bolt11=${bolt11}"
+
+  result=$(ln_call_lightningd paystatus ${bolt11})
+  returncode=$?
 
   echo "${result}"
 
@@ -466,10 +538,8 @@ ln_newaddr() {
 
   local result
 
-  result=$(./lightning-cli newaddr)
+  result=$(ln_call_lightningd newaddr)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_newaddr] result=${result}"
 
   echo "${result}"
 
@@ -478,54 +548,51 @@ ln_newaddr() {
 
 ln_listpeers() {
   trace "Entering ln_listpeers()..."
+
   local id=${1}
   local result
-  result=$(./lightning-cli listpeers ${id})
+
+  result=$(ln_call_lightningd listpeers ${id})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listpeers] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 ln_listfunds() {
-  trace "Entering ln_listpeers()..."
+  trace "Entering ln_listfunds()..."
+
   local result
-  result=$(./lightning-cli listfunds)
+
+  result=$(ln_call_lightningd listfunds)
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listfunds] result=${result}"
+
   echo "${result}"
-  return ${returncode}
-}
-ln_listpays() {
-  trace "Entering ln_listpays()..."
-  local result
-  result=$(./lightning-cli listpays)
-  returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_listpays] result=${result}"
-  echo "${result}"
+
   return ${returncode}
 }
 ln_getroute() {
   trace "Entering ln_getroute()..."
   # Defaults used from c-lightning documentation
-  local result 
+
+  local result
   local id=${1}
   local msatoshi=${2}
   local riskfactor=${3}
-  result=$(./lightning-cli getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor}) 
+
+  result=$(ln_call_lightningd getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_getroute] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 
 ln_withdraw() {
   trace "Entering ln_withdraw()..."
   # Defaults used from c-lightning documentation
-  local result 
+
+  local result
   local request=${1}
   local destination=$(echo "${request}" | jq -r ".destination")
   local satoshi=$(echo "${request}" | jq -r ".satoshi")
@@ -534,12 +601,13 @@ ln_withdraw() {
   if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
       satoshi="all"
   fi
-  result=$(./lightning-cli withdraw ${destination} ${satoshi} ${feerate}) 
+
+  result=$(ln_call_lightningd withdraw ${destination} ${satoshi} ${feerate})
   returncode=$?
-  trace_rc ${returncode}
-  trace "[ln_withdraw] result=${result}"
+
   echo "${result}"
+
   return ${returncode}
 }
 
-case "${0}" in *call_lightningd.sh) ./lightning-cli $@;; esac
+case "${0}" in *call_lightningd.sh) ln_call_lightningd $@;; esac

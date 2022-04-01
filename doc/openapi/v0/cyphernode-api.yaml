@@ -62,6 +62,9 @@ paths:
                 eventMessage:
                   description: "Will be part of the published message on confirmations"
                   type: "string"
+                label:
+                  description: "Label for this address that will be imported in Bitcoin Core"
+                  type: "string"
       responses:
         '200':
           description: "successfully created"
@@ -221,8 +224,6 @@ paths:
                 - "pub32"
                 - "path"
                 - "nstart"
-                - "unconfirmedCallbackURL"
-                - "confirmedCallbackURL"
               properties:
                 label:
                   description: "Label for that xpub.  Can be used, instead for xpub, for future references in xpub-related endpoints."
@@ -1096,8 +1097,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
-  /getnewaddress:
+  /getnewaddress/{address_type}:
     get:
+      parameters:
+        - in: "path"
+          name: "address_type"
+          description: "Address type"
+          required: false
+          schema:
+            type: "string"
+            enum: ["legacy", "p2sh-segwit", "bech32"]
       tags:
         - "spending wallet"
         - "core features"
@@ -1114,6 +1123,9 @@ paths:
                 properties:
                   address:
                     $ref: '#/components/schemas/TypeAddressString'
+                  address_type:
+                    type: "string"
+                    enum: ["legacy", "p2sh-segwit", "bech32"]
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '503':
@@ -1122,6 +1134,102 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getnewaddress:
+    post:
+      tags:
+        - "spending wallet"
+        - "core features"
+      summary: "Generates a new address on the spending wallet"
+      description: "Generates a new address on the spending wallet. Useful to refill the spending wallet from cold wallet (ie Trezor)."
+      operationId: "getSpendingWalletNewAddress"
+      requestBody:
+        description: "Bitcoin address properties"
+        required: false
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                address_type:
+                  type: "string"
+                  enum: ["legacy", "p2sh-segwit", "bech32"]
+                label:
+                  type: "string"
+      responses:
+        '200':
+          description: "successfully got an address"
+          content:
+            application/json:
+              schema:
+                type: "object"
+              required:
+                - "address"
+                properties:
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+                  address_type:
+                    type: "string"
+                    enum: ["legacy", "p2sh-segwit", "bech32"]
+                  label:
+                    type: "string"
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /validateaddress/{address}:
+    get:
+      parameters:
+        - in: "path"
+          name: "address"
+          description: "address string to validate"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "bitcoin"
+        - "core features"
+      summary: "Get the detailed information about the given address"
+      description: "Returns the detailed information about the given address"
+      operationId: "validateAddress"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "isvalid"
+                properties:
+                  isvalid:
+                    type: "boolean"
+                  address:
+                    $ref: '#/components/schemas/TypeAddressString'
+                  scriptPubKey:
+                    type: "string"
+                  isscript:
+                    type: "boolean"
+                  iswitness:
+                    type: "boolean"
+                  witness_version:
+                    type: "number"
+                  witness_program:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+
   /spend:
     post:
       tags:
@@ -1795,6 +1903,81 @@ paths:
                       properties:
                         address:
                           $ref: '#/components/schemas/TypeAddressString'
+        '400':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /deriveindex_bitcoind/{indexSpecifier}:
+    get:
+      parameters:
+        - in: "path"
+          name: "indexSpecifier"
+          description: "Index specifier. Either an integer or a range in the form n-m"
+          required: true
+          schema:
+            type: "string"
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Fast address derivation using configured xpub key and derivation path"
+      description: "Fast address derivation for supplied index. Must be used with derivation.pub32 and derivation.path properties in config.properties."
+      operationId: "deriveIndex"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TypeAddressString'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /derivepubpath_bitcoind:
+    post:
+      tags:
+        - "addresses"
+        - "core features"
+      summary: "Fast address derivation using supplied xpub key and derivation path"
+      description: "Fast address derivation for supplied pub32 and path.  config.properties' derivation.pub32 and derivation.path are not used."
+      operationId: "derivePubPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              required:
+                - "pub32"
+                - "path"
+              properties:
+                pub32:
+                  description: "xpub/ypub/zpub/tpub/upub/vpub used to derive address(es)"
+                  type: "string"
+                path:
+                  description: "Derivation path including the index, in the form n or n-m (ex.: 0/44'/86 or 0/44'/62-77)"
+                  type: "string"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  $ref: '#/components/schemas/TypeAddressString'
         '400':
           $ref: '#/components/schemas/ApiResponseInvalidInput'
         '403':
@@ -2788,6 +2971,7 @@ components:
         - "unconfirmedCallbackURL"
         - "confirmedCallbackURL"
         - "eventMessage"
+        - "label"
       properties:
         id:
           type: "string"
@@ -2809,6 +2993,9 @@ components:
           description: "Async callback in case of activity on address"
           type: "string"
           format: "url"
+        label:
+          description: "Label for this address that will be imported in Bitcoin Core"
+          type: "string"
         estimatesmartfee2blocks:
           type: "string"
         estimatesmartfee6blocks:
@@ -3208,9 +3395,9 @@ components:
       type: "string"
       pattern: "^[a-fA-F0-9]+$"
     TypeAddressString:
-      description: "base58 check encoded address"
+      description: "base58 or base32 check encoded address"
       type: "string"
-      pattern: "^[a-km-zA-HJ-NP-Z1-9]{26,35}$"
+      pattern: "^(bc1|tb1|bcrt1)[ac-hj-np-z02-9]{9,71}|[123mn][a-km-zA-HJ-NP-Z1-9]{26,33}$"
     TypeXpubString:
       description: "base58 check encoded xpub"
       type: "string"

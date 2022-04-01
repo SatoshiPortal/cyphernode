@@ -29,6 +29,8 @@ confirmation() {
 
   local returncode
   local txid=${1}
+  local bypass_callbacks=${2}
+  trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
   local tx_details
   tx_details="$(get_transaction ${txid})"
   returncode=$?
@@ -42,7 +44,7 @@ confirmation() {
   # First of all, let's make sure we're working on watched addresses...
   local address
   local addresseswhere
-  local addresses=$(echo "${tx_details}" | jq ".result.details[].address")
+  local addresses=$(echo "${tx_details}" | jq -r ".result.details[].address")
 
   local notfirst=false
   local IFS=$'\n'
@@ -51,9 +53,9 @@ confirmation() {
     trace "[confirmation] address=${address}"
 
     if ${notfirst}; then
-      addresseswhere="${addresseswhere},${address}"
+      addresseswhere="${addresseswhere},'${address}'"
     else
-      addresseswhere="${address}"
+      addresseswhere="'${address}'"
       notfirst=true
     fi
   done
@@ -64,11 +66,11 @@ confirmation() {
   fi
   ########################################################################################################
 
-  local tx=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
+  local tx=$(sql "SELECT id FROM tx WHERE txid='${txid}'")
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
-  local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+  local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -98,36 +100,33 @@ confirmation() {
     local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
-      tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
-      tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      tx_blockhash="$(echo "${tx_details}" | jq -r '.result.blockhash')"
+      tx_blockheight=$(get_block_info ${tx_blockhash} | jq '.result.height')
+      tx_blockhash="'${tx_blockhash}'"
       tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
-    sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}-$$.blob'))"
-    trace_rc $?
-
-    id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
+    id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime)"\
+" VALUES ('${txid}', '${tx_hash}', ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime})"\
+" ON CONFLICT (txid) DO"\
+" UPDATE SET blockhash=${tx_blockhash}, blockheight=${tx_blockheight}, blocktime=${tx_blocktime}, confirmations=${tx_nb_conf}"\
+" RETURNING id" \
+    "SELECT id FROM tx WHERE txid='${txid}'")
     trace_rc $?
 
   else
     # TX found in our DB.
     # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf) or spending to a watched address (in this case, spend inserted the tx in the DB)
 
-    local tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
+    local tx_blockhash=$(echo "${tx_details}" | jq -r '.result.blockhash')
     trace "[confirmation] tx_blockhash=${tx_blockhash}"
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(get_block_info $(echo "${tx_blockhash}" | tr -d '"') | jq '.result.height')
+      local tx_blockheight=$(get_block_info "${tx_blockhash}" | jq '.result.height')
       local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
 
-      sql "UPDATE tx SET
-        confirmations=${tx_nb_conf},
-        blockhash=${tx_blockhash},
-        blockheight=${tx_blockheight},
-        blocktime=${tx_blocktime},
-        raw_tx=readfile('rawtx-${txid}-$$.blob')
-        WHERE txid=\"${txid}\""
+      sql "UPDATE tx SET confirmations=${tx_nb_conf}, blockhash='${tx_blockhash}', blockheight=${tx_blockheight}, blocktime=${tx_blocktime} WHERE txid='${txid}'"
       trace_rc $?
     fi
     id_inserted=${tx}
@@ -160,7 +159,8 @@ confirmation() {
       # If the tx is batched and pays multiple watched addresses, we have to insert
       # those additional addresses in watching_tx!
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      sql "INSERT OR IGNORE INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"
+      sql "INSERT INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"\
+" ON CONFLICT DO NOTHING"
       trace_rc $?
     else
       trace "[confirmation] For this tx, there's already watching_tx rows"
@@ -184,8 +184,8 @@ confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      trace "[confirmation] mosquitto_pub -h broker -t tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
@@ -196,7 +196,13 @@ confirmation() {
   ) 201>./.confirmation.lock
 
   # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
-  do_callbacks
+  # If this was called by missed_conf algo, we don't want to process all the callbacks now.  We wait
+  # for next cron.
+  if [ -z "${bypass_callbacks}" ]; then
+    trace "[confirmation] Let's do the callbacks!"
+    do_callbacks "${txid}"
+  fi
+
   echo '{"result":"confirmed"}'
 
   return 0

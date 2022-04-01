@@ -34,8 +34,7 @@ main() {
   done
 }
 
-export TRACING=1
-
 main
+returncode=$?
 trace "[requesthandler] exiting"
-exit $?
+exit ${returncode}

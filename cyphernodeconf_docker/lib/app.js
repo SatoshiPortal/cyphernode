@@ -87,6 +87,7 @@ module.exports = class App {
       proxy_version: process.env.PROXY_VERSION,
       proxycron_version: process.env.PROXYCRON_VERSION,
       pycoin_version: process.env.PYCOIN_VERSION,
+      postgres_version: process.env.POSTGRES_VERSION,
       traefik_version: process.env.TRAEFIK_VERSION,
       mosquitto_version: process.env.MOSQUITTO_VERSION,
       otsclient_version: process.env.OTSCLIENT_VERSION,
@@ -149,6 +150,7 @@ module.exports = class App {
         'cyphernode/proxy': this.sessionData.proxy_version,
         'cyphernode/proxycron': this.sessionData.proxycron_version,
         'cyphernode/pycoin': this.sessionData.pycoin_version,
+        'cyphernode/postgres': this.sessionData.postgres_version,
         'cyphernode/otsclient': this.sessionData.otsclient_version,
         'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
@@ -361,6 +363,7 @@ module.exports = class App {
 
     const pathProps = [
       'gatekeeper_datapath',
+      'postgres_datapath',
       'logs_datapath',
       'traefik_datapath',
       'tor_datapath',
@@ -485,6 +488,13 @@ module.exports = class App {
         host: 'pycoin',
         networks: ['cyphernodenet'],
         docker: 'cyphernode/pycoin:'+this.config.docker_versions['cyphernode/pycoin']
+      },
+      {
+        name: 'Postgres',
+        label: 'postgres',
+        host: 'postgres',
+        networks: ['cyphernodenet'],
+        docker: 'postgres:'+this.config.docker_versions['cyphernode/postgres']
       },
       {
         name: 'Notifier',

@@ -9,6 +9,8 @@ createbatcher() {
 
   # POST http://192.168.111.152:8080/createbatcher
   #
+  # Will UPDATE the batcher if it already exists (as per label)
+  #
   # args:
   # - batcherLabel, optional, id can be used to reference the batcher
   # - confTarget, optional, overriden by batchspend's confTarget, default Bitcoin Core conf_target will be used if not supplied
@@ -22,7 +24,8 @@ createbatcher() {
 
   local request=${1}
   local response
-  local label=$(echo "${request}" | jq ".batcherLabel")
+  local returncode
+  local label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[createbatcher] label=${label}"
   local conf_target=$(echo "${request}" | jq ".confTarget")
   trace "[createbatcher] conf_target=${conf_target}"
@@ -37,13 +40,20 @@ createbatcher() {
 
   local batcher_id
 
-  batcher_id=$(sql "INSERT OR IGNORE INTO batcher (label, conf_target, feerate) VALUES (${label}, ${conf_target}, ${feerate}); SELECT LAST_INSERT_ROWID();")
+  batcher_id=$(sql "INSERT INTO batcher (label, conf_target, feerate)"\
+" VALUES ('${label}', ${conf_target}, ${feerate})"\
+" ON CONFLICT (label) DO"\
+" UPDATE SET conf_target=${conf_target}, feerate=${feerate}"\
+" RETURNING id" \
+  "SELECT id FROM batcher WHERE label='${label}'")
+  returncode=$?
+  trace_rc ${returncode}
 
-  if ("${batcher_id}" -eq "0"); then
+  if [ "${returncode}" -ne "0" ]; then
     trace "[createbatcher] Could not insert"
-    response='{"result":null,"error":{"code":-32700,"message":"Could not create batcher, label probably already exists","data":'${request}'}}'
+    response='{"result":null,"error":{"code":-32700,"message":"Could not create/update batcher","data":'${request}'}}'
   else
-    trace "[createbatcher] Inserted"
+    trace "[createbatcher] Inserted or updated, response=${batcher_id}"
     response='{"result":{"batcherId":'${batcher_id}'},"error":null}'
   fi
 
@@ -79,7 +89,7 @@ updatebatcher() {
 
   local id=$(echo "${request}" | jq ".batcherId")
   trace "[updatebatcher] id=${id}"
-  local label=$(echo "${request}" | jq ".batcherLabel")
+  local label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[updatebatcher] label=${label}"
   local conf_target=$(echo "${request}" | jq ".confTarget")
   trace "[updatebatcher] conf_target=${conf_target}"
@@ -99,12 +109,12 @@ updatebatcher() {
   # fi
 
   if [ "${id}" = "null" ]; then
-    whereclause="label=${label}"
+    whereclause="label='${label}'"
   else
     whereclause="id = ${id}"
   fi
 
-  sql "UPDATE batcher set label=${label}, conf_target=${conf_target}, feerate=${feerate} WHERE ${whereclause}"
+  sql "UPDATE batcher set label='${label}', conf_target=${conf_target}, feerate=${feerate} WHERE ${whereclause}"
   returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -ne 0 ]; then
@@ -151,13 +161,13 @@ addtobatch() {
   trace "[addtobatch] address=${address}"
   local amount=$(echo "${request}" | jq ".amount")
   trace "[addtobatch] amount=${amount}"
-  local label=$(echo "${request}" | jq ".outputLabel")
+  local label=$(echo "${request}" | jq -r ".outputLabel")
   trace "[addtobatch] label=${label}"
   local batcher_id=$(echo "${request}" | jq ".batcherId")
   trace "[addtobatch] batcher_id=${batcher_id}"
-  local batcher_label=$(echo "${request}" | jq ".batcherLabel")
+  local batcher_label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[addtobatch] batcher_label=${batcher_label}"
-  local webhook_url=$(echo "${request}" | jq ".webhookUrl")
+  local webhook_url=$(echo "${request}" | jq -r ".webhookUrl")
   trace "[addtobatch] webhook_url=${webhook_url}"
 
   # Let's lowercase bech32 addresses
@@ -185,7 +195,7 @@ addtobatch() {
 
   if [ "${batcher_id}" = "null" ]; then
     # Using batcher_label
-    batcher_id=$(sql "SELECT id FROM batcher WHERE label=${batcher_label}")
+    batcher_id=$(sql "SELECT id FROM batcher WHERE label='${batcher_label}'")
     returncode=$?
     trace_rc ${returncode}
   fi
@@ -195,7 +205,10 @@ addtobatch() {
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
   else
     # Check if address already pending for this batcher...
-    inserted_id=$(sql "SELECT id FROM recipient WHERE LOWER(address)=LOWER(\"${address}\") AND tx_id IS NULL AND batcher_id=${batcher_id}")
+    inserted_id=$(sql "SELECT id FROM recipient WHERE LOWER(address)=LOWER('${address}') AND tx_id IS NULL AND batcher_id=${batcher_id}")
+    returncode=$?
+    trace_rc ${returncode}
+
     if [ -n "${inserted_id}" ]; then
       response='{"result":null,"error":{"code":-32700,"message":"Duplicated address","data":'${request}'}}'
 
@@ -208,7 +221,9 @@ addtobatch() {
     fi
 
     # Insert the new destination
-    inserted_id=$(sql "INSERT INTO recipient (address, amount, webhook_url, batcher_id, label) VALUES (\"${address}\", ${amount}, ${webhook_url}, ${batcher_id}, ${label}); SELECT LAST_INSERT_ROWID();")
+    inserted_id=$(sql "INSERT INTO recipient (address, amount, webhook_url, batcher_id, label)"\
+" VALUES ('${address}', ${amount}, '${webhook_url}', ${batcher_id}, '${label}')"\
+" RETURNING id")
     returncode=$?
     trace_rc ${returncode}
 
@@ -277,7 +292,7 @@ removefrombatch() {
       if [ "${returncode}" -ne 0 ]; then
         response='{"result":null,"error":{"code":-32700,"message":"Output was not removed","data":'${request}'}}'
       else
-        row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
+        row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), DATE '0001-01-01'), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
         returncode=$?
         trace_rc ${returncode}
 
@@ -333,7 +348,7 @@ batchspend() {
 
   local batcher_id=$(echo "${request}" | jq ".batcherId")
   trace "[batchspend] batcher_id=${batcher_id}"
-  local batcher_label=$(echo "${request}" | jq ".batcherLabel")
+  local batcher_label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[batchspend] batcher_label=${batcher_label}"
   local conf_target=$(echo "${request}" | jq ".confTarget")
   trace "[batchspend] conf_target=${conf_target}"
@@ -348,7 +363,7 @@ batchspend() {
 
   if [ "${batcher_id}" = "null" ]; then
     # Using batcher_label
-    whereclause="label=${batcher_label}"
+    whereclause="label='${batcher_label}'"
   else
     whereclause="id=${batcher_id}"
   fi
@@ -420,11 +435,11 @@ batchspend() {
       trace "[batchspend] webhook_url=${webhook_url}"
 
       if [ -z "${recipientsjson}" ]; then
-        whereclause="\"${recipient_id}\""
+        whereclause="${recipient_id}"
         recipientsjson="\"${address}\":${amount}"
         webhooks_data="{\"outputId\":${recipient_id},\"address\":\"${address}\",\"amount\":${amount},\"webhookUrl\":\"${webhook_url}\"}"
       else
-        whereclause="${whereclause},\"${recipient_id}\""
+        whereclause="${whereclause},${recipient_id}"
         recipientsjson="${recipientsjson},\"${address}\":${amount}"
         webhooks_data="${webhooks_data},{\"outputId\":${recipient_id},\"address\":\"${address}\",\"amount\":${amount},\"webhookUrl\":\"${webhook_url}\"}"
       fi
@@ -449,7 +464,7 @@ batchspend() {
       tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
 
       # Amounts and fees are negative when spending so we absolute those fields
-      local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+      local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
       local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
       local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
       local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
@@ -459,21 +474,20 @@ batchspend() {
       tx_replaceable=$([ "${tx_replaceable}" = "yes" ] && echo "true" || echo "false")
       trace "[batchspend] tx_replaceable=${tx_replaceable}"
       local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
-      # Sometimes raw tx are too long to be passed as paramater, so let's write
-      # it to a temp file for it to be read by sqlite3 and then delete the file
-      echo "${tx_raw_details}" > batchspend-rawtx-${txid}-$$.blob
 
       # Get the info on the batch before setting it to done
-      row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
+      row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), DATE '0001-01-01'), COALESCE(SUM(amount), 0.00000000) FROM recipient WHERE tx_id IS NULL AND batcher_id=${batcher_id}")
+      returncode=$?
+      trace_rc ${returncode}
 
       # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-      id_inserted=$(sql "INSERT OR IGNORE INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target, raw_tx) VALUES (\"${txid}\", ${tx_hash}, 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target}, readfile('batchspend-rawtx-${txid}-$$.blob')); SELECT LAST_INSERT_ROWID();")
+      id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target)"\
+" VALUES ('${txid}', '${tx_hash}', 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target})"\
+" RETURNING id" \
+"SELECT id FROM tx WHERE txid='${txid}'")
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -eq 0 ]; then
-        if [ "${id_inserted}" -eq 0 ]; then
-          id_inserted=$(sql "SELECT id FROM tx WHERE txid=\"${txid}\"")
-        fi
         trace "[batchspend] id_inserted: ${id_inserted}"
         sql "UPDATE recipient SET tx_id=${id_inserted} WHERE id IN (${whereclause})"
         trace_rc $?
@@ -488,13 +502,10 @@ batchspend() {
       trace "[batchspend] total=${total}"
 
       response='{"result":{"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}
-      response="${response},\"status\":\"accepted\",\"txid\":\"${txid}\",\"hash\":${tx_hash},\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":[${webhooks_data}]}"
+      response="${response},\"status\":\"accepted\",\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}},\"outputs\":[${webhooks_data}]}"
       response="${response},\"error\":null}"
 
-      # Delete the temp file containing the raw tx (see above)
-      rm batchspend-rawtx-${txid}-$$.blob
-
-      batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":'${tx_hash}',"details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
+      batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":"'${tx_hash}'","details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
 
     else
       local message=$(echo "${data}" | jq -e ".error.message")
@@ -529,7 +540,7 @@ batch_check_webhooks() {
   local total
   local tx_id
 
-  local batching=$(sql "SELECT address, amount, r.id, webhook_url, b.id, t.txid, t.hash, t.timereceived, t.fee, t.size, t.vsize, t.is_replaceable, t.conf_target, t.id FROM recipient r, batcher b, tx t WHERE r.batcher_id=b.id AND r.tx_id=t.id AND NOT calledback AND tx_id IS NOT NULL AND webhook_url IS NOT NULL")
+  local batching=$(sql "SELECT address, amount, r.id, webhook_url, b.id, t.txid, t.hash, t.timereceived, t.fee, t.size, t.vsize, t.is_replaceable::text, t.conf_target, t.id FROM recipient r, batcher b, tx t WHERE r.batcher_id=b.id AND r.tx_id=t.id AND NOT calledback AND tx_id IS NOT NULL AND webhook_url IS NOT NULL")
   trace "[batch_check_webhooks] batching=${batching}"
 
   local IFS=$'\n'
@@ -559,7 +570,6 @@ batch_check_webhooks() {
     tx_vsize=$(echo "${row}" | cut -d '|' -f11)
     trace "[batch_check_webhooks] tx_vsize=${tx_vsize}"
     tx_replaceable=$(echo "${row}" | cut -d '|' -f12)
-    tx_replaceable=$([ "${tx_replaceable}" -eq "1" ] && echo "true" || echo "false")
     trace "[batch_check_webhooks] tx_replaceable=${tx_replaceable}"
     conf_target=$(echo "${row}" | cut -d '|' -f13)
     trace "[batch_check_webhooks] conf_target=${conf_target}"
@@ -571,7 +581,7 @@ batch_check_webhooks() {
     # I know this query for each output is not very efficient, but this function should not execute often, only in case of
     # failed callbacks on batches...
     # Get the info on the batch
-    row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), 0), COALESCE(SUM(amount), 0.00000000) FROM recipient r WHERE tx_id=\"${tx_id}\"")
+    row=$(sql "SELECT COUNT(id), COALESCE(MIN(inserted_ts), DATE '0001-01-01'), COALESCE(SUM(amount), 0.00000000) FROM recipient r WHERE tx_id='${tx_id}'")
 
     # Use the selected row above
     count=$(echo "${row}" | cut -d '|' -f1)
@@ -647,8 +657,13 @@ batch_webhooks() {
     fi
   done
 
-  sql "UPDATE recipient SET calledback=1, calledback_ts=CURRENT_TIMESTAMP WHERE id IN (${successful_recipient_ids})"
-  trace_rc $?
+  if [ -n "${successful_recipient_ids}" ]; then
+    trace "[batch_webhooks] We have successful callbacks, let's update the db..."
+    sql "UPDATE recipient SET calledback=true, calledback_ts=CURRENT_TIMESTAMP WHERE id IN (${successful_recipient_ids})"
+    trace_rc $?
+  else
+    trace "[batch_webhooks] We don't have successful callbacks, no need to update the db!"
+  fi
 }
 
 listbatchers() {
@@ -664,7 +679,7 @@ listbatchers() {
   #  "error":null}
 
 
-  local batchers=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL GROUP BY b.id")
+  local batchers=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), DATE '0001-01-01') || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL GROUP BY b.id ORDER BY b.id")
   trace "[listbatchers] batchers=${batchers}"
 
   local returncode
@@ -710,7 +725,7 @@ getbatcher() {
 
   local batcher_id=$(echo "${request}" | jq ".batcherId")
   trace "[getbatcher] batcher_id=${batcher_id}"
-  local batcher_label=$(echo "${request}" | jq ".batcherLabel")
+  local batcher_label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[getbatcher] batcher_label=${batcher_label}"
 
   if [ "${batcher_id}" = "null" ] && [ "${batcher_label}" = "null" ]; then
@@ -721,13 +736,13 @@ getbatcher() {
 
   if [ "${batcher_id}" = "null" ]; then
     # Using batcher_label
-    whereclause="b.label=${batcher_label}"
+    whereclause="b.label='${batcher_label}'"
   else
     # Using batcher_id
     whereclause="b.id=${batcher_id}"
   fi
 
-  batcher=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL WHERE ${whereclause} GROUP BY b.id")
+  batcher=$(sql "SELECT b.id, '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), DATE '0001-01-01') || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) || '}' FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id AND r.tx_id IS NULL WHERE ${whereclause} GROUP BY b.id")
   trace "[getbatcher] batcher=${batcher}"
 
   if [ -n "${batcher}" ]; then
@@ -790,9 +805,9 @@ getbatchdetails() {
 
   local batcher_id=$(echo "${request}" | jq ".batcherId")
   trace "[getbatchdetails] batcher_id=${batcher_id}"
-  local batcher_label=$(echo "${request}" | jq ".batcherLabel")
+  local batcher_label=$(echo "${request}" | jq -r ".batcherLabel")
   trace "[getbatchdetails] batcher_label=${batcher_label}"
-  local txid=$(echo "${request}" | jq ".txid")
+  local txid=$(echo "${request}" | jq -r ".txid")
   trace "[getbatchdetails] txid=${txid}"
 
   if [ "${batcher_id}" = "null" ] && [ "${batcher_label}" = "null" ]; then
@@ -803,7 +818,7 @@ getbatchdetails() {
 
   if [ "${batcher_id}" = "null" ]; then
     # Using batcher_label
-    whereclause="b.label=${batcher_label}"
+    whereclause="b.label='${batcher_label}'"
   else
     # Using batcher_id
     whereclause="b.id=${batcher_id}"
@@ -811,7 +826,7 @@ getbatchdetails() {
 
   if [ "${txid}" != "null" ]; then
     # Using txid
-    whereclause="${whereclause} AND t.txid=${txid}"
+    whereclause="${whereclause} AND t.txid='${txid}'"
   else
     # null txid
     whereclause="${whereclause} AND t.txid IS NULL"
@@ -819,7 +834,7 @@ getbatchdetails() {
   fi
 
   # First get the batch summary
-  batch=$(sql "SELECT b.id, COALESCE(t.id, NULL), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || b.conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' ||COALESCE(MIN(r.inserted_ts), 0) || '\",\"total\":' ||COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id")
+  batch=$(sql "SELECT b.id, COALESCE(t.id, NULL), '{\"batcherId\":' || b.id || ',\"batcherLabel\":\"' || b.label || '\",\"confTarget\":' || b.conf_target || ',\"nbOutputs\":' || COUNT(r.id) || ',\"oldest\":\"' || COALESCE(MIN(r.inserted_ts), DATE '0001-01-01') || '\",\"total\":' || COALESCE(SUM(amount), 0.00000000) FROM batcher b LEFT JOIN recipient r ON r.batcher_id=b.id ${outerclause} LEFT JOIN tx t ON t.id=r.tx_id WHERE ${whereclause} GROUP BY b.id, t.id")
   trace "[getbatchdetails] batch=${batch}"
 
   if [ -n "${batch}" ]; then
@@ -832,7 +847,7 @@ getbatchdetails() {
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
       
-      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || CASE is_replaceable WHEN 1 THEN 'true' ELSE 'false' END || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
+      tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
       outerclause="AND r.tx_id IS NULL"
