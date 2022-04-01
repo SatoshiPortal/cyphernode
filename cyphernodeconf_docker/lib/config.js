@@ -267,4 +267,12 @@ module.exports = class Config {
     this.data.schema_version = '0.2.6.wasabi';
   }
 
+  async migrate_0_2_5_wasabi_to_0_2_6_wasabi() {
+    const currentVersion = this.data.schema_version;
+    if( currentVersion != '0.2.5.wasabi' ) {
+      return;
+    }
+    this.data.schema_version = '0.2.6.wasabi';
+  }
+
 };

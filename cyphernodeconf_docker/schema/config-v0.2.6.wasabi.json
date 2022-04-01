@@ -31,6 +31,8 @@
     "gatekeeper_datapath",
     "gatekeeper_port",
     "proxy_datapath",
+    "postgres_password",
+    "postgres_datapath",
     "logs_datapath",
     "traefik_datapath",
     "traefik_http_port",
@@ -493,6 +495,31 @@
       "title": "Traefik custom datapath",
       "examples": [
         "/tmp/cyphernode/traefik"
+      ]
+    },
+    "postgres_password": {
+      "$id": "#/properties/postgres_password",
+      "type": "string",
+      "title": "Postgres cyphernode's password",
+      "default": "CHANGEME",
+      "examples": [
+        "CHANGEME"
+      ]
+    },
+    "postgres_datapath": {
+      "$id": "#/properties/postgres_datapath",
+      "type": "string",
+      "title": "Postgres datapath",
+      "examples": [
+        "/tmp/cyphernode/postgres"
+      ]
+    },
+    "postgres_datapath_custom": {
+      "$id": "#/properties/postgres_datapath_custom",
+      "type": "string",
+      "title": "Postgres custom datapath",
+      "examples": [
+        "/tmp/cyphernode/postgres"
       ]
     },
     "logs_datapath": {

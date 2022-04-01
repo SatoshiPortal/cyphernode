@@ -856,7 +856,6 @@ getbatchdetails() {
     if [ -n "${tx_id}" ]; then
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
-
       tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid

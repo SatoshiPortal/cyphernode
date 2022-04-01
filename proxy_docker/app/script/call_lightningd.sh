@@ -304,6 +304,7 @@ ln_pay() {
   trace "Entering ln_pay()..."
 
   # Let's try to pay (MPP enabled) for 85 seconds.
+  # If this doesn't work for a routing reason, let's try to legacypay (MPP disabled) for 85 seconds.
   # If this doesn't work, return an error.
 
   local result
