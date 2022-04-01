@@ -128,7 +128,12 @@ services:
   ##########################
 
   bitcoin:
+    <%   if ( net === 'regtest' ) { %>
+    # regtest only
+    image: cyphernode/knots:<%= bitcoin_version %>
+    <% } else { %>
     image: cyphernode/bitcoin:<%= bitcoin_version %>
+    <% } %>
     command: $USER /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
     ports:
@@ -187,6 +192,8 @@ services:
       <% if ( features.indexOf('wasabi') !== -1 ) { %>
       - "WASABI_RPC_USER=<%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %>"
       - "WASABI_RPC_CFG=/tmp/wasabi_curlcfg.properties"
+      - "WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>"
+      - "WASABI_MIXUNTIL=<%= wasabi_mixuntil %>"
       <% } %>
       - "PROXY_LISTENING_PORT=8888"
       - "DB_PATH=/proxy/db"

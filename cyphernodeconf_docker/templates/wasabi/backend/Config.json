@@ -1,6 +1,6 @@
 {
   "Network": "RegTest",
-  "BitcoinRpcConnectionString": "wallet=wasabi_backend.dat;server=bitcoin;<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>",
+  "BitcoinRpcConnectionString": "<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>",
   "MainNetBitcoinP2pEndPoint": "bitcoin:8333",
   "TestNetBitcoinP2pEndPoint": "bitcoin:18333",
   "RegTestBitcoinP2pEndPoint": "bitcoin:18444",

@@ -4,6 +4,7 @@ BITCOIN_CLI='bitcoin-cli'
 
 <% if( net === 'regtest' ) { %>
 BITCOIN_CLI="$BITCOIN_CLI -regtest"
+BASIC_WALLETS='"wasabi_backend.dat" '
 <% } %>
 
 while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "CYPHERNODE: bitcoind not ready" ; sleep 10 ; done
@@ -11,7 +12,7 @@ while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "CYPHERNODE: bitcoind
 echo "CYPHERNODE: bitcoind is ready"
 
 # Check for the basic wallets.  If not present, create.
-BASIC_WALLETS='"watching01.dat" "xpubwatching01.dat" "spending01.dat"'
+BASIC_WALLETS=$BASIC_WALLETS'"watching01.dat" "xpubwatching01.dat" "spending01.dat"'
 
 CURRENT_WALLETS=`$BITCOIN_CLI listwallets`
 

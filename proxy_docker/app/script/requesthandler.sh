@@ -762,10 +762,6 @@ main() {
           response=$(serve_ots_info "${line}")
           returncode=$?
           ;;
-        *)
-          response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
-          returncode=1
-          ;;
         wasabi_getnewaddress)
           # queries random instance for a new bech32 address
           # POST http://192.168.111.152:8080/wasabi_getnewaddress
@@ -774,17 +770,15 @@ main() {
           # Empty BODY: Label will be "unknown"
 
           response=$(wasabi_newaddr "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         wasabi_getbalances)
-          # Get wasabi instance balances 
+          # Get wasabi instance balances
           # If anonset is provided, will return balances for UTXO's with anonset as their minimum Anonimity level.
           # GET http://192.168.111.152:8080/wasabi_getbalances/{anonset}
           # GET http://192.168.111.152:8080/wasabi_getbalances/87
           response=$(wasabi_getbalances $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         wasabi_spend)
           # args:
@@ -801,8 +795,7 @@ main() {
           # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
           response=$(wasabi_spend "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         wasabi_getunspentcoins)
           # args:
@@ -812,8 +805,7 @@ main() {
           # GET http://192.168.111.152:8080/wasabi_getunspentcoins/{instanceId}
 
           response=$(wasabi_getunspentcoins "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         wasabi_gettransactions)
           # args:
@@ -830,31 +822,31 @@ main() {
             filter_internal=$(echo "${line}" | jq ".txnFilterInternal")
           fi
           response=$(wasabi_gettransactions "${instanceid}" "${filter_internal}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         wasabi_spendprivate)
           # GET http://192.168.111.152:8080/wasabi_spendprivate
           # Useful to manually trigger an auto-spend
 
           response=$(wasabi_batchprivatetospender)
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         config_props)
           # GET http://192.168.111.152:8080/config_props
           # Get currently saved configs from propstable
-          if [ "$http_method" = "GET" ]; then    
+          if [ "$http_method" = "GET" ]; then
             response=$(cyphernode_props_get_props)
-            response_to_client "${response}" ${?}
           elif [ "$http_method" = "POST" ] || [ "$http_method" = "PUT" ]; then
             # POST http://192.168.111.152:8080/config_props
             # body {"id": null | "property_id", "property": "how_big", "value": "6.15" }
-            # Will updset (Insert or update) property with value,  depending if id already exists 
+            # Will updset (Insert or update) property with value,  depending if id already exists
             response=$(cyphernode_props_upsert_prop "${line}")
-            response_to_client "${response}" ${?}
           fi
-          break
+          returncode=$?
+          ;;
+        *)
+          response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
+          returncode=1
           ;;
       esac
       response=$(echo "${response}" | jq -Mc)

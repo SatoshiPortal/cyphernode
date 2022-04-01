@@ -28,12 +28,12 @@ newblock() {
   # do_callbacks_txid "$(echo "${blockinfo}" | jq ".result.tx[]")"
   do_callbacks_txid
   batch_check_webhooks
-  if [ "$(( $(od -An -N2 < /dev/urandom) % 10 ))" = "0" ]; then
+#  if [ "$(( $(od -An -N2 < /dev/urandom) % 10 ))" = "0" ]; then
     trace "[newblock] Let's try to spend mixed coins!"
     wasabi_batchprivatetospender
-  else
-    trace "[newblock] We won't try to spend mixed coins now, relax."
-  fi
+#  else
+#    trace "[newblock] We won't try to spend mixed coins now, relax."
+#  fi
 
   ) 202>./.newblock.lock
 }
