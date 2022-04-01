@@ -41,7 +41,7 @@ cyphernode_props_upsert_prop(){
   trace "Property id $property_id"
   if [ -z "$property_id" ]; then
        $(sql "INSERT INTO cyphernode_props (property,value) VALUES ('$property','$value')")
-       trace "[upsert_prop] Inserted prop $property, with value: $value, insert id: $upsert_id"
+       trace "[upsert_prop] Inserted prop $property, with value: $value"
   else
        $(sql "UPDATE cyphernode_props SET value='$value' WHERE id=${property_id}")
        trace "[upsert_prop] Updated prop $property, with value: $value"

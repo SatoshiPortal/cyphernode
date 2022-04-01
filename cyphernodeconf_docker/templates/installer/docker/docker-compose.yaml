@@ -126,6 +126,10 @@ services:
   ##########################
 
   bitcoin:
+    <%   if ( net === 'regtest' ) { %>
+    # regtest only
+    image: cyphernode/knots:<%= bitcoin_version %>
+    <% } else { %>
     image: cyphernode/bitcoin:<%= bitcoin_version %>
     user: $USER
     command: /.bitcoin/entrypoint.sh

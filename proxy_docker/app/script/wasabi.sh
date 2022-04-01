@@ -18,8 +18,6 @@
 
 . walletoperations.sh
 
-. ${DB_PATH}/config.sh
-
 # send_to_wasabi <instance_nb> <rpc_method> <params>
 # returns wasabi rpc response as is
 send_to_wasabi() {
@@ -180,7 +178,7 @@ wasabi_getbalances() {
   local balances
   local minInstanceIndex=0
   local maxInstanceIndex=$((WASABI_INSTANCE_COUNT-1))
-  local minanonset="${1-$WASABI_MIXUNTIL}"
+  local minanonset="${1:-${WASABI_MIXUNTIL}}"
 
   trace "[wasabi_getbalances] WASABI_MIXUNTIL=${minanonset}"
 
@@ -284,7 +282,7 @@ wasabi_batchprivatetospender() {
   local toaddress
   local utxo_to_spend
   local balance
-  local matching_wallet 
+  local matching_wallet
   local address_index=1
   local minanonset
   # Check auto spend setting from cyphernode_props table
@@ -299,7 +297,7 @@ wasabi_batchprivatetospender() {
      if [ "${wasabi_autospend_cfg}" = "_disabled" ]; then
         trace "[wasabi_batchprivatetospender] batch private send is disabled: ${wasabi_autospend_cfg}"
         return
-     else 
+     else
         # Otherwise it's '_spender' to send it to the spending wallet or a label for one of our watching wallets
         [ "${wasabi_autospend_cfg}" = "_spender" ] && matching_wallet="_spender" || matching_wallet=$(getactivexpubwatches | jq --arg target "${wasabi_autospend_cfg}"  '.watches | .[] | select(.label==$target) | .label')
         if [ -z "${matching_wallet}" ] || [ "${matching_wallet}" = "null" ]; then
@@ -526,7 +524,7 @@ wasabi_spend() {
     return 1
   fi
   local spendingAmount
-  spendingAmount=$(awk "BEGIN { printf(\"%d\", ${amount}*100000000); exit }")
+  spendingAmount=$(awk "BEGIN { printf(\"%.f\", ${amount}*100000000); exit }")
   trace "[wasabi_spend] spendingAmount=${spendingAmount}"
 
   local address

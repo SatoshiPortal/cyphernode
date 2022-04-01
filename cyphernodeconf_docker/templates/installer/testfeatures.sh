@@ -177,7 +177,8 @@ checkwasabi_<%= index %>() {
   echo -en "\r\n\e[1;36mTesting Wasabi #<%= index %>... " > /dev/console
   local rc
 
-  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d '{"instanceId":<%= index %>}' http://proxy:8888/wasabi_gettransactions)
+  rc=$(curl -s -o /dev/null -w "%{http_code}" -u <%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %> -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"getstatus\"}" http://wasabi_<%= index %>:18099/)
+#  rc=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -d '{"instanceId":<%= index %>}' http://proxy:8888/wasabi_gettransactions)
   [ "${rc}" -ne "200" ] && return 300
 
   echo -e "\e[1;36mWasabi #<%= index %> rocks!" > /dev/console
