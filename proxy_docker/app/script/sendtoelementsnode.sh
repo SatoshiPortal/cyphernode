@@ -5,7 +5,7 @@
 send_to_elements_watcher_node() {
   trace "Entering send_to_elements_watcher_node()..."
   local node_payload
-  node_payload="$(send_to_elements_node ${WATCHING_ELEMENTS_NODE_RPC_URL}/${WATCHING_ELEMENTS_NODE_DEFAULT_WALLET} ${WATCHING_ELEMENTS_NODE_RPC_CFG} $@)"
+  node_payload="$(send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_DEFAULT_WALLET} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@)"
   local returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -ne 0 ]; then
@@ -22,7 +22,7 @@ send_to_elements_watcher_node() {
 send_to_xpub_elements_watcher_wallet() {
   trace "Entering send_to_xpub_elements_watcher_wallet()..."
 
-  send_to_elements_node ${WATCHING_ELEMENTS_NODE_RPC_URL}/${WATCHING_ELEMENTS_NODE_XPUB_WALLET} ${WATCHING_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_XPUB_WALLET} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -33,7 +33,7 @@ send_to_elements_watcher_node_wallet() {
   local walletname=$1
   shift
   trace "[send_to_elements_watcher_node_wallet] walletname=${walletname}"
-  send_to_elements_node ${WATCHING_ELEMENTS_NODE_RPC_URL}/${walletname} ${WATCHING_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${walletname} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -42,7 +42,7 @@ send_to_elements_watcher_node_wallet() {
 send_to_elements_spender_node()
 {
   trace "Entering send_to_elements_spender_node()..."
-  send_to_elements_node ${SPENDING_ELEMENTS_NODE_RPC_URL}/${SPENDING_ELEMENTS_NODE_DEFAULT_WALLET} ${SPENDING_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node ${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET} ${SPENDER_ELEMENTS_NODE_RPC_CFG} $@
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -58,11 +58,11 @@ send_to_elements_node()
   local config=${2}
   local data=${3}
 
-  trace "[send_to_elements_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
-  result=$(curl -m 20 -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
+  trace "[send_to_elements_node] curl -m 60 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
+  result=$(curl -m 60 -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
   returncode=$?
   trace_rc ${returncode}
-  trace "[send_to_elements_node] result=${result}"
+  # trace "[send_to_elements_node] result=${result}"
 
   if [ "${returncode}" -eq 0 ]; then
     # Node responded, let's see if we got an error message from the node

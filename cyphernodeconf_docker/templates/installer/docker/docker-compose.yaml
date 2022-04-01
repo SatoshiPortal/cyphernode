@@ -225,8 +225,8 @@ services:
       - "<%= elements_datapath %>:/.elements"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s

@@ -261,6 +261,9 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
+          elements_manage_not_imported
+          elements_manage_missed_conf
+          response=$(elements_do_callbacks)
           response=$(manage_not_imported)
           response=$(manage_missed_conf)
           response=$(do_callbacks)
@@ -780,41 +783,52 @@ main() {
         elements_getnewaddress)
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
+          #
+          # or...
+          # POST http://192.168.111.152:8080/elements_getnewaddress
+          # BODY {"addressType":"bech32","label":"myLabel"}
+          # BODY {"label":"myLabel"}
+          # BODY {"addressType":"p2sh-segwit"}
+          # BODY {}
 
-          response=$(elements_getnewaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address_type=$(echo "${line}" | jq -er ".addressType // empty")
+            label=$(echo "${line}" | jq -er ".label // empty")
+          else
+            address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(elements_getnewaddress "${address_type}" "${label}")
+          returncode=$?
           ;;
         elements_spend)
           # POST http://192.168.111.152:8080/elements_spend
           # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 
           response=$(elements_spend "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_getwalletinfo)
           # curl (GET) 192.168.111.152:8080/elements_getwalletinfo
 
           response=$(elements_getwalletinfo)
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_validateaddress)
           # GET http://192.168.111.152:8080/elements_validateaddress/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
 
-          response=$(elements_validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          response=$(elements_validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
           ;;
         elements_watch)
           # POST http://192.168.111.152:8080/elements_watch
           # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
           # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
           # eventMessage={"bounceAddress":"Azpr3WH7nX2p3Q6vGk34wuCpyFifpxvTCxTRPgZPYfBnjW5NJ6DP2odKbaeHBdRCCyYMW3XtveciLSpe","nbConf":0}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg==","label":"myLabel"}
           response=$(elements_watchrequest "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_unwatch)
           # curl (GET) 192.168.111.152:8080/elements_unwatch/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
