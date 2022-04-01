@@ -27,6 +27,8 @@ elements_confirmation() {
 
   local returncode
   local txid=${1}
+  local bypass_callbacks=${2}
+  trace "[elements_confirmation] bypass_callbacks=${bypass_callbacks}"
   local tx_details
   tx_details="$(elements_get_transaction ${txid} true)"
   returncode=$?
@@ -40,7 +42,7 @@ elements_confirmation() {
   # First of all, let's make sure we're working on watched addresses...
   local address
   local addresseswhere
-  local addresses=$(echo "${tx_details}" | jq ".result.details[].address")
+  local addresses=$(echo "${tx_details}" | jq -r ".result.details[].address")
 
   local notfirst=false
   local IFS=$'\n'
@@ -49,28 +51,28 @@ elements_confirmation() {
     trace "[elements_confirmation] address=${address}"
 
     if ${notfirst}; then
-      addresseswhere="${addresseswhere},${address}"
+      addresseswhere="${addresseswhere},'${address}'"
     else
-      addresseswhere="${address}"
+      addresseswhere="'${address}'"
       notfirst=true
     fi
   done
-  local rows=$(sql "SELECT id, address, unblinded_address, watching_by_pub32_id, pub32_index, event_message, watching_assetid FROM elements_watching WHERE watching AND (address IN (${addresseswhere}) OR unblinded_address IN (${addresseswhere}))")
+  local rows=$(sql "SELECT id, address, unblinded_address, elements_watching_by_pub32_id, pub32_index, event_message, watching_assetid FROM elements_watching WHERE watching AND (address IN (${addresseswhere}) OR unblinded_address IN (${addresseswhere}))")
   if [ ${#rows} -eq 0 ]; then
     trace "[elements_confirmation] No watched address in this tx!"
     return 0
   fi
   ########################################################################################################
 
-  local tx=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
+  local tx=$(sql "SELECT id FROM elements_tx WHERE txid='${txid}'")
   local id_inserted
   local tx_raw_details=$(elements_get_rawtransaction ${txid} true | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
-  local tx_hash=$(echo "${tx_raw_details}" | jq '.result.hash')
+  local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
-  echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+  # echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
 
   if [ -z ${tx} ]; then
     # TX not found in our DB.
@@ -97,42 +99,39 @@ elements_confirmation() {
     local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[elements_confirmation] tx_nb_conf=${tx_nb_conf}"
-      tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
-      tx_blockheight=$(elements_get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      tx_blockhash="$(echo "${tx_details}" | jq -r '.result.blockhash')"
+      tx_blockheight=$(elements_get_block_info ${tx_blockhash} | jq '.result.height')
+      tx_blockhash="'${tx_blockhash}'"
       tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
     fi
 
-    sql "INSERT OR IGNORE INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime, raw_tx) VALUES (\"${txid}\", ${tx_hash}, ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime}, readfile('rawtx-${txid}-$$.blob'))"
-    trace_rc $?
-
-    id_inserted=$(sql "SELECT id FROM elements_tx WHERE txid=\"${txid}\"")
+    id_inserted=$(sql "INSERT INTO elements_tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime)"\
+" VALUES ('${txid}', '${tx_hash}', ${tx_nb_conf}, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${tx_blockhash}, ${tx_blockheight}, ${tx_blocktime})"\
+" ON CONFLICT (txid) DO"\
+" UPDATE SET blockhash=${tx_blockhash}, blockheight=${tx_blockheight}, blocktime=${tx_blocktime}, confirmations=${tx_nb_conf}"\
+" RETURNING id" \
+    "SELECT id FROM elements_tx WHERE txid='${txid}'")
     trace_rc $?
 
   else
     # TX found in our DB.
     # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf) or spending to a watched address (in this case, spend inserted the tx in the DB)
 
-    local tx_blockhash=$(echo "${tx_details}" | jq '.result.blockhash')
+    local tx_blockhash=$(echo "${tx_details}" | jq -r '.result.blockhash')
     trace "[elements_confirmation] tx_blockhash=${tx_blockhash}"
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[elements_confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(elements_get_block_info $(echo "${tx_blockhash}" | tr -d '"') | jq '.result.height')
+      local tx_blockheight=$(elements_get_block_info "${tx_blockhash}" | jq '.result.height')
       local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
 
-      sql "UPDATE elements_tx SET
-        confirmations=${tx_nb_conf},
-        blockhash=${tx_blockhash},
-        blockheight=${tx_blockheight},
-        blocktime=${tx_blocktime},
-        raw_tx=readfile('rawtx-${txid}-$$.blob')
-        WHERE txid=\"${txid}\""
+      sql "UPDATE elements_tx SET confirmations=${tx_nb_conf}, blockhash='${tx_blockhash}', blockheight=${tx_blockheight}, blocktime=${tx_blocktime} WHERE txid='${txid}'"
       trace_rc $?
     fi
     id_inserted=${tx}
   fi
   # Delete the temp file containing the raw tx (see above)
-  rm rawtx-${txid}-$$.blob
+  # rm rawtx-${txid}-$$.blob
 
   ########################################################################################################
 
@@ -152,7 +151,7 @@ elements_confirmation() {
     # In the case of us spending to a watched address, the address appears twice in the details,
     # once on the spend side (negative amount) and once on the receiving side (positive amount)
     tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .vout")
-    tx_vout_assetid=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .asset")
+    tx_vout_assetid=$(echo "${tx_details}" | jq -r ".result.details | map(select(.address==\"${unblinded_address}\"))[0] | .asset")
 
     ########################################################################################################
     # Let's now insert in the join table if not already done
@@ -162,7 +161,8 @@ elements_confirmation() {
       # If the tx is batched and pays multiple watched addresses, we have to insert
       # those additional addresses in watching_tx!
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      sql "INSERT OR IGNORE INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, ${tx_vout_assetid})"
+      sql "INSERT INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, '${tx_vout_assetid}')"\
+" ON CONFLICT DO NOTHING"
       trace_rc $?
     else
       trace "[elements_confirmation] For this tx, there's already watching_tx rows"
@@ -187,8 +187,8 @@ elements_confirmation() {
     if [ -n "${event_message}" ]; then
       # There's an event message, let's publish it!
 
-      trace "[elements_confirmation] mosquitto_pub -h broker -t elements_tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":${tx_vout_assetid},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
-      response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":${tx_hash},\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":${tx_vout_assetid},\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+      trace "[elements_confirmation] mosquitto_pub -h broker -t elements_tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":\"${tx_vout_assetid}\",\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":\"${tx_vout_assetid}\",\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
       returncode=$?
       trace_rc ${returncode}
     fi
@@ -199,7 +199,13 @@ elements_confirmation() {
   ) 201>./.elements_confirmation.lock
 
   # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
-  elements_do_callbacks
+  # If this was called by missed_conf algo, we don't want to process all the callbacks now.  We wait
+  # for next cron.
+  if [ -z "${bypass_callbacks}" ]; then
+    trace "[elements_confirmation] Let's do the callbacks!"
+    elements_do_callbacks "${txid}"
+  fi
+
   echo '{"result":"confirmed"}'
 
   return 0
