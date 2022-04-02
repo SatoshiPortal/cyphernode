@@ -102,8 +102,12 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
-    <% if ( features.indexOf('tor') !== -1 ) { %>
+    <% if (docker_mode == 'compose') { %>
+    restart: always
+    <% } %>
     depends_on:
+      - bitcoin
+    <% if ( features.indexOf('tor') !== -1 ) { %>
       - tor
     <% } %>
     <% if ( docker_mode === 'swarm' ) { %>
@@ -166,6 +170,51 @@ services:
     <% } %>
   <% } %>
 
+  <% if ( features.indexOf('elements') !== -1 ) { %>
+  ##########################
+  # ELEMENTS               #
+  ##########################
+
+  elements:
+    image: cyphernode/elements:<%= elements_version %>
+    command: $USER /.elements/entrypoint.sh
+    <% if( elements_expose ) { %>
+    ports:
+      - "<%= (net === 'regtest') ? '18886:18886' : ((net === 'testnet') ? '18886:18886' : '7042:7042') %>"
+    <% } %>
+    volumes:
+      - "<%= elements_datapath %>:/.elements"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
+    networks:
+      - cyphernodenet
+    restart: always
+    depends_on:
+      - bitcoin
+    <% if ( features.indexOf('tor') !== -1 ) { %>
+      - tor
+    <% } %>
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+  <% } %>
+
   ##########################
   # PROXY                  #
   ##########################
@@ -197,6 +246,17 @@ services:
       - "OTS_FILES=/proxy/otsfiles"
       - "XPUB_DERIVATION_GAP=100"
       - "PGPASSFILE=/proxy/db/pgpass"
+      <% if ( features.indexOf('elements') !== -1 ) { %>
+      - "SPENDING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
+      - "SPENDING_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
+      - "SPENDING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "SPENDING_ELEMENTS_NODE_RPC_CFG=/tmp/spending_elementsnode_curlcfg.properties"
+      - "WATCHING_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
+      - "WATCHING_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
+      - "WATCHING_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat"
+      - "WATCHING_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
+      - "WATCHING_ELEMENTS_NODE_RPC_CFG=/tmp/watching_elementsnode_curlcfg.properties"
+      <% } %>
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"

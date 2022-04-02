@@ -92,6 +92,7 @@ module.exports = class App {
       mosquitto_version: process.env.MOSQUITTO_VERSION,
       otsclient_version: process.env.OTSCLIENT_VERSION,
       bitcoin_version: process.env.BITCOIN_VERSION,
+      elements_version: process.env.ELEMENTS_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
@@ -144,6 +145,7 @@ module.exports = class App {
       setup_version: this.sessionData.setup_version,
       docker_versions: {
         'cyphernode/bitcoin': this.sessionData.bitcoin_version,
+        'cyphernode/elements': this.sessionData.elements_version,
         'cyphernode/gatekeeper': this.sessionData.gatekeeper_version,
         'cyphernode/tor': this.sessionData.tor_version,
         'cyphernode/proxy': this.sessionData.proxy_version,
@@ -290,6 +292,9 @@ module.exports = class App {
       if (this.isChecked('torifyables', 'tor_bitcoin')) {
         this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
       }
+      if (this.isChecked('torifyables', 'tor_elements')) {
+        this.sessionData.tor_elements_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/elements/hidden_service' ) ));
+      }
     }
 
     // creates keys if they don't exist or we say so.
@@ -367,6 +372,7 @@ module.exports = class App {
       'tor_datapath',
       'proxy_datapath',
       'bitcoin_datapath',
+      'elements_datapath',
       'lightning_datapath',
       'otsclient_datapath'
     ];
@@ -530,6 +536,7 @@ module.exports = class App {
           traefik_hostname: this.sessionData.tor_traefik_hostname,
           lightning_hostname: this.sessionData.tor_lightning_hostname,
           bitcoin_hostname: this.sessionData.tor_bitcoin_hostname,
+          elements_hostname: this.sessionData.tor_elements_hostname,
         }
       },
       otsclient: {
@@ -548,6 +555,16 @@ module.exports = class App {
         networks: ['cyphernodeappsnet'],
         docker: "cyphernode/specter"
       },
+      elements: {
+        networks: ['cyphernodenet'],
+        docker: "cyphernode/elements:"+this.config.docker_versions['cyphernode/elements'],
+        extra: {
+          expose: this.config.data.elements_expose,
+          torified: this.torifyables.find(data => data.value === 'tor_elements').checked,
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_elements'),
+          tor_hostname: this.sessionData.tor_elements_hostname
+        }
+      },
       lightning: {
         networks: ['cyphernodenet'],
         docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
@@ -561,7 +578,7 @@ module.exports = class App {
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
-      }
+      },
     }
 
     for( let feature of this.features ) {

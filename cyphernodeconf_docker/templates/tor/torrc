@@ -17,5 +17,11 @@ HiddenServiceVersion 3
 HiddenServicePort <%= (net === 'regtest') ? '18444 bitcoin:18444' : ((net === 'testnet') ? '18333 bitcoin:18333' : '8333 bitcoin:8333') %>
 <% } %>
 
+<% if ( torifyables && torifyables.indexOf('tor_elements') !== -1 && elements_expose) { %>
+HiddenServiceDir /tor/elements/hidden_service/
+HiddenServiceVersion 3
+HiddenServicePort <%= (net === 'regtest') ? '18886 elements:18886' : ((net === 'testnet') ? '18886 elements:18886' : '7042 elements:7042') %>
+<% } %>
+
 SocksPort 0.0.0.0:9050
 ExitPolicy reject *:* # no exits allowed
