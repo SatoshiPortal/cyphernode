@@ -102,9 +102,6 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
-    <% if (docker_mode == 'compose') { %>
-    restart: always
-    <% } %>
     depends_on:
       - bitcoin
     <% if ( features.indexOf('tor') !== -1 ) { %>
