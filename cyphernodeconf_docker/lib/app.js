@@ -578,7 +578,7 @@ module.exports = class App {
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
-      },
+      }
     }
 
     for( let feature of this.features ) {
