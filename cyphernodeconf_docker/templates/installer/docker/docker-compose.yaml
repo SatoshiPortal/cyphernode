@@ -184,6 +184,7 @@ services:
     <% } %>
     volumes:
       - "<%= elements_datapath %>:/.elements"
+      - "<%= elements_datapath %>/createWallets.sh:/.elements/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
       test: chown -R $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
