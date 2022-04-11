@@ -14,11 +14,9 @@ while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | aw
 
 #TORIP=$(getent hosts tor | awk '{ print $1 }')
 echo "tor ready at IP ${TORIP}"
-/.elements/createWallets.sh &
 
 exec elementsd --proxy=$TORIP:9050
 <% } else { %>
-/.elements/createWallets.sh &
 
 exec elementsd
 
