@@ -193,15 +193,25 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
-    restart: always
     depends_on:
       - bitcoin
     <% if ( features.indexOf('tor') !== -1 ) { %>
       - tor
     <% } %>
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
   <% } %>
 
   ##########################
@@ -236,11 +246,11 @@ services:
       - "XPUB_DERIVATION_GAP=100"
       - "PGPASSFILE=/proxy/db/pgpass"
       <% if ( features.indexOf('elements') !== -1 ) { %>
-      - "SPENDER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
+      - "SPENDER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
       - "SPENDER_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
       - "SPENDER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
       - "SPENDER_ELEMENTS_NODE_RPC_CFG=/tmp/spender_elementsnode_curlcfg.properties"
-      - "WATCHER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '7041' : '7041') %>/wallet"
+      - "WATCHER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
       - "WATCHER_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
       - "WATCHER_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat"
       - "WATCHER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
