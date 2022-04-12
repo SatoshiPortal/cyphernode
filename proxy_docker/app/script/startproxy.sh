@@ -23,15 +23,33 @@ createCurlConfig() {
 
 }
 
+# If the file .dbfailed exists, it means we previously failed to process DB migrations.
+# Sometimes, depending on timing, a migration fails but it doesn't mean it's corrupted.
+# It may be a container that was not accessible for a short period of time, for example.
+# So we'll try up to MAX_ATTEMPTS times before concluding in failure.
+
+# For this to work, we'll put the number of attemps in the .dbfailed file.
+
+MAX_ATTEMPTS=5
+
+nb_attempts=1
 if [ -e ${DB_PATH}/.dbfailed ]; then
+  n=$(cat ${DB_PATH}/.dbfailed)
+  nb_attempts=$((n+1))
+fi
+
+if [ "${nb_attempts}" -gt "${MAX_ATTEMPTS}" ]; then
   touch /container_monitor/proxy_dbfailed
-  trace "[startproxy] A previous database creation/migration failed.  Stopping."
-  trace "[startproxy] A file called .dbfailed has been created.  Fix the migration errors, remove .dbfailed and retry."
+  trace "[startproxy] Too many database creation/migration failed attempts.  Failed attempts = ${nb_attempts}."
+  trace "[startproxy] A file called .dbfailed has been created in your proxy datapath.  Fix the migration errors, remove .dbfailed and retry."
+  trace "[startproxy] Check your log files, especially postgres."
   trace "[startproxy] Exiting."
   sleep 30
   exit 1
 else
-  rm -f /container_monitor/proxy_dbfailed
+  if [ "${nb_attempts}" -gt "1" ]; then
+    trace "[startproxy] Current database creation/migration attempt = ${nb_attempts}.  Retrying..."
+  fi
 fi
 
 trace "[startproxy] Waiting for PostgreSQL to be ready..."
@@ -57,16 +75,20 @@ else
 fi
 
 if [ "${returncode}" -ne "0" ]; then
-  touch ${DB_PATH}/.dbfailed
-  touch /container_monitor/proxy_dbfailed
-  trace "[startproxy] Database creation/migration failed.  Stopping."
+  echo -n "${nb_attempts}" > ${DB_PATH}/.dbfailed
+  trace "[startproxy] Database creation/migration failed.  We will retry ${MAX_ATTEMPTS} times."
   trace "[startproxy] A file called .dbfailed has been created in your proxy datapath.  Fix the migration errors, remove .dbfailed and retry."
+  trace "[startproxy] Check your log files, especially postgres."
   trace "[startproxy] Exiting."
   sleep 30
   exit ${returncode}
 fi
 
+# /container_monitor/proxy_ready will be created by Docker's health check
 rm -f /container_monitor/proxy_ready
+
+rm -f /container_monitor/proxy_dbfailed
+rm -f ${DB_PATH}/.dbfailed
 
 chmod 0600 $DB_FILE
 

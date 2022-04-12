@@ -17,7 +17,7 @@
 # action_installation_info=stats
 # action_getmempoolinfo=stats
 # action_getblockhash=stats
-# 
+#
 # # Watcher can do what the stats can do, plus:
 # action_watch=watcher
 # action_unwatch=watcher
@@ -47,7 +47,7 @@
 # action_ln_listpays=watcher
 # action_ln_paystatus=watcher
 # action_bitcoin_estimatesmartfee=watcher
-# 
+#
 # # Spender can do what the watcher can do, plus:
 # action_get_txns_spending=spender
 # action_getbalance=spender
@@ -78,10 +78,10 @@
 # action_listbatchers=spender
 # action_getbatcher=spender
 # action_getbatchdetails=spender
-# 
+#
 # # Admin can do what the spender can do, plus:
-# 
-# 
+#
+#
 # # Should be called from inside the Docker network only:
 # action_conf=internal
 # action_newblock=internal
@@ -558,7 +558,7 @@ exec_in_test_container_leave_lf apk add --update curl coreutils openssl
 
 # Copy keys to test container
 trace 1 "\n\n[test_gatekeeper] ${BCyan}Copying keys and certs to test container...${Color_Off}\n"
-gatekeeperid=$(docker ps -q -f "name=cyphernode_gatekeeper")
+gatekeeperid=$(docker ps -q -f "name=cyphernode.gatekeeper")
 testid=$(docker ps -q -f "name=tests-gatekeeper")
 docker cp ${gatekeeperid}:/etc/nginx/conf.d/keys.properties - | docker cp - ${testid}:/
 docker cp ${gatekeeperid}:/etc/ssl/certs/cert.pem - | docker cp - ${testid}:/

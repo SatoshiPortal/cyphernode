@@ -251,9 +251,8 @@ services:
 
   proxycron:
     image: cyphernode/proxycron:<%= proxycron_version %>
-    environment:
-      - "TX_CONF_URL=proxy:8888/executecallbacks"
-      - "OTS_URL=proxy:8888/ots_backoffice"
+    env_file:
+      - .env/proxycron.env
     networks:
       - cyphernodenet
     depends_on:

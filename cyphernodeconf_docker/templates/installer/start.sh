@@ -1,6 +1,8 @@
 #!/bin/bash
 
-. ./.cyphernodeconf/installer/config.sh
+current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
+
+. ${current_path}/.cyphernodeconf/installer/config.sh
 
 # be aware that randomly downloaded cyphernode apps will have access to
 # your configuration and filesystem.
@@ -14,7 +16,7 @@ start_apps() {
   local APP_START_SCRIPT_PATH
   local APP_ID
 
-  for i in $current_path/apps/*
+  for i in ${current_path}/apps/*
   do
     APP_SCRIPT_PATH=$(echo $i)
     if [ -d "$APP_SCRIPT_PATH" ] && [ ! -f "$APP_SCRIPT_PATH/ignoreThisApp" ]; then
@@ -39,7 +41,7 @@ start_apps() {
         if [ "$DOCKER_MODE" = "swarm" ]; then
           docker stack deploy -c $APP_SCRIPT_PATH/docker-compose.yaml $APP_ID
         elif [ "$DOCKER_MODE" = "compose" ]; then
-          docker-compose -f $APP_SCRIPT_PATH/docker-compose.yaml up -d --remove-orphans
+          docker-compose -p $APP_ID -f $APP_SCRIPT_PATH/docker-compose.yaml up -d --remove-orphans
         fi
       fi
     fi
@@ -58,15 +60,13 @@ fi
 export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
-current_path="$(cd "$(dirname "$0")" >/dev/null && pwd)"
-
 # Let's make sure the container readyness files are deleted before starting the stack
 docker run --rm -v cyphernode_container_monitor:/container_monitor alpine sh -c 'rm -f /container_monitor/*_ready'
 
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
 <% } else if(docker_mode == 'compose') { %>
-docker-compose -f $current_path/docker-compose.yaml up -d --remove-orphans
+docker-compose -p cyphernode -f $current_path/docker-compose.yaml up -d --remove-orphans
 <% } %>
 
 start_apps
@@ -80,4 +80,4 @@ else
   printf " It's pretty fast!\r\n"
 fi
 
-. ./testdeployment.sh
+. ${current_path}/testdeployment.sh

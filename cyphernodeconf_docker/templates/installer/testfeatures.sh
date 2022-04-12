@@ -84,7 +84,7 @@ checkpostgres() {
   echo -en "\r\n\e[1;36mTesting Postgres... " > /dev/console
   local rc
 
-  pg_isready -h postgres -U cyphernode
+  pg_isready -h postgres -U cyphernode > /dev/null
   [ "${?}" -ne "0" ] && return 105
 
   echo -e "\e[1;36mPostgres rocks!" > /dev/console
@@ -109,7 +109,7 @@ checknotifier() {
   local response
   local returncode
 
-  nc -vlp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\\r\\n\\r\\n" ; date >&2 ; timeout 1 tee /dev/tty | cat ; ' &
+  nc -lp1111 -e sh -c 'echo -en "HTTP/1.1 200 OK\\r\\n\\r\\n" ; timeout 1 tee /dev/null ;' > /dev/null &
   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"web\",\"url\":\"http://$(hostname):1111/notifiertest\",\"tor\":false}")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
