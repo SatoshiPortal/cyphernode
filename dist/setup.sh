@@ -650,6 +650,8 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/start.sh $current_path/start.sh 0
   copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
   copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
+  copy_file $cyphernodeconf_filepath/installer/tgsetup.sh $current_path/tgsetup.sh 0
+  copy_file $cyphernodeconf_filepath/installer/run-tgsetup.sh $current_path/run-tgsetup.sh 0
 
   if [[ ! -x $current_path/start.sh ]]; then
     step "     [32mmake[0m start.sh executable"
@@ -672,6 +674,18 @@ install_docker() {
   if [[ ! -x $current_path/testdeployment.sh ]]; then
     step "     [32mmake[0m testdeployment.sh executable"
     try chmod +x $current_path/testdeployment.sh
+    next
+  fi
+
+  if [[ ! -x $current_path/tgsetup.sh ]]; then
+    step "     [32mmake[0m tgsetup.sh executable"
+    try chmod +x $current_path/tgsetup.sh
+    next
+  fi
+
+  if [[ ! -x $current_path/run-tgsetup.sh ]]; then
+    step "     [32mmake[0m run-tgsetup.sh executable"
+    try chmod +x $current_path/run-tgsetup.sh
     next
   fi
 }

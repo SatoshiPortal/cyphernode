@@ -564,12 +564,7 @@ module.exports = class App {
       },
       telegram: {
         networks: ['cyphernodenet'],
-        docker: "cypernode/notifier",
-        extra: {
-          bot_url: this.config.data.telegram_bot_url,
-          api_key: this.config.data.telegram_api_key,
-          chat_id: this.config.data.telegram_chat_id
-        }
+        docker: "cypernode/notifier"
       }
     }
 

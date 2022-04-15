@@ -2,7 +2,7 @@ FROM eclipse-mosquitto:1.6-openssl
 
 ENV HOME /notifier
 
-RUN apk --no-cache --update add jq curl su-exec
+RUN apk --no-cache --update add jq curl su-exec postgresql
 
 WORKDIR ${HOME}
 

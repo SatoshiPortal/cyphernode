@@ -304,14 +304,17 @@ services:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
     env_file:
-      - ./.env/notifier.env
+      - .env/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
+      - "<%= proxy_datapath %>:/proxy/db"
+      - container_monitor:/container_monitor
     networks:
       - cyphernodenet
       - cyphernodeappsnet
     depends_on:
       - broker
+      - postgres
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
       replicas: 1

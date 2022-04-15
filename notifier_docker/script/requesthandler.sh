@@ -3,6 +3,7 @@
 . ./trace.sh
 . ./web.sh
 . ./response.sh
+. ./sql.sh
 
 main() {
   trace "Entering main()..."
@@ -14,9 +15,24 @@ main() {
   local url
 
   if [ "${FEATURE_TELEGRAM}" = "true" ]; then
-      trace "[main] FEATURE_TELEGRAM is ENABLED"
+    trace "[main] FEATURE_TELEGRAM is ENABLED"
+
+    trace "[main] Looking up TG_BOT_URL in database"
+    TG_BOT_URL=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_base_url'")
+    returncode=$?
+    trace_rc ${returncode}
+
+    trace "[main] Looking up TG_API_KEY in database"
+    TG_API_KEY=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_api_key'")
+    returncode=$?
+    trace_rc ${returncode}
+
+    trace "[main] Looking up TG_CHAT_ID in database"
+    TG_CHAT_ID=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_chat_id'")
+    returncode=$?
+    trace_rc ${returncode}
   else
-      trace "[main] FEATURE_TELEGRAM is DISABLED"
+    trace "[main] FEATURE_TELEGRAM is DISABLED"
   fi
 
   # Messages should have this form:
@@ -41,7 +57,7 @@ main() {
         #   local body=$(echo "{\"text\":\"Hello world in Telegram at `date -u +"%FT%H%MZ"`\"}" | base64)
         #   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
         if [ "${FEATURE_TELEGRAM}" = "true" ]; then
-          url=$(echo ${TELEGRAM_BOT_URL}${TELEGRAM_API_KEY}/sendMessage?chat_id=${TELEGRAM_CHAT_ID})
+          url=$(echo ${TG_BOT_URL}${TG_API_KEY}/sendMessage?chat_id=${TG_CHAT_ID})
           trace "[main] telegram-url=${url}"
 
           msg=$(echo ${msg} | jq --arg url ${url} '. += {"url":$url}' )
@@ -55,7 +71,7 @@ main() {
         ;;
       sendToTelegramNoop)
         if [ "${FEATURE_TELEGRAM}" = "true" ]; then
-          url=$(echo ${TELEGRAM_BOT_URL}${TELEGRAM_API_KEY}/getMe)
+          url=$(echo ${TG_BOT_URL}${TG_API_KEY}/getMe)
           trace "[main] telegram-url=${url}"
 
           msg=$(echo ${msg} | jq --arg url ${url} '. += {"url":$url}' )

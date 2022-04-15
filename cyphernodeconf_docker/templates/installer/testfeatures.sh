@@ -131,6 +131,7 @@ checknotifiertelegram() {
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")
   [ "${http_code}" -ge "400" ] && return 118
+  [ "${http_code}" -eq "0" ] && return 119
 
   echo -e "\e[1;36mNotifier Telegram rocks!" > /dev/console
 
@@ -322,7 +323,7 @@ if [ "${returncode}" -ne "0" ]; then
     workingproxy="false"
   fi
 else
-  echo -e "\e[1;36mCyphernode seems to be correctly deployed.  Let's run more thourough tests..." > /dev/console
+  echo -e "\e[1;36mCyphernode seems to be correctly deployed.  Let's run more thorough tests..." > /dev/console
 fi
 
 # Let's now check each feature fonctionality...

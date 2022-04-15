@@ -49,8 +49,5 @@
   "installer_cleanup": "Do you want to <font underline='true'>remove</font> this configurator Docker image after installation? This would free about 150MB of disk space.",
   "docker_mode": "Cyphernode Docker services can be run using <font underline='true'>Docker Swarm</font> (https://docs.docker.com/engine/swarm/) or <font underline='true'>docker-compose</font> (https://docs.docker.com/compose/overview/). Both will work, some users prefer one to another depending on deployment types, scalability, current framework, etc.",
   "telegram": "Would you like to enable Telegram notifications - Some manual steps need to be carried once before first use.  See /notifier_docker/sample-config.sh",
-  "telegram_bot_url": "Provide Telegram URL to use for API calls.  If you don't host a Telegram server, the default URL should work.  Make sure your network rules let those outbound calls go through.  There are no inbound (webhooks) calls for now",
-  "telegram_api_key": "Provide Telegram API key. Get your Telegram API Key by chating with the @BotFather. More info can be found here: https://core.telegram.org/bots",
-  "telegram_chat_id": "Provide Telegram chat id (an integer).  Manual steps are required: Add your Bot to a Telegram group you created and then get updates to get the chat.ID in order to send messages to this group afterwards",
   "__default__": ""
 }
