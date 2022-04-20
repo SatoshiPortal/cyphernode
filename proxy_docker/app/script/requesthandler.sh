@@ -778,52 +778,70 @@ main() {
           ;;
         elements_unwatch)
           # curl (GET) 192.168.111.152:8080/elements_unwatch/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+          # or
+          # POST http://192.168.111.152:8080/elements_unwatch
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
+          # args:
+          # - address: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by the watch
+          local address="null"
+          local unconfirmedCallbackURL="null"
+          local confirmedCallbackURL="null"
+          local watchid="null"
 
-          response=$(elements_unwatchrequest "${line}")
-          response_to_client "${response}" ${?}
-          break
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address=$(echo "${line}" | jq -r ".address")
+            unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
+            confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+            watchid=$(echo "${line}" | jq ".id")
+          else
+            address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(elements_unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+          returncode=$?
           ;;
         elements_conf)
           # curl (GET) 192.168.111.152:8080/elements_conf/59e23a15fad777453819702ca432e7c01096c18314ccba90cf3436541f7f1f1a
 
           response=$(elements_confirmation_request "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_newblock)
           # curl (GET) 192.168.111.152:8080/elements_newblock/c7168456b69248e166a0a39ed61dbb19623de0d65789a20d5b39bc6b4371dfbb
 
           response=$(elements_newblock "${line}")
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_gettransaction)
           # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
 
           response=$(elements_get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_getbestblockhash)
           # curl (GET) http://192.168.111.152:8080/elements_getbestblockhash
 
           response=$(elements_get_best_block_hash)
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_getblockchaininfo)
           # http://192.168.111.152:8080/elements_getblockchaininfo
 
           response=$(elements_get_blockchain_info)
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         elements_getmempoolinfo)
           # curl GET http://192.168.111.152:8080/elements_getmempoolinfo
 
           response=$(elements_get_mempool_info)
-          response_to_client "${response}" ${?}
-          break
+          returncode=$?
           ;;
         ots_stamp)
           # POST http://192.168.111.152:8080/ots_stamp
