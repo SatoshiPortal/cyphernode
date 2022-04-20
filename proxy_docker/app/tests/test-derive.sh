@@ -152,7 +152,8 @@ start_test_container
 trace 1 "\n\n[test-derive] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-returncode=$(tests_derive)
+tests_derive
+returncode=$?
 
 trace 1 "\n\n[test-derive] ${BCyan}Tearing down...${Color_Off}\n"
 wait
