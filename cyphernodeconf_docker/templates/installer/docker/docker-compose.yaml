@@ -455,8 +455,10 @@ services:
       - <%= traefik_https_port %>:<%= traefik_https_port %>
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml:ro"
-      - "<%= traefik_datapath%>/acme.json:/acme.json"
+      - "<%= traefik_datapath%>/traefik.toml:/etc/traefik/traefik.toml:ro"
+      <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+      - "<%= traefik_datapath%>/acme.json:/etc/traefik/acme.json"
+      <% } -%>
       - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet

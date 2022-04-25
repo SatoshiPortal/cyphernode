@@ -1,30 +1,175 @@
-debug = false
+[global]
+checkNewVersion = false
+sendAnonymousUsage = false
 
-logLevel = "ERROR"
-defaultEntryPoints = ["https","http"]
+# TODO: remove this later
+[log]
+level = "DEBUG"
 
+# TODO: remove this later
+[accessLog]
+
+# TODO: remove this later
+[api]
+insecure = true
+
+[[tls.certificates]]
+certFile = "/etc/ssl/certs/cert.pem"
+keyFile = "/etc/ssl/private/key.pem"
+
+# add entry points from which services will be accessible
 [entryPoints]
-  [entryPoints.http]
-  address = ":<%= traefik_http_port %>"
-  [entryPoints.https]
-  address = ":<%= traefik_https_port %>"
-  [entryPoints.https.tls]
+[entryPoints.web]
+address = ":<%= traefik_http_port %>"
+[entryPoints.websecure]
+address = ":<%= traefik_https_port %>"
+[entryPoints.onion]
+address = ":9876"
+# [entryPoints.gatekeeper]
+# address = ":2009"
 
-[retry]
-
-[docker]
-endpoint = "unix:///var/run/docker.sock"
-domain = "cyphernode.localhost"
-watch = true
+# add docker provider but do not auto expose all containers
+[providers.docker]
 exposedByDefault = false
-swarmMode = <%= ( docker_mode === 'swarm' )?'true':'false' %>
+<% if (docker_mode === 'swarm') { -%>
+swarmMode = true
+<% } -%>
 
-[acme]
-email = "letsencrypt@yourdomain.com"
-storage = "acme.json"
-entryPoint = "https"
-onHostRule = true
-[acme.httpChallenge]
-entryPoint = "http"
-[[acme.domains]]
-  main = "cyphernode.yourdomain.com"
+# This file provider is used to read in the traefik.toml file
+# so routers and middlewares are available. This is strange
+[providers.file]
+filename = "/etc/traefik/traefik.toml"
+
+# [http.services]
+# [http.services.proxy.loadBalancer]
+# [[http.services.proxy.loadBalancer.servers]]
+# url = "http://proxy:8888/"
+
+# This router is only used to run the root-to-admin-redirect
+# middleware. It does nothing else
+[http.routers]
+[http.routers.redirect-to-https]
+entryPoints = ["web"]
+middlewares = ["https-redirect"]
+priority = 1
+<% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`)"
+<% } else { -%>
+rule = "HostRegexp(`{host:.+}`)"
+<% } -%>
+service = "noop@internal"
+
+[http.routers.root-router]
+entrypoints = ["websecure"]
+middlewares = ["root-to-admin-redirect@file"]
+priority = 2
+<% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/`)"
+<% } else { -%>
+rule = "Path(`/`)"
+<% } -%>
+service = "noop@internal"
+tls = true
+
+# <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+# [http.routers.letsencrypt-router]
+# entrypoints = ["websecure"]
+# middlewares = ["root-to-admin-redirect@file"]
+# priority = 3
+# rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.well-known/acme-challenge/.+`)"
+# service = "noop@internal"
+# [http.routers.letsencrypt-router.tls]
+# certResolver = "letsencrypt"
+# [[http.routers.letsencrypt-router.tls.domains]]
+# main = "<%- traefik_external_hostname %>"
+# <% } -%>
+
+[http.routers.root-router-onion]
+entrypoints = ["onion"]
+middlewares = ["root-to-admin-redirect@file"]
+priority = 4
+<% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/`)"
+<% } else { -%>
+rule = "Path(`/`)"
+<% } -%>
+service = "noop@internal"
+
+# [http.routers.auth-router]
+# entrypoints = ["websecure"]
+# middlewares = ["forward-auth@file"]
+# priority = 5
+# <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+# rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.+`)"
+# <% } else { -%>
+# rule = "Path(`/.+`)"
+# <% } -%>
+# service = "noop@internal"
+# tls = true
+
+# [http.routers.auth-router-onion]
+# entrypoints = ["onion"]
+# middlewares = ["forward-auth@file"]
+# priority = 5
+# <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+# rule = "Host(`<%- traefik_external_hostname %>`) && Path(`/.+`)"
+# <% } else { -%>
+# rule = "Path(`/.+`)"
+# <% } -%>
+# service = "noop@internal"
+
+# [http.routers.auth-router-gatekeeper]
+# entrypoints = ["gatekeeper"]
+# middlewares = ["strip-proxy-api-versionprefix@file", "gatekeeper-forward-auth@file"]
+# <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+# rule = "Host(`<%- traefik_external_hostname %>`) && PathPrefix(`/v0`)"
+# <% } else { -%>
+# rule = "PathPrefix(`/v0`)"
+# <% } -%>
+# service = "proxy@file"
+# tls = true
+
+# This middleware redirects requests to / to the admin interface
+[http.middlewares]
+[http.middlewares.root-to-admin-redirect.redirectRegex]
+regex = "^(https{0,1}://[^/]+?)/{0,1}$"
+replacement = "$1/welcome/"
+
+# [http.middlewares.forward-auth.forwardauth]
+# address = "http://cyphernodefauth:3032/public"
+# #address = "http://192.168.178.90:3032/public"
+# authResponseHeaders = ["X-Auth-User-Claims"]
+# trustForwardHeader = true
+
+[http.middlewares.https-redirect.redirectScheme]
+scheme = "https"
+
+# [http.middlewares.gatekeeper-forward-auth.forwardauth]
+# address = "http://cyphernodefauth:3032/gatekeeper"
+# #address = "http://192.168.178.90:3032/gatekeeper"
+# authResponseHeaders = ["X-Auth-User-Claims"]
+# trustForwardHeader = true
+
+# [http.middlewares.strip-proxy-api-versionprefix.stripprefix]
+# prefixes=["/v0","/v0/","/v1","/v1/"]
+# forceSlash=true
+
+<% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { -%>
+# NOTE: letsencrypt resolver with httpChallenge only works on standard ports 80,443
+[certificatesResolvers.letsencrypt.acme]
+email = "<%= traefik_letsencrypt_email %>"
+storage = "/etc/traefik/acme.json"
+[certificatesResolvers.letsencrypt.acme.httpChallenge]
+entryPoint = "web"
+<% } -%>
+
+
+# [acme]
+# email = "letsencrypt@yourdomain.com"
+# storage = "acme.json"
+# entryPoint = "https"
+# onHostRule = true
+# [acme.httpChallenge]
+# entryPoint = "http"
+# [[acme.domains]]
+#   main = "cyphernode.yourdomain.com"
