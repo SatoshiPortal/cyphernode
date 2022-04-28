@@ -130,15 +130,15 @@ CREATE INDEX idx_stamp_calledback ON stamp (calledback);
 
 CREATE TABLE cyphernode_props (
   id SERIAL PRIMARY KEY,
-  property VARCHAR,
+  category VARCHAR NOT NULL,
+  property VARCHAR NOT NULL,
   value VARCHAR,
   inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX idx_cp_property ON cyphernode_props (property);
-CREATE UNIQUE INDEX idx_cp_propval ON cyphernode_props (property, value);
+CREATE UNIQUE INDEX idx_cp_catprop ON cyphernode_props (category, property);
 
-INSERT INTO cyphernode_props (id, property, value) VALUES (1, 'version', '0.1');
-INSERT INTO cyphernode_props (id, property, value) VALUES (2, 'pay_index', '0');
+INSERT INTO cyphernode_props (id, category, property, value) VALUES (1, 'cyphernode', 'version', '0.2');
+INSERT INTO cyphernode_props (id, category, property, value) VALUES (2, 'c-lightning', 'pay_index', '0');
 SELECT SETVAL('cyphernode_props_id_seq', 2);
 
 CREATE TABLE ln_invoice (
