@@ -171,7 +171,7 @@ services:
     image: cyphernode/proxy:<%= proxy_version %>
     command: $USER ./startproxy.sh
     env_file:
-      - .env/proxy.env 
+      - .env/proxy.env
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -272,10 +272,8 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
-    <% if ( features.indexOf('tor') !== -1 ) { %>
     env_file:
       - .env/notifier.env
-    <% } %>
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:
