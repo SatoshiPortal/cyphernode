@@ -493,9 +493,6 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/otsclient/otsclient.env $current_path/.env/otsclient.env 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/proxycron/proxycron.env $current_path/.env/proxycron.env 1 $SUDO_REQUIRED
 
-
-  copy_file $cyphernodeconf_filepath/notifier/notifier.env $current_path/.env/notifier.env 1 $SUDO_REQUIRED
-
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
