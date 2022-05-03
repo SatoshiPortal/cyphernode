@@ -14,26 +14,11 @@ main() {
   local response_topic
   local url
 
-  if [ "${FEATURE_TELEGRAM}" = "true" ]; then
-    trace "[main] FEATURE_TELEGRAM is ENABLED"
+  TG_BOT_URL=""
+  TG_API_KEY=""
+  TG_CHAT_ID=""
 
-    trace "[main] Looking up TG_BOT_URL in database"
-    TG_BOT_URL=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_base_url'")
-    returncode=$?
-    trace_rc ${returncode}
-
-    trace "[main] Looking up TG_API_KEY in database"
-    TG_API_KEY=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_api_key'")
-    returncode=$?
-    trace_rc ${returncode}
-
-    trace "[main] Looking up TG_CHAT_ID in database"
-    TG_CHAT_ID=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_chat_id'")
-    returncode=$?
-    trace_rc ${returncode}
-  else
-    trace "[main] FEATURE_TELEGRAM is DISABLED"
-  fi
+  loadConfig
 
   # Messages should have this form:
   # {"response-topic":"response/5541","cmd":"web","url":"2557df870b9a:1111/callback1conf","body":"eyJpZCI6IjUxIiwiYWRkc...dCI6MTUxNzYwMH0K"}
@@ -83,10 +68,49 @@ main() {
           trace "[main] Telegram is NOT enabled - message not sent"
         fi
         ;;
+     reloadConfig)
+        trace "[main] Reloading configs Now"
+        response="{\"return_code\":\"$(loadConfig)\"}"
+        trace "[main] response=${response}"
+        publish_response "${response}" "${response_topic}" ${?}
+        trace "[main] Reloading configs - Done"
+        ;;
     esac
     trace "[main] msg processed"
   done
 }
+
+loadConfig(){
+  if [ "${FEATURE_TELEGRAM}" = "true" ]; then
+    trace "[loadConfig] FEATURE_TELEGRAM is ENABLED"
+
+    trace "[loadConfig] Looking up TG_BOT_URL in database"
+    TG_BOT_URL=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_base_url'")
+    returncode=$?
+    trace "[loadConfig] TG_BOT_URL [${TG_BOT_URL}]"
+    trace_rc ${returncode}
+    [ "${returncode}" -ne "0" ] && echo 10
+
+    trace "[loadConfig] Looking up TG_API_KEY in database"
+    TG_API_KEY=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_api_key'")
+    returncode=$?
+    trace "[loadConfig] TG_API_KEY [${TG_API_KEY}]"
+    trace_rc ${returncode}
+    [ "${returncode}" -ne "0" ] && echo 20
+
+    trace "[loadConfig] Looking up TG_CHAT_ID in database"
+    TG_CHAT_ID=$(sql "SELECT value FROM cyphernode_props WHERE category='notifier' AND property='tg_chat_id'")
+    returncode=$?
+    trace "[loadConfig] TG_CHAT_ID [${TG_CHAT_ID}]"
+    trace_rc ${returncode}
+    [ "${returncode}" -ne "0" ] && echo 30
+  else
+    trace "[loadConfig] FEATURE_TELEGRAM is DISABLED"
+  fi
+
+  echo "0"
+}
+
 
 main
 returncode=$?

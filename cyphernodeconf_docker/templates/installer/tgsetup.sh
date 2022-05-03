@@ -131,12 +131,15 @@ while true; do
           sql "INSERT INTO cyphernode_props (category, property, value) VALUES ('notifier', 'tg_chat_id', '$TG_CHAT_ID') \
                ON CONFLICT (category, property) DO UPDATE SET value=$TG_CHAT_ID"
 
-          echo "Sending message to Telegram [$today]"
-          echo "curl -X POST $TG_BASE_URL$TG_API_KEY/sendMessage?chat_id=$TG_CHAT_ID" 
-
-          curl -X POST "$TG_BASE_URL$TG_API_KEY/sendMessage?chat_id=$TG_CHAT_ID" -H "Content-Type: application/json" -d "{\"text\":\"Hello from Cyphernode [$today] - setup is complete\"}"
+          echo ""
+          echo "Reloading notifier configs"
+          response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"reloadConfig\",\"tor\":false}")
 
           echo ""
+          echo "Sending message to Telegram [$today]"
+          body=$(echo "{\"text\":\"Hello from Cyphernode 2[$today] - setup is complete\"}" | base64 | tr -d '\n')
+          response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
+
           echo "Ok. Done."
           exit
         fi
