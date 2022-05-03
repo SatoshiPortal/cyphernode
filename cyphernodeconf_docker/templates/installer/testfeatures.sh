@@ -430,13 +430,13 @@ result="${result}$(feature_status ${returncode} 'Notifier error!')}"
 result="${result},{\"coreFeature\":true, \"name\":\"notifier telegram\",\"working\":"
 status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier\") | .active")
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
-  timeout_feature checknotifiertelegram
+  checknotifiertelegram
   returncode=$?
 else
   returncode=1
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
-result="${result}$(feature_status ${returncode} 'Notifier Telegram error!')}"
+result="${result}$(feature_status ${returncode} 'Notifier Telegram error! - Please run Telegram setup - See doc/TELEGRAM.md')}"
 <% } %>
 
 #############################
