@@ -1,7 +1,54 @@
-# Telegram integration in Cyphernode.  Please enjoy responsibly
+# Telegram integration in Cyphernode.
 
-Get your Telegram API Key by chating with the @BotFather
-Details here https://core.telegram.org/bots
+Build and setup Cyphernode - Choose to enable Telegram.  The first time you run Cyphernode, you will get an error concerning Telegram beacause Telegram has to be setup with the next few steps.
+
+START CYPHERNODE running /dist/start.sh
+
+In directory cyphernode/notifier_docker/scripts, you will find the script start-tg-setup.sh to start the Telegram setup.  It runs inside the notifier container with this command : 
+      docker exec -it $(docker ps -q -f "name=cyphernode_notifier") ./tgsetup.sh 
+
+Follow the steps of the installer - example output follows:
+
+notifier_docker/script % ./start-tg-setup.sh
+Testing database before starting the configuration
+Database is alive
+Do you wish to configure Telegram for Cyphernode? [yn] yAdding the Telegram base URL in database config table cyphernode_props
+[sql] psql -qAtX -h postgres -U cyphernode -c "INSERT INTO cyphernode_props (category, property, value) VALUES ('notifier', 'tg_base_url', 'https://api.telegram.org/bot')      ON CONFLICT (category, property) DO NOTHING"
+0
+
+Please go into your Telegram App and start chatting with the @BotFather
+
+==> (Step 1) Enter @Botfather in the search tab and choose this bot
+==> Note, official Telegram bots have a blue checkmark beside their name
+==> (Step 2) Click “Start” to activate BotFather bot.  In response, you receive a list of commands to manage bots
+==> (Step 3) Choose or type the /newbot command and send it
+==> @BotFather replies: Alright, a new bot. How are we going to call it? Please choose a name for your bot
+==> (Step 4) Choose a name for your bot.  And choose a username for your bot — the bot can be found by its username in searches. The username must be unique and end with the word 'bot'
+==> After you choose a suitable name for your bot — the bot is created. You will receive a message with a link to your bot t.me/<bot_username>
+==> Cyphernode needs the generated token to access the API: Copy the line below following the message 'Use this token to access the HTTP API' 
+Enter the token here: 5172851233:AAHkpd4T1ILyhXyqDelNnOTgFE4hl-AQSVMTelegram Setup will now try to obtain the chat ID from the Telgram server.
+To make this happen, please go into the Telegram App and send a message to the new bot
+Click on the link in the @BotFather's answer : Congratulations on your new bot. You will find it at t.me/your-new-bot.
+Trying to contact Telegram server...
+[sql] psql -qAtX -h postgres -U cyphernode -c "INSERT INTO cyphernode_props (category, property, value) VALUES ('notifier', 'tg_api_key', '3172855133:AAHkpd4T1ILyhXyqDelNnOTgFE4hl-AQSVM')          ON CONFLICT (category, property) DO UPDATE SET value='5182851733:AAHkpd4T1ILyhXyqDelNnOTgFE4hl-AQSVM'"
+0
+[sql] psql -qAtX -h postgres -U cyphernode -c "INSERT INTO cyphernode_props (category, property, value) VALUES ('notifier', 'tg_chat_id', '1649436203')                ON CONFLICT (category, property) DO UPDATE SET value=1609936104"
+0
+
+Reloading configs
+
+Sending message to Telegram [Tue May  3 16:29:03 UTC 2022]
+Ok. Done.
+
+
+
+
+
+
+
+
+
+How it works :
 
 calling Telegram API
   example :

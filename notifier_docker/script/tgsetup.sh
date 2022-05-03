@@ -3,9 +3,6 @@
 # Cyphernode Telegram configuration
 #
 #
-echo "Telegram setup.  Installing components..."
-apk add --update --no-cache curl jq postgresql > /dev/null
-
 sql() {
   local select_id=${2}
   local response
@@ -132,7 +129,7 @@ while true; do
                ON CONFLICT (category, property) DO UPDATE SET value=$TG_CHAT_ID"
 
           echo ""
-          echo "Reloading notifier configs"
+          echo "Reloading configs"
           response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"reloadConfig\",\"tor\":false}")
 
           echo ""
