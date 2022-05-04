@@ -1,11 +1,13 @@
 # Telegram integration in Cyphernode.
 
-Build and setup Cyphernode - Choose to enable Telegram.  The first time you run Cyphernode, you will get an error concerning Telegram beacause Telegram has to be setup with the next few steps.
+The first time you run Cyphernode, you will get an error concerning Telegram beacause Telegram has to be setup with the next few steps.  Go to [STEP 1]
 
-==> START CYPHERNODE running /dist/start.sh
+Build and setup Cyphernode - Choose to enable Telegram.  
 
-In directory cyphernode/notifier_docker/scripts, you will find the script start-tg-setup.sh to start the Telegram setup.  It runs inside the notifier container with this command : 
-      docker exec -it $(docker ps -q -f "name=cyphernode_notifier") ./tgsetup.sh 
+==> START CYPHERNODE by running /dist/start.sh
+
+[STEP 1]: In directory cyphernode/notifier_docker/script, you will find the script `start-tg-setup.sh` to start the Telegram setup.  It runs inside the notifier container with this command : 
+      `docker exec -it $(docker ps -q -f "name=cyphernode_notifier") ./tgsetup.sh`
 
 Follow the steps of the installer - example output follows:
 

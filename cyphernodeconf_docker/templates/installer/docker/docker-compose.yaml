@@ -276,7 +276,7 @@ services:
       - .env/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
-      - "<%= proxy_datapath %>:/proxy/db"
+      - "<%= proxy_datapath %>/pgpass:/proxy/db/pgpass"
       - container_monitor:/container_monitor
     networks:
       - cyphernodenet

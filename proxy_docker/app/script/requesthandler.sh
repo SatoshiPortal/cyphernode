@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+
+. ./db/config.sh
 . ./sendtobitcoinnode.sh
 . ./callbacks_job.sh
 . ./watchrequest.sh

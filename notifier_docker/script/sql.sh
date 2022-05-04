@@ -30,3 +30,22 @@ sql() {
 
   return ${returncode}
 }
+
+waitfortable(){
+  TABLE_NAME=$1
+
+  trace "Entering waitfortable [$TABLE_NAME]"
+
+  while true; do
+
+    exists=$(psql -qAtX -h postgres -U cyphernode -c "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname='public' and tablename='$TABLE_NAME')")
+
+    if [ "${exists}" = "t" ]; then
+      trace "Table found [$TABLE_NAME] -  Exiting"
+      break
+    fi
+
+    trace "wainting for table [$TABLE_NAME] to exist"
+    sleep 5
+  done
+}
