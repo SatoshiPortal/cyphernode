@@ -14,8 +14,4 @@ echo "CYPHERNODE[entrypoint]: Tor is ready - Starting bitcoind"
 # Create default wallets if they are not loaded
 /.bitcoin/createWallets.sh &
 
-<% if( net === 'regtest' ) { %>
-/.bitcoin/mine.sh &
-<% } %>
-
 exec bitcoind
