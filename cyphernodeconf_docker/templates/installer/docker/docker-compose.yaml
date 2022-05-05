@@ -134,9 +134,6 @@ services:
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
-      <% if( net === 'regtest' ) { %>
-      - "<%= bitcoin_datapath %>/mine.sh:/.bitcoin/mine.sh:ro"
-      <% } %>
       - container_monitor:/container_monitor
     healthcheck:
       <% if( net === 'regtest' ) { %>

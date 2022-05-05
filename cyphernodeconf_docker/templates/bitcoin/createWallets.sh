@@ -12,13 +12,24 @@ CURRENT_WALLETS=`$BITCOIN_CLI listwallets`
 
 for wallet in $BASIC_WALLETS
 do
-    echo "CYPHERNODE: Checking wallet [$wallet]"
+    echo "CYPHERNODE[createWallet]: Checking wallet [$wallet]"
     echo "$CURRENT_WALLETS" | grep -F $wallet > /dev/null 2>&1
 
     if [ "$?" -ne "0" ]; then
        walletNameNoQuote=`echo $wallet | tr -d '"'`
-       $BITCOIN_CLI createwallet ${walletNameNoQuote} && echo "CYPHERNODE: new wallet created : [$walletNameNoQuote]"
+       $BITCOIN_CLI createwallet ${walletNameNoQuote} && echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]"
     else
-       echo "CYPHERNODE: Wallet [$wallet] found"
+       echo "CYPHERNODE[createWallet]: Wallet [$wallet] found"
     fi
 done
+
+<% if( net === 'regtest' ) { %>
+MINBLOCK=101
+
+blockcount=`bitcoin-cli getblockcount`                            
+blocktomine=`expr $MINBLOCK - $blockcount`
+[ $blocktomine -gt 0 ] && echo "CYPHERNODE[createWallet]: About to mine [$blocktomine] new block(s)" && bitcoin-cli -rpcwallet=spending01.dat -generate $blocktomine
+
+echo "CYPHERNODE[createWallet]: Done mining [$blocktomine] new block(s)"
+
+<% } %>
