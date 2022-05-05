@@ -103,7 +103,7 @@ test_elements_manage_missed_0_conf() {
   docker stop $(docker ps -q -f "name=proxy\.")
 
   trace 3 "[test_elements_manage_missed_0_conf] Sending coins to watched address while proxy is down..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.00001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/elements_spend | jq -r ".txid")
 
   wait_for_proxy
@@ -140,7 +140,7 @@ test_elements_manage_missed_1_conf() {
   trace 3 "[test_elements_manage_missed_1_conf] response=${response}"
 
   trace 3 "[test_elements_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.00001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/elements_spend | jq -r ".txid")
 
   trace 3 "[test_elements_manage_missed_1_conf] Sleeping for 10 seconds to let the 0-conf callbacks to happen..."
