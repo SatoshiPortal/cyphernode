@@ -536,6 +536,7 @@ install_docker() {
 
     copy_file $cyphernodeconf_filepath/bitcoin/entrypoint.sh $BITCOIN_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
     copy_file $cyphernodeconf_filepath/bitcoin/createWallets.sh $BITCOIN_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/bitcoin/mine.sh $BITCOIN_DATAPATH/mine.sh 1 $SUDO_REQUIRED
 
     if [[ ! -x $BITCOIN_DATAPATH/entrypoint.sh ]]; then
       step "     [32mmake[0m entrypoint.sh executable"
@@ -545,6 +546,11 @@ install_docker() {
     if [[ ! -x $BITCOIN_DATAPATH/createWallets.sh ]]; then
       step "     [32mmake[0m createWallets.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/createWallets.sh
+      next
+    fi
+    if [[ ! -x $BITCOIN_DATAPATH/mine.sh ]]; then
+      step "     [32mmake[0m mine.sh executable"
+      sudo_if_required chmod +x $BITCOIN_DATAPATH/mine.sh
       next
     fi
   fi
