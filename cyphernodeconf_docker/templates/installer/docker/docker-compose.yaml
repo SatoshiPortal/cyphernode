@@ -134,9 +134,16 @@ services:
     volumes:
       - "<%= bitcoin_datapath %>:/.bitcoin"
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
+      <% if( net === 'regtest' ) { %>
+      - "<%= bitcoin_datapath %>/mine.sh:/.bitcoin/mine.sh:ro"
+      <% } %>
       - container_monitor:/container_monitor
     healthcheck:
+      <% if( net === 'regtest' ) { %>
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      <% } else { %>
       test: chown -R $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      <% } %>
       interval: 30s
       timeout: 10s
       retries: 10
