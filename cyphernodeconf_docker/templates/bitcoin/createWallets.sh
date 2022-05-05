@@ -28,8 +28,18 @@ MINBLOCK=101
 
 blockcount=`bitcoin-cli getblockcount`                            
 blocktomine=`expr $MINBLOCK - $blockcount`
-[ $blocktomine -gt 0 ] && echo "CYPHERNODE[createWallet]: About to mine [$blocktomine] new block(s)" && bitcoin-cli -rpcwallet=spending01.dat -generate $blocktomine
+[ $blocktomine -gt 0 ] && echo "CYPHERNODE[createWallet]: About to mine [$blocktomine] new block(s)" && \
+  bitcoin-cli -rpcwallet=spending01.dat -generate $blocktomine && \
+  echo "CYPHERNODE[createWallet]: Done mining [$blocktomine] new block(s)"
 
-echo "CYPHERNODE[createWallet]: Done mining [$blocktomine] new block(s)"
+MIN_BALANCE=1.00000000
+balance=`bitcoin-cli -rpcwallet=spending01.dat getbalance`
+echo "CYPHERNODE[createWallet]: Current balance [$balance] - Min balance is [$MIN_BALANCE]"
 
+while [ `expr $balance \>= $MIN_BALANCE` -eq 0 ]; do
+  echo "CYPHERNODE[createWallet]: Balance is less than $MIN_BALANCE - mining 1 block" && \
+  bitcoin-cli -rpcwallet=spending01.dat -generate 1 && \
+  echo "CYPHERNODE[createWallet]: Done mining 1 block"
+  balance=`bitcoin-cli -rpcwallet=spending01.dat getbalance`
+done
 <% } %>
