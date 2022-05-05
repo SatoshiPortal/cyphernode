@@ -25,6 +25,6 @@ module.exports = {
     }];
   },
   templates: function( props ) {
-    return ['pgpass'];
+    return ['pgpass', 'postgres.env'];
   }
 };

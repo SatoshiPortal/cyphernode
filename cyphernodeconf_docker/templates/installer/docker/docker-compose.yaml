@@ -10,11 +10,8 @@ services:
     image: postgres:<%= postgres_version %>
     user: $USER
     entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
-    environment:
-      - "POSTGRES_USER=cyphernode"
-      - "POSTGRES_PASSWORD=<%= postgres_password %>"
-      - "POSTGRES_DB=cyphernode"
-      - "PGDATA=/var/lib/postgresql/data/pgdata"
+    env_file:
+      - .env/postgres.env
     volumes:
       - "<%= postgres_datapath %>:/var/lib/postgresql/data"
       - "<%= logs_datapath %>:/cnlogs"
@@ -222,41 +219,8 @@ services:
   proxy:
     image: cyphernode/proxy:<%= proxy_version %>
     command: $USER ./startproxy.sh
-    environment:
-      - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
-      - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
-      - "WATCHER_BTC_NODE_XPUB_WALLET=xpubwatching01.dat"
-      - "WATCHER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
-      - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
-      - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
-      - "PROXY_LISTENING_PORT=8888"
-      - "DB_PATH=/proxy/db"
-      - "DB_FILE=/proxy/db/proxydb"
-      - "PYCOIN_CONTAINER=pycoin:7777"
-      <% if ( use_xpub && xpub ) { %>
-      - "DERIVATION_PUB32=<%= xpub %>"
-      - "DERIVATION_PATH=<%= derivation_path %>"
-      <% } %>
-      - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune ? 'true' : 'false' %>"
-      - "OTSCLIENT_CONTAINER=otsclient:6666"
-      - "OTS_FILES=/proxy/otsfiles"
-      - "XPUB_DERIVATION_GAP=100"
-      - "PGPASSFILE=/proxy/db/pgpass"
-      <% if ( features.indexOf('elements') !== -1 ) { %>
-      - "SPENDER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
-      - "SPENDER_ELEMENTS_NODE_DEFAULT_WALLET=spending01.dat"
-      - "SPENDER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "SPENDER_ELEMENTS_NODE_RPC_CFG=/tmp/spender_elementsnode_curlcfg.properties"
-      - "WATCHER_ELEMENTS_NODE_RPC_URL=elements:<%= (net === 'regtest') ? '18885' : ((net === 'testnet') ? '18891' : '7041') %>/wallet"
-      - "WATCHER_ELEMENTS_NODE_DEFAULT_WALLET=watching01.dat"
-      - "WATCHER_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat"
-      - "WATCHER_ELEMENTS_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "WATCHER_ELEMENTS_NODE_RPC_CFG=/tmp/watcher_elementsnode_curlcfg.properties"
-      <% } %>
+    env_file:
+      - .env/proxy.env
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -357,12 +321,8 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
-    <% if ( features.indexOf('tor') !== -1 ) { %>
-    environment:
-      - "TRACING=1"
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-    <% } %>
+    env_file:
+      - .env/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:
@@ -392,9 +352,8 @@ services:
   pycoin:
     image: cyphernode/pycoin:<%= pycoin_version %>
     command: $USER ./startpycoin.sh
-    environment:
-      - "TRACING=1"
-      - "PYCOIN_LISTENING_PORT=7777"
+    env_file:
+      - .env/pycoin.env
     <% if ( devmode ) { %>
     ports:
       - "7777:7777"
@@ -426,16 +385,8 @@ services:
   otsclient:
     image: cyphernode/otsclient:<%= otsclient_version %>
     command: $USER /script/startotsclient.sh
-    environment:
-      - "TRACING=1"
-      - "OTSCLIENT_LISTENING_PORT=6666"
-      <% if (net === 'testnet') { %>
-      - "TESTNET=1"
-      <% } %>
-      <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_otsoperations') !== -1 ) { %>
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-      <% } %>
+    env_file:
+      - .env/otsclient.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
       - "<%= otsclient_datapath %>:/otsfiles"
@@ -466,8 +417,8 @@ services:
     # HTTP authentication API gate
     image: cyphernode/gatekeeper:<%= gatekeeper_version %>
     command: $USER
-    environment:
-      - "TRACING=1"
+    env_file:
+      - .env/gatekeeper.env
     <% if( gatekeeper_expose ) { %>
     ports:
       - "<%= gatekeeper_port %>:<%= gatekeeper_port %>"
@@ -515,8 +466,10 @@ services:
       - <%= traefik_https_port %>:<%= traefik_https_port %>
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml:ro"
-      - "<%= traefik_datapath%>/acme.json:/acme.json"
+      - "<%= traefik_datapath%>/traefik.toml:/etc/traefik/traefik.toml:ro"
+      <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { %>
+      - "<%= traefik_datapath%>/acme.json:/etc/traefik/acme.json"
+      <% } %>
       - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet
