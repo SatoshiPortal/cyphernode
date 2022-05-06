@@ -12,7 +12,6 @@ const schemas = {
   '0.2.2': require('../schema/config-v0.2.2.json'),
   '0.2.3': require('../schema/config-v0.2.3.json'),
   '0.2.4': require('../schema/config-v0.2.4.json'),
-  '0.2.5': require('../schema/config-v0.2.5.json'),
   '0.2.5.wasabi': require('../schema/config-v0.2.5.wasabi.json'),
   '0.2.6.wasabi': require('../schema/config-v0.2.6.wasabi.json')
 };

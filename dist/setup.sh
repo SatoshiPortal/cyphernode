@@ -384,6 +384,12 @@ install_docker() {
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
 
+  if [ ! -d $current_path/.env ]; then
+    step "   [32mcreate[0m $current_path/.env"
+    sudo_if_required mkdir -p $current_path/.env
+    next
+  fi
+
   copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
@@ -391,6 +397,7 @@ install_docker() {
   copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/gatekeeper.env $current_path/.env/gatekeeper.env 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
@@ -475,17 +482,18 @@ install_docker() {
     next
   fi
 
-  if [ ! -d $current_path/.env ]; then
-    step "   [32mcreate[0m ${current_path}/.env"
-    sudo_if_required mkdir -p ${current_path}/.env
-    next
-  fi
 
   copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/postgres/postgres.env $current_path/.env/postgres.env 1 $SUDO_REQUIRED
   sudo_if_required chmod 0600 $PROXY_DATAPATH/pgpass
-  copy_file $cyphernodeconf_filepath/proxycron/proxycron.env ${current_path}/.env/proxycron.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/proxy/proxy.env $current_path/.env/proxy.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/notifier/notifier.env $current_path/.env/notifier.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/pycoin/pycoin.env $current_path/.env/pycoin.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/otsclient/otsclient.env $current_path/.env/otsclient.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/proxycron/proxycron.env $current_path/.env/proxycron.env 1 $SUDO_REQUIRED
+
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
@@ -902,7 +910,7 @@ PYCOIN_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v22.0"
 LIGHTNING_VERSION="v0.10.2"
-TRAEFIK_VERSION="v1.7.9-alpine"
+TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"
 WASABI_VERSION="v0.3.1"
