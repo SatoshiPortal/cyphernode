@@ -18,7 +18,6 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
-. ./newblock.sh
 . ./batching.sh
 
 main() {
@@ -213,12 +212,6 @@ main() {
         get_unused_addresses_by_watchlabel)
           # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
           response=$(get_unused_addresses_by_watchlabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
-          returncode=$?
-          ;;
-        newblock)
-          # curl (GET) 192.168.111.152:8080/newblock/000000000000005c987120f3b6f995c95749977ef1a109c89aa74ce4bba97c1f
-
-          response=$(newblock "${line}")
           returncode=$?
           ;;
         getbestblockhash)

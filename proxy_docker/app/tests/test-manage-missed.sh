@@ -48,6 +48,13 @@ wait_for_proxy() {
   docker exec -t tests-manage-missed sh -c 'while true ; do curl proxy:8888/helloworld ; [ "$?" -eq "0" ] && break ; sleep 5; done'
 }
 
+wait_for_broker() {
+  trace 1 "\n\n[wait_for_broker] ${BCyan}Waiting for the broker to be ready...${Color_Off}\n"
+
+  # First ping the containers to make sure they're up...
+  docker exec -t tests-manage-missed sh -c 'while true ; do ping -c 1 broker ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+}
+
 test_manage_missed_0_conf() {
   # Missed 0-conf:
   # 1. Get new address
@@ -125,6 +132,7 @@ test_manage_missed_1_conf() {
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
   docker restart $(docker ps -q -f "name=proxy[^c]")
+  docker stop $(docker ps -q -f "name=broker") # otherwise the message gets delivered when proxy gets back up
 
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
   mine
@@ -132,6 +140,52 @@ test_manage_missed_1_conf() {
   wait_for_proxy
 
   trace 3 "[test_manage_missed_1_conf] Calling executecallbacks..."
+  exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
+}
+
+test_manage_missed_1_conf_dead_broker() {
+  # Missed 1-conf:
+  # 1. Get new address
+  # 2. Watch it
+  # 3. sendtoaddress
+  # 4. Check if 0-conf callback is called
+  # 5. Stop broker
+  # 6. Mine a new block
+  # 7. Wait for broker
+  # 8. Call executecallbacks
+  # 9. Check if 1-conf callback is called
+
+  trace 1 "\n[test_manage_missed_1_conf_dead_broker] ${BCyan}Let's miss a 1-conf!...${Color_Off}"
+
+  trace 2 "[test_manage_missed_1_conf_dead_broker] getnewaddress..."
+  local response=$(exec_in_test_container curl -d '{"label":"missed0conftest"}' proxy:8888/getnewaddress)
+  trace 3 "[test_manage_missed_1_conf_dead_broker] response=${response}"
+  local address=$(echo "${response}" | jq -r ".address")
+  trace 3 "[test_manage_missed_1_conf_dead_broker] address=${address}"
+
+  trace 2 "[test_manage_missed_1_conf_dead_broker] watch it..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${url3}'","confirmedCallbackURL":"'${url4}'","label":"missed0conftest"}'
+  trace 3 "[test_manage_missed_1_conf_dead_broker] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_1_conf_dead_broker] response=${response}"
+
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Sending coins to watched address while proxy is up..."
+  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
+
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
+  sleep 20
+
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Shutting down the broker..."
+  docker stop $(docker ps -q -f "name=broker")
+
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Mine a new block..."
+  mine
+  sleep 10
+
+  wait_for_broker
+
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Calling executecallbacks..."
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 }
 
@@ -163,6 +217,9 @@ exec_in_test_container apk add --update curl
 
 test_manage_missed_0_conf
 test_manage_missed_1_conf
+
+test_manage_missed_0_conf
+test_manage_missed_1_conf_dead_broker
 
 trace 3 "Waiting for the callbacks to happen..."
 wait
