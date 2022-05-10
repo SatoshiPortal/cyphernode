@@ -5,19 +5,26 @@
 . ./batching.sh
 
 bitcoin_node_newblock() {
+  local blockheight
+  local newblockheight
 
   trace "Entering bitcoin_node_newblock()..."
 
   while true  # Keep an infinite loop to reconnect when connection lost/broker unavailable
+  
   do
-    mosquitto_sub -h broker -t newblock | while read -r message
-    do
-      trace "[bitcoin_node_newblock] Message: ${message}"
-      processNewBlock ${message}
-    done
+    trace "[bitcoin_node_newblock] mosquitto_sub --retained-only -h broker -t newblock -C 1 -W 5"
+    message=$(mosquitto_sub --retained-only -h broker -t newblock -C 1 -W 5) 
+    trace "[bitcoin_node_newblock] Message: ${message}"
 
-    trace "[bitcoin_node_newblock] reconnecting in 10 secs" 
-    sleep 10
+    newblockheight=$(echo $message | jq .blockheight)
+    if [ -n "$newblockheight" ] && [ "$newblockheight" != "$blockheight" ]; then
+      processNewBlock ${message}
+      blockheight=$newblockheight
+      trace "[bitcoin_node_newblock] Done processing"
+    fi
+    trace "[bitcoin_node_newblock] reconnecting in 60 secs" 
+    sleep 60
   done
 }
 

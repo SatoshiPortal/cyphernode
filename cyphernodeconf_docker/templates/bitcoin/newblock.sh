@@ -9,8 +9,8 @@ newblock(){
   local blockheight
   blockheight=$(get_block_height $blockhash)
 
-  echo "[newblock] mosquitto_pub -h broker -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
-  mosquitto_pub -h broker -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
+  echo "[newblock] mosquitto_pub -h broker --retain -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+  mosquitto_pub -h broker --retain -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
 }
 
 get_block_height(){
