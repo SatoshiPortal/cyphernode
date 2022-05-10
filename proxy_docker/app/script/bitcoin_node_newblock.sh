@@ -11,7 +11,6 @@ bitcoin_node_newblock() {
   trace "Entering bitcoin_node_newblock()..."
 
   while true  # Keep an infinite loop to reconnect when connection lost/broker unavailable
-  
   do
     trace "[bitcoin_node_newblock] mosquitto_sub --retained-only -h broker -t newblock -C 1 -W 5"
     message=$(mosquitto_sub --retained-only -h broker -t newblock -C 1 -W 5) 
