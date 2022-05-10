@@ -1,7 +1,7 @@
 #!/bin/sh
 
 newblock(){
-  echo "[newblock] Enering newblock"
+  echo "[newblock] Entering newblock"
 
   local blockhash="$@"
   echo "[newblock] [blockhash=$blockhash]"
