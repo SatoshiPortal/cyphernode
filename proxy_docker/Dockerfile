@@ -21,7 +21,7 @@ COPY --from=eclipse-mosquitto:1.6-openssl /usr/bin/mosquitto_rr /usr/bin/mosquit
 COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libmosquitto* /usr/lib/
 COPY --from=eclipse-mosquitto:1.6-openssl /lib/ld-musl-* /lib/
 
-RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh tests/* \
+RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh bitcoin_node_conf.sh tests/* \
  && chmod o+w . \
  && mkdir db \
  && pip3 install base58

@@ -8,19 +8,6 @@
 . ./computefees.sh
 . ./blockchainrpc.sh
 
-confirmation_request()
-{
-  # We are receiving a HTTP request, let's find the TXID from it
-
-  trace "Entering confirmation_request()..."
-
-  local request=${1}
-  local txid=$(echo "${request}" | cut -d ' ' -f2 | cut -d '/' -f3)
-
-  confirmation "${txid}"
-  return $?
-}
-
 confirmation() {
   (
   flock -x 201
