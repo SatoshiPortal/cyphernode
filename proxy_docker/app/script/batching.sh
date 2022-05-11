@@ -3,6 +3,7 @@
 . ./trace.sh
 . ./sendtobitcoinnode.sh
 . ./bitcoin.sh
+. ./blockchainrpc.sh
 
 createbatcher() {
   trace "Entering createbatcher()..."
