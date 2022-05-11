@@ -3,6 +3,7 @@
 . ./trace.sh
 . ./sql.sh
 . ./blockchainrpc.sh
+. ./notify.sh
 . ./computefees.sh
 
 do_callbacks_txid() {
