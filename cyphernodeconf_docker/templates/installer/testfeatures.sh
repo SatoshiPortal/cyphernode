@@ -129,8 +129,6 @@ checknotifiertelegram() {
   local returncode
   local msg
 
-  echo "TOR [$TOR_TELEGRAM]"
-
   if [ "$TOR_TELEGRAM" = "true" ]; then
     msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\",\"tor\":true}"
   else
@@ -139,10 +137,10 @@ checknotifiertelegram() {
 
   response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "$msg")
   returncode=$?
-  [ "${returncode}" -ne "0" ] && return 115
+  [ "${returncode}" -ne "0" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")
-  [ "${http_code}" -ge "400" ] && return 118
-  [ "${http_code}" -eq "0" ] && return 119
+  [ "${http_code}" -ge "400" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 118
+  [ "${http_code}" -eq "0" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 119
 
   echo -e "\e[1;36mNotifier Telegram rocks!" > /dev/console
 
@@ -317,6 +315,7 @@ feature_status() {
 # Let's first see if everything is up.
 
 echo "EXIT_STATUS=1" > /dist/exitStatus.sh
+RUN_TELEGRAM_SETUP=0
 
 #############################
 # Ping containers and PROXY #
@@ -443,6 +442,8 @@ status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier
 if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
   checknotifiertelegram
   returncode=$?
+  # Non critical error - run telegram setup at the end
+  [ "${returncode}" -ne "0" ] && RUN_TELEGRAM_SETUP=1 && returncode=0
 else
   returncode=1
 fi
@@ -545,6 +546,7 @@ result="{${result}]}"
 echo "${result}" > /gatekeeper/installation.json
 
 echo "EXIT_STATUS=${finalreturncode}" > /dist/exitStatus.sh
+echo "RUN_TELEGRAM_SETUP=$RUN_TELEGRAM_SETUP" >> /dist/exitStatus.sh
 
 <% if (features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1) { %>
 echo "TOR_TRAEFIK_HOSTNAME=$(cat /dist/.cyphernodeconf/tor/traefik/hidden_service/hostname)" >> /dist/exitStatus.sh

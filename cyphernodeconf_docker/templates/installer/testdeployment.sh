@@ -84,6 +84,11 @@ if [ "$EXIT_STATUS" -ne "0" ]; then
   exit 1
 fi
 
+if [ "$RUN_TELEGRAM_SETUP" -ne "0" ]; then
+  printf "\r\n\e[1;32mStarting Telegram setup\e[0m\n"
+  ../notifier_docker/script/start-tg-setup.sh
+fi
+
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
 printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + ':' + traefik_https_port + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
