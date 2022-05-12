@@ -56,6 +56,7 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
+-v ${current_path}/.cyphernodeconf/installer/config.sh:/config.sh \
 -v $current_path:/dist \
 -v cyphernode_container_monitor:/container_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh

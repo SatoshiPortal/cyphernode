@@ -564,7 +564,10 @@ module.exports = class App {
       },
       telegram: {
         networks: ['cyphernodenet'],
-        docker: "cypernode/notifier"
+        docker: "cypernode/notifier",
+        extra:{
+          torified: this.torifyables.find(data => data.value === 'tor_telegram').checked,
+        }
       }
     }
 

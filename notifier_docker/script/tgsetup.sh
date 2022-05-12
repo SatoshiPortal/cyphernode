@@ -43,6 +43,8 @@ else
   echo "Database is alive"
 fi
 
+echo "Using tor [$TOR_TELEGRAM]"
+
 while true; do
   read -p "Do you wish to configure Telegram for Cyphernode? [yn] " -n 1 -r
 
@@ -130,13 +132,19 @@ while true; do
 
           echo ""
           echo "Reloading configs"
-          response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"reloadConfig\",\"tor\":false}")
+
+          response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"reloadConfig\"}")
 
           echo ""
           echo "Sending message to Telegram [$today]"
-          body=$(echo "{\"text\":\"Hello from Cyphernode 2[$today] - setup is complete\"}" | base64 | tr -d '\n')
-          response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
 
+          if [ "${TOR_TELEGRAM}" = "true" ]; then
+            body=$(echo "{\"text\":\"Hello from Cyphernode [$today] using tor - setup is complete\"}" | base64 | tr -d '\n')
+            response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\",\"tor\":true}")
+          else
+            body=$(echo "{\"text\":\"Hello from Cyphernode [$today] using clearnet - setup is complete\"}" | base64 | tr -d '\n')
+            response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}")
+          fi
           echo "Ok. Done."
           exit
         fi

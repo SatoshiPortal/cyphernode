@@ -4,6 +4,8 @@ apk add --update --no-cache openssl curl jq coreutils postgresql > /dev/null
 
 . /gatekeeper/keys.properties
 
+. ./config.sh
+
 checkgatekeeper() {
   echo -e "\r\n\e[1;36mTesting Gatekeeper...\e[0;32m" > /dev/console
 
@@ -125,8 +127,17 @@ checknotifiertelegram() {
   echo -en "\r\n\e[1;36mTesting Notifier Telegram... " > /dev/console
   local response
   local returncode
-  
-  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\"}")
+  local msg
+
+  echo "TOR [$TOR_TELEGRAM]"
+
+  if [ "$TOR_TELEGRAM" = "true" ]; then
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\",\"tor\":true}"
+  else
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\"}"
+  fi
+
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "$msg")
   returncode=$?
   [ "${returncode}" -ne "0" ] && return 115
   http_code=$(echo "${response}" | jq -r ".http_code")

@@ -66,6 +66,7 @@ module.exports = {
 // - OTS Callbacks (webhooks)
 // - Address Watches Callbacks (webhooks)
 // - TXID Watches Callbacks (webhooks)
+// - Telegram
 
 // Certain services can also use clearnet.  What do you want to allow to use clearnet?
 // - Bitcoin Node

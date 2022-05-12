@@ -21,6 +21,7 @@ TOR_TXID_WATCH_WEBHOOKS=<%= (torifyables && torifyables.indexOf('tor_txidwatches
 TOR_TRAEFIK=<%= (torifyables && torifyables.indexOf('tor_traefik') !== -1)?'true':'false' %>
 TOR_BITCOIN=<%= (torifyables && torifyables.indexOf('tor_bitcoin') !== -1)?'true':'false' %>
 TOR_LIGHTNING=<%= (torifyables && torifyables.indexOf('tor_lightning') !== -1)?'true':'false' %>
+TOR_TELEGRAM=<%= (torifyables && torifyables.indexOf('tor_telegram') !== -1)?'true':'false' %>
 <% } %>
 DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>

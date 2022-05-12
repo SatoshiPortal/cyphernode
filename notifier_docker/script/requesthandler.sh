@@ -93,6 +93,10 @@ loadConfig(){
   if [ "${FEATURE_TELEGRAM}" = "true" ]; then
     trace "[loadConfig] FEATURE_TELEGRAM is ENABLED"
 
+    if [ "${TOR_TELEGRAM}" = "true" ]; then
+      trace "[loadConfig] Telegram will be used with tor"
+    fi
+
     # wait for table to exist in DB - for clean install
     waitfortable "cyphernode_props" 
 

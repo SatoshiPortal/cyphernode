@@ -52,13 +52,13 @@ notify_web() {
 }
 
 #
-# call notify_telegram "JSON data".  See https://core.telegram.org/bots/api#sendmessage
-# ex in shell script: notify_telegram "{\"text\":\"Unit testing notify_telegram at `date -u +"%FT%H%MZ"`\"}"
+# call notify_telegram "text to send".  See https://core.telegram.org/bots/api#sendmessage
+# ex in shell script: notify_telegram "Unit testing notify_telegram at `date -u +"%FT%H%MZ"`"
 #
 notify_telegram() {
   trace "Entering notify_telegram()..."
 
-  local body=$(echo "${1}" | base64 | tr -d '\n')
+  local body=$(echo {\"text\":\"$1\"} | base64 | tr -d '\n')
 
   local returncode
   local response
@@ -66,8 +66,12 @@ notify_telegram() {
   local curl_code
   local msg
 
-  msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}"
- 
+  if [ "$TOR_TELEGRAM" = "true" ]; then
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\",\"tor\":true}"
+  else
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramGroup\",\"body\":\"${body}\"}"
+  fi
+
   # We use the pid as the response-topic, so there's no conflict in responses.
   trace "[notify_telegram] mosquitto_rr -h broker -W 21 -t notifier -e \"response/$$\" -m \"${msg}\""
   response=$(mosquitto_rr -h broker -W 21 -t notifier -e "response/$$" -m ${msg})
