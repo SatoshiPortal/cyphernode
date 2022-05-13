@@ -87,6 +87,8 @@ readLoop(){
     esac
     trace "[main] msg processed"
   done
+
+  trace "[readLoop] Exiting read loop"
 }
 
 loadConfig(){
@@ -125,8 +127,6 @@ loadConfig(){
   else
     trace "[loadConfig] FEATURE_TELEGRAM is DISABLED"
   fi
-
-  echo "0"
 }
 
 main
