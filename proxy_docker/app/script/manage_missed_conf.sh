@@ -25,7 +25,7 @@ manage_not_imported() {
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
-      sql "UPDATE watching SET imported=1 WHERE address=\"${address}\""
+      sql "UPDATE watching SET imported=true WHERE address='${address}'"
     fi
   done
 
@@ -33,7 +33,7 @@ manage_not_imported() {
 }
 
 manage_missed_conf() {
-  # Maybe we missed confirmations, because we were down or no network or
+  # Maybe we missed 0-conf or 1-conf watched txs, because we were down or no network or
   # whatever, so we look at what might be missed and do confirmations.
 
   # The strategy here: get the list of watched addresses, see if they received something on the Bitcoin node,
@@ -41,7 +41,7 @@ manage_missed_conf() {
 
   trace "[Entering manage_missed_conf()]"
 
-  local watches=$(sql 'SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported AND (tx_id IS NULL OR t.confirmations=0) ORDER BY address')
+  local watches=$(sql "SELECT DISTINCT address FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx t ON t.id = tx_id WHERE watching AND imported ORDER BY address")
   trace "[manage_missed_conf] watches=${watches}"
   if [ ${#watches} -eq 0 ]; then
     trace "[manage_missed_conf] Nothing missed!"
@@ -66,6 +66,7 @@ manage_missed_conf() {
 
   local received
   local received_address
+  local confirmations
   local watching
   local latesttxid
   local tx
@@ -76,48 +77,55 @@ manage_missed_conf() {
   local row
   local address
   local inserted_ts
+  local calledback0conf
   local txid
   local txids
   local IFS=$'\n'
   for address in ${received_watches}
   do
-    watching=$(sql 'SELECT address, inserted_ts FROM watching WHERE address="'${address}'"')
+    watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM watching WHERE address='${address}'")
     trace "[manage_missed_conf] watching=${watching}"
     if [ ${#watching} -eq 0 ]; then
       trace "[manage_missed_conf] Nothing missed!"
       continue
     fi
 
-    # Let's get confirmed received txs for the address
-    # address=$(echo "${watches}" | cut -d '|' -f1)
-    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" +"%s")
+    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" -D '%Y-%m-%d %H:%M:%S' +"%s")
     trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
+    calledback0conf=$(echo "${watching}" | cut -d '|' -f3)
+    trace "[manage_missed_conf] calledback0conf=${calledback0conf}"
 
-    received_address=$(echo "${received}" | jq -Mc ".result | map(select(.address==\"${address}\" and .confirmations>0))[0]")
+    received_address=$(echo "${received}" | jq -Mc ".result | map(select(.address==\"${address}\"))[0]")
     trace "[manage_missed_conf] received_address=${received_address}"
-    if [ "${received_address}" = "null" ]; then
-      # Not confirmed while we were away...
-      trace "[manage_missed_conf] Nothing missed here"
+    confirmations=$(echo "${received_address}" | jq -r ".confirmations")
+    trace "[manage_missed_conf] confirmations=${confirmations}"
+
+    if [ "${confirmations}" -eq "0" ] && [ "${calledback0conf}" = "t" ]; then
+      # 0-conf and calledback0conf is true, so let's skip this one
+      trace "[manage_missed_conf] Nothing missed!"
     else
-      # We got something confirmed
-      # Let's find out if it was confirmed after being watched
-      trace "[manage_missed_conf] We got something confirmed"
+      # 0-conf and calledback0conf false, let's call confirmation
+      # or
+      # 1-conf and calledback1conf false, let's call confirmation
+      trace "[manage_missed_conf] We got something to check..."
+
       latesttxid=$(echo "${received_address}" | jq -r ".txids | last")
       trace "[manage_missed_conf] latesttxid=${latesttxid}"
       data='{"method":"gettransaction","params":["'${latesttxid}'"]}'
       tx=$(send_to_watcher_node ${data})
       blocktime=$(echo "${tx}" | jq '.result.blocktime')
       txtime=$(echo "${tx}" | jq '.result.time')
-      confirmations=$(echo "${tx}" | jq '.result.confirmations')
 
       trace "[manage_missed_conf] blocktime=${blocktime}"
       trace "[manage_missed_conf] txtime=${txtime}"
       trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
       trace "[manage_missed_conf] confirmations=${confirmations}"
 
-      if [ "${txtime}" -gt "${inserted_ts}" ] && [ "${confirmations}" -gt "0" ]; then
-        # Mined after watch, we missed it!
-        trace "[manage_missed_conf] Mined after watch, we missed it!"
+      if [ "${txtime}" -ge "${inserted_ts}" ]; then
+        # Broadcast or mined after watch, we missed it!
+        trace "[manage_missed_conf] Broadcast or mined after watch, we missed it!"
+        # We skip the callbacks because do_callbacks is called right after in
+        # requesthandler.executecallbacks (where we're from)
         confirmation "${latesttxid}" "true"
       fi
     fi

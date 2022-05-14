@@ -1,0 +1,166 @@
+BEGIN;
+
+CREATE TABLE watching_by_pub32 (
+  id SERIAL PRIMARY KEY,
+  pub32 VARCHAR UNIQUE,
+  label VARCHAR UNIQUE,
+  derivation_path VARCHAR,
+  callback0conf VARCHAR,
+  callback1conf VARCHAR,
+  last_imported_n INTEGER,
+  watching BOOLEAN DEFAULT FALSE,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE watching (
+  id SERIAL PRIMARY KEY,
+  address VARCHAR,
+  label VARCHAR,
+  watching BOOLEAN DEFAULT FALSE,
+  callback0conf VARCHAR,
+  calledback0conf BOOLEAN DEFAULT FALSE,
+  callback1conf VARCHAR,
+  calledback1conf BOOLEAN DEFAULT FALSE,
+  imported BOOLEAN DEFAULT FALSE,
+  watching_by_pub32_id INTEGER REFERENCES watching_by_pub32,
+  pub32_index INTEGER,
+  event_message VARCHAR,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_watching_address ON watching (address);
+CREATE UNIQUE INDEX idx_watching_01 ON watching (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, ''));
+CREATE INDEX idx_watching_label ON watching (label);
+CREATE INDEX idx_watching_watching ON watching (watching);
+CREATE INDEX idx_watching_imported ON watching (imported);
+CREATE INDEX idx_watching_watching_by_pub32_id ON watching (watching_by_pub32_id);
+
+CREATE TABLE tx (
+  id SERIAL PRIMARY KEY,
+  txid VARCHAR UNIQUE,
+  hash VARCHAR UNIQUE,
+  confirmations INTEGER DEFAULT 0,
+  timereceived BIGINT,
+  fee REAL,
+  size INTEGER,
+  vsize INTEGER,
+  is_replaceable BOOLEAN,
+  blockhash VARCHAR,
+  blockheight INTEGER,
+  blocktime BIGINT,
+  conf_target SMALLINT,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_tx_timereceived ON tx (timereceived);
+CREATE INDEX idx_tx_fee ON tx (fee);
+CREATE INDEX idx_tx_size ON tx (size);
+CREATE INDEX idx_tx_vsize ON tx (vsize);
+CREATE INDEX idx_tx_blockhash ON tx (blockhash);
+CREATE INDEX idx_tx_blockheight ON tx (blockheight);
+CREATE INDEX idx_tx_blocktime ON tx (blocktime);
+CREATE INDEX idx_tx_confirmations ON tx (confirmations);
+
+CREATE TABLE watching_tx (
+  watching_id INTEGER REFERENCES watching,
+  tx_id INTEGER REFERENCES tx,
+  vout INTEGER,
+  amount REAL
+);
+CREATE UNIQUE INDEX idx_watching_tx ON watching_tx (watching_id, tx_id);
+CREATE INDEX idx_watching_tx_watching_id ON watching_tx (watching_id);
+CREATE INDEX idx_watching_tx_tx_id ON watching_tx (tx_id);
+
+CREATE TABLE batcher (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR UNIQUE,
+  conf_target SMALLINT,
+  feerate REAL,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO batcher (id, label, conf_target, feerate) VALUES (1, 'default', 6, NULL);
+SELECT SETVAL('batcher_id_seq', 1);
+
+CREATE TABLE recipient (
+  id SERIAL PRIMARY KEY,
+  address VARCHAR,
+  amount REAL,
+  tx_id INTEGER REFERENCES tx,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  webhook_url VARCHAR,
+  calledback BOOLEAN DEFAULT FALSE,
+  calledback_ts TIMESTAMP,
+  batcher_id INTEGER REFERENCES batcher,
+  label VARCHAR
+);
+CREATE INDEX idx_recipient_address ON recipient (address);
+CREATE INDEX idx_recipient_label ON recipient (label);
+CREATE INDEX idx_recipient_calledback ON recipient (calledback);
+CREATE INDEX idx_recipient_webhook_url ON recipient (webhook_url);
+CREATE INDEX idx_recipient_tx_id ON recipient (tx_id);
+CREATE INDEX idx_recipient_batcher_id ON recipient (batcher_id);
+
+CREATE TABLE watching_by_txid (
+  id SERIAL PRIMARY KEY,
+  txid VARCHAR,
+  watching BOOLEAN DEFAULT FALSE,
+  callback1conf VARCHAR,
+  calledback1conf BOOLEAN DEFAULT FALSE,
+  callbackxconf VARCHAR,
+  calledbackxconf BOOLEAN DEFAULT FALSE,
+  nbxconf INTEGER,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_watching_by_txid_txid ON watching_by_txid (txid);
+CREATE UNIQUE INDEX idx_watching_by_txid_1x ON watching_by_txid (txid, COALESCE(callback1conf, ''), COALESCE(callbackxconf, ''));
+CREATE INDEX idx_watching_by_txid_watching ON watching_by_txid (watching);
+CREATE INDEX idx_watching_by_txid_callback1conf ON watching_by_txid (callback1conf);
+CREATE INDEX idx_watching_by_txid_calledback1conf ON watching_by_txid (calledback1conf);
+CREATE INDEX idx_watching_by_txid_callbackxconf ON watching_by_txid (callbackxconf);
+CREATE INDEX idx_watching_by_txid_calledbackxconf ON watching_by_txid (calledbackxconf);
+
+CREATE TABLE stamp (
+  id SERIAL PRIMARY KEY,
+  hash VARCHAR UNIQUE,
+  callbackUrl VARCHAR,
+  requested BOOLEAN DEFAULT FALSE,
+  upgraded BOOLEAN DEFAULT FALSE,
+  calledback BOOLEAN DEFAULT FALSE,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_stamp_calledback ON stamp (calledback);
+
+CREATE TABLE cyphernode_props (
+  id SERIAL PRIMARY KEY,
+  category VARCHAR NOT NULL,
+  property VARCHAR NOT NULL,
+  value VARCHAR,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX idx_cp_catprop ON cyphernode_props (category, property);
+
+INSERT INTO cyphernode_props (id, category, property, value) VALUES (1, 'cyphernode', 'version', '0.2');
+INSERT INTO cyphernode_props (id, category, property, value) VALUES (2, 'c-lightning', 'pay_index', '0');
+SELECT SETVAL('cyphernode_props_id_seq', 2);
+
+CREATE TABLE ln_invoice (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR UNIQUE,
+  bolt11 VARCHAR UNIQUE,
+  payment_hash VARCHAR,
+  msatoshi BIGINT,
+  status VARCHAR,
+  pay_index INTEGER,
+  msatoshi_received BIGINT,
+  paid_at BIGINT,
+  description VARCHAR,
+  expires_at BIGINT,
+  callback_url VARCHAR,
+  calledback BOOLEAN DEFAULT FALSE,
+  callback_failed BOOLEAN DEFAULT FALSE,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_lninvoice_label ON ln_invoice (label);
+CREATE INDEX idx_lninvoice_bolt11 ON ln_invoice (bolt11);
+CREATE INDEX idx_lninvoice_calledback ON ln_invoice (calledback);
+CREATE INDEX idx_lninvoice_callback_failed ON ln_invoice (callback_failed);
+
+COMMIT;

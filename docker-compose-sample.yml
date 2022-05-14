@@ -2,165 +2,294 @@ version: "3"
 
 services:
 
+  ##########################
+  # POSTGRESQL             #
+  ##########################
 
+  postgres:
+    image: postgres:14.0-bullseye
+    user: $USER
+    entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
+    env_file:
+      - .env/postgres.env
+    volumes:
+      - "cn-dir/dist/cyphernode/postgres:/var/lib/postgresql/data"
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: sh -c 'psql -U cyphernode -c "select 1;" && touch /container_monitor/postgres_ready && chown $USER /container_monitor/postgres_ready || rm -f /container_monitor/postgres_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 90s
+    networks:
+      - cyphernodenet
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
+
+  
+  ##########################
+  # TOR                    #
+  ##########################
+
+  tor:
+    image: cyphernode/tor:v0.9.0-dev-local
+    # Sleeping 10 seconds to let lightning and traefik start
+    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; exec tor -f /tor/torrc'
+    volumes:
+      - "cn-dir/dist/cyphernode/tor:/tor"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - cyphernodenet
+      - cyphernodeappsnet
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
+  
+
+  
+
+  
   ##########################
   # BITCOIN                #
   ##########################
 
   bitcoin:
-    image: cyphernode/bitcoin:v0.19.1
-    command: $USER bitcoind
-
+    image: cyphernode/bitcoin:v22.0
+    command: $USER /.bitcoin/entrypoint.sh
+    
     volumes:
-      - "~/btcdata:/.bitcoin"
+      - "cn-dir/dist/cyphernode/bitcoin:/.bitcoin"
+      - "cn-dir/dist/cyphernode/bitcoin/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready
-      interval: 10s
-      timeout: 5s
-      retries: 1
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-
+    
+    depends_on:
+      - tor
+    
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
+  
 
   ##########################
   # PROXY                  #
   ##########################
 
   proxy:
-    image: cyphernode/proxy:v0.4.0-local
+    image: cyphernode/proxy:v0.9.0-dev-local
     command: $USER ./startproxy.sh
-    environment:
-      - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=bitcoin:18332/wallet"
-      - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
-      - "WATCHER_BTC_NODE_XPUB_WALLET=xpubwatching01.dat"
-      - "WATCHER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
-      - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=bitcoin:18332/wallet"
-      - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
-      - "SPENDER_BTC_NODE_RPC_USER=bitcoin:CHANGEME"
-      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
-      - "PROXY_LISTENING_PORT=8888"
-      - "DB_PATH=/proxy/db"
-      - "DB_FILE=/proxy/db/proxydb"
-      - "PYCOIN_CONTAINER=pycoin:7777"
-
-      - "WATCHER_BTC_NODE_PRUNED=false"
-      - "OTSCLIENT_CONTAINER=otsclient:6666"
-      - "OTS_FILES=/proxy/otsfiles"
-      - "XPUB_DERIVATION_GAP=100"
-
+    env_file:
+      - .env/proxy.env 
+    
     volumes:
-      - "~/cn-dev/dist/cyphernode/proxy:/proxy/db"
-
-      - "~/cn-dev/dist/cyphernode/lightning:/.lightning"
-
-
-      - "~/cn-dev/dist/cyphernode/otsclient:/proxy/otsfiles"
-
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
+      - "cn-dir/dist/cyphernode/proxy:/proxy/db"
+      
+      
+      - "cn-dir/dist/cyphernode/otsclient:/proxy/otsfiles"
+      
+      
+      - "cn-dir/dist/cyphernode/tor:/proxy/tor"
+      
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    depends_on:
+      - postgres
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
   ##########################
   # PROXYCRON              #
   ##########################
 
   proxycron:
-    image: cyphernode/proxycron:v0.4.0-local
-    environment:
-      - "TX_CONF_URL=proxy:8888/executecallbacks"
-      - "OTS_URL=proxy:8888/ots_backoffice"
+    image: cyphernode/proxycron:v0.9.0-dev-local
+    env_file:
+      - .env/proxycron.env
     networks:
       - cyphernodenet
-    restart: always
     depends_on:
       - proxy
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
   ##########################
   # BROKER                 #
   ##########################
 
   broker:
-    image: eclipse-mosquitto:1.6
+    image: eclipse-mosquitto:1.6-openssl
     networks:
       - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+      - cyphernodeappsnet
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
   ##########################
   # NOTIFIER               #
   ##########################
 
   notifier:
-    image: cyphernode/notifier:v0.4.0-local
+    image: cyphernode/notifier:v0.9.0-dev-local
     command: $USER ./startnotifier.sh
+    
+    env_file:
+      - .env/notifier.env
+    
+    volumes:
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
     networks:
       - cyphernodenet
       - cyphernodeappsnet
-    restart: always
     depends_on:
       - broker
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
   ##########################
   # PYCOIN                 #
   ##########################
 
   pycoin:
-    image: cyphernode/pycoin:v0.4.0-local
+    image: cyphernode/pycoin:v0.9.0-dev-local
     command: $USER ./startpycoin.sh
-    environment:
-      - "TRACING=1"
-      - "PYCOIN_LISTENING_PORT=7777"
-
+    env_file:
+      - .env/pycoin.env
+    
+    volumes:
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
     networks:
       - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
-
+  
   ##########################
   # OTSCLIENT              #
   ##########################
 
   otsclient:
-    image: cyphernode/otsclient:v0.4.0-local
+    image: cyphernode/otsclient:v0.9.0-dev-local
     command: $USER /script/startotsclient.sh
-    environment:
-      - "TRACING=1"
-      - "OTSCLIENT_LISTENING_PORT=6666"
-
-      - "TESTNET=1"
-
+    env_file:
+      - .env/otsclient.env
     volumes:
-      - "~/cn-dev/dist/cyphernode/otsclient:/otsfiles"
-      - "~/btcdata/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
-    command: $USER /script/startotsclient.sh
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
+      - "cn-dir/dist/cyphernode/otsclient:/otsfiles"
+      - "cn-dir/dist/cyphernode/bitcoin/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
     networks:
       - cyphernodenet
-    restart: always
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
+  
 
   ##########################
   # GATEKEEPER             #
@@ -168,33 +297,40 @@ services:
 
   gatekeeper:
     # HTTP authentication API gate
-    image: cyphernode/gatekeeper:v0.4.0-local
+    image: cyphernode/gatekeeper:v0.9.0-dev-local
     command: $USER
-    environment:
-      - "TRACING=1"
-
-    ports:
-      - "2009:2009"
-
+    env_file:
+      - .env/gatekeeper.env
+    
     volumes:
-      - "~/cn-dev/dist/cyphernode/gatekeeper/certs:/etc/ssl/certs"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/private:/etc/ssl/private"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/keys.properties:/etc/nginx/conf.d/keys.properties"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/api.properties:/etc/nginx/conf.d/api.properties"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/default.conf:/etc/nginx/conf.d/default.conf"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/htpasswd:/etc/nginx/conf.d/status/htpasswd"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
-      - "~/cn-dev/dist/cyphernode/gatekeeper/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
+      - "cn-dir/dist/cyphernode/logs:/cnlogs"
+      - "cn-dir/dist/cyphernode/gatekeeper/certs:/etc/ssl/certs:ro"
+      - "cn-dir/dist/cyphernode/gatekeeper/private:/etc/ssl/private:ro"
+      - "cn-dir/dist/cyphernode/gatekeeper/keys.properties:/etc/nginx/conf.d/keys.properties"
+      - "cn-dir/dist/cyphernode/gatekeeper/api.properties:/etc/nginx/conf.d/api.properties"
+      - "cn-dir/dist/cyphernode/gatekeeper/default.conf:/etc/nginx/conf.d/default.conf"
+      - "cn-dir/dist/cyphernode/gatekeeper/htpasswd:/etc/nginx/conf.d/status/htpasswd"
+      - "cn-dir/dist/cyphernode/gatekeeper/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
+      - "cn-dir/dist/cyphernode/gatekeeper/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
+      - "cn-dir/dist/cyphernode/gatekeeper/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
+      - container_monitor:/container_monitor
     networks:
       - cyphernodenet
       - cyphernodeappsnet
-    restart: always
     depends_on:
       - proxy
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
   ##########################
   # TRAEFIK                #
@@ -207,43 +343,25 @@ services:
       - 443:443
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "~/cn-dev/dist/cyphernode/traefik/traefik.toml:/traefik.toml"
-      - "~/cn-dev/dist/cyphernode/traefik/acme.json:/acme.json"
-      - "~/cn-dev/dist/cyphernode/traefik/htpasswd:/htpasswd/htpasswd"
+      - "cn-dir/dist/cyphernode/traefik/traefik.toml:/traefik.toml:ro"
+      - "cn-dir/dist/cyphernode/traefik/acme.json:/acme.json"
+      - "cn-dir/dist/cyphernode/traefik/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet
-    restart: always
     depends_on:
       - gatekeeper
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-
-
-  ##########################
-  # LIGHTNING              #
-  ##########################
-
-  lightning:
-    image: cyphernode/clightning:v0.8.2
-    command: $USER sh -c 'while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 10 ; done ; echo "bitcoin ready!" ; lightningd'
-
-    ports:
-      - "9735:9735"
-
-    volumes:
-      - "~/cn-dev/dist/cyphernode/lightning:/.lightning"
-      - "~/btcdata/bitcoin-client.conf:/.bitcoin/bitcoin.conf"
-      - container_monitor:/container_monitor:ro
-    networks:
-      - cyphernodenet
-    restart: always
-    depends_on:
-      - bitcoin
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
-
+    
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    
 
 volumes:
   container_monitor:

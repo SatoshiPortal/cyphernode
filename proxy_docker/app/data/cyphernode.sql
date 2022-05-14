@@ -53,7 +53,7 @@ CREATE TABLE tx (
   fee REAL,
   size INTEGER,
   vsize INTEGER,
-	is_replaceable INTEGER,
+  is_replaceable INTEGER,
   blockhash TEXT,
   blockheight INTEGER,
   blocktime INTEGER,

@@ -15,10 +15,22 @@ CyphernodeClient.prototype._generateToken = function() {
   let current = Math.round(new Date().getTime()/1000) + 10
   let p = '{"id":"' + this.api_id + '","exp":' + current + '}'
 //  console.log("p=" + p)
-  let p64 = Buffer.from(p).toString('base64')
+  const re1 = /\+/g;
+  const re2 = /\//g;
+  const p64 = Buffer.from(p)
+    .toString("base64")
+    .replace(re1, "-")
+    .replace(re2, "_")
+    .split("=")[0];
   let msg = this.h64 + '.' + p64
 //  console.log("msg=" + msg)
-  let s = CryptoJS.HmacSHA256(msg, this.api_key).toString()
+  const s = crypto
+    .createHmac("sha256", this.apiKey)
+    .update(msg)
+    .digest("base64")
+    .replace(re1, "-")
+    .replace(re2, "_")
+    .split("=")[0];
 //  let s2 = createHmac('sha256', this.api_key).update(msg).digest('hex')
 //  let s3 = crypto.createHmac('sha256', this.api_key).update(msg).digest('hex');
 //  console.log("s=" + s)

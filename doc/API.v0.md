@@ -752,6 +752,36 @@ Proxy response:
 }
 ```
 
+### Validate a Bitcoin address
+
+Returns the detailed information about the given address.
+
+```http
+GET http://cyphernode:8888/validateaddress/address
+GET http://cyphernode:8888/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
+```
+
+Proxy response for a valid address:
+
+```json
+{
+  "isvalid": true,
+  "address": "tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv",
+  "scriptPubKey": "5120a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c",
+  "iswitness": true,
+  "witness_version": 1,
+  "witness_program": "a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c"
+}
+```
+
+Proxy response for an invalid address:
+
+```json
+{
+  "isvalid": false
+}
+```
+
 ### Spend coins from spending wallet (called by your application)
 
 Calls sendtoaddress RPC on the spending wallet with supplied info.  Can supply an eventMessage to be published on successful spending.  eventMessage should be base64 encoded to avoid dealing with escaping special characters.

@@ -2,6 +2,43 @@ version: "3"
 
 services:
 
+  ##########################
+  # POSTGRESQL             #
+  ##########################
+
+  postgres:
+    image: postgres:<%= postgres_version %>
+    user: $USER
+    entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
+    env_file:
+      - .env/postgres.env
+    volumes:
+      - "<%= postgres_datapath %>:/var/lib/postgresql/data"
+      - "<%= logs_datapath %>:/cnlogs"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: sh -c 'psql -U cyphernode -c "select 1;" && touch /container_monitor/postgres_ready && chown $USER /container_monitor/postgres_ready || rm -f /container_monitor/postgres_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 90s
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+
   <% if ( features.indexOf('tor') !== -1 ) { %>
   ##########################
   # TOR                    #
@@ -9,14 +46,14 @@ services:
 
   tor:
     image: cyphernode/tor:<%= tor_version %>
-    # Sleeping 7 seconds to let lightning and traefik start
-    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; tor -f /tor/torrc'
+    # Sleeping 10 seconds to let lightning and traefik start
+    command: $USER sh -c 'rm -f /container_monitor/tor_ready ; sleep 10 ; export HOME=/tor ; exec tor -f /tor/torrc'
     volumes:
       - "<%= tor_datapath %>:/tor"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready && chown $USER /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     networks:
@@ -55,8 +92,8 @@ services:
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready && chown $USER /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
-      interval: 20s
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s
@@ -89,7 +126,7 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command:  $USER /.bitcoin/entrypoint.sh
+    command: $USER /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18444:18444' : ((net === 'testnet') ? '18333:18333' : '8333:8333') %>"
@@ -99,8 +136,12 @@ services:
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
-      interval: 20s
+      <% if( net === 'regtest' ) { %>
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      <% } else { %>
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      <% } %>
+      interval: 30s
       timeout: 10s
       retries: 10
     stop_grace_period: 30s
@@ -133,29 +174,8 @@ services:
   proxy:
     image: cyphernode/proxy:<%= proxy_version %>
     command: $USER ./startproxy.sh
-    environment:
-      - "TRACING=1"
-      - "WATCHER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
-      - "WATCHER_BTC_NODE_DEFAULT_WALLET=watching01.dat"
-      - "WATCHER_BTC_NODE_XPUB_WALLET=xpubwatching01.dat"
-      - "WATCHER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "WATCHER_BTC_NODE_RPC_CFG=/tmp/watcher_btcnode_curlcfg.properties"
-      - "SPENDER_BTC_NODE_RPC_URL=<%= (bitcoin_mode === 'internal') ? 'bitcoin' : bitcoin_node_ip %>:<%= (net === 'regtest') ? '18443' : ((net === 'testnet') ? '18332' : '8332') %>/wallet"
-      - "SPENDER_BTC_NODE_DEFAULT_WALLET=spending01.dat"
-      - "SPENDER_BTC_NODE_RPC_USER=<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>"
-      - "SPENDER_BTC_NODE_RPC_CFG=/tmp/spender_btcnode_curlcfg.properties"
-      - "PROXY_LISTENING_PORT=8888"
-      - "DB_PATH=/proxy/db"
-      - "DB_FILE=/proxy/db/proxydb"
-      - "PYCOIN_CONTAINER=pycoin:7777"
-      <% if ( use_xpub && xpub ) { %>
-      - "DERIVATION_PUB32=<%= xpub %>"
-      - "DERIVATION_PATH=<%= derivation_path %>"
-      <% } %>
-      - "WATCHER_BTC_NODE_PRUNED=<%= bitcoin_prune ? 'true' : 'false' %>"
-      - "OTSCLIENT_CONTAINER=otsclient:6666"
-      - "OTS_FILES=/proxy/otsfiles"
-      - "XPUB_DERIVATION_GAP=100"
+    env_file:
+      - .env/proxy.env
     <% if ( devmode ) { %>
     ports:
       - "8888:8888"
@@ -172,8 +192,17 @@ services:
       <% if ( features.indexOf('tor') !== -1 ) { %>
       - "<%= tor_datapath %>:/proxy/tor"
       <% } %>
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 30s
     networks:
       - cyphernodenet
+    depends_on:
+      - postgres
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
       replicas: 1
@@ -195,9 +224,8 @@ services:
 
   proxycron:
     image: cyphernode/proxycron:<%= proxycron_version %>
-    environment:
-      - "TX_CONF_URL=proxy:8888/executecallbacks"
-      - "OTS_URL=proxy:8888/ots_backoffice"
+    env_file:
+      - .env/proxycron.env
     networks:
       - cyphernodenet
     depends_on:
@@ -248,11 +276,8 @@ services:
   notifier:
     image: cyphernode/notifier:<%= notifier_version %>
     command: $USER ./startnotifier.sh
-    <% if ( features.indexOf('tor') !== -1 ) { %>
-    environment:
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-    <% } %>
+    env_file:
+      - .env/notifier.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
     networks:
@@ -282,9 +307,8 @@ services:
   pycoin:
     image: cyphernode/pycoin:<%= pycoin_version %>
     command: $USER ./startpycoin.sh
-    environment:
-      - "TRACING=1"
-      - "PYCOIN_LISTENING_PORT=7777"
+    env_file:
+      - .env/pycoin.env
     <% if ( devmode ) { %>
     ports:
       - "7777:7777"
@@ -316,16 +340,8 @@ services:
   otsclient:
     image: cyphernode/otsclient:<%= otsclient_version %>
     command: $USER /script/startotsclient.sh
-    environment:
-      - "TRACING=1"
-      - "OTSCLIENT_LISTENING_PORT=6666"
-      <% if (net === 'testnet') { %>
-      - "TESTNET=1"
-      <% } %>
-      <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_otsoperations') !== -1 ) { %>
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-      <% } %>
+    env_file:
+      - .env/otsclient.env
     volumes:
       - "<%= logs_datapath %>:/cnlogs"
       - "<%= otsclient_datapath %>:/otsfiles"
@@ -356,8 +372,8 @@ services:
     # HTTP authentication API gate
     image: cyphernode/gatekeeper:<%= gatekeeper_version %>
     command: $USER
-    environment:
-      - "TRACING=1"
+    env_file:
+      - .env/gatekeeper.env
     <% if( gatekeeper_expose ) { %>
     ports:
       - "<%= gatekeeper_port %>:<%= gatekeeper_port %>"
@@ -373,6 +389,7 @@ services:
       - "<%= gatekeeper_datapath %>/installation.json:/etc/nginx/conf.d/s/stats/installation.json"
       - "<%= gatekeeper_datapath %>/client.7z:/etc/nginx/conf.d/s/stats/client.7z"
       - "<%= gatekeeper_datapath %>/config.7z:/etc/nginx/conf.d/s/stats/config.7z"
+      - container_monitor:/container_monitor
     networks:
       - cyphernodenet
       - cyphernodeappsnet
@@ -404,8 +421,10 @@ services:
       - <%= traefik_https_port %>:<%= traefik_https_port %>
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "<%= traefik_datapath%>/traefik.toml:/traefik.toml:ro"
-      - "<%= traefik_datapath%>/acme.json:/acme.json"
+      - "<%= traefik_datapath%>/traefik.toml:/etc/traefik/traefik.toml:ro"
+      <% if (typeof traefik_use_letsencrypt !== 'undefined' && traefik_use_letsencrypt) { %>
+      - "<%= traefik_datapath%>/acme.json:/etc/traefik/acme.json"
+      <% } %>
       - "<%= traefik_datapath%>/htpasswd:/htpasswd/htpasswd:ro"
     networks:
       - cyphernodeappsnet

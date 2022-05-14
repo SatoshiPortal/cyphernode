@@ -2,8 +2,28 @@
 
 # . /mine.sh
 
+# This should be run in regtest
+
 # docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/mine.sh:/mine.sh" -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine /tests.sh
 
+# This will test:
+#
+# - getbestblockhash
+# - getbestblockinfo
+# - getblockinfo
+# - getnewaddress
+# - getbalance
+# - watch and callbacks
+# - getactivewatches
+# - unwatch
+# - deriveindex
+# - derivepubpath
+# - spend
+# - gettransaction
+# - ln_getinfo
+# - ln_newaddr
+#
+#
 
 tests()
 {
@@ -108,12 +128,12 @@ tests()
   fi
   local imported=$(echo "${response}" | jq ".imported" | tr -d '\"')
   echo "imported=${imported}"
-  if [ "${imported}" != "1" ]; then
+  if [ "${imported}" != "true" ]; then
     exit 30
   fi
   local inserted=$(echo "${response}" | jq ".inserted" | tr -d '\"')
   echo "inserted=${inserted}"
-  if [ "${inserted}" != "1" ]; then
+  if [ "${inserted}" != "true" ]; then
     exit 40
   fi
   local unconfirmedCallbackURL=$(echo "${response}" | jq ".unconfirmedCallbackURL" | tr -d '\"')
