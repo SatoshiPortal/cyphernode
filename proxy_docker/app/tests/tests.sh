@@ -3,7 +3,7 @@
 
 # This should be run in regtest
 
-# docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/mine.sh:/mine.sh" -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" -v "$PWD/colors.sh:/colors.sh" alpine /tests.sh
+# docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" -v "$PWD/colors.sh:/colors.sh" alpine /tests.sh
 
 # This will test:
 #
@@ -285,7 +285,8 @@ tests()
   fi
 
   print_title "Testing bitcoin_gettxoutproof txid+blockhash..."
-  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"})
+#  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"})
+  transaction="{\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"}"
 
   response=$(curl -s -H "Content-Type: application/json" -d "${transaction}" proxy:8888/bitcoin_gettxoutproof)
 
