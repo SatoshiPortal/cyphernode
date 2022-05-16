@@ -562,6 +562,12 @@ main() {
           response=$(bitcoin_estimatesmartfee "$(echo "${line}" | jq -r ".confTarget")")
           returncode=$?
           ;;
+        bitcoin_generatetoaddress)
+          # POST http://192.168.111.152:8080/bitcoin_generatetoaddress
+          # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
+          response=$(bitcoin_generatetoaddress "${line}")
+          returncode=$?
+          ;;
         deriveindex)
           # curl GET http://192.168.111.152:8080/deriveindex/25-30
           # curl GET http://192.168.111.152:8080/deriveindex/34

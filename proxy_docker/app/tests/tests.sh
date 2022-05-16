@@ -1,10 +1,8 @@
 #!/bin/sh
 
-# . /mine.sh
-
 # This should be run in regtest
 
-# docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/mine.sh:/mine.sh" -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine /tests.sh
+# docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine /tests.sh
 
 # This will test:
 #
@@ -245,8 +243,10 @@ tests()
   response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" proxy:8888/spend)
   echo "response=${response}"
   echo
-  echo "Please mine a block"
+  echo "Mining a block in 2 secs"
   echo
+  (sleep 2; mine) &
+
   wait_for_callbacks
   echo "Tested spend, conf and callbacks."
 
@@ -264,6 +264,36 @@ tests()
     exit 8
   fi
   echo "Tested gettransaction."
+
+  echo "Testing bitcoin_generatetoaddress..."
+
+  response=$(curl -s proxy:8888/getnewaddress)
+  echo "response=${response}"
+  local addresstomine=$(echo ${response} | jq ".address" | tr -d '\"')
+  echo "addresstomine=${addresstomine}"
+  if [ -z "${addresstomine}" ]; then
+    exit 11
+  fi
+
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\",\"maxtries\":1}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress response=${response}"
+  echo "bitcoin_generatetoaddress response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 12
+  fi
+
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress (without maxtries) response=${response}"
+  echo "bitcoin_generatetoaddress (without maxtries) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Tested bitcoin_generatetoaddress."
 
   # addtobatch
   # POST http://proxy:8888/addtobatch
@@ -342,6 +372,25 @@ tests()
   # ln_pay
 
 
+}
+
+mine(){
+  response=$(curl -s proxy:8888/getnewaddress)
+  echo "response=${response}"
+  local addresstomine=$(echo ${response} | jq ".address" | tr -d '\"')
+  echo "addresstomine=${addresstomine}"
+  if [ -z "${addresstomine}" ]; then
+    exit 11
+  fi
+
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress response=${response}"
+  echo "bitcoin_generatetoaddress response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 12
+  fi
 }
 
 wait_for_callbacks()

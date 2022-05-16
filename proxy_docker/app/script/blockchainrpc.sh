@@ -114,3 +114,26 @@ bitcoin_estimatesmartfee() {
   send_to_watcher_node "${data}"
   return $?
 }
+
+
+bitcoin_generatetoaddress() {
+  trace "Entering bitcoin_generatetoaddress()..."
+
+  local nbblocks=$(echo ${1} | jq ".nbblocks")
+  local address=$(echo ${1} | jq ".address")
+  local maxtries=$(echo ${1} | jq ".maxtries // empty")  # Optional - Core defaults to default=1000000
+  local response
+
+  trace "[bitcoin_generatetoaddress] nbblocks=[${nbblocks}] address=[${address}] maxtries=[${maxtries}]"
+
+  local data
+  if [ -z "${maxtries}" ]; then
+    data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address}]}"
+  else
+    data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
+  fi
+  trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
+
+  send_to_spender_node "${data}"
+  return $?
+}
