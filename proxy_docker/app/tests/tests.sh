@@ -374,8 +374,11 @@ tests()
 
 }
 
+#
+# Mines 1 block
+#
 mine(){
-  response=$(curl -s proxy:8888/getnewaddress)
+  local response=$(curl -s proxy:8888/getnewaddress)
   echo "response=${response}"
   local addresstomine=$(echo ${response} | jq ".address" | tr -d '\"')
   echo "addresstomine=${addresstomine}"
