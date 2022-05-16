@@ -569,9 +569,8 @@ main() {
 	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
 	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
           # }
-          response=$(bitcoin_gettxoutproof "$(echo ${line} | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
-          response_to_client "${response}" ${?}
-          break
+          response=$(bitcoin_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
+          returncode=$?
           ;;
         deriveindex)
           # curl GET http://192.168.111.152:8080/deriveindex/25-30

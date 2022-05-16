@@ -131,7 +131,7 @@ bitcoin_gettxoutproof() {
   if [ -z "${2}" ]; then
     params=${1}
   else
-    params=$(echo ${1},\"${2}\")
+    params="${1},\"${2}\""
   fi
 
   trace "[bitcoin_gettxoutproof] txids=${txids}"
