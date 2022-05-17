@@ -90,7 +90,7 @@ manage_missed_conf() {
       continue
     fi
 
-    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" -D '%Y-%m-%d %H:%M:%S' +"%s")
+    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" +%s)
     trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
     calledback0conf=$(echo "${watching}" | cut -d '|' -f3)
     trace "[manage_missed_conf] calledback0conf=${calledback0conf}"
@@ -111,7 +111,8 @@ manage_missed_conf() {
 
       latesttxid=$(echo "${received_address}" | jq -r ".txids | last")
       trace "[manage_missed_conf] latesttxid=${latesttxid}"
-      data='{"method":"gettransaction","params":["'${latesttxid}'"]}'
+      data="{\"method\":\"gettransaction\",\"params\":[\"${latesttxid}\",true]}"
+
       tx=$(send_to_watcher_node ${data})
       blocktime=$(echo "${tx}" | jq '.result.blocktime')
       txtime=$(echo "${tx}" | jq '.result.time')
@@ -126,7 +127,7 @@ manage_missed_conf() {
         trace "[manage_missed_conf] Broadcast or mined after watch, we missed it!"
         # We skip the callbacks because do_callbacks is called right after in
         # requesthandler.executecallbacks (where we're from)
-        confirmation "${latesttxid}" "true"
+        confirmation $(echo "${tx}" | jq .result | base64 -w 0) "true"
       fi
     fi
   done

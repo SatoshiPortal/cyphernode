@@ -7,31 +7,35 @@
 . ./responsetoclient.sh
 . ./computefees.sh
 . ./blockchainrpc.sh
+. ./watchrequest.sh
 
+# Expecting 2 params
+#
+# 1: base64 encoded {"amount": 0.00000000, "confirmations": 1,"generated": true,"blockhash": "67862b2428039f1e4e088ae74e44230705931784862c4f03f8978d6d53adad83",...}
+# 2: boolean bypass_callbacks (optional)
+#
 confirmation() {
   (
   flock -x 201
 
   trace "Entering confirmation()..."
 
-  local returncode
-  local txid=${1}
+  local tx_details=$(echo ${1} | base64 -d)
   local bypass_callbacks=${2}
-  trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
-  local tx_details
-  tx_details="$(get_transaction ${txid})"
-  returncode=$?
-  trace_rc ${returncode}
+
   trace "[confirmation] tx_details=${tx_details}"
-  if [ "${returncode}" -ne "0" ]; then
-    trace "[confirmation] Transaction not in watcher, exiting."
-    return 0
-  fi
+  trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
+
+  local returncode
+  local txid=$(echo $tx_details | jq .txid | tr -d \")
+
   ########################################################################################################
   # First of all, let's make sure we're working on watched addresses...
   local address
   local addresseswhere
-  local addresses=$(echo "${tx_details}" | jq -r ".result.details[].address")
+  local addresses=$(echo "${tx_details}" | jq -r ".details[].address")
+
+  trace "[confirmation] addresses=${addresses}"
 
   local notfirst=false
   local IFS=$'\n'
@@ -56,7 +60,7 @@ confirmation() {
   local tx=$(sql "SELECT id FROM tx WHERE txid='${txid}'")
   local id_inserted
   local tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
-  local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
+  local tx_nb_conf=$(echo "${tx_details}" | jq -r '.confirmations // 0')
   local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
@@ -70,16 +74,17 @@ confirmation() {
 
     # Let's first insert the tx in our DB
 
-    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
-    local tx_amount=$(echo "${tx_details}" | jq '.result.amount')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.amount')
 
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
-    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
     local fees=$(compute_fees "${txid}")
     trace "[confirmation] fees=${fees}"
+    trace "[confirmation] tx_hash=${tx_hash}"
 
     # If we missed 0-conf...
     local tx_blockhash=null
@@ -87,10 +92,10 @@ confirmation() {
     local tx_blocktime=null
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
-      tx_blockhash="$(echo "${tx_details}" | jq -r '.result.blockhash')"
-      tx_blockheight=$(get_block_info ${tx_blockhash} | jq '.result.height')
+      tx_blockhash="$(echo "${tx_details}" | jq -r '.blockhash')"
+      tx_blockheight=$(get_block_info ${tx_blockhash} | jq '.height')
       tx_blockhash="'${tx_blockhash}'"
-      tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
+      tx_blocktime=$(echo "${tx_details}" | jq '.blocktime')
     fi
 
     id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, blockhash, blockheight, blocktime)"\
@@ -105,13 +110,13 @@ confirmation() {
     # TX found in our DB.
     # 1-conf or executecallbacks on an unconfirmed tx or spending watched address (in this case, we probably missed conf) or spending to a watched address (in this case, spend inserted the tx in the DB)
 
-    local tx_blockhash=$(echo "${tx_details}" | jq -r '.result.blockhash')
+    local tx_blockhash=$(echo "${tx_details}" | jq -r '.blockhash')
     trace "[confirmation] tx_blockhash=${tx_blockhash}"
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(get_block_info "${tx_blockhash}" | jq '.result.height')
-      local tx_blocktime=$(echo "${tx_details}" | jq '.result.blocktime')
+      local tx_blockheight=$(get_block_info "${tx_blockhash}" | jq '.height')
+      local tx_blocktime=$(echo "${tx_details}" | jq '.blocktime')
 
       sql "UPDATE tx SET confirmations=${tx_nb_conf}, blockhash='${tx_blockhash}', blockheight=${tx_blockheight}, blocktime=${tx_blocktime} WHERE txid='${txid}'"
       trace_rc $?
@@ -133,10 +138,10 @@ confirmation() {
   do
 
     address=$(echo "${row}" | cut -d '|' -f2)
-    tx_vout_amount=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
+    tx_vout_amount=$(echo "${tx_details}" | jq ".details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
     # In the case of us spending to a watched address, the address appears twice in the details,
     # once on the spend side (negative amount) and once on the receiving side (positive amount)
-    tx_vout_n=$(echo "${tx_details}" | jq ".result.details | map(select(.address==\"${address}\"))[0] | .vout")
+    tx_vout_n=$(echo "${tx_details}" | jq ".details | map(select(.address==\"${address}\"))[0] | .vout")
 
     ########################################################################################################
     # Let's now insert in the join table if not already done

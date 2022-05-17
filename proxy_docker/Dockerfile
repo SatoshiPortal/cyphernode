@@ -9,7 +9,8 @@ RUN apk add --update --no-cache \
     su-exec \
     py3-pip \
     xxd \
-    postgresql
+    postgresql \
+    coreutils
 
 WORKDIR ${HOME}
 

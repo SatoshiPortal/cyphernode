@@ -10,12 +10,8 @@ bitcoin_node_conf() {
   do
     mosquitto_sub -h broker -t confirmation | while read -r message
     do
-      message=$(echo $message | base64 -d)
-      trace "[bitcoin_node_conf] Message=[$message]" 
-
-      local txid=$(echo $message | jq .txid)
-      trace "[bitcoin_node_conf] txid=[$txid]"
-      confirmation "${txid}"
+      trace "[bitcoin_node_conf] Processing confirmation from bitcoin node" 
+      confirmation ${message}
     done
 
     trace "[bitcoin_node_conf] reconnecting in 10 secs" 
