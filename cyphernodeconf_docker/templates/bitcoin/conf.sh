@@ -1,7 +1,7 @@
 #!/bin/sh
 
 conf(){
-  pid=$(cut -d' ' -f4 < /proc/self/stat)
+  local pid=$(cut -d' ' -f4 < /proc/self/stat)
   echo "[conf-$pid] Entering conf"
 
   local txid="$@"
