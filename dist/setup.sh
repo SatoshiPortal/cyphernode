@@ -536,7 +536,7 @@ install_docker() {
 
     copy_file $cyphernodeconf_filepath/bitcoin/entrypoint.sh $BITCOIN_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
     copy_file $cyphernodeconf_filepath/bitcoin/createWallets.sh $BITCOIN_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/bitcoin/conf.sh $BITCOIN_DATAPATH/conf.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/bitcoin/walletnotify.sh $BITCOIN_DATAPATH/walletnotify.sh 1 $SUDO_REQUIRED
 
     if [[ ! -x $BITCOIN_DATAPATH/entrypoint.sh ]]; then
       step "     [32mmake[0m entrypoint.sh executable"
@@ -548,9 +548,9 @@ install_docker() {
       sudo_if_required chmod +x $BITCOIN_DATAPATH/createWallets.sh
       next
     fi
-    if [[ ! -x $BITCOIN_DATAPATH/conf.sh ]]; then
-      step "     [32mmake[0m conf.sh executable"
-      sudo_if_required chmod +x $BITCOIN_DATAPATH/conf.sh
+    if [[ ! -x $BITCOIN_DATAPATH/walletnotify.sh ]]; then
+      step "     [32mmake[0m walletnotify.sh executable"
+      sudo_if_required chmod +x $BITCOIN_DATAPATH/walletnotify.sh
       next
     fi
   fi

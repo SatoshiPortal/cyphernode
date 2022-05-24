@@ -3,23 +3,23 @@
 . ./trace.sh
 . ./confirmation.sh
 
-bitcoin_node_conf() {
-  trace "Entering bitcoin_node_conf()..."
+bitcoin_node_walletnotify() {
+  trace "Entering bitcoin_node_walletnotify()..."
 
   while true  # Keep an infinite loop to reconnect when connection lost/broker unavailable
   do
     mosquitto_sub -h broker -t confirmation | while read -r message
     do
-      trace "[bitcoin_node_conf] Processing confirmation from bitcoin node" 
+      trace "[bitcoin_node_walletnotify] Processing walletnotify from bitcoin node" 
       confirmation ${message}
     done
 
-    trace "[bitcoin_node_conf] reconnecting in 10 secs" 
+    trace "[bitcoin_node_walletnotify] reconnecting in 10 secs" 
     sleep 10
   done
 }
 
-bitcoin_node_conf
+bitcoin_node_walletnotify
 returncode=$?
-trace "[bitcoin_node_conf] exiting"
+trace "[bitcoin_node_walletnotify] exiting"
 exit ${returncode}

@@ -104,6 +104,6 @@ module.exports = {
     return 'VAR0=VALUE0\nVAR1=VALUE1'
   },
   templates: function( props ) {
-    return ['bitcoin.conf', 'bitcoin-client.conf', 'entrypoint.sh', 'createWallets.sh', 'conf.sh'];
+    return ['bitcoin.conf', 'bitcoin-client.conf', 'entrypoint.sh', 'createWallets.sh', 'walletnotify.sh'];
   }
 };

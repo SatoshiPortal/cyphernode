@@ -100,6 +100,6 @@ if [ "${FEATURE_LIGHTNING}" = "true" ]; then
   ./waitanyinvoice.sh &
 fi
 
-./bitcoin_node_conf.sh &
+./bitcoin_node_walletnotify.sh &
 
 exec nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh
