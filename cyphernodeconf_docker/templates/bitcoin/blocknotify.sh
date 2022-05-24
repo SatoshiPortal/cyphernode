@@ -1,20 +1,20 @@
 #!/bin/sh
 
-newblock(){
+blocknotify(){
   local pid=$(cut -d' ' -f4 < /proc/self/stat)
 
-  echo "[newblock-$pid] Entering newblock"
+  echo "[blocknotify-$pid] Entering blocknotify"
 
   local blockhash="$@"
-  echo "[newblock-$pid] [blockhash=$blockhash]"
+  echo "[blocknotify-$pid] [blockhash=$blockhash]"
 
   local blockheight
   blockheight=$(get_block_height $blockhash)
 
-  echo "[newblock-$pid] mosquitto_pub -h broker --retain -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+  echo "[blocknotify-$pid] mosquitto_pub -h broker --retain -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
   mosquitto_pub -h broker --retain -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
 
-  echo "[newblock-$pid] Done"
+  echo "[blocknotify-$pid] Done"
 }
 
 get_block_height(){
@@ -27,4 +27,4 @@ get_block_height(){
   echo $blockheight
 }
 
-newblock $@
+blocknotify $@
