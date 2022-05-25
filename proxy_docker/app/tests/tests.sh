@@ -275,6 +275,7 @@ tests()
     exit 11
   fi
 
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":1,\"address\":\"${addresstomine}\",\"maxtries\":123}\" proxy:8888/bitcoin_generatetoaddress]"
   response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\",\"maxtries\":1}" proxy:8888/bitcoin_generatetoaddress)
 
   echo "bitcoin_generatetoaddress response=${response}"
@@ -284,10 +285,41 @@ tests()
     exit 12
   fi
 
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":1,\"address\":\"${addresstomine}\"}\" proxy:8888/bitcoin_generatetoaddress]"
   response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
 
   echo "bitcoin_generatetoaddress (without maxtries) response=${response}"
   echo "bitcoin_generatetoaddress (without maxtries) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":2}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":2}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using (2, nil, nil) response=${response}"
+  echo "bitcoin_generatetoaddress using (2, nil, nil) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using values (default, default, default) response=${response}"
+  echo "bitcoin_generatetoaddress using values (default, default, default) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"address\":\"${addresstomine}\"}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using values (default, address, default) response=${response}"
+  echo "bitcoin_generatetoaddress using values (default, address, default) response=$(echo ${response} | jq ".error")"
 
   if [ "$(echo ${response} | jq ".error")" != "null" ]; then
     exit 13
@@ -378,18 +410,15 @@ tests()
 # Mines 1 block
 #
 mine(){
-  local response=$(curl -s proxy:8888/getnewaddress)
-  echo "response=${response}"
-  local addresstomine=$(echo ${response} | jq ".address" | tr -d '\"')
-  echo "addresstomine=${addresstomine}"
-  if [ -z "${addresstomine}" ]; then
-    exit 11
-  fi
+  local response
+  
+  echo "About to mine one block"
 
-  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+  echo "response=curl -H \"Content-Type: application/json\" -d \"{}\" proxy:8888/bitcoin_generatetoaddress"
+  response=$(curl -H "Content-Type: application/json" -d "{}" proxy:8888/bitcoin_generatetoaddress)
 
-  echo "bitcoin_generatetoaddress response=${response}"
-  echo "bitcoin_generatetoaddress response=$(echo ${response} | jq ".error")"
+  echo "Mining one block response=${response}"
+  echo "Mining one block response=$(echo ${response} | jq ".error")"
 
   if [ "$(echo ${response} | jq ".error")" != "null" ]; then
     exit 12

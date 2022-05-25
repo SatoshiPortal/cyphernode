@@ -1840,10 +1840,16 @@ paths:
               properties:
                 nbBlocks:
                   type: "number"
+                  required: false
+                  default: 1
                 address:
                   $ref: '#/components/schemas/TypeAddressString'
+                  required: false
+                  default: new address from spender wallet
                 maxtries:
                   type: "number"
+                  required: false
+                  default: 1000000 
       responses:
         '200':
           description: "operation successful"

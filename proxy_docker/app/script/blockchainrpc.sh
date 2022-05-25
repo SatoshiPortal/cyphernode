@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sendtobitcoinnode.sh
+. ./walletoperations.sh
 
 get_best_block_hash() {
   trace "Entering get_best_block_hash()..."
@@ -119,19 +120,19 @@ bitcoin_estimatesmartfee() {
 bitcoin_generatetoaddress() {
   trace "Entering bitcoin_generatetoaddress()..."
 
-  local nbblocks=$(echo ${1} | jq ".nbblocks")
-  local address=$(echo ${1} | jq ".address")
-  local maxtries=$(echo ${1} | jq ".maxtries // empty")  # Optional - Core defaults to default=1000000
-  local response
+  local nbblocks=$(echo ${1} | jq '.nbblocks // 1') # Optional - Default 1
+  local address=$(echo ${1} | jq '.address' // empty) # Optional - getnewadress from spender wallet
+  local maxtries=$(echo ${1} | jq '.maxtries // 1000000')  # Optional - use Core default
+                    
+  if [ -z "${address}" ]; then          
+    address=$(getnewaddress | jq '.address')
+  fi   
 
   trace "[bitcoin_generatetoaddress] nbblocks=[${nbblocks}] address=[${address}] maxtries=[${maxtries}]"
 
   local data
-  if [ -z "${maxtries}" ]; then
-    data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address}]}"
-  else
-    data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
-  fi
+  data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
+
   trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
 
   send_to_spender_node "${data}"
