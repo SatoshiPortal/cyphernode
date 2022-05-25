@@ -203,12 +203,17 @@ tests()
   # (GET) http://proxy:8888/deriveindex/25-30
   # {"addresses":[{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
 
+
   print_title "Testing deriveindex..."
   response=$(curl -v proxy:8888/deriveindex/25-30)
   echo "response=${response}"
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
-  echo "LONGUEUR: $nbaddr"
+  echo "Length: [$nbaddr]"
   if [ "${nbaddr}" -ne "6" ]; then
+    echo -e $Red;
+    echo -e "In setup, make sure you set your default xpub key to$BBlue upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb$Red";
+    echo -e "and default derivation to$BBlue 0/n";
+    echo -e $Color_Off
     exit 130
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
@@ -227,10 +232,6 @@ tests()
   echo "response=${response}"
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
   if [ "${nbaddr}" -ne "6" ]; then
-    echo -e $Red;
-    echo -e "In setup, make sure you set your default xpub key to$BBlue upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\r\n$Color_Off";
-    echo -e "and default derivation to$BBlue 0/n";
-    echo -e $Color_Off
     exit 150
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
@@ -356,7 +357,7 @@ tests()
   print_title "Testing ln_newaddr..."
   response=$(curl -s proxy:8888/ln_newaddr)
   echo "response=${response}"
-  address=$(echo ${response} | jq ".address")
+  address=$(echo ${response} | jq ".bech32")
   echo "address=${address}"
   if [ -z "${address}" ]; then
     exit 180
