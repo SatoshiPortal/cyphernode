@@ -116,12 +116,11 @@ bitcoin_estimatesmartfee() {
   return $?
 }
 
-
 bitcoin_generatetoaddress() {
   trace "Entering bitcoin_generatetoaddress()..."
 
   local nbblocks=$(echo ${1} | jq '.nbblocks // 1') # Optional - Default 1
-  local address=$(echo ${1} | jq '.address' // empty) # Optional - getnewadress from spender wallet
+  local address=$(echo ${1} | jq '.address // empty') # Optional - getnewadress from spender wallet
   local maxtries=$(echo ${1} | jq '.maxtries // 1000000')  # Optional - use Core default
                     
   if [ -z "${address}" ]; then          
@@ -136,5 +135,36 @@ bitcoin_generatetoaddress() {
   trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
 
   send_to_spender_node "${data}"
+  return $?
+}
+
+# example curl -m 20 -s --config /tmp/watcher_btcnode_curlcfg.properties -H "Content-Type: text/plain"
+#    --data-binary '{"method":"gettxoutproof","params":[["3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb
+#           79c4f997dea8fb532cb"],"0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"] }' 
+#           bitcoin:18443/wallet/watching01.dat
+bitcoin_gettxoutproof() {
+  trace "Entering bitcoin_gettxoutproof()..."
+
+  local txids=${1}
+  local blockhash=${2}
+  local params
+
+  # The blockhash is optional
+  if [ -z "${2}" ]; then
+    params=${1}
+  else
+    params="${1},\"${2}\""
+  fi
+
+  trace "[bitcoin_gettxoutproof] txids=${txids}"
+  trace "[bitcoin_gettxoutproof] blockhash=${blockhash}"
+
+  trace "[bitcoin_gettxoutproof] params=${params}"
+
+  local data="{\"method\":\"gettxoutproof\",\"params\":[${params}]}"
+  trace "[bitcoin_gettxoutproof] data=${data}"
+
+  send_to_watcher_node "${data}"
+
   return $?
 }

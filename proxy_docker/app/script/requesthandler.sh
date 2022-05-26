@@ -563,9 +563,25 @@ main() {
           returncode=$?
           ;;
         bitcoin_generatetoaddress)
+          # GET with no parameters ==> http://192.168.111.152:8080/bitcoin_generatetoaddress
           # POST http://192.168.111.152:8080/bitcoin_generatetoaddress
           # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
-          response=$(bitcoin_generatetoaddress "${line}")
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(bitcoin_generatetoaddress "${line}")
+          else
+            response=$(bitcoin_generatetoaddress "{}")
+          fi
+          returncode=$?
+          ;;
+        bitcoin_gettxoutproof)
+          # POST http://192.168.111.152:8080/bitcoin_gettxoutproof
+          # BODY 
+          # {
+	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
+	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
+          # }
+          response=$(bitcoin_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
           returncode=$?
           ;;
         deriveindex)
