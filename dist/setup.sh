@@ -214,7 +214,8 @@ configure() {
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
-             --log-driver=none$pw_env \
+             $pw_env \
+             --log-driver=none \
              --network none \
              --rm$interactive cyphernode/cyphernodeconf:$CONF_VERSION $user node index.js$recreate
   if [[ -f $cyphernodeconf_filepath/exitStatus.sh ]]; then
