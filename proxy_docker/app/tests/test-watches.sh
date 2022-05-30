@@ -258,7 +258,8 @@ start_test_container
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-returncode=$(test_watches)
+#returncode=$(test_watches)
+test_watches
 
 trace 1 "\n\n[test_watches] ${BCyan}Tearing down...${Color_Off}\n"
 wait
