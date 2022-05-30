@@ -21,7 +21,7 @@ jobs:
         run: ./.github/ci-config/copy-config.sh
         shell: bash
       - name: Run Cyphernode Setup
-        run: env CFG_PASSWORD="qq" ./setup.sh -irc <<< 'y\n'
+        run: env CFG_PASSWORD="qq" ./dist/setup.sh -irc <<< 'y\n'
         shell: bash
       - name: Start Cyphernode
         run: ./dist/start.sh
