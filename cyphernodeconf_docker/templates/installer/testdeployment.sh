@@ -91,7 +91,7 @@ printf "\033[0;92mYou can also use Tor Browser and navigate to your onion addres
 printf "\033[0;95mhttps://${TOR_TRAEFIK_HOSTNAME}:<%= traefik_https_port %>/welcome\033[0m\r\n\r\n"
 
 printf "\033[0;92mTor Browser on mobile?  We got you:\r\n\r\n\033[0m"
-docker run --rm cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
+docker run --rm -t cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
 printf "\r\n"
 
 <% } %>

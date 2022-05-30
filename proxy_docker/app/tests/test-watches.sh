@@ -246,10 +246,11 @@ start_callback_server() {
 
   local port=${1:-1111}
 
-  docker exec -it tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -257,7 +258,7 @@ start_test_container
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-test_watches
+returncode=$(test_watches)
 
 trace 1 "\n\n[test_watches] ${BCyan}Tearing down...${Color_Off}\n"
 wait
@@ -266,3 +267,4 @@ stop_test_container
 
 trace 1 "\n\n[test_watches] ${BCyan}See ya!${Color_Off}\n"
 
+exit ${returncode}
