@@ -27,8 +27,9 @@ jobs:
         run: ./dist/start.sh
         shell: bash
       - name: Run test
-        run: ./proxy_docker/app/tests/test-watches.sh
-        shell: bash
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          ./proxy_docker/app/tests/test-watches.sh
       - name: Stop Cyphernode
         run: ./dist/stop.sh
         shell: bash
