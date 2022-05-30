@@ -169,6 +169,7 @@ configure() {
 
   if [[ $CFG_PASSWORD ]]; then
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
+    interactive=''
   fi
 
   echo "\nDetermining the speed of your machine..."
