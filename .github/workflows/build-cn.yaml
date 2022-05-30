@@ -1,7 +1,7 @@
 name: Build Cyphernode on push
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  Build-Cyphernode:
     runs-on: ubuntu-latest
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
@@ -16,5 +16,20 @@ jobs:
           ls ${{ github.workspace }}
       - name: Run build script
         run: ./build.sh
+        shell: bash
+      - name: Copy default config
+        run: ./.github/ci-config/copy-config.sh
+        shell: bash
+      - name: Run Cyphernode Setup
+        run: ./dist/setup.sh
+        shell: bash
+      - name: Start Cyphernode
+        run: ./dist/start.sh
+        shell: bash
+      - name: Run test
+        run: ./proxy_docker/app/tests/test-watches.sh
+        shell: bash
+      - name: Stop Cyphernode
+        run: ./dist/stop.sh
         shell: bash
       - run: echo "🍏 This job's status is ${{ job.status }}."
