@@ -54,7 +54,7 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
 # Will test if Cyphernode is fully up and running...
-docker run --rm -v $current_path/testfeatures.sh:/testfeatures.sh \
+docker run --rm -t -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
 -v cyphernode_container_monitor:/container_monitor:ro \

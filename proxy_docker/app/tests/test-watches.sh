@@ -265,3 +265,5 @@ wait
 stop_test_container
 
 trace 1 "\n\n[test_watches] ${BCyan}See ya!${Color_Off}\n"
+
+exit 0

@@ -170,14 +170,14 @@ configure() {
   if [[ $CFG_PASSWORD ]]; then
     pw_env=" -e CFG_PASSWORD=$CFG_PASSWORD"
     interactive=''
-  fi
-
-  echo "\nDetermining the speed of your machine..."
-  local speedseconds=$(bash -c ' : {1..500000} ; echo $SECONDS')
-  if [[ $speedseconds > 2 ]]; then
-    clear && echo "This may take a while, since it seems we're running on a slow machine."
   else
-    clear && echo "Fast machine..."
+    echo "\nDetermining the speed of your machine..."
+    local speedseconds=$(bash -c ' : {1..500000} ; echo $SECONDS')
+    if [[ $speedseconds > 2 ]]; then
+      clear && echo "This may take a while, since it seems we're running on a slow machine."
+    else
+      clear && echo "Fast machine..."
+    fi
   fi
 
   # before starting a new cyphernodeconf, kill all the others
