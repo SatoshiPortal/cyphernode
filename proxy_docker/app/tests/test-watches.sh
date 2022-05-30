@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. ./colors.sh
-. ./mine.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
+. $DIR/mine.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
@@ -38,7 +39,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-watches "$@"
+  docker exec tests-watches "$@"
 }
 
 test_watches() {
