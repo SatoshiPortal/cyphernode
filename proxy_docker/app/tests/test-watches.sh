@@ -201,10 +201,11 @@ test_watches() {
   start_callback_server 1112
   start_callback_server 1113
 
-docker ps | grep notifier
+  docker ps | grep notifier
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
+  mine
 
   # 15. Wait for 1-conf webhook
   trace 3 "[test_watches] Waiting for 1-conf callbacks on address1 and txid..."
@@ -215,7 +216,8 @@ docker ps | grep notifier
   start_callback_server 1114
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
-  trace 3 "[test_watches] Mine 2 new blocks..."
+  trace 3 "[test_watches] Mine 2 new blocks... Sleeping 5 secs"
+  sleep 5
   mine 2
 
   # 18. Wait for 3-conf webhook
