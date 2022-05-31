@@ -25,7 +25,8 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-watches --network=cyphernodenet alpine
+  trace 1 $DIR
+  docker run -d --rm -t --name tests-watches --network=cyphernodenet -v cyphernode_container_monitor:/container_monitor:ro alpine
 }
 
 stop_test_container() {
@@ -256,6 +257,37 @@ start_callback_server() {
   trace 1 "[start_callback_server] ${BCyan}server started on [port=${port}] with PID [$!] ${Color_Off}"
 }
 
+wait_for_cyphernode(){
+
+  exec_in_test_container sh -c 'for loop in `seq 1 10` ; do ping -c 1 proxy ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+  exec_in_test_container sh -c 'for loop in `seq 1 10` ; do ping -c 1 bitcoin ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+
+  local isStarted
+  while [ true ]; do
+    trace 1 "Wainting for Bitcoin to be ready"
+    isStarted=$(exec_in_test_container ls /container_monitor/bitcoin_ready)
+    trace 1 "is started [${isStarted}]"
+    if [ -n "${isStarted}" ]; then
+      trace 1 "Bitcoin is ready!!"
+      break;
+    fi
+    sleep 10
+  done
+
+  isStarted=""
+  while [ true ]; do
+    trace 1 "Wainting for Proxy to be ready"
+    isStarted=$(exec_in_test_container ls /container_monitor/proxy_ready)
+
+    if [ -n "${isStarted}" ]; then
+      trace 1 "Proxy is ready!!"
+      break;
+    fi
+    sleep 10
+  done
+}
+
+
 TRACING=3
 returncode=0
 
@@ -264,6 +296,10 @@ start_test_container
 
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
+
+exec_in_test_container apk add --update curl
+
+wait_for_cyphernode
 
 test_watches
 returncode=$?
