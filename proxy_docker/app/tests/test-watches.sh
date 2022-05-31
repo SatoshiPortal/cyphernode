@@ -177,7 +177,7 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
   start_callback_server 1111
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
+  txid=$(docker exec $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watches] txid=${txid}"
   trace 3 "[test_watches] Waiting for 0-conf callback on address1..."
