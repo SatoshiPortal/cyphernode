@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. ./colors.sh
-. ./mine.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
+. $DIR/mine.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
