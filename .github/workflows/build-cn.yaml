@@ -33,7 +33,6 @@ jobs:
       - name: Stop Cyphernode
         run: ./dist/stop.sh
         shell: bash
-      - name: Dump docker logs on failure
-        if: failure()
+      - name: Dump docker logs
         uses: jwalton/gh-docker-logs@v1
       - run: echo "🍏 This job's status is ${{ job.status }}."

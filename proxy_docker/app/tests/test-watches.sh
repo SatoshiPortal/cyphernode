@@ -201,9 +201,10 @@ test_watches() {
   start_callback_server 1112
   start_callback_server 1113
 
+docker ps | grep notifier
+
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
-  mine
 
   # 15. Wait for 1-conf webhook
   trace 3 "[test_watches] Waiting for 1-conf callbacks on address1 and txid..."
@@ -244,7 +245,7 @@ test_watches() {
 start_callback_server() {
   local port=${1:-1111}
 
-  trace 1 "[start_callback_server] ${BCyan}Let's start the callback server [port=${port}]!...${Color_Off}"
+  trace 1 "[start_callback_server] ${BCyan}Start the callback server [port=${port}]!...${Color_Off}"
 
   docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 }
