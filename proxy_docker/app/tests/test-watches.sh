@@ -181,6 +181,7 @@ test_watches() {
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watches] txid=${txid}"
   trace 3 "[test_watches] Waiting for 0-conf callback on address1..."
+  wait
 
   # 12. Call watchtxid on spent txid with 3-conf webhook
   trace 2 "\n\n[test_watches] ${BCyan}12. Call watchtxid on spent txid with 3-conf webhook...${Color_Off}\n"
@@ -202,7 +203,7 @@ test_watches() {
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
-  mine &
+  mine
 
   # 15. Wait for 1-conf webhook
   trace 3 "[test_watches] Waiting for 1-conf callbacks on address1 and txid..."
@@ -214,7 +215,7 @@ test_watches() {
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
   trace 3 "[test_watches] Mine 2 new blocks..."
-  mine 2 &
+  mine 2
 
   # 18. Wait for 3-conf webhook
   trace 3 "[test_watches] Waiting for 3-conf callback on txid..."
@@ -241,13 +242,11 @@ test_watches() {
 }
 
 start_callback_server() {
-  trace 1 "[start_callback_server] ${BCyan}Let's start the callback servers!...${Color_Off}"
-
   local port=${1:-1111}
 
+  trace 1 "[start_callback_server] ${BCyan}Let's start the callback server [port=${port}]!...${Color_Off}"
+
   docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
-  
-  echo $!
 }
 
 TRACING=3
