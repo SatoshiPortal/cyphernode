@@ -202,8 +202,8 @@ test_watches() {
   start_callback_server 1113
 
   # 14. Generate a block (triggers 1-conf webhook)
-  trace 3 "[test_manage_missed_1_conf] Mine a new block... Sleeping 5 secs"
-  sleep 5
+  trace 3 "[test_manage_missed_1_conf] Mine a new block..."
+
   mine
 
   # 15. Wait for 1-conf webhook
@@ -215,8 +215,8 @@ test_watches() {
   start_callback_server 1114
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
-  trace 3 "[test_watches] Mine 2 new blocks... Sleeping 5 secs"
-  sleep 5
+  trace 3 "[test_watches] Mine 2 new blocks..."
+  
   mine 2
 
   # 18. Wait for 3-conf webhook
