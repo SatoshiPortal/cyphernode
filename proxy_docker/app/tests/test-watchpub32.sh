@@ -42,7 +42,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-watch-pub32 "$@"
+  docker exec tests-watch-pub32 "$@"
 }
 
 test_watch_pub32() {

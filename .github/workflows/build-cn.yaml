@@ -30,6 +30,7 @@ jobs:
         shell: 'script -q -e -c "bash {0}"'
         run: |
           ./proxy_docker/app/tests/test-watches.sh
+          ./proxy_docker/app/tests/test-watchpub32.sh
       - name: Stop Cyphernode
         run: ./dist/stop.sh
         shell: bash
