@@ -206,6 +206,9 @@ test_watches() {
 
   mine
 
+  # Make it crash
+  return 66
+
   # 15. Wait for 1-conf webhook
   trace 3 "[test_watches] Waiting for 1-conf callbacks on address1 and txid..."
   wait
