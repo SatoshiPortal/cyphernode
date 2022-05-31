@@ -175,13 +175,12 @@ test_watches() {
   # 10. Call spend, to the address with label1 (triggers 0-conf webhook)
   # 11. Wait for label1's 0-conf webhook
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
-  local pid1111=start_callback_server 1111
+  start_callback_server 1111
   # Let's use the bitcoin node directly to better simulate an external spend
   txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watches] txid=${txid}"
   trace 3 "[test_watches] Waiting for 0-conf callback on address1..."
-  wait pid1111
 
   # 12. Call watchtxid on spent txid with 3-conf webhook
   trace 2 "\n\n[test_watches] ${BCyan}12. Call watchtxid on spent txid with 3-conf webhook...${Color_Off}\n"
@@ -198,29 +197,28 @@ test_watches() {
 
   # 13. Start a callback servers for 1-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}13. Start a callback servers for 1-conf txid watch webhook...${Color_Off}\n"
-  local pid1112=start_callback_server 1112
-  local pid1113=start_callback_server 1113
+  start_callback_server 1112
+  start_callback_server 1113
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
-  mine
+  mine &
 
   # 15. Wait for 1-conf webhook
   trace 3 "[test_watches] Waiting for 1-conf callbacks on address1 and txid..."
-  wait pid1112
-  wait pid1113
+  wait
 
   # 16. Start a callback servers for 3-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}16. Start a callback servers for 3-conf txid watch webhook...${Color_Off}\n"
-  local pid1114=start_callback_server 1114
+  start_callback_server 1114
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
   trace 3 "[test_watches] Mine 2 new blocks..."
-  mine 2
+  mine 2 &
 
   # 18. Wait for 3-conf webhook
   trace 3 "[test_watches] Waiting for 3-conf callback on txid..."
-  wait pid1114
+  wait
 
   # 20. Call getactivewatches, make sure label1 and label2 are not there
   trace 2 "\n\n[test_watches] ${BCyan}20. Call getactivewatches, make sure label1 and label2 are not there...${Color_Off}\n"
@@ -261,13 +259,14 @@ start_test_container
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-#returncode=$(test_watches)
-returncode=test_watches
+test_watches
+returncode=$?
 
 trace 1 "\n\n[test_watches] ${BCyan}Tearing down...${Color_Off}\n"
-wait
 
 stop_test_container
+
+wait
 
 trace 1 "\n\n[test_watches] ${BCyan}See ya!${Color_Off}\n"
 
