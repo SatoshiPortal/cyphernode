@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. ./colors.sh
-. ./mine.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
+. $DIR/mine.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
@@ -35,7 +36,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-manage-missed $@
+  docker exec tests-manage-missed $@
 }
 
 wait_for_proxy() {
@@ -78,7 +79,7 @@ test_manage_missed_0_conf() {
   docker restart $(docker ps -q -f "name=proxy[^c]")
 
   trace 3 "[test_manage_missed_0_conf] Sending coins to watched address while proxy is down..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
   wait_for_proxy
@@ -115,7 +116,7 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] response=${response}"
 
   trace 3 "[test_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
   # txid1=$(exec_in_test_container curl -d '{"address":"'${address}'","amount":0.0001}' proxy:8888/spend | jq -r ".txid")
 
   trace 3 "[test_manage_missed_1_conf] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
@@ -145,6 +146,7 @@ wait_for_callbacks() {
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -162,9 +164,16 @@ trace 2 "url4=${url4}"
 exec_in_test_container apk add --update curl
 
 test_manage_missed_0_conf
+returncode=$?
+
+[ "${returncode}" -ne "0" ] && exit ${returncode}
+ 
 test_manage_missed_1_conf
+returncode=$?
 
 trace 3 "Waiting for the callbacks to happen..."
 wait
 
 stop_test_container
+
+exit ${returncode}

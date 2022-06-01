@@ -426,12 +426,13 @@ start_callback_server() {
 
   trace 1 "[start_callback_server] ${BCyan}Start the callback server [port=${port}]!...${Color_Off}"
 
-  docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker run --rm -t --name tests-watch-pub32-cb --network=cyphernodenet alpine sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 
   trace 1 "[start_callback_server] ${BCyan}server started on [port=${port}] with PID [$!] ${Color_Off}"
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -443,10 +444,13 @@ trace 1 "\n\n[test_watch_pub32] ${BCyan}Installing needed packages...${Color_Off
 exec_in_test_container apk add --update curl
 
 test_watch_pub32
+returncode=$?
 
 trace 1 "\n\n[test_watch_pub32] ${BCyan}Tearing down...${Color_Off}\n"
-wait
 
 stop_test_container
+wait
 
 trace 1 "\n\n[test_watch_pub32] ${BCyan}See ya!${Color_Off}\n"
+
+exit ${returncode}
