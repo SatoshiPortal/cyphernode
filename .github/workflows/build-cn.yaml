@@ -31,7 +31,9 @@ jobs:
         run: |
           ./proxy_docker/app/tests/test-watches.sh
           ./proxy_docker/app/tests/test-watchpub32.sh
-          ./proxy_docker/app/tests/test-managed-missed.sh
+          ./proxy_docker/app/tests/test-manage-missed.sh
+          ./proxy_docker/app/tests/test-derive.sh
+          ./proxy_docker/app/tests/test-batching.sh
       - name: Stop Cyphernode
         run: ./dist/stop.sh
         shell: bash

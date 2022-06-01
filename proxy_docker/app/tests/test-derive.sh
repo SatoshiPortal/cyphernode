@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ./colors.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
 
 # You need jq installed for these tests to run correctly
 # You need to configure cyphernode with a default xpub for these tests to work.
