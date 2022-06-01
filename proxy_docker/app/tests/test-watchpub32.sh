@@ -273,7 +273,7 @@ test_watch_pub32() {
   trace 2 "\n\n[test_watch_pub32] ${BCyan}12. Send coins to address1...${Color_Off}\n"
   start_callback_server 1111
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid1=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
+  txid1=$(docker exec $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid1=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watch_pub32] txid1=${txid1}"
   trace 3 "[test_watch_pub32] Waiting for 0-conf callback on address1..."
@@ -422,12 +422,13 @@ test_watch_pub32() {
 }
 
 start_callback_server() {
-  trace 1 "\n\n[start_callback_server] ${BCyan}Let's start a callback server!...${Color_Off}\n"
+  local port=${1:-1111}
 
-  port=${1:-${callbackserverport}}
-  docker run --rm -t --name tests-watch-pub32-cb --network=cyphernodenet alpine sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  trace 1 "[start_callback_server] ${BCyan}Start the callback server [port=${port}]!...${Color_Off}"
 
-  # docker run --rm -it --name tests-watch-pub32-cb --network=cyphernodenet alpine sh -c "nc -vlkp1111 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'"
+  docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+
+  trace 1 "[start_callback_server] ${BCyan}server started on [port=${port}] with PID [$!] ${Color_Off}"
 }
 
 TRACING=3
