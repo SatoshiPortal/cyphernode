@@ -451,6 +451,6 @@ trace 1 "\n\n[test_watch_pub32] ${BCyan}Tearing down...${Color_Off}\n"
 stop_test_container
 wait
 
-trace 1 "\n\n[test_watch_pub32] ${BCyan}See ya!${Color_Off}\n"
+trace 1 "\n\n[test_watch_pub32] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
 
 exit ${returncode}

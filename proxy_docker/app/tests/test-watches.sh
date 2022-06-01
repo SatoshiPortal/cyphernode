@@ -274,6 +274,6 @@ stop_test_container
 
 wait
 
-trace 1 "\n\n[test_watches] ${BCyan}See ya!${Color_Off}\n"
+trace 1 "\n\n[test_watches] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
 
 exit ${returncode}

@@ -410,14 +410,14 @@ callbackservername="tests-batching-cb"
 trace 1 "\n\n[test-batching] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-
-returncode=$(testbatching)
+testbatching
+returncode=$?
 
 trace 1 "\n\n[test-batching] ${BCyan}Tearing down...${Color_Off}\n"
 wait
 
 stop_test_container
 
-trace 1 "\n\n[test-batching] ${BCyan}See ya!${Color_Off}\n"
+trace 1 "\n\n[test-batching] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
 
 exit ${returncode}

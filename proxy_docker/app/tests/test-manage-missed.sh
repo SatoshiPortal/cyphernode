@@ -176,4 +176,6 @@ wait
 
 stop_test_container
 
+trace 1 "\n\n[test_manage_missed] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
+
 exit ${returncode}
