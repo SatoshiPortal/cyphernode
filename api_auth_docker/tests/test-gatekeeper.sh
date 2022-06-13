@@ -385,32 +385,32 @@ test_watcher_functions() {
   test_authorization "ln_getinfo" "${token}" ${has_access} || return 200
 
   # action_ln_create_invoice=watcher
-  test_authorization "ln_create_invoice" "${token}" ${has_access} || return 210
+  test_authorization "ln_create_invoice" "${token}" ${has_access} || return 201
 
   # action_ln_getconnectionstring=watcher
-  test_authorization "ln_getconnectionstring" "${token}" ${has_access} || return 220
+  test_authorization "ln_getconnectionstring" "${token}" ${has_access} || return 202
 
   # action_ln_decodebolt11=watcher
-  test_authorization "ln_decodebolt11" "${token}" ${has_access} || return 230
+  test_authorization "ln_decodebolt11" "${token}" ${has_access} || return 203
 
   # action_ln_listpeers=watcher
-  test_authorization "ln_listpeers" "${token}" ${has_access} || return 240
+  test_authorization "ln_listpeers" "${token}" ${has_access} || return 204
 
   # action_ln_getroute=watcher
-  test_authorization "ln_getroute" "${token}" ${has_access} || return 250
+  test_authorization "ln_getroute" "${token}" ${has_access} || return 205
 
   # action_ln_listpays=watcher
-  test_authorization "ln_listpays" "${token}" ${has_access} || return 260
+  test_authorization "ln_listpays" "${token}" ${has_access} || return 206
 
   # action_ln_paystatus=watcher
-  test_authorization "ln_paystatus" "${token}" ${has_access} || return 270
+  test_authorization "ln_paystatus" "${token}" ${has_access} || return 207
 
   # action_bitcoin_estimatesmartfee=watcher
-  test_authorization "bitcoin_estimatesmartfee" "${token}" ${has_access} || return 280
+  test_authorization "bitcoin_estimatesmartfee" "${token}" ${has_access} || return 210
 
-  test_authorization "bitcoin_gettxoutproof" "${token}" ${has_access} || return 280
+  test_authorization "bitcoin_gettxoutproof" "${token}" ${has_access} || return 220
 
-  test_authorization "validateaddress" "${token}" ${has_access} || return 280
+  test_authorization "validateaddress" "${token}" ${has_access} || return 230
 
   trace 1 "\n\n[test_watcher_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
@@ -427,90 +427,90 @@ test_spender_functions() {
   test_authorization "get_txns_spending" "${token}" ${has_access} || return 10
 
   # action_getbalance=spender
-  test_authorization "getbalance" "${token}" ${has_access} || return 10
+  test_authorization "getbalance" "${token}" ${has_access} || return 15
 
   # action_getbalances=spender
-  test_authorization "getbalances" "${token}" ${has_access} || return 10
+  test_authorization "getbalances" "${token}" ${has_access} || return 20
 
   # action_getbalancebyxpub=spender
-  test_authorization "getbalancebyxpub" "${token}" ${has_access} || return 10
+  test_authorization "getbalancebyxpub" "${token}" ${has_access} || return 25
 
   # action_getbalancebyxpublabel=spender
-  test_authorization "getbalancebyxpublabel" "${token}" ${has_access} || return 10
+  test_authorization "getbalancebyxpublabel" "${token}" ${has_access} || return 30
 
   # action_getnewaddress=spender
-  test_authorization "getnewaddress" "${token}" ${has_access} || return 10
+  test_authorization "getnewaddress" "${token}" ${has_access} || return 35
 
   # action_spend=spender
-  test_authorization "spend" "${token}" ${has_access} || return 10
+  test_authorization "spend" "${token}" ${has_access} || return 40
 
   # action_bumpfee=spender
-  test_authorization "bumpfee" "${token}" ${has_access} || return 10
+  test_authorization "bumpfee" "${token}" ${has_access} || return 45
 
   # action_addtobatch=spender
-  test_authorization "addtobatch" "${token}" ${has_access} || return 10
+  test_authorization "addtobatch" "${token}" ${has_access} || return 50
 
   # action_batchspend=spender
-  test_authorization "batchspend" "${token}" ${has_access} || return 10
+  test_authorization "batchspend" "${token}" ${has_access} || return 55
 
   # action_deriveindex=spender
-  test_authorization "deriveindex" "${token}" ${has_access} || return 10
+  test_authorization "deriveindex" "${token}" ${has_access} || return 60
 
   # action_derivepubpath=spender
-  test_authorization "derivepubpath" "${token}" ${has_access} || return 10
+  test_authorization "derivepubpath" "${token}" ${has_access} || return 65
 
   # action_deriveindex_bitcoind=spender
-  test_authorization "deriveindex_bitcoind" "${token}" ${has_access} || return 10
+  test_authorization "deriveindex_bitcoind" "${token}" ${has_access} || return 70
 
   # action_derivepubpath_bitcoind=spender
-  test_authorization "derivepubpath_bitcoind" "${token}" ${has_access} || return 10
+  test_authorization "derivepubpath_bitcoind" "${token}" ${has_access} || return 75
 
   # action_ln_pay=spender
-  test_authorization "ln_pay" "${token}" ${has_access} || return 10
+  test_authorization "ln_pay" "${token}" ${has_access} || return 80
 
   # action_ln_newaddr=spender
-  test_authorization "ln_newaddr" "${token}" ${has_access} || return 10
+  test_authorization "ln_newaddr" "${token}" ${has_access} || return 85
 
   # action_ots_stamp=spender
-  test_authorization "ots_stamp" "${token}" ${has_access} || return 10
+  test_authorization "ots_stamp" "${token}" ${has_access} || return 90
 
   # action_ots_getfile=spender
-  test_authorization "ots_getfile" "${token}" ${has_access} || return 10
+  test_authorization "ots_getfile" "${token}" ${has_access} || return 95
 
   # action_ln_getinvoice=spender
-  test_authorization "ln_getinvoice" "${token}" ${has_access} || return 10
+  test_authorization "ln_getinvoice" "${token}" ${has_access} || return 100
 
   # action_ln_delinvoice=spender
-  test_authorization "ln_delinvoice" "${token}" ${has_access} || return 10
+  test_authorization "ln_delinvoice" "${token}" ${has_access} || return 105
 
   # action_ln_connectfund=spender
-  test_authorization "ln_connectfund" "${token}" ${has_access} || return 10
+  test_authorization "ln_connectfund" "${token}" ${has_access} || return 110
 
   # action_ln_listfunds=spender
-  test_authorization "ln_listfunds" "${token}" ${has_access} || return 10
+  test_authorization "ln_listfunds" "${token}" ${has_access} || return 120
 
   # action_ln_withdraw=spender
-  test_authorization "ln_withdraw" "${token}" ${has_access} || return 10
+  test_authorization "ln_withdraw" "${token}" ${has_access} || return 125
 
   # action_createbatcher=spender
-  test_authorization "createbatcher" "${token}" ${has_access} || return 10
+  test_authorization "createbatcher" "${token}" ${has_access} || return 130
 
   # action_updatebatcher=spender
-  test_authorization "updatebatcher" "${token}" ${has_access} || return 10
+  test_authorization "updatebatcher" "${token}" ${has_access} || return 135
 
   # action_removefrombatch=spender
-  test_authorization "removefrombatch" "${token}" ${has_access} || return 10
+  test_authorization "removefrombatch" "${token}" ${has_access} || return 140
 
   # action_listbatchers=spender
-  test_authorization "listbatchers" "${token}" ${has_access} || return 10
+  test_authorization "listbatchers" "${token}" ${has_access} || return 145
 
   # action_getbatcher=spender
-  test_authorization "getbatcher" "${token}" ${has_access} || return 10
+  test_authorization "getbatcher" "${token}" ${has_access} || return 150
 
   # action_getbatchdetails=spender
-  test_authorization "getbatchdetails" "${token}" ${has_access} || return 10
+  test_authorization "getbatchdetails" "${token}" ${has_access} || return 155
 
-  test_authorization "bitcoin_generatetoaddress" "${token}" ${has_access} || return 10
+  test_authorization "bitcoin_generatetoaddress" "${token}" ${has_access} || return 160
 
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
