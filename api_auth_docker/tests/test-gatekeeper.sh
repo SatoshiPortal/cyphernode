@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ./colors.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
 
 # We just want to test the authentication/authorization, not the actual called function
 # You need jq installed for these tests to run correctly
@@ -47,6 +48,9 @@
 # action_ln_listpays=watcher
 # action_ln_paystatus=watcher
 # action_bitcoin_estimatesmartfee=watcher
+# action_bitcoin_gettxoutproof=watcher
+# action_validateaddress=watcher
+
 #
 # # Spender can do what the watcher can do, plus:
 # action_get_txns_spending=spender
@@ -78,6 +82,7 @@
 # action_listbatchers=spender
 # action_getbatcher=spender
 # action_getbatchdetails=spender
+# action_bitcoin_generatetoaddress=spender
 #
 # # Admin can do what the spender can do, plus:
 #
@@ -403,6 +408,10 @@ test_watcher_functions() {
   # action_bitcoin_estimatesmartfee=watcher
   test_authorization "bitcoin_estimatesmartfee" "${token}" ${has_access} || return 280
 
+  test_authorization "bitcoin_gettxoutproof" "${token}" ${has_access} || return 280
+
+  test_authorization "validateaddress" "${token}" ${has_access} || return 280
+
   trace 1 "\n\n[test_watcher_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 
@@ -500,6 +509,8 @@ test_spender_functions() {
 
   # action_getbatchdetails=spender
   test_authorization "getbatchdetails" "${token}" ${has_access} || return 10
+
+  test_authorization "bitcoin_generatetoaddress" "${token}" ${has_access} || return 10
 
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
