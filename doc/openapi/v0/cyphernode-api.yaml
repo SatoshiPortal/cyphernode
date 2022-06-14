@@ -1885,6 +1885,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bitcoin_generatetoaddress:
+    post:
+      tags:
+        - "core features"
+        - "bitcoin"
+      summary: "Mine blocks immediately to a specified address (before the call returns)"
+      description: "Mine blocks immediately to a specified address (before the call returns)"
+      operationId: "generateToAddress"
+      requestBody:
+        description: "Number of blocks, destination address, max number of iterations to try"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                nbBlocks:
+                  type: "number"
+                  required: false
+                  default: 1
+                address:
+                  $ref: '#/components/schemas/TypeAddressString'
+                  required: false
+                  default: new address from spender wallet
+                maxtries:
+                  type: "number"
+                  required: false
+                  default: 1000000 
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "array"
+                    properties:
+                      blocks:
+                        $ref: '#/components/schemas/TypeHashString'
+                  error:
+                    type: "object"
+                  id:
+                    type: "number"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /deriveindex/{indexSpecifier}:
     get:
       parameters:

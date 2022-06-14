@@ -1874,6 +1874,28 @@ Proxy response:
 }
 ```
 
+### Mine blocks immediately to a specified address (before the RPC call returns)
+
+This will call the Bitcoin Core generatetoaddress RPC call and return the result as is.
+
+```http
+POST http://cyphernode:8888/bitcoin_generatetoaddress
+with body...
+BODY {"nbblock":1, "address":"hex", "maxtries":123}
+
+Proxy response:
+
+```json
+{
+  "result": {[
+          
+  "hex"
+
+  ]
+  },
+  "error": null,
+}
+```
 #### Get a hex-encoded proof that one or more "txid" were included in a block.
 
 This will call the Bitcoin Core gettxoutproof RPC call and return the result as is.

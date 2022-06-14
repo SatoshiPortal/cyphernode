@@ -2,6 +2,7 @@
 
 . ./trace.sh
 . ./sendtobitcoinnode.sh
+. ./walletoperations.sh
 
 get_best_block_hash() {
   trace "Entering get_best_block_hash()..."
@@ -115,6 +116,27 @@ bitcoin_estimatesmartfee() {
   return $?
 }
 
+bitcoin_generatetoaddress() {
+  trace "Entering bitcoin_generatetoaddress()..."
+
+  local nbblocks=$(echo ${1} | jq '.nbblocks // 1') # Optional - Default 1
+  local address=$(echo ${1} | jq '.address // empty') # Optional - getnewadress from spender wallet
+  local maxtries=$(echo ${1} | jq '.maxtries // 1000000')  # Optional - use Core default
+                    
+  if [ -z "${address}" ]; then          
+    address=$(getnewaddress | jq '.address')
+  fi   
+
+  trace "[bitcoin_generatetoaddress] nbblocks=[${nbblocks}] address=[${address}] maxtries=[${maxtries}]"
+
+  local data
+  data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
+
+  trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
+
+  send_to_spender_node "${data}"
+  return $?
+}
 
 # example curl -m 20 -s --config /tmp/watcher_btcnode_curlcfg.properties -H "Content-Type: text/plain"
 #    --data-binary '{"method":"gettxoutproof","params":[["3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb
