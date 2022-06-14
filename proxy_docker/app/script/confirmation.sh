@@ -6,12 +6,84 @@
 . ./sendtobitcoinnode.sh
 . ./responsetoclient.sh
 . ./computefees.sh
-. ./blockchainrpc.sh
 . ./watchrequest.sh
 
 # Expecting 2 params
 #
-# 1: base64 encoded {"amount": 0.00000000, "confirmations": 1,"generated": true,"blockhash": "67862b2428039f1e4e088ae74e44230705931784862c4f03f8978d6d53adad83",...}
+# 1: base64 encoded 
+# {
+#  "amount": 0.00010000,
+#  "confirmations": 1,
+#  "blockhash": "3f81808e33b9d07a9a022e070dd790be079d0af157d35c7b05ef461e78a5b6fb",
+#  "blockheight": 108,
+#  "blockindex": 1,
+#  "blocktime": 1655218274,
+#  "txid": "e4a492e9d367bd1feaa6a4aab8cdda120f10d56abb1230e1b6146dc339d37cdf",
+#  "walletconflicts": [
+#  ],
+#  "time": 1655216562,
+#  "timereceived": 1655216562,
+#  "bip125-replaceable": "no",
+#  "details": [
+#    {
+#      "involvesWatchonly": true,
+#      "address": "bcrt1q3zlnle9u90uxg6a267udga8zhmc5ppy5qn34fe",
+#      "category": "receive",
+#      "amount": 0.00010000,
+#      "label": "watch_label22791",
+#      "vout": 0
+#    }
+#  ],
+#  "hex": "02000000000101086369f53e9f13ba6104b4efc0995f7ff0724a0b53eb8b49f5297387cdbc01460000000000fdffffff02102700000000000016001488bf3fe4bc2bf8646baad7b8d474e2bef1408494d83d052a01000000160014a826dbbef73081aca17d486b907d1a5e16219d8b0247304402206e20cb9611610597426d2580eec0899f90c7000c85af8dee7dabfda34b60724f02200124ce1a53426ee44fd8e49d87d4c2c49fe14077367df1a5b236dd17f4646d9f012102f86ca416271b87df55a5b007b183afbc0eaec26ca2b493ccd07eb5b0d331c2716b000000",
+#  "decoded": {
+#    "txid": "e4a492e9d367bd1feaa6a4aab8cdda120f10d56abb1230e1b6146dc339d37cdf",
+#    "hash": "9a54a8d940ffec9c0d7e214f9bef6207e8dcd6a88cbc5f13776efdb0d1a81feb",
+#    "version": 2,
+#    "size": 222,
+#    "vsize": 141,
+#    "weight": 561,
+#    "locktime": 107,
+#    "vin": [
+#      {
+#        "txid": "4601bccd877329f5498beb530b4a72f07f5f99c0efb40461ba139f3ef5696308",
+#        "vout": 0,
+#        "scriptSig": {
+#          "asm": "",
+#          "hex": ""
+#        },
+#        "txinwitness": [
+#          "304402206e20cb9611610597426d2580eec0899f90c7000c85af8dee7dabfda34b60724f02200124ce1a53426ee44fd8e49d87d4c2c49fe14077367df1a5b236dd17f4646d9f01",
+#          "02f86ca416271b87df55a5b007b183afbc0eaec26ca2b493ccd07eb5b0d331c271"
+#        ],
+#        "sequence": 4294967293
+#      }
+#   ],
+#    "vout": [
+#      {
+#        "value": 0.00010000,
+#        "n": 0,
+#        "scriptPubKey": {
+#          "asm": "0 88bf3fe4bc2bf8646baad7b8d474e2bef1408494",
+#          "hex": "001488bf3fe4bc2bf8646baad7b8d474e2bef1408494",
+#          "address": "bcrt1q3zlnle9u90uxg6a267udga8zhmc5ppy5qn34fe",
+#          "type": "witness_v0_keyhash"
+#        }
+#      },
+#      {
+#        "value": 49.99953880,
+#        "n": 1,
+#        "scriptPubKey": {
+#          "asm": "0 a826dbbef73081aca17d486b907d1a5e16219d8b",
+#          "hex": "0014a826dbbef73081aca17d486b907d1a5e16219d8b",
+#          "address": "bcrt1q4qndh0hhxzq6egtafp4eqlg6tctzr8vtuy382f",
+#          "type": "witness_v0_keyhash"
+#        }
+#      }
+#    ]
+#  }
+#}
+#
+
 # 2: boolean bypass_callbacks (optional)
 #
 confirmation() {
@@ -59,9 +131,8 @@ confirmation() {
 
   local tx=$(sql "SELECT id FROM tx WHERE txid='${txid}'")
   local id_inserted
-  local tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.confirmations // 0')
-  local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
+  local tx_hash=$(echo "${tx_details}" | jq -r '.decoded.hash')
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -77,8 +148,8 @@ confirmation() {
     local tx_ts_firstseen=$(echo "${tx_details}" | jq '.timereceived')
     local tx_amount=$(echo "${tx_details}" | jq '.amount')
 
-    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
-    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_size=$(echo "${tx_details}" | jq '.decoded.size')
+    local tx_vsize=$(echo "${tx_details}" | jq '.decoded.vsize')
     local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
@@ -93,7 +164,7 @@ confirmation() {
     if [ "${tx_nb_conf}" -gt "0" ]; then
       trace "[confirmation] tx_nb_conf=${tx_nb_conf}"
       tx_blockhash="$(echo "${tx_details}" | jq -r '.blockhash')"
-      tx_blockheight=$(get_block_info ${tx_blockhash} | jq '.height')
+      tx_blockheight=$(echo "${tx_details}" | jq -r '.blockheight')
       tx_blockhash="'${tx_blockhash}'"
       tx_blocktime=$(echo "${tx_details}" | jq '.blocktime')
     fi
@@ -115,7 +186,7 @@ confirmation() {
     if [ "${tx_blockhash}" = "null" ]; then
       trace "[confirmation] probably being called by executecallbacks without any confirmations since the last time we checked"
     else
-      local tx_blockheight=$(get_block_info "${tx_blockhash}" | jq '.height')
+      local tx_blockheight=$(echo "${tx_details}" | jq -r '.blockheight')
       local tx_blocktime=$(echo "${tx_details}" | jq '.blocktime')
 
       sql "UPDATE tx SET confirmations=${tx_nb_conf}, blockhash='${tx_blockhash}', blockheight=${tx_blockheight}, blocktime=${tx_blocktime} WHERE txid='${txid}'"

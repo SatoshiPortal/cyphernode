@@ -1,27 +1,27 @@
 #!/bin/sh
 
 walletnotify(){
-  local pid=$(cut -d' ' -f4 < /proc/self/stat)
-  echo "[walletnotify-$pid] Entering walletnotify"
+  echo "[walletnotify-$$] Entering walletnotify"
 
   local txid="$@"
-  echo "[walletnotify-$pid] [txid=$txid]"
+  echo "[walletnotify-$$] [txid=$txid]"
   local tx
 
   for wallet in $(bitcoin-cli listwallets | grep watching | tr -d ,\")
   do
-    echo "[walletnotify-$pid] tx=(bitcoin-cli -rpcwallet=$wallet gettransaction $txid true)"
-    tx=$(bitcoin-cli -rpcwallet=$wallet gettransaction $txid true)
-
+    echo "[walletnotify-$$] tx=(bitcoin-cli -rpcwallet=$wallet gettransaction $txid true true)"
+    tx=$(bitcoin-cli -rpcwallet=$wallet gettransaction $txid true true)
+    tx=$(echo $tx | jq -Mc)
+    
     if [ -n "$tx" ]; then
-      echo "[walletnotify-$pid] Found [$txid] in wallet [$wallet]"
-      echo "[walletnotify-$pid] mosquitto_pub -h broker -t confirmation -m \"$tx\" "
-      mosquitto_pub -h broker -t confirmation -m $(echo $tx | base64 -w 0)
+      echo "[walletnotify-$$] Found [$txid] in wallet [$wallet]"
+      echo "[walletnotify-$$] mosquitto_pub -h broker -t bitcoin_watching_walletnotify -m \"$tx\" "
+      mosquitto_pub -h broker -t bitcoin_watching_walletnotify -m $(echo $tx | base64 -w 0)
       break;
     fi
   done
 
-  echo "[walletnotify-$pid] Done"
+  echo "[walletnotify-$$] Done"
 }
 
 walletnotify $@

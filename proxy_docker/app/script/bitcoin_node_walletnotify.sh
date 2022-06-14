@@ -8,9 +8,9 @@ bitcoin_node_walletnotify() {
 
   while true  # Keep an infinite loop to reconnect when connection lost/broker unavailable
   do
-    mosquitto_sub -h broker -t confirmation | while read -r message
+    mosquitto_sub -h broker -t bitcoin_watching_walletnotify | while read -r message
     do
-      trace "[bitcoin_node_walletnotify] Processing walletnotify from bitcoin node" 
+      trace "[bitcoin_node_walletnotify] Processing bitcoin_watching_walletnotify from bitcoin node" 
       confirmation ${message}
     done
 
