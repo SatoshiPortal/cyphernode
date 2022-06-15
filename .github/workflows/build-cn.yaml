@@ -29,6 +29,7 @@ jobs:
       - name: Run test
         shell: 'script -q -e -c "bash {0}"'
         run: |
+          ./api_auth_docker/tests/test-gatekeeper.sh
           ./proxy_docker/app/tests/test-watches.sh
           ./proxy_docker/app/tests/test-watchpub32.sh
           ./proxy_docker/app/tests/test-manage-missed.sh
