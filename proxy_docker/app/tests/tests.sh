@@ -1,10 +1,9 @@
 #!/bin/sh
-
-# . /mine.sh
+. ./colors.sh
 
 # This should be run in regtest
 
-# docker run -it --rm -it --name cn-tests --network=cyphernodenet -v "$PWD/mine.sh:/mine.sh" -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" alpine /tests.sh
+# docker run -it --rm --name cn-tests --network=cyphernodenet -v "$PWD/tests.sh:/tests.sh" -v "$PWD/tests-cb.sh:/tests-cb.sh" -v "$PWD/colors.sh:/colors.sh" alpine /tests.sh
 
 # This will test:
 #
@@ -20,6 +19,8 @@
 # - derivepubpath
 # - spend
 # - gettransaction
+# - gettxoutproof
+# - generatetoaddress
 # - ln_getinfo
 # - ln_newaddr
 #
@@ -37,7 +38,7 @@ tests()
   # getbestblockhash
   # (GET) http://proxy:8888/getbestblockhash
 
-  echo "Testing getbestblockhash..."
+  print_title "Testing getbestblockhash..."
   response=$(curl -s proxy:8888/getbestblockhash)
   echo "response=${response}"
   local blockhash=$(echo ${response} | jq ".result" | tr -d '\"')
@@ -50,7 +51,7 @@ tests()
   # getbestblockinfo
   # curl (GET) http://proxy:8888/getbestblockinfo
 
-  echo "Testing getbestblockinfo..."
+  print_title "Testing getbestblockinfo..."
   response=$(curl -s proxy:8888/getbestblockinfo)
   echo "response=${response}"
   local blockhash2=$(echo ${response} | jq ".result.hash" | tr -d '\"')
@@ -63,7 +64,7 @@ tests()
   # getblockinfo
   # (GET) http://proxy:8888/getblockinfo/000000006f82a384c208ecfa04d05beea02d420f3f398ddda5c7f900de5718ea
 
-  echo "Testing getblockinfo..."
+  print_title "Testing getblockinfo..."
   response=$(curl -s proxy:8888/getblockinfo/${blockhash})
   echo "response=${response}"
   blockhash2=$(echo ${response} | jq ".result.hash" | tr -d '\"')
@@ -77,7 +78,7 @@ tests()
   # (GET) http://proxy:8888/getnewaddress
   # returns {"address":"2MuiUu8AyuByAGYRDAqqhdYxt8gXcsQ1Ymw"}
 
-  echo "Testing getnewaddress..."
+  print_title "Testing getnewaddress..."
   response=$(curl -s proxy:8888/getnewaddress)
   echo "response=${response}"
   address1=$(echo ${response} | jq ".address" | tr -d '\"')
@@ -92,7 +93,7 @@ tests()
   # getbalance
   # (GET) http://proxy:8888/getbalance
 
-  echo "Testing getbalance..."
+  print_title "Testing getbalance..."
   response=$(curl -s proxy:8888/getbalance)
   echo "response=${response}"
   local balance=$(echo ${response} | jq ".balance")
@@ -106,7 +107,7 @@ tests()
   # POST http://proxy:8888/watch
   # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.122.233:1111/callback0conf","confirmedCallbackURL":"192.168.122.233:1111/callback1conf"}
 
-  echo "Testing watch..."
+  print_title "Testing watch..."
   local url1="$(hostname):1111/callback0conf"
   local url2="$(hostname):1111/callback1conf"
   echo "url1=${url1}"
@@ -155,7 +156,7 @@ tests()
   # getactivewatches
   # (GET) http://proxy:8888/getactivewatches
 
-  echo "Testing getactivewatches..."
+  print_title "Testing getactivewatches..."
   response=$(curl -s proxy:8888/getactivewatches)
   echo "response=${response}"
   response=$(echo ${response} | jq ".watches[]")
@@ -175,7 +176,7 @@ tests()
   # unwatch
   # (GET) http://proxy:8888/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
 
-  echo "Testing unwatch..."
+  print_title "Testing unwatch..."
   response=$(curl -s proxy:8888/unwatch/${address2})
   echo "response=${response}"
   event=$(echo "${response}" | jq ".event" | tr -d '\"')
@@ -203,11 +204,17 @@ tests()
   # (GET) http://proxy:8888/deriveindex/25-30
   # {"addresses":[{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
 
-  echo "Testing deriveindex..."
+
+  print_title "Testing deriveindex..."
   response=$(curl -v proxy:8888/deriveindex/25-30)
   echo "response=${response}"
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
+  echo "Length: [$nbaddr]"
   if [ "${nbaddr}" -ne "6" ]; then
+    echo -e $Red;
+    echo -e "In setup, make sure you set your default xpub key to$BBlue upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb$Red";
+    echo -e "and default derivation to$BBlue 0/n";
+    echo -e $Color_Off
     exit 130
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
@@ -221,7 +228,7 @@ tests()
   # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
   # {"addresses":[{"address":"2N6Q9kBcLtNswgMSLSQ5oduhbctk7hxEJW8"},{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
 
-  echo "Testing derivepubpath..."
+  print_title "Testing derivepubpath..."
   response=$(curl -v -H "Content-Type: application/json" -d "{\"pub32\":\"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb\",\"path\":\"0/25-30\"}" proxy:8888/derivepubpath)
   echo "response=${response}"
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
@@ -241,12 +248,14 @@ tests()
   # By spending to a watched address, we will test the spending feature and trigger the confirmation to test
   # confirmations of watched addresses... Cleva!!!
 
-  echo "Testing spend, conf and callbacks..."
+  print_title "Testing spend, conf and callbacks..."
   response=$(curl -v -H "Content-Type: application/json" -d "{\"address\":\"${address1}\",\"amount\":0.00001}" proxy:8888/spend)
   echo "response=${response}"
   echo
-  echo "Please mine a block"
+  echo "Mining a block in 2 secs"
   echo
+  (sleep 2; mine) &
+
   wait_for_callbacks
   echo "Tested spend, conf and callbacks."
 
@@ -254,16 +263,117 @@ tests()
   # gettransaction
   # (GET) http://proxy:8888/gettransaction/af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648
 
-  echo "Testing gettransaction..."
+  print_title "Testing gettransaction..."
   transaction=$(echo "${response}" | jq -r ".txid")
   response=$(curl -s proxy:8888/gettransaction/${transaction})
   echo "response=${response}"
   local txid=$(echo ${response} | jq ".result.txid" | tr -d '\"')
+  local blockhash=$(echo ${response} | jq ".result.blockhash" | tr -d '\"')
+
   echo "txid=${txid}"
   if [ "${txid}" != "${transaction}" ]; then
     exit 8
   fi
   echo "Tested gettransaction."
+
+  print_title "Testing bitcoin_generatetoaddress..."
+
+  response=$(curl -s proxy:8888/getnewaddress)
+  echo "response=${response}"
+  local addresstomine=$(echo ${response} | jq ".address" | tr -d '\"')
+  echo "addresstomine=${addresstomine}"
+  if [ -z "${addresstomine}" ]; then
+    exit 11
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":1,\"address\":\"${addresstomine}\",\"maxtries\":123}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\",\"maxtries\":1}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress response=${response}"
+  echo "bitcoin_generatetoaddress response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 12
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":1,\"address\":\"${addresstomine}\"}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":1,\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress (without maxtries) response=${response}"
+  echo "bitcoin_generatetoaddress (without maxtries) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"nbblocks\":2}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"nbblocks\":2}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using (2, nil, nil) response=${response}"
+  echo "bitcoin_generatetoaddress using (2, nil, nil) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using values (default, default, default) response=${response}"
+  echo "bitcoin_generatetoaddress using values (default, default, default) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing [curl -H \"Content-Type: application/json\" -d \"{\"address\":\"${addresstomine}\"}\" proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl -H "Content-Type: application/json" -d "{\"address\":\"${addresstomine}\"}" proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress using values (default, address, default) response=${response}"
+  echo "bitcoin_generatetoaddress using values (default, address, default) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 13
+  fi
+
+  echo "Testing GET [curl proxy:8888/bitcoin_generatetoaddress]"
+  response=$(curl proxy:8888/bitcoin_generatetoaddress)
+
+  echo "bitcoin_generatetoaddress GET using values (default, address, default) response=${response}"
+  echo "bitcoin_generatetoaddress GET using values (default, address, default) response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 14
+  fi
+
+  echo "Tested bitcoin_generatetoaddress."
+
+  print_title "Testing gettxoutproof..."
+  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\"})
+
+  response=$(curl -s -H "Content-Type: application/json" -d "${transaction}" proxy:8888/bitcoin_gettxoutproof)
+
+  echo "bitcoin_gettxoutproof response=${response}"
+  echo "bitcoin_gettxoutproof response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 9
+  fi
+
+  print_title "Testing bitcoin_gettxoutproof txid+blockhash..."
+#  transaction=$(echo {\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"})
+  transaction="{\"txids\":\"[\\\"${txid}\\\"]\",\"blockhash\":\"${blockhash}\"}"
+
+  response=$(curl -s -H "Content-Type: application/json" -d "${transaction}" proxy:8888/bitcoin_gettxoutproof)
+
+  echo "bitcoin_gettxoutproof response=${response}"
+  echo "bitcoin_gettxoutproof response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 10
+  fi
+
+  echo "Tested bitcoin_gettxoutproof."
 
   # addtobatch
   # POST http://proxy:8888/addtobatch
@@ -306,7 +416,7 @@ tests()
   # ln_getinfo
   # (GET) http://proxy:8888/ln_getinfo
 
-  echo "Testing ln_getinfo..."
+  print_title "Testing ln_getinfo..."
   response=$(curl -s proxy:8888/ln_getinfo)
   echo "response=${response}"
   local port=$(echo ${response} | jq ".binding[] | select(.type == \"ipv4\") | .port")
@@ -319,10 +429,10 @@ tests()
   # ln_newaddr
   # (GET) http://proxy:8888/ln_newaddr
 
-  echo "Testing ln_newaddr..."
+  print_title "Testing ln_newaddr..."
   response=$(curl -s proxy:8888/ln_newaddr)
   echo "response=${response}"
-  address=$(echo ${response} | jq ".address")
+  address=$(echo ${response} | jq ".bech32")
   echo "address=${address}"
   if [ -z "${address}" ]; then
     exit 180
@@ -342,6 +452,29 @@ tests()
   # ln_pay
 
 
+}
+
+#
+# Mines 1 block
+#
+mine(){
+  local response
+  
+  echo "About to mine one block"
+
+  echo "response=curl proxy:8888/bitcoin_generatetoaddress"
+  response=$(curl proxy:8888/bitcoin_generatetoaddress)
+
+  echo "Mining one block response=${response}"
+  echo "Mining one block response=$(echo ${response} | jq ".error")"
+
+  if [ "$(echo ${response} | jq ".error")" != "null" ]; then
+    exit 12
+  fi
+}
+
+print_title(){
+  echo -e $BBlue; echo "$1"; echo -e $Color_Off
 }
 
 wait_for_callbacks()
