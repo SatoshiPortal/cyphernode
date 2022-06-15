@@ -446,7 +446,9 @@ module.exports = class App {
           uacomment: this.config.data.bitcoin_uacomment,
           torified: this.torifyables.find(data => data.value === 'tor_bitcoin').checked,
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_bitcoin'),
-          tor_hostname: this.sessionData.tor_bitcoin_hostname
+          tor_hostname: this.sessionData.tor_bitcoin_hostname,
+          port: (this.config.data.net === 'regtest') ? 18444 : ((this.config.data.net === 'testnet') ? 18333 : 8333),
+          network: this.config.data.net
         }
       },
       {

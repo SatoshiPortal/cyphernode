@@ -562,6 +562,18 @@ main() {
           response=$(bitcoin_estimatesmartfee "$(echo "${line}" | jq -r ".confTarget")")
           returncode=$?
           ;;
+        bitcoin_generatetoaddress)
+          # GET with no parameters ==> http://192.168.111.152:8080/bitcoin_generatetoaddress
+          # POST http://192.168.111.152:8080/bitcoin_generatetoaddress
+          # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(bitcoin_generatetoaddress "${line}")
+          else
+            response=$(bitcoin_generatetoaddress "{}")
+          fi
+          returncode=$?
+          ;;
         bitcoin_gettxoutproof)
           # POST http://192.168.111.152:8080/bitcoin_gettxoutproof
           # BODY 
