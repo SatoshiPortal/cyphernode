@@ -56,6 +56,7 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 # Will test if Cyphernode is fully up and running...
 docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
+-v ${current_path}/.cyphernodeconf/installer/config.sh:/config.sh \
 -v $current_path:/dist \
 -v cyphernode_container_monitor:/container_monitor:ro \
 --network cyphernodenet eclipse-mosquitto:<%= mosquitto_version %> /testfeatures.sh
@@ -81,6 +82,11 @@ if [ "$EXIT_STATUS" -ne "0" ]; then
   printf "\r\n\033[1;31mRun ./testdeployment.sh to rerun the tests.\033[0m"
   printf "\r\n\033[1;31mRun ./stop.sh to stop cyphernode.\r\n\033[0m"
   exit 1
+fi
+
+if [ "$RUN_TELEGRAM_SETUP" -ne "0" ]; then
+  printf "\r\n\e[1;32mStarting Telegram setup\e[0m\n"
+  ../notifier_docker/script/start-tg-setup.sh
 fi
 
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"

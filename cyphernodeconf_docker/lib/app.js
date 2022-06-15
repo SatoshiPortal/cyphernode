@@ -563,6 +563,13 @@ module.exports = class App {
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
+      },
+      telegram: {
+        networks: ['cyphernodenet'],
+        docker: "cypernode/notifier",
+        extra:{
+          torified: this.torifyables.find(data => data.value === 'tor_telegram').checked,
+        }
       }
     }
 

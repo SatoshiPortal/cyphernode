@@ -4,6 +4,8 @@ apk add --update --no-cache openssl curl jq coreutils postgresql > /dev/null
 
 . /gatekeeper/keys.properties
 
+. ./config.sh
+
 checkgatekeeper() {
   echo -e "\r\n\e[1;36mTesting Gatekeeper...\e[0;32m" > /dev/console
 
@@ -117,6 +119,30 @@ checknotifier() {
   [ "${http_code}" -ge "400" ] && return 118
 
   echo -e "\e[1;36mNotifier rocks!" > /dev/console
+
+  return 0
+}
+
+checknotifiertelegram() {
+  echo -en "\r\n\e[1;36mTesting Notifier Telegram... " > /dev/console
+  local response
+  local returncode
+  local msg
+
+  if [ "$TOR_TELEGRAM" = "true" ]; then
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\",\"tor\":true}"
+  else
+    msg="{\"response-topic\":\"response/$$\",\"cmd\":\"sendToTelegramNoop\"}"
+  fi
+
+  response=$(mosquitto_rr -h broker -W 15 -t notifier -e "response/$$" -m "$msg")
+  returncode=$?
+  [ "${returncode}" -ne "0" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 115
+  http_code=$(echo "${response}" | jq -r ".http_code")
+  [ "${http_code}" -ge "400" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 118
+  [ "${http_code}" -eq "0" ] && echo -e "\e[1;31mNotifier Telegram needs to be configured" > /dev/console && return 119
+
+  echo -e "\e[1;36mNotifier Telegram rocks!" > /dev/console
 
   return 0
 }
@@ -289,6 +315,7 @@ feature_status() {
 # Let's first see if everything is up.
 
 echo "EXIT_STATUS=1" > /dist/exitStatus.sh
+RUN_TELEGRAM_SETUP=0
 
 #############################
 # Ping containers and PROXY #
@@ -306,7 +333,7 @@ if [ "${returncode}" -ne "0" ]; then
     workingproxy="false"
   fi
 else
-  echo -e "\e[1;36mCyphernode seems to be correctly deployed.  Let's run more thourough tests..." > /dev/console
+  echo -e "\e[1;36mCyphernode seems to be correctly deployed.  Let's run more thorough tests..." > /dev/console
 fi
 
 # Let's now check each feature fonctionality...
@@ -405,6 +432,25 @@ fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Notifier error!')}"
 
+<% if (features.indexOf('telegram') != -1) { %>
+#############################
+# NOTIFIER TELEGRAM         #
+#############################
+
+result="${result},{\"coreFeature\":true, \"name\":\"notifier telegram\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"notifier\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  checknotifiertelegram
+  returncode=$?
+  # Non critical error - run telegram setup at the end
+  [ "${returncode}" -ne "0" ] && RUN_TELEGRAM_SETUP=1 && returncode=0
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Notifier Telegram error! - Please run Telegram setup - See doc/TELEGRAM.md')}"
+<% } %>
+
 #############################
 # PYCOIN                    #
 #############################
@@ -500,6 +546,7 @@ result="{${result}]}"
 echo "${result}" > /gatekeeper/installation.json
 
 echo "EXIT_STATUS=${finalreturncode}" > /dist/exitStatus.sh
+echo "RUN_TELEGRAM_SETUP=$RUN_TELEGRAM_SETUP" >> /dist/exitStatus.sh
 
 <% if (features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1) { %>
 echo "TOR_TRAEFIK_HOSTNAME=$(cat /dist/.cyphernodeconf/tor/traefik/hidden_service/hostname)" >> /dist/exitStatus.sh

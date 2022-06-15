@@ -1,8 +1,5 @@
 #!/bin/sh
 #
-#
-#
-#
 
 . ./db/config.sh
 . ./sendtobitcoinnode.sh

@@ -493,7 +493,6 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/otsclient/otsclient.env $current_path/.env/otsclient.env 1 $SUDO_REQUIRED
   copy_file $cyphernodeconf_filepath/proxycron/proxycron.env $current_path/.env/proxycron.env 1 $SUDO_REQUIRED
 
-
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
@@ -856,6 +855,15 @@ install_apps() {
       next
     fi
   fi
+
+  if [[ $FEATURE_TELEGRAM == true ]]; then
+    step "   [32menabled[0m Telegram - Manual configuration needed before first time use (Bot and Group creation, API key) - see doc/TELEGRAM.md"
+    next
+  else
+    step "   [32mdisabled[0m Telegram"
+    next
+  fi
+
 }
 
 install() {

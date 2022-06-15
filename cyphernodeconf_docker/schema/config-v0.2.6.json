@@ -189,7 +189,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ],
         "title": "The feature",
         "default": "",
@@ -198,7 +199,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "telegram"
         ]
       }
     },
@@ -217,7 +219,8 @@
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
-          "tor_txidwatcheswebhooks"
+          "tor_txidwatcheswebhooks",
+          "tor_telegram"
         ],
         "title": "The Torified feature",
         "default": "",
@@ -228,7 +231,8 @@
           "tor_otsoperations",
           "tor_otswebhooks",
           "tor_addrwatcheswebhooks",
-          "tor_txidwatcheswebhooks"
+          "tor_txidwatcheswebhooks",
+          "tor_telegram"
         ]
       }
     },
