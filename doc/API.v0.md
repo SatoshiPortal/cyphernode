@@ -300,22 +300,6 @@ Proxy response:
 }
 ```
 
-### Confirm a Transaction on Watched Address (called by Bitcoin node on transaction confirmations)
-
-Confirms a transaction on an imported address.  The Watching Bitcoin node will notify Cyphernode (thanks to walletnotify in bitcoin.conf) by calling this endpoint with txid when a tx is new or updated on an address.  If address is still being watched (flag in DB), the corresponding callbacks will be called.
-
-```http
-GET http://cyphernode:8888/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
-```
-
-Proxy response:
-
-```json
-{
-  "result":"confirmed"
-}
-```
-
 ### Callbacks
 
 When cyphernode receives a transaction confirmation (/conf endpoint) on a watched address, it makes an HTTP POST request using the corresponding callback URL previously supplied in the watch call (/watch endpoint).  The POST body will contain the following information:
