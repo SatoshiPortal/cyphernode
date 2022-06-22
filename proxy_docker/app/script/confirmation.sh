@@ -10,7 +10,7 @@
 
 # Expecting 2 params
 #
-# 1: base64 encoded 
+# 1: base64 encoded
 # {
 #  "amount": 0.00010000,
 #  "confirmations": 1,
@@ -136,7 +136,7 @@ confirmation() {
 
   # Sometimes raw tx are too long to be passed as paramater, so let's write
   # it to a temp file for it to be read by sqlite3 and then delete the file
-  echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+  echo "${tx_details}" | jq -Mc '.decoded' > rawtx-${txid}-$$.blob
 
   if [ -z ${tx} ]; then
     # TX not found in our DB.
