@@ -1,5 +1,8 @@
 name: Build Cyphernode every day on branch dev
 on:
+  push:
+    branches:
+      - dev
   schedule:
   - cron: "0 0 * * *"
 jobs:
