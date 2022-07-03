@@ -23,7 +23,7 @@ compute_fees() {
 
   local vout_total_amount=0
   local vout_value
-  local vout_values=$(echo "${tx_raw_details}" | jq ".result.vout[].value")
+  local vout_values=$(echo "${tx_raw_details}" | jq ".vout[].value")
   for vout_value in ${vout_values}
   do
     vout_total_amount=$(awk "BEGIN { printf(\"%.8f\", ${vout_total_amount}+${vout_value}); exit }")
@@ -43,7 +43,7 @@ compute_vin_total_amount()
   trace "Entering compute_vin_total_amount()..."
 
   local main_tx=${1}
-  local vin_txids_vout=$(echo "${main_tx}" | jq '.result.vin[] | ((.txid + "-") + (.vout | tostring))')
+  local vin_txids_vout=$(echo "${main_tx}" | jq '.vin[] | ((.txid + "-") + (.vout | tostring))')
   trace "[compute_vin_total_amount] vin_txids_vout=${vin_txids_vout}"
   local returncode
   local vin_txid_vout

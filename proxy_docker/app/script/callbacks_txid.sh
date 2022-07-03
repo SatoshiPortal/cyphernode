@@ -10,7 +10,7 @@ do_callbacks_txid() {
   trace "Entering do_callbacks_txid()..."
 
   # Let's check the 1-conf (newly mined) watched txid that are included in the new block...
-  
+
   # Let's fetch all the watching txid still being watched but not called back
   local callbacks=$(sql "SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf IS NOT NULL AND NOT calledback1conf")
   trace "[do_callbacks_txid] callbacks1conf=${callbacks}"
@@ -98,7 +98,7 @@ build_callback_txid() {
 
       # Sometimes raw tx are too long to be passed as paramater, so let's write
       # it to a temp file for it to be read by sqlite3 and then delete the file
-      echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+      echo "${tx_raw_details}" | jq -Mc '.result' > rawtx-${txid}-$$.blob
 
       # Number of confirmations for transaction is at least what we want
       # Let's prepare the callback!

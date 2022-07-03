@@ -10,7 +10,6 @@
 . ./watchrequest.sh
 . ./unwatchrequest.sh
 . ./getactivewatches.sh
-. ./confirmation.sh
 . ./blockchainrpc.sh
 . ./responsetoclient.sh
 . ./trace.sh
@@ -213,12 +212,6 @@ main() {
         get_unused_addresses_by_watchlabel)
           # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
           response=$(get_unused_addresses_by_watchlabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
-          returncode=$?
-          ;;
-        conf)
-          # curl (GET) 192.168.111.152:8080/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
-
-          response=$(confirmation_request "${line}")
           returncode=$?
           ;;
         newblock)
