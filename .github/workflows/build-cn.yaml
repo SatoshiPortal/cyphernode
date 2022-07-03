@@ -45,6 +45,7 @@ jobs:
           ./proxy_docker/app/tests/test-manage-missed.sh
           ./proxy_docker/app/tests/test-derive.sh
           ./proxy_docker/app/tests/test-batching.sh
+          ./proxy_docker/app/tests/tests.sh
 
       - name: Stop Cyphernode
         run: ./dist/stop.sh

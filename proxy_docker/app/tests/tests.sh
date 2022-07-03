@@ -1,5 +1,6 @@
 #!/bin/sh
-. ./colors.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
 
 # This should be run in regtest
 
