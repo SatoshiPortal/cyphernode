@@ -2,7 +2,8 @@ name: Build Cyphernode every day & on push on branch dev
 on:
   push:
     branches:
-      - features/gh-actions
+      - features/**
+      - dev
   schedule:
   - cron: "0 0 * * *"
 
