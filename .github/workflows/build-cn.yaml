@@ -2,8 +2,8 @@ name: Build Cyphernode every day & on push on branch dev
 on:
   push:
     branches:
-      - features/**
       - dev
+      - features/gh-actions
   schedule:
   - cron: "0 0 * * *"
 
@@ -15,8 +15,15 @@ jobs:
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
       - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
 
-      - name: Check out repository code
+      - if: ${{ github.event_name == 'push' }}
+        name: Check out repository code
         uses: actions/checkout@v3
+
+      - if: ${{ github.event_name == 'schedule' }}
+        name: Check out repository dev
+        uses: actions/checkout@v3
+        with:
+          ref: 'dev'
 
       - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
       - run: echo "🖥️ The workflow is now ready to test your code on the runner."
