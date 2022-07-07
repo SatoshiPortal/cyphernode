@@ -263,7 +263,6 @@ start_test_container
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-exec_in_test_container apk add --update curl
 
 test_watches
 returncode=$?

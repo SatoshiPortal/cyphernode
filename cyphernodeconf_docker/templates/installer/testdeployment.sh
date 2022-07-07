@@ -54,7 +54,7 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 <% } %>
 
 # Will test if Cyphernode is fully up and running...
-docker run --rm -t -v $current_path/testfeatures.sh:/testfeatures.sh \
+docker run --rm -it -v $current_path/testfeatures.sh:/testfeatures.sh \
 -v <%= gatekeeper_datapath %>:/gatekeeper \
 -v $current_path:/dist \
 -v cyphernode_container_monitor:/container_monitor:ro \
@@ -91,7 +91,7 @@ printf "\033[0;92mYou can also use Tor Browser and navigate to your onion addres
 printf "\033[0;95mhttps://${TOR_TRAEFIK_HOSTNAME}:<%= traefik_https_port %>/welcome\033[0m\r\n\r\n"
 
 printf "\033[0;92mTor Browser on mobile?  We got you:\r\n\r\n\033[0m"
-docker run --rm -t cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
+docker run --rm -it cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
 printf "\r\n"
 
 <% } %>
