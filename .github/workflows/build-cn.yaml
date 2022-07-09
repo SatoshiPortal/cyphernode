@@ -1,0 +1,65 @@
+name: Build Cyphernode every day & on push on branch dev
+on:
+  push:
+    branches:
+      - dev
+  schedule:
+  - cron: "0 0 * * *"
+
+jobs:
+  Build-Cyphernode:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+      - if: ${{ github.event_name == 'push' }}
+        name: Check out repository code
+        uses: actions/checkout@v3
+
+      - if: ${{ github.event_name == 'schedule' }}
+        name: Check out repository dev
+        uses: actions/checkout@v3
+        with:
+          ref: 'dev'
+
+      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+
+      - name: Run build script
+        run: ./build.sh
+        shell: bash
+
+      - name: Copy default config
+        run: ./.github/ci-config/copy-config.sh
+        shell: bash
+
+      - name: Run Cyphernode Setup
+        run: env CFG_PASSWORD="qq" ./dist/setup.sh -irc <<< 'y\n'
+        shell: bash
+
+      - name: Start Cyphernode
+        run: ./dist/start.sh
+        shell: bash
+
+      - name: Run test
+        shell: 'script -q -e -c "bash {0}"'
+        run: |
+          ./api_auth_docker/tests/test-gatekeeper.sh
+          ./proxy_docker/app/tests/test-watches.sh
+          ./proxy_docker/app/tests/test-watchpub32.sh
+          ./proxy_docker/app/tests/test-manage-missed.sh
+          ./proxy_docker/app/tests/test-derive.sh
+          ./proxy_docker/app/tests/test-batching.sh
+          ./proxy_docker/app/tests/tests.sh
+
+      - name: Stop Cyphernode
+        run: ./dist/stop.sh
+        shell: bash
+
+      - name: Dump docker logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v1
+
+      - run: echo "🍏 This job's status is ${{ job.status }}."

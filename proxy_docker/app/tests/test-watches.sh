@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. ./colors.sh
-. ./mine.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
+. $DIR/mine.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
@@ -24,7 +25,8 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-watches --network=cyphernodenet alpine
+  trace 1 $DIR
+  docker run -d --rm -t --name tests-watches --network=cyphernodenet -v cyphernode_container_monitor:/container_monitor:ro alpine
 }
 
 stop_test_container() {
@@ -38,7 +40,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-watches "$@"
+  docker exec tests-watches "$@"
 }
 
 test_watches() {
@@ -176,7 +178,7 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
   start_callback_server 1111
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
+  txid=$(docker exec $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watches] txid=${txid}"
   trace 3 "[test_watches] Waiting for 0-conf callback on address1..."
@@ -202,6 +204,7 @@ test_watches() {
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
+
   mine
 
   # 15. Wait for 1-conf webhook
@@ -214,6 +217,7 @@ test_watches() {
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
   trace 3 "[test_watches] Mine 2 new blocks..."
+  
   mine 2
 
   # 18. Wait for 3-conf webhook
@@ -241,14 +245,17 @@ test_watches() {
 }
 
 start_callback_server() {
-  trace 1 "[start_callback_server] ${BCyan}Let's start the callback servers!...${Color_Off}"
-
   local port=${1:-1111}
 
+  trace 1 "[start_callback_server] ${BCyan}Start the callback server [port=${port}]!...${Color_Off}"
+
   docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+
+  trace 1 "[start_callback_server] ${BCyan}server started on [port=${port}] with PID [$!] ${Color_Off}"
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -256,11 +263,16 @@ start_test_container
 trace 1 "\n\n[test_watches] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
+
 test_watches
+returncode=$?
 
 trace 1 "\n\n[test_watches] ${BCyan}Tearing down...${Color_Off}\n"
-wait
 
 stop_test_container
 
-trace 1 "\n\n[test_watches] ${BCyan}See ya!${Color_Off}\n"
+wait
+
+trace 1 "\n\n[test_watches] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
+
+exit ${returncode}

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ./colors.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
 
 # You need jq installed for these tests to run correctly
 # You need to configure cyphernode with a default xpub for these tests to work.
@@ -150,13 +151,14 @@ start_test_container
 trace 1 "\n\n[test-derive] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
 
-returncode=$(tests_derive)
+tests_derive
+returncode=$?
 
 trace 1 "\n\n[test-derive] ${BCyan}Tearing down...${Color_Off}\n"
 wait
 
 stop_test_container
 
-trace 1 "\n\n[test-derive] ${BCyan}See ya!${Color_Off}\n"
+trace 1 "\n\n[test-derive] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
 
 exit ${returncode}

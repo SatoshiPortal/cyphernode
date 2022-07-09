@@ -1,7 +1,8 @@
 #!/bin/bash
 
-. ./colors.sh
-. ./mine.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
+. $DIR/mine.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
@@ -34,7 +35,6 @@ stop_test_container() {
   trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
   # docker stop tests-watch-pub32
-  # docker stop tests-watch-pub32-cb
   local containers=$(docker ps -q -f "name=tests-watch-pub32")
   if [ -n "${containers}" ]; then
     docker stop ${containers}
@@ -43,6 +43,50 @@ stop_test_container() {
 
 exec_in_test_container() {
   docker exec -it tests-watch-pub32 "$@"
+}
+
+exec_in_test_container_nonint() {
+  docker exec -t tests-watch-pub32 "$@"
+}
+
+create_cb_server() {
+  trace 1 "\n\n[create_cb_server] ${BCyan}Creating cb-server.sh...${Color_Off}\n"
+
+  local cbserver_b64
+  cbserver_b64=$(echo '#!/bin/sh
+
+lookingfor=$1
+returncode=0
+
+a=$(timeout 1 tee)
+
+echo -en "\033[40m\033[0;37m" >&2
+date >&2
+echo "$a" >&2
+
+case "$a" in
+  *$lookingfor*)
+    echo -e "\033[42m\033[0;30m  Found \"$lookingfor\" in request!  \033[40m" >&2
+    found=true
+    ;;
+esac
+
+echo -e "\033[0m" >&2
+
+if [ "$found" = "true" ]; then
+  echo -en "HTTP/1.1 200 OK\r\n\r\n"
+else
+  echo -en "HTTP/1.1 404 NOT FOUND\r\n\r\n"
+  returncode=1
+fi
+echo -en "$a"
+
+return ${returncode}
+' | base64)
+
+  exec_in_test_container sh -c 'echo '${cbserver_b64}' | base64 -d > cb-server.sh && chmod +x cb-server.sh'
+
+  trace 1 "\n\n[create_cb_server] ${BCyan}Created cb-server.sh...${Color_Off}\n"
 }
 
 test_watch_pub32() {
@@ -83,16 +127,18 @@ test_watch_pub32() {
 
   local xpub1="upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb"
   local xpub2="tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk"
-  local label1="label$RANDOM"
-  local label2="label$RANDOM"
+  local id1=$RANDOM
+  local id2=$RANDOM
+  local port1=${id1}
+  local port3=${id2}
+  local label1="label${id1}"
+  local label2="label${id2}"
   local path1="0/n"
   local path2="0/n"
   local path_a1
   local path_a2
-  local callbackurl0conf1="http://${callbackservername}:1111/callbackurl0conf1"
-  local callbackurl1conf1="http://${callbackservername}:1112/callbackurl1conf1"
-  local callbackurl0conf2="http://${callbackservername}:1113/callbackurl0conf2"
-  local callbackurl1conf2="http://${callbackservername}:1114/callbackurl1conf2"
+  local callbackurl0conf1="http://${callbackservername}:${port1}/callbackurl0conf1"
+  local callbackurl0conf2="http://${callbackservername}:${port3}/callbackurl0conf2"
   local address
   local address1
   local address2
@@ -113,25 +159,31 @@ test_watch_pub32() {
 
   # 1. Call watchxpub with xpub1 label1 with url1 as callback
   trace 2 "\n\n[test_watch_pub32] ${BCyan}1. watchxpub 1...${Color_Off}\n"
-  data='{"label":"'${label1}'","pub32":"'${xpub1}'","path":"'${path1}'","nstart":0,"unconfirmedCallbackURL":"'${callbackurl0conf1}'","confirmedCallbackURL":"'${callbackurl1conf1}'"}'
+  data='{"label":"'${label1}'","pub32":"'${xpub1}'","path":"'${path1}'","nstart":0,"unconfirmedCallbackURL":"'${callbackurl0conf1}'"}'
   trace 3 "[test_watch_pub32] data=${data}"
   response=$(exec_in_test_container curl -d "${data}" proxy:8888/watchxpub)
   trace 3 "[test_watch_pub32] response=${response}"
   data=$(echo "${response}" | jq -re ".error")
   if [ "${?}" -eq "0" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 1. watchxpub 1 failed: ${data}!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 10
   fi
 
   # 2. Call watchxpub with xpub2 label2 with url2 as callback
   trace 2 "\n\n[test_watch_pub32] ${BCyan}2. watchxpub 2...${Color_Off}\n"
-  data='{"label":"'${label2}'","pub32":"'${xpub2}'","path":"'${path2}'","nstart":0,"unconfirmedCallbackURL":"'${callbackurl0conf2}'","confirmedCallbackURL":"'${callbackurl1conf2}'"}'
+  data='{"label":"'${label2}'","pub32":"'${xpub2}'","path":"'${path2}'","nstart":0,"unconfirmedCallbackURL":"'${callbackurl0conf2}'"}'
   trace 3 "[test_watch_pub32] data=${data}"
   response=$(exec_in_test_container curl -d "${data}" proxy:8888/watchxpub)
   trace 3 "[test_watch_pub32] response=${response}"
   data=$(echo "${response}" | jq -re ".label")
   if [ "${label2}" != "${data}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 2. watchxpub 2 failed!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 20
   fi
 
@@ -146,6 +198,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index1=${index1}"
   if [ "${address1}" = "null" ] || [ "${index1}" = "null" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 3. Call get_unused_addresses_by_watchlabel with label1 /10!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 87
   fi
 
@@ -159,6 +214,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index2=${index2}"
   if [ "${address2}" = "null" ] || [ "${index2}" = "null" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 4. Call get_unused_addresses_by_watchlabel with label2 /10!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 87
   fi
 
@@ -174,6 +232,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] address=${address}"
   if [ "${address}" != "${address1}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 5. Call derivepubpath_bitcoind with xpub1 path 0/index1!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 30
   fi
 
@@ -188,6 +249,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] address=${address}"
   if [ "${address}" != "${address2}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 6. Call derivepubpath_bitcoind with xpub2 path 0/index2!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 30
   fi
 
@@ -202,10 +266,16 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] last_imported_n2=${last_imported_n2}"
   if [ "${last_imported_n1}" -ne "100" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 7. \"${last_imported_n1}\" -ne \"100\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 50
   fi
   if [ "${last_imported_n2}" -ne "100" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 7. \"${last_imported_n2}\" -ne \"100\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 55
   fi
 
@@ -217,6 +287,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index1}th address=${address}"
   if [ "${address}" != "${address1}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 8. Call getactivewatchesbyxpub with xpub1: \"${address}\" != \"${address1}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 60
   fi
   # Check if last_imported_n1 exists in watched list
@@ -224,6 +297,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index=${index}"
   if [ "${index}" != "100" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 8. Call getactivewatchesbyxpub with xpub1: \"${index}\" != \"100\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 65
   fi
 
@@ -235,6 +311,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index2}th address=${address}"
   if [ "${address}" != "${address2}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 9. Call getactivewatchesbyxpub with xpub2: \"${address}\" != \"${address2}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 60
   fi
   # Check if last_imported_n1 exists in watched list
@@ -242,6 +321,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index=${index}"
   if [ "${index}" != "100" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 9. Call getactivewatchesbyxpub with xpub2: \"${index}\" != \"100\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 65
   fi
 
@@ -253,6 +335,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index1}th address=${address}"
   if [ "${address}" != "${address1}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 10. Call getactivewatchesbylabel with label1: \"${address}\" != \"${address1}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 80
   fi
 
@@ -264,13 +349,16 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index2}th address=${address}"
   if [ "${address}" != "${address2}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 11. Call getactivewatchesbylabel with label2: \"${address}\" != \"${address2}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 80
   fi
 
 
   # 12. Send coins to address1, wait for callback
   trace 2 "\n\n[test_watch_pub32] ${BCyan}12. Send coins to address1...${Color_Off}\n"
-  start_callback_server 1111
+  start_callback_server $port1 &
   # Let's use the bitcoin node directly to better simulate an external spend
   txid1=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid1=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
@@ -280,7 +368,7 @@ test_watch_pub32() {
 
   # 13. Send coins to address2, wait for callback
   trace 2 "\n\n[test_watch_pub32] ${BCyan}13. Send coins to address2...${Color_Off}\n"
-  start_callback_server 1113
+  start_callback_server $port3 &
   # Let's use the bitcoin node directly to better simulate an external spend
   txid2=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address2} 0.0001 | tr -d "\r\n")
 #  txid2=$(exec_in_test_container curl -d '{"address":"'${address2}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
@@ -297,6 +385,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] txid searched=${txid}"
   if [ "${txid}" != "${txid1}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 14. Call get_txns_by_watchlabel for label1: \"${txid}\" != \"${txid1}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 88
   fi
 
@@ -308,6 +399,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] txid searched=${txid}"
   if [ "${txid}" != "${txid2}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 15. Call get_txns_by_watchlabel for label2: \"${txid}\" != \"${txid2}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 88
   fi
 
@@ -320,6 +414,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index1}th address searched=${address}"
   if [ "${address}" = "${address1}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 16. Call get_unused_addresses_by_watchlabel with label1 /10: \"${address}\" = \"${address1}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 87
   fi
 
@@ -331,6 +428,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] ${index2}th address searched=${address}"
   if [ "${address}" = "${address2}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 17. Call get_unused_addresses_by_watchlabel with label2 /10: \"${address}\" = \"${address2}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 87
   fi
 
@@ -345,10 +445,16 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] last_imported_n2_x=${last_imported_n2_x}"
   if [ "${last_imported_n1_x}" -ne "$((100+${index1}))" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 18. Call getactivexpubwatches: \"${last_imported_n1_x}\" -ne \"$((100+${index1}))\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 90
   fi
   if [ "${last_imported_n2_x}" -ne "$((100+${index2}))" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 18. Call getactivexpubwatches \"${last_imported_n2_x}\" -ne \"$((100+${index2}))\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 95
   fi
 
@@ -360,6 +466,9 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index=${index}"
   if [ "${index}" != "${last_imported_n1_x}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 19. Call getactivewatchesbyxpub with xpub1: \"${index}\" != \"${last_imported_n1_x}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 100
   fi
 
@@ -371,30 +480,17 @@ test_watch_pub32() {
   trace 3 "[test_watch_pub32] index=${index}"
   if [ "${index}" != "${last_imported_n2_x}" ]; then
     trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 20. Call getactivewatchesbyxpub with xpub2: \"${index}\" != \"${last_imported_n2_x}\"!                                           ${Color_Off}\n"
+
+    unwatch_xpubs "${xpub1}" "${label2}"
+
     return 100
   fi
 
-
-  # 21. Call unwatchxpubbyxpub with xpub1
-  trace 2 "\n\n[test_watch_pub32] ${BCyan}21. unwatchxpubbyxpub with xpub1...${Color_Off}\n"
-  response=$(exec_in_test_container curl proxy:8888/unwatchxpubbyxpub/${xpub1})
-  trace 3 "[test_watch_pub32] response=${response}"
-  data=$(echo "${response}" | jq -re ".pub32")
-  if [ "${xpub1}" != "${data}" ]; then
-    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 21. Call unwatchxpubbyxpub with xpub1!                                           ${Color_Off}\n"
-    return 120
+  unwatch_xpubs "${xpub1}" "${label2}"
+  returncode=$?
+  if [ "$returncode" -ne "0" ]; then
+    return returncode
   fi
-
-  # 22. Call unwatchxpubbylabel with label2
-  trace 2 "\n\n[test_watch_pub32] ${BCyan}22. unwatchxpubbylabel with label2...${Color_Off}\n"
-  response=$(exec_in_test_container curl proxy:8888/unwatchxpubbylabel/${label2})
-  trace 3 "[test_watch_pub32] response=${response}"
-  data=$(echo "${response}" | jq -re ".label")
-  if [ "${label2}" != "${data}" ]; then
-    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 22. Call unwatchxpubbylabel with label2 failed!                                           ${Color_Off}\n"
-    return 130
-  fi
-
 
   # 23. Call getactivewatchesbyxpub with xpub1, should be empty
   trace 2 "\n\n[test_watch_pub32] ${BCyan}23. getactivewatchesbyxpub with xpub1...${Color_Off}\n"
@@ -420,13 +516,40 @@ test_watch_pub32() {
 
 }
 
+unwatch_xpubs() {
+  local xpub1 label2 response data
+  xpub1=$1
+  label2=$2
+
+  # 21. Call unwatchxpubbyxpub with xpub1
+  trace 2 "\n\n[test_watch_pub32] ${BCyan}21. unwatchxpubbyxpub with xpub1...${Color_Off}\n"
+  response=$(exec_in_test_container curl proxy:8888/unwatchxpubbyxpub/${xpub1})
+  trace 3 "[test_watch_pub32] response=${response}"
+  data=$(echo "${response}" | jq -re ".pub32")
+  if [ "${xpub1}" != "${data}" ]; then
+    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 21. Call unwatchxpubbyxpub with xpub1!                                           ${Color_Off}\n"
+    return 120
+  fi
+
+  # 22. Call unwatchxpubbylabel with label2
+  trace 2 "\n\n[test_watch_pub32] ${BCyan}22. unwatchxpubbylabel with label2...${Color_Off}\n"
+  response=$(exec_in_test_container curl proxy:8888/unwatchxpubbylabel/${label2})
+  trace 3 "[test_watch_pub32] response=${response}"
+  data=$(echo "${response}" | jq -re ".label")
+  if [ "${label2}" != "${data}" ]; then
+    trace 1 "\n\n[test_watch_pub32] ${On_Red}${BBlack} 22. Call unwatchxpubbylabel with label2 failed!                                           ${Color_Off}\n"
+    return 130
+  fi
+}
+
 start_callback_server() {
   trace 1 "\n\n[start_callback_server] ${BCyan}Let's start a callback server!...${Color_Off}\n"
 
+  local port expected_text
   port=${1:-${callbackserverport}}
-  docker run --rm -t --name tests-watch-pub32-cb --network=cyphernodenet alpine sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  expected_text=$2
 
-  # docker run --rm -it --name tests-watch-pub32-cb --network=cyphernodenet alpine sh -c "nc -vlkp1111 -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'"
+  exec_in_test_container_nonint sh -c 'nc -vlp'${port}' -e ./cb-server.sh '${expected_text}' ; echo "::$?::"'
 }
 
 TRACING=3
@@ -434,11 +557,13 @@ TRACING=3
 stop_test_container
 start_test_container
 
-callbackserverport="1111"
-callbackservername="tests-watch-pub32-cb"
+callbackserverport="$port1"
+callbackservername="tests-watch-pub32"
 
 trace 1 "\n\n[test_watch_pub32] ${BCyan}Installing needed packages...${Color_Off}\n"
 exec_in_test_container apk add --update curl
+
+create_cb_server
 
 test_watch_pub32
 

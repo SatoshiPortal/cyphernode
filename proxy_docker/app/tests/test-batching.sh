@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ./colors.sh
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+. $DIR/colors.sh
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
@@ -62,7 +63,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-batching "$@"
+  docker exec tests-batching "$@"
 }
 
 
@@ -398,6 +399,7 @@ start_callback_server() {
 }
 
 TRACING=3
+returncode=0
 
 stop_test_container
 start_test_container
@@ -409,10 +411,13 @@ trace 1 "\n\n[test-batching] ${BCyan}Installing needed packages...${Color_Off}\n
 exec_in_test_container apk add --update curl
 
 testbatching
+returncode=$?
 
 trace 1 "\n\n[test-batching] ${BCyan}Tearing down...${Color_Off}\n"
 wait
 
 stop_test_container
 
-trace 1 "\n\n[test-batching] ${BCyan}See ya!${Color_Off}\n"
+trace 1 "\n\n[test-batching] ${BCyan}See ya! returncode=[${returncode}]${Color_Off}\n"
+
+exit ${returncode}
