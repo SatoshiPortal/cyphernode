@@ -1,6 +1,6 @@
-FROM alpine:3.12.4 AS builder
+FROM alpine:3.15.4 AS builder
 
-ARG TOR_VER=0.4.6.10
+ARG TOR_VER=0.4.7.8
 ARG TOR_DIR=tor-$TOR_VER
 ARG TOR_FILE=$TOR_DIR.tar.gz
 ARG TOR_DIST=https://dist.torproject.org/$TOR_FILE
@@ -10,14 +10,14 @@ RUN apk --no-cache add --update \
 
 RUN wget $TOR_DIST.sha256sum && wget $TOR_DIST.sha256sum.asc && wget $TOR_DIST
 
-RUN sed -r 's/(.) tor/\1  tor/' tor-0.4.6.10.tar.gz.sha256sum | sha256sum -c -
+RUN sed -r 's/(.) tor/\1 tor/' tor-0.4.7.8.tar.gz.sha256sum | sha256sum -c -
 
 RUN gpg --auto-key-locate nodefault,wkd --locate-keys ahf@torproject.org  dgoulet@torproject.org nickm@torproject.org \
  && gpg --verify tor-$TOR_VER.tar.gz.sha256sum.asc \
  && tar xfz $TOR_FILE && cd $TOR_DIR \
  && ./configure && make install
 
-FROM alpine:3.12.4
+FROM alpine:3.15.4
 
 RUN apk --no-cache add --update \
   su-exec
