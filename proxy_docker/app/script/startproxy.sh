@@ -102,5 +102,7 @@ fi
 
 ./bitcoin_node_walletnotify.sh &
 
-#exec nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./requesthandler.sh
-exec nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./aaaa.sh
+trap "pkill nc" TERM
+
+nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./requesthandler.sh &
+wait
