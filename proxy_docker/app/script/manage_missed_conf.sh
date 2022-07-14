@@ -115,7 +115,7 @@ manage_missed_conf() {
       data="{\"method\":\"gettransaction\",\"params\":[\"${latesttxid}\",true,true]}"
       trace "[manage_missed_conf] calling method=${data}"
 
-      tx=$(send_to_watcher_node ${data})
+      tx=$(send_to_watcher_node "${data}")
 
       blocktime=$(echo "${tx}" | jq '.result.blocktime')
       txtime=$(echo "${tx}" | jq '.result.time')
@@ -130,7 +130,7 @@ manage_missed_conf() {
         trace "[manage_missed_conf] Broadcast or mined after watch, we missed it!"
         # We skip the callbacks because do_callbacks is called right after in
         # requesthandler.executecallbacks (where we're from)
-        confirmation $(echo "${tx}" | jq -Mc '.result' | base64 -w 0) "true"
+        confirmation "$(echo "${tx}" | jq -Mc '.result' | base64 -w 0)" "true"
       fi
     fi
   done
@@ -138,4 +138,4 @@ manage_missed_conf() {
   return 0
 }
 
-case "${0}" in *manage_missed_conf.sh) manage_not_imported $@; manage_missed_conf $@;; esac
+case "${0}" in *manage_missed_conf.sh) manage_not_imported "$@"; manage_missed_conf "$@";; esac

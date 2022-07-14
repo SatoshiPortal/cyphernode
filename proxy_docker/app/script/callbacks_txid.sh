@@ -23,7 +23,7 @@ do_callbacks_txid() {
 "
   for row in ${callbacks}
   do
-    build_callback_txid ${row}
+    build_callback_txid "${row}"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
@@ -42,7 +42,7 @@ do_callbacks_txid() {
 
   for row in ${callbacks}
   do
-    build_callback_txid ${row}
+    build_callback_txid "${row}"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
@@ -83,7 +83,7 @@ build_callback_txid() {
   nbxconf=$(echo "${row}" | cut -d '|' -f4)
   trace "[build_callback_txid] nbxconf=${nbxconf}"
 
-  tx_raw_details=$(get_rawtransaction ${txid})
+  tx_raw_details=$(get_rawtransaction "${txid}")
   returncode=$?
   trace_rc ${returncode}
 
@@ -114,7 +114,7 @@ build_callback_txid() {
       trace "[build_callback_txid] fees=${fees}"
       local tx_blockhash=$(echo "${tx_raw_details}" | jq '.result.blockhash')
       trace "[build_callback_txid] tx_blockhash=${tx_blockhash}"
-      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      local tx_blockheight=$(get_block_info "$(echo ${tx_blockhash} | tr -d '"')" | jq '.result.height')
       trace "[build_callback_txid] tx_blockheight=${tx_blockheight}"
       local tx_blocktime=$(echo "${tx_raw_details}" | jq '.result.blocktime')
       trace "[build_callback_txid] tx_blocktime=${tx_blocktime}"
@@ -154,7 +154,7 @@ curl_callback_txid() {
   local returncode
   local response
 
-  response=$(notify_web "${1}" "${2}" ${TOR_TXID_WATCH_WEBHOOKS})
+  response=$(notify_web "${1}" "${2}" "${TOR_TXID_WATCH_WEBHOOKS}")
   returncode=$?
   trace_rc ${returncode}
 

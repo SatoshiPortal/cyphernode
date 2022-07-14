@@ -37,7 +37,7 @@ get_best_block_info() {
 
   local block_hash=$(echo "$(get_best_block_hash)" | jq -r ".result")
   trace "[get_best_block_info] block_hash=${block_hash}"
-  get_block_info ${block_hash}
+  get_block_info "${block_hash}"
   return $?
 }
 
@@ -122,10 +122,10 @@ bitcoin_generatetoaddress() {
   local nbblocks=$(echo ${1} | jq '.nbblocks // 1') # Optional - Default 1
   local address=$(echo ${1} | jq '.address // empty') # Optional - getnewadress from spender wallet
   local maxtries=$(echo ${1} | jq '.maxtries // 1000000')  # Optional - use Core default
-                    
-  if [ -z "${address}" ]; then          
+
+  if [ -z "${address}" ]; then
     address=$(getnewaddress | jq '.address')
-  fi   
+  fi
 
   trace "[bitcoin_generatetoaddress] nbblocks=[${nbblocks}] address=[${address}] maxtries=[${maxtries}]"
 
@@ -140,7 +140,7 @@ bitcoin_generatetoaddress() {
 
 # example curl -m 20 -s --config /tmp/watcher_btcnode_curlcfg.properties -H "Content-Type: text/plain"
 #    --data-binary '{"method":"gettxoutproof","params":[["3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb
-#           79c4f997dea8fb532cb"],"0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"] }' 
+#           79c4f997dea8fb532cb"],"0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"] }'
 #           bitcoin:18443/wallet/watching01.dat
 bitcoin_gettxoutproof() {
   trace "Entering bitcoin_gettxoutproof()..."

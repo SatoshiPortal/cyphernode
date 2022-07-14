@@ -156,7 +156,7 @@ ln_getinvoice() {
   trace "[ln_getinvoice] label=${label}"
   local result
 
-  result=$(ln_call_lightningd listinvoices ${label})
+  result=$(ln_call_lightningd listinvoices "${label}")
   returncode=$?
 
   echo "${result}"
@@ -172,7 +172,7 @@ ln_delinvoice() {
   local returncode
   local rc
 
-  result=$(ln_call_lightningd delinvoice ${label} "unpaid")
+  result=$(ln_call_lightningd delinvoice "${label}" "unpaid")
   returncode=$?
 
   if [ "${returncode}" -ne "0" ]; then
@@ -199,7 +199,7 @@ ln_decodebolt11() {
   local bolt11=${1}
   local result
 
-  result=$(ln_call_lightningd decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay "${bolt11}")
   returncode=$?
 
   echo "${result}"
@@ -230,7 +230,7 @@ ln_connectfund() {
   trace "[ln_connectfund] callback_url=${callback_url}"
 
   # Let's first try to connect to peer
-  result=$(ln_call_lightningd connect ${peer})
+  result=$(ln_call_lightningd connect "${peer}")
   returncode=$?
 
   if [ "${returncode}" -eq "0" ]; then
@@ -248,7 +248,7 @@ ln_connectfund() {
     trace "[ln_connectfund] nodeId=${nodeId}"
 
     # Now let's fund a channel with peer
-    result=$(ln_call_lightningd fundchannel ${nodeId} $((${msatoshi}/1000)))
+    result=$(ln_call_lightningd fundchannel "${nodeId}" "$((${msatoshi}/1000))")
     returncode=$?
 
     if [ "${returncode}" -eq "0" ]; then
@@ -322,7 +322,7 @@ ln_pay() {
   trace "[ln_pay] expected_description=${expected_description}"
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
-  result=$(ln_call_lightningd decodepay ${bolt11})
+  result=$(ln_call_lightningd decodepay "${bolt11}")
   returncode=$?
 
   if [ "${returncode}" -eq "0" ]; then
@@ -377,9 +377,9 @@ ln_pay() {
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        result=$(ln_call_lightningd pay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=85)
+        result=$(ln_call_lightningd pay -k bolt11="${bolt11}" msatoshi=${expected_msatoshi} retry_for=85)
       else
-        result=$(ln_call_lightningd pay -k bolt11=${bolt11} retry_for=85)
+        result=$(ln_call_lightningd pay -k bolt11="${bolt11}" retry_for=85)
       fi
       returncode=$?
       trace_rc ${returncode}
@@ -442,9 +442,9 @@ ln_pay() {
 
             if [ "${invoice_msatoshi}" = "null" ]; then
               # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-              result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} msatoshi=${expected_msatoshi} retry_for=85)
+              result=$(ln_call_lightningd legacypay -k bolt11="${bolt11}" msatoshi=${expected_msatoshi} retry_for=85)
             else
-              result=$(ln_call_lightningd legacypay -k bolt11=${bolt11} retry_for=85)
+              result=$(ln_call_lightningd legacypay -k bolt11="${bolt11}" retry_for=85)
             fi
             returncode=$?
             trace_rc ${returncode}
@@ -510,7 +510,7 @@ ln_listpays() {
   local bolt11=${1}
   trace "[ln_listpays] bolt11=${bolt11}"
 
-  result=$(ln_call_lightningd listpays ${bolt11})
+  result=$(ln_call_lightningd listpays "${bolt11}")
   returncode=$?
 
   echo "${result}"
@@ -525,7 +525,7 @@ ln_paystatus() {
   local bolt11=${1}
   trace "[ln_paystatus] bolt11=${bolt11}"
 
-  result=$(ln_call_lightningd paystatus ${bolt11})
+  result=$(ln_call_lightningd paystatus "${bolt11}")
   returncode=$?
 
   echo "${result}"
@@ -552,7 +552,7 @@ ln_listpeers() {
   local id=${1}
   local result
 
-  result=$(ln_call_lightningd listpeers ${id})
+  result=$(ln_call_lightningd listpeers "${id}")
   returncode=$?
 
   echo "${result}"
@@ -580,7 +580,7 @@ ln_getroute() {
   local msatoshi=${2}
   local riskfactor=${3}
 
-  result=$(ln_call_lightningd getroute -k id=${id} msatoshi=${msatoshi} riskfactor=${riskfactor})
+  result=$(ln_call_lightningd getroute -k id="${id}" msatoshi=${msatoshi} riskfactor=${riskfactor})
   returncode=$?
 
   echo "${result}"
@@ -602,7 +602,7 @@ ln_withdraw() {
       satoshi="all"
   fi
 
-  result=$(ln_call_lightningd withdraw ${destination} ${satoshi} ${feerate})
+  result=$(ln_call_lightningd withdraw "${destination}" ${satoshi} ${feerate})
   returncode=$?
 
   echo "${result}"
@@ -610,4 +610,4 @@ ln_withdraw() {
   return ${returncode}
 }
 
-case "${0}" in *call_lightningd.sh) ln_call_lightningd $@;; esac
+case "${0}" in *call_lightningd.sh) ln_call_lightningd "$@";; esac

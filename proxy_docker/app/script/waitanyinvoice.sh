@@ -46,7 +46,7 @@ ln_waitanyinvoice() {
     row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE callback_url<>'' AND NOT calledback AND bolt11='${bolt11}'")
 
     if [ -n "${row}" ]; then
-      ln_manage_callback ${row}
+      ln_manage_callback "${row}"
     fi
 
     sql "UPDATE cyphernode_props SET value='${pay_index}' WHERE property='pay_index'"
