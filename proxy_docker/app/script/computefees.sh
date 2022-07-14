@@ -38,8 +38,7 @@ compute_fees() {
   echo "${fees}"
 }
 
-compute_vin_total_amount()
-{
+compute_vin_total_amount() {
   trace "Entering compute_vin_total_amount()..."
 
   local main_tx=${1}
@@ -74,4 +73,4 @@ compute_vin_total_amount()
   return 0
 }
 
-case "${0}" in *computefees.sh) compute_vin_total_amount $@;; esac
+case "${0}" in *computefees.sh) compute_vin_total_amount "$@";; esac

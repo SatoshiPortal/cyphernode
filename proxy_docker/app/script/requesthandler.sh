@@ -320,7 +320,7 @@ main() {
         validateaddress)
           # GET http://192.168.111.152:8080/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
 
-          response=$(validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
         spend)

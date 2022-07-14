@@ -188,7 +188,7 @@ services:
       - "<%= logs_datapath %>:/cnlogs"
       - "<%= proxy_datapath %>:/proxy/db"
       <% if ( features.indexOf('lightning') !== -1 && lightning_implementation === 'c-lightning' ) { %>
-      - "<%= lightning_datapath %>:/.lightning"
+      - "<%= lightning_datapath %>:/proxy/.lightning"
       <% } %>
       <% if ( features.indexOf('otsclient') !== -1 ) { %>
       - "<%= otsclient_datapath %>:/proxy/otsfiles"

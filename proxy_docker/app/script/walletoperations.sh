@@ -38,8 +38,8 @@ spend() {
     trace "[spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction ${txid} "spender")
-    tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+    tx_details=$(get_transaction "${txid}" "spender")
+    tx_raw_details=$(get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
@@ -133,7 +133,7 @@ bumpfee() {
 get_txns_spending() {
   trace "Entering get_txns_spending()... with count: $1 , skip: $2"
   local count="$1"
-  local skip="$2" 
+  local skip="$2"
   local response
   local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
   response=$(send_to_spender_node "${data}")
@@ -194,7 +194,7 @@ getbalances() {
   trace "[getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local balances=$(echo ${response} | jq ".result")
+    local balances=$(echo "${response}" | jq ".result")
     trace "[getbalances] balances=${balances}"
 
     data="{\"balances\":${balances}}"
@@ -219,7 +219,7 @@ getbalancebyxpublabel() {
   xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label='${label}'")
   trace "[getbalancebyxpublabel] xpub=${xpub}"
 
-  getbalancebyxpub ${xpub} "getbalancebyxpublabel"
+  getbalancebyxpub "${xpub}" "getbalancebyxpublabel"
   returncode=$?
 
   return ${returncode}
@@ -244,11 +244,11 @@ getbalancebyxpub() {
   # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
+  addresses=$(send_to_xpub_watcher_wallet "${data}" | jq ".result | keys" | tr -d '\n ')
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
   data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_watcher_wallet "${data}" | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[getbalancebyxpub] balance=${balance}"
@@ -324,7 +324,7 @@ create_wallet() {
   trace "[create_wallet] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_watcher_node ${rpcstring})
+  result=$(send_to_watcher_node "${rpcstring}")
   local returncode=$?
 
   echo "${result}"

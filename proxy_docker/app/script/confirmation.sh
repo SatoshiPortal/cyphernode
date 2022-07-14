@@ -92,14 +92,14 @@ confirmation() {
 
   trace "Entering confirmation()..."
 
-  local tx_details=$(echo ${1} | base64 -d)
+  local tx_details=$(echo "${1}" | base64 -d)
   local bypass_callbacks=${2}
 
   trace "[confirmation] tx_details=${tx_details}"
   trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
 
   local returncode
-  local txid=$(echo $tx_details | jq .txid | tr -d \")
+  local txid=$(echo "$tx_details" | jq .txid | tr -d \")
 
   ########################################################################################################
   # First of all, let's make sure we're working on watched addresses...
@@ -238,7 +238,7 @@ confirmation() {
       trace "[confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
       pub32_index=$(echo "${row}" | cut -d '|' -f4)
-      extend_watchers ${watching_by_pub32_id} ${pub32_index}
+      extend_watchers "${watching_by_pub32_id}" "${pub32_index}"
     fi
     ########################################################################################################
 

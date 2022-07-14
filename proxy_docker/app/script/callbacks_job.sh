@@ -30,7 +30,7 @@ do_callbacks() {
 "
   for row in ${callbacks}
   do
-    build_callback ${row}
+    build_callback "${row}"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq 0 ]; then
@@ -45,7 +45,7 @@ do_callbacks() {
 
   for row in ${callbacks}
   do
-    build_callback ${row}
+    build_callback "${row}"
     returncode=$?
     if [ "${returncode}" -eq 0 ]; then
       address=$(echo "${row}" | cut -d '|' -f2)
@@ -62,7 +62,7 @@ do_callbacks() {
 
     for row in ${callbacks}
     do
-      ln_manage_callback ${row}
+      ln_manage_callback "${row}"
       trace_rc $?
     done
   else
@@ -271,7 +271,7 @@ build_callback() {
   if [ -n "${pub32_index}" ]; then
     data="${data}\"pub32\":\"${pub32}\","
     data="${data}\"pub32_label\":\"${label}\","
-    derivation_path=$(echo $derivation_path | sed -En "s/n/${pub32_index}/p")
+    derivation_path=$(echo "$derivation_path" | sed -En "s/n/${pub32_index}/p")
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
   data="${data}\"eventMessage\":\"${event_message}\"}"
@@ -287,11 +287,11 @@ curl_callback() {
   local returncode
   local response
 
-  response=$(notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS})
+  response=$(notify_web "${1}" "${2}" "${TOR_ADDR_WATCH_WEBHOOKS}")
   returncode=$?
   trace_rc ${returncode}
 
   return ${returncode}
 }
 
-case "${0}" in *callbacks_job.sh) do_callbacks $@;; esac
+case "${0}" in *callbacks_job.sh) do_callbacks "$@";; esac

@@ -446,11 +446,16 @@ batchspend() {
       fi
     done
 
-    local bitcoincore_args="{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}"
+    trace "[batchspend] recipientsjson=${recipientsjson}"
+
+    local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
     if [ -n "${conf_target}" ]; then
       bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
     fi
     bitcoincore_args="${bitcoincore_args}]}"
+
+    trace "[batchspend] bitcoincore_args=${bitcoincore_args}"
+
     data=$(send_to_spender_node "${bitcoincore_args}")
     returncode=$?
     trace_rc ${returncode}
@@ -850,7 +855,7 @@ getbatchdetails() {
     if [ -n "${tx_id}" ]; then
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
-      
+
       tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
