@@ -12,6 +12,7 @@ RUN apt update && apt -y install \
     mosquitto-clients \
     gpg \
     ncat \
+    procps \
 
  && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
     gpg --dearmor | \
