@@ -211,10 +211,10 @@ tests()
   local nbaddr=$(echo "${response}" | jq ".addresses | length")
   echo "Length: [$nbaddr]"
   if [ "${nbaddr}" -ne "6" ]; then
-    echo -e $Red;
-    echo -e "In setup, make sure you set your default xpub key to$BBlue upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb$Red";
-    echo -e "and default derivation to$BBlue 0/n";
-    echo -e $Color_Off
+    echo $Red;
+    echo "In setup, make sure you set your default xpub key to$BBlue upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb$Red";
+    echo "and default derivation to$BBlue 0/n";
+    echo $Color_Off
     exit 130
   fi
   address=$(echo "${response}" | jq ".addresses[2].address" | tr -d '\"')
@@ -459,7 +459,7 @@ tests()
 #
 mine(){
   local response
-  
+
   echo "About to mine one block"
 
   echo "response=curl proxy:8888/bitcoin_generatetoaddress"
@@ -474,7 +474,7 @@ mine(){
 }
 
 print_title(){
-  echo -e $BBlue; echo "$1"; echo -e $Color_Off
+  echo $BBlue; echo "$1"; echo $Color_Off
 }
 
 wait_for_callbacks()

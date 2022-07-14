@@ -7,7 +7,7 @@
 
 newblock() {
   (
-  flock -x 202
+  flock -x 7
 
   trace "Entering newblock()..."
 
@@ -29,5 +29,5 @@ newblock() {
   do_callbacks_txid
   batch_check_webhooks
 
-  ) 202>./.newblock.lock
+  ) 7>./.newblock.lock
 }

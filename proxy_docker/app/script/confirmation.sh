@@ -88,7 +88,7 @@
 #
 confirmation() {
   (
-  flock -x 201
+  flock -x 9
 
   trace "Entering confirmation()..."
 
@@ -256,7 +256,7 @@ confirmation() {
 
   done
 
-  ) 201>./.confirmation.lock
+  ) 9>./.confirmation.lock
 
   # There's a lock in callbacks, let's get out of the confirmation lock before entering another one
   # If this was called by missed_conf algo, we don't want to process all the callbacks now.  We wait

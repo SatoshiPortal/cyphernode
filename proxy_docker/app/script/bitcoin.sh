@@ -10,7 +10,7 @@ deriveindex() {
   trace "[deriveindex] index=${index}"
 
   local pub32=$DERIVATION_PUB32
-  local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
+  local path=$(echo "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
 
   local data="{\"pub32\":\"${pub32}\",\"path\":\"${path}\"}"
   trace "[deriveindex] data=${data}"
@@ -260,7 +260,7 @@ deriveindex_bitcoind() {
   local pub32=${DERIVATION_PUB32}
   trace "[deriveindex_bitcoind] pub32=${pub32}"
 
-  local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
+  local path=$(echo "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
   trace "[deriveindex_bitcoind] path=${path}"
 
   bitcoind_derive_addresses "${pub32}" "${path}"
@@ -452,25 +452,25 @@ derivepubpath_bitcoind() {
 
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/26-30"}' localhost:8888/derivepubpath
 # {"addresses":[{"address":"mmaVh4SYCQhSmLWwFz7TuJ6WrQRYy8ertu"},{"address":"msriobrSwkReTfzvQr78de6RBfcbVCDxmX"},{"address":"mp377o3ifAGT5hnDBFjzmm8dFKEC9Cr4ct"},{"address":"mkxWm27kekHJC2kH1HgiT18xHrLMriZ3rc"},{"address":"mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/26-30"}' localhost:8888/derivepubpath_bitcoind
 # ["mmaVh4SYCQhSmLWwFz7TuJ6WrQRYy8ertu","msriobrSwkReTfzvQr78de6RBfcbVCDxmX","mp377o3ifAGT5hnDBFjzmm8dFKEC9Cr4ct","mkxWm27kekHJC2kH1HgiT18xHrLMriZ3rc","mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath 
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath
 # {"addresses":[{"address":"mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"}]}
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath_bitcoind   
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath_bitcoind
 # ["mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/26-30         
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/26-30
 # {"addresses":[{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex_bitcoind/26-30
 # ["2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV","2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP","2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6","2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH","2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/30   
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/30
 # {"addresses":[{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex_bitcoind/30
 # ["2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"]
-# 
+#

@@ -1,32 +1,36 @@
-FROM cyphernode/alpine-glibc-base:v3.12.4_2.31-0
+FROM debian:bullseye-slim
 
 ENV HOME /proxy
-
-RUN apk add --update --no-cache \
-    sqlite \
-    jq \
-    curl \
-    su-exec \
-    py3-pip \
-    xxd \
-    postgresql \
-    coreutils
-
 WORKDIR ${HOME}
 
-COPY app/data/* ./
-COPY app/script/* ./
-COPY app/tests/* ./tests/
-COPY --from=cyphernode/clightning:v0.10.2 /usr/local/bin/lightning-cli ./
-COPY --from=eclipse-mosquitto:1.6-openssl /usr/bin/mosquitto_rr /usr/bin/mosquitto_sub /usr/bin/mosquitto_pub /usr/bin/
-COPY --from=eclipse-mosquitto:1.6-openssl /usr/lib/libmosquitto* /usr/lib/
-COPY --from=eclipse-mosquitto:1.6-openssl /lib/ld-musl-* /lib/
+RUN apt update && apt -y install \
+    sqlite3 \
+    jq \
+    curl \
+    base58 \
+    xxd \
+    mosquitto-clients \
+    gpg \
+    ncat \
 
-RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh bitcoin_node_walletnotify.sh tests/* \
- && chmod o+w . \
- && mkdir db \
- && pip3 install base58
+ && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | \
+    gpg --dearmor | \
+    tee /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg >/dev/null \
+ && echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" \
+    > /etc/apt/sources.list.d/postgresql.list \
+
+ && apt update && apt install -y \
+    postgresql-14 \
+ && apt -y remove gpg \
+ && apt -y autoremove
+
+ COPY app/data/* ./
+ COPY app/script/* ./
+ COPY app/tests/* ./tests/
+ COPY --from=cyphernode/clightning:v0.11.2-debian /usr/local/bin/lightning-cli ./
+
+ RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh bitcoin_node_walletnotify.sh tests/* \
+  && chmod o+w . \
+  && mkdir db
 
 VOLUME ["${HOME}/db", "/.lightning"]
-
-ENTRYPOINT ["su-exec"]
