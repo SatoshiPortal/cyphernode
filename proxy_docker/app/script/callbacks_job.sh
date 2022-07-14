@@ -26,7 +26,8 @@ do_callbacks() {
   local returncode
   local address
   local url
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${callbacks}
   do
     build_callback ${row}
