@@ -436,7 +436,8 @@ insert_watches() {
   local nstart=${6}
   local inserted_values
 
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${addresses}
   do
     # (address, label, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)

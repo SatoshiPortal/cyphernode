@@ -110,7 +110,8 @@ confirmation() {
   trace "[confirmation] addresses=${addresses}"
 
   local notfirst=false
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${addresses}
   do
     trace "[confirmation] address=${address}"

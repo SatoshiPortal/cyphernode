@@ -75,7 +75,8 @@ getactivewatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -138,7 +139,8 @@ getactivewatchesxpub() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -170,7 +172,8 @@ getactivexpubwatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then

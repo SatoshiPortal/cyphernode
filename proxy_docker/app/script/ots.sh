@@ -163,7 +163,8 @@ serve_ots_backoffice() {
   local requested
   local upgraded
   local id
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${callbacks}
   do
     trace "[serve_ots_backoffice] row=${row}"

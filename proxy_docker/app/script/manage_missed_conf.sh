@@ -16,7 +16,8 @@ manage_not_imported() {
 
   local result
   local returncode
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     address=$(echo "${row}" | cut -d '|' -f1)
@@ -80,7 +81,8 @@ manage_missed_conf() {
   local calledback0conf
   local txid
   local txids
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${received_watches}
   do
     watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM watching WHERE address='${address}'")
