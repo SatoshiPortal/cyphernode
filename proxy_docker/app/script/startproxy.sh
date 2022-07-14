@@ -3,17 +3,17 @@
 . ./trace.sh
 
 trim() {
-  echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
+  echo "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
 
 createCurlConfig() {
 
-  if [[ ''$1 == '' ]]; then
+  if [ ''$1 = '' ]; then
     trace "[startproxy] Missing file name: Check your *_BTC_NODE_RPC_CFG"
     return
   fi
 
-  if [[ ''$2 == '' ]]; then
+  if [ ''$2 = '' ]; then
     trace "[startproxy] Missing content: Check your *_BTC_NODE_RPC_USER"
     return
   fi
@@ -102,4 +102,5 @@ fi
 
 ./bitcoin_node_walletnotify.sh &
 
-exec nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh
+#exec nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./requesthandler.sh
+exec nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./aaaa.sh

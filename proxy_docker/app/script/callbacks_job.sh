@@ -6,7 +6,7 @@
 
 do_callbacks() {
   (
-  flock -x 200 || return 0
+  flock -x 8 || return 0
 
   trace "Entering do_callbacks()..."
 
@@ -68,7 +68,7 @@ do_callbacks() {
     trace "[do_callbacks] called for a specific txid, skipping LN callbacks"
   fi
 
-  ) 200>./.callbacks.lock
+  ) 8>./.callbacks.lock
 }
 
 ln_manage_callback() {
@@ -270,7 +270,7 @@ build_callback() {
   if [ -n "${pub32_index}" ]; then
     data="${data}\"pub32\":\"${pub32}\","
     data="${data}\"pub32_label\":\"${label}\","
-    derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
+    derivation_path=$(echo $derivation_path | sed -En "s/n/${pub32_index}/p")
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
   data="${data}\"eventMessage\":\"${event_message}\"}"

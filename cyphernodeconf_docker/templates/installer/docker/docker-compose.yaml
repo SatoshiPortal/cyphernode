@@ -82,7 +82,8 @@ services:
 
   lightning:
     image: cyphernode/clightning:<%= lightning_version %>
-    command: $USER /.lightning/bitcoin/entrypoint.sh
+    user: $USER
+    command: /.lightning/bitcoin/entrypoint.sh
     <% if( lightning_expose ) { %>
     ports:
       - "9735:9735"
@@ -92,7 +93,7 @@ services:
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'lightning-cli getinfo && touch /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready'
+      test: lightning-cli getinfo && touch /container_monitor/lightning_ready && chown -R $USER /container_monitor || rm -f /container_monitor/lightning_ready
       interval: 30s
       timeout: 10s
       retries: 10
@@ -126,7 +127,8 @@ services:
 
   bitcoin:
     image: cyphernode/bitcoin:<%= bitcoin_version %>
-    command: $USER /.bitcoin/entrypoint.sh
+    user: $USER
+    command: /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18444:18444' : ((net === 'testnet') ? '18333:18333' : '8333:8333') %>"
@@ -138,9 +140,9 @@ services:
       - container_monitor:/container_monitor
     healthcheck:
       <% if( net === 'regtest' ) { %>
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      test: sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready && chown -R $USER /container_monitor || rm -f /container_monitor/bitcoin_ready'
       <% } else { %>
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
+      test: bitcoin-cli echo && touch /container_monitor/bitcoin_ready && chown -R $USER /container_monitor || rm -f /container_monitor/bitcoin_ready
       <% } %>
       interval: 30s
       timeout: 10s
@@ -174,7 +176,8 @@ services:
 
   proxy:
     image: cyphernode/proxy:<%= proxy_version %>
-    command: $USER ./startproxy.sh
+    user: $USER
+    command: ./startproxy.sh
     env_file:
       - .env/proxy.env
     <% if ( devmode ) { %>
@@ -195,7 +198,7 @@ services:
       <% } %>
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready'
+      test: curl localhost:8888/helloworld && touch /container_monitor/proxy_ready && chown -R $USER /container_monitor || rm -f /container_monitor/proxy_ready
       interval: 30s
       timeout: 10s
       retries: 10

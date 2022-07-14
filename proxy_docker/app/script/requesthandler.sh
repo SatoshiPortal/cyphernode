@@ -61,14 +61,15 @@ main() {
     fi
     # line=content-length: 406
     case "${line}" in *[cC][oO][nN][tT][eE][nN][tT]-[lL][eE][nN][gG][tT][hH]*)
-      content_length=$(echo "${line}" | cut -d ':' -f2)
+      content_length=$(echo "${line}" | cut -d ' ' -f2)
       trace "[main] content_length=${content_length}";
       ;;
     esac
     if [ ${step} -eq 1 ]; then
       trace "[main] step=${step}"
       if [ "${http_method}" = "POST" ] && [ "${content_length}" -gt "0" ]; then
-        read -rd '' -n ${content_length} line
+#        read -rd '' -n ${content_length} line
+        line=$(dd bs=1 count=${content_length} 2>/dev/null)
         line=$(echo "${line}" | jq -c)
         trace "[main] line=${line}"
       fi
@@ -569,7 +570,7 @@ main() {
           ;;
         bitcoin_gettxoutproof)
           # POST http://192.168.111.152:8080/bitcoin_gettxoutproof
-          # BODY 
+          # BODY
           # {
 	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
 	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
