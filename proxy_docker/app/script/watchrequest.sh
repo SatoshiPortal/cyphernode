@@ -307,7 +307,7 @@ watchpub32() {
   fi
 
   if [ -z "${error_msg}" ]; then
-    local subspath=$(echo $path | sed -En "s/n/${nstart}-${last_n}/p")
+    local subspath=$(echo "$path" | sed -En "s/n/${nstart}-${last_n}/p")
     trace "[watchpub32] subspath=${subspath}"
     local addresses
     addresses=$(derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
