@@ -22,4 +22,4 @@ bitcoin_node_walletnotify() {
 bitcoin_node_walletnotify
 returncode=$?
 trace "[bitcoin_node_walletnotify] exiting"
-exit "${returncode}"
+exit ${returncode}
