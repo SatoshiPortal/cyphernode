@@ -12,4 +12,4 @@ mine() {
   docker exec -t $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat -generate ${nbblocks}
 }
 
-case "${0}" in *mine.sh) mine $@;; esac
+case "${0}" in *mine.sh) mine "$@";; esac

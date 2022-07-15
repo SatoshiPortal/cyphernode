@@ -60,7 +60,7 @@ do_callbacks_txid() {
 build_callback_txid() {
   trace "Entering build_callback_txid()..."
 
-  local row=$@
+  local row="$@"
   local id
   local txid
   local url

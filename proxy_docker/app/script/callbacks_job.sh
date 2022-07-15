@@ -75,7 +75,7 @@ do_callbacks() {
 ln_manage_callback() {
   trace "Entering ln_manage_callback()..."
 
-  local row=$@
+  local row="$@"
   trace "[ln_manage_callback] row=${row}"
 
   local id=$(echo "${row}" | cut -d '|' -f1)
@@ -162,7 +162,7 @@ ln_manage_callback() {
 build_callback() {
   trace "Entering build_callback()..."
 
-  local row=$@
+  local row="$@"
   local id
   local url
   local data
