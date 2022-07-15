@@ -14,7 +14,7 @@ walletnotify(){
     tx=$(echo "$tx" | jq -Mc)
 
     if [ -n "$tx" ]; then
-      echo "[walletnotify-$$] Found [$txid] in wallet [$wallet]"
+      echo "[walletnotify-$$] Found [${txid}] in wallet [${wallet}]"
       echo "[walletnotify-$$] mosquitto_pub -h broker -t bitcoin_watching_walletnotify -m \"$tx\" "
       mosquitto_pub -h broker -t bitcoin_watching_walletnotify -m $(echo "$tx" | base64 -w 0)
       break;

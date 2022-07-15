@@ -96,7 +96,8 @@ confirmation() {
   trace "[confirmation] tx_details=${tx_details}"
   trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
 
-  local txid=$(echo "$tx_details" | jq .txid | tr -d \")
+  local returncode
+  local txid=$(echo "${tx_details}" | jq -r ".txid")
 
   (
   local returncode

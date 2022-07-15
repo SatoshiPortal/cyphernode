@@ -12,7 +12,7 @@ bitcoin_node_new_tip() {
     mosquitto_sub -h broker -t bitcoin_node_new_tip | while read -r message
     do
       trace "[bitcoin_node_new_tip] Message: ${message}"
-      processNewTip ${message}
+      processNewTip "${message}"
       trace "[bitcoin_node_new_tip] Done processing"
     done
 
@@ -23,14 +23,14 @@ bitcoin_node_new_tip() {
 
 processNewTip(){
   (
-  flock -x 202
+  flock -x 7
 
   trace "[bitcoin_node_new_tip] Entering processNewTip()..."
 
   do_callbacks_txid
   batch_check_webhooks
 
-  ) 202>./.processnewtip.lock
+  ) 7>./.processnewtip.lock
 }
 
 bitcoin_node_new_tip
