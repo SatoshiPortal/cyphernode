@@ -120,9 +120,9 @@ echo '[38;5;148m[39m
 
 sudo_if_required() {
   if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
-    try sudo $@
+    try sudo "$@"
   else
-    try $@
+    try "$@"
   fi
 }
 

@@ -71,4 +71,4 @@ binfile_response_to_client()
   sleep 1
 }
 
-case "${0}" in *responsetoclient.sh) response_to_client $@;; esac
+case "${0}" in *responsetoclient.sh) response_to_client "$@";; esac

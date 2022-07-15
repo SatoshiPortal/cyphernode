@@ -272,4 +272,4 @@ confirmation() {
   return 0
 }
 
-case "${0}" in *confirmation.sh) confirmation $@;; esac
+case "${0}" in *confirmation.sh) confirmation "$@";; esac
