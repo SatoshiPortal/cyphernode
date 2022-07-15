@@ -102,7 +102,8 @@ fi
 
 ./bitcoin_node_walletnotify.sh &
 
+# For some reason, ncat doesn't like being PID 1 (Ncat: assertion failed: count <= INT_MAX QUITTING.),
+# so I had to remove "exec" before "nc" and trap SIGTERM to manage "docker stop" correctly.
 trap "pkill nc" TERM
-
 nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./requesthandler.sh &
 wait
