@@ -7,7 +7,7 @@ blocknotify(){
   echo "[blocknotify-$$] [blockhash=$blockhash]"
 
   local blockheight
-  blockheight=$(get_block_height $blockhash)
+  blockheight=$(get_block_height "$blockhash")
 
   echo "[blocknotify-$$] mosquitto_pub -h broker -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
   mosquitto_pub -h broker -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
@@ -16,13 +16,13 @@ blocknotify(){
   chain_info=$(bitcoin-cli getblockchaininfo | jq -Mc)
 
   local chain_tip
-  chain_tip=$(echo $chain_info | jq '.blocks')
+  chain_tip=$(echo "$chain_info" | jq '.blocks')
 
   if [ "$blockheight" -ge "$chain_tip" ]; then
     echo "[blocknotify-$$] mosquitto_pub -h broker -t bitcoin_node_new_tip -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
     mosquitto_pub -h broker -t bitcoin_node_new_tip -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
   else
-    echo "[blocknotify-$$] Skipping publication [$blockheight < $chain_tip] on topic bitcoin_node_new_tip"
+    echo "[blocknotify-$$] Skipping publication ["$blockheight" < "$chain_tip"] on topic bitcoin_node_new_tip"
   fi
 
   echo "[blocknotify-$$] Done"
@@ -30,12 +30,12 @@ blocknotify(){
 
 get_block_height(){
   local blockinfo
-  blockinfo=$(bitcoin-cli getblock $1)
+  blockinfo=$(bitcoin-cli getblock "$1")
 
   local blockheight
-  blockheight=$(echo ${blockinfo} | jq -r ".height")
+  blockheight=$(echo "${blockinfo}" | jq -r ".height")
 
-  echo $blockheight
+  echo "$blockheight"
 }
 
-blocknotify $@
+blocknotify "$@"
