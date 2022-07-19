@@ -304,7 +304,6 @@ ln_pay() {
   trace "Entering ln_pay()..."
 
   # Let's try to pay (MPP enabled) for 85 seconds.
-  # If this doesn't work for a routing reason, let's try to legacypay (MPP disabled) for 85 seconds.
   # If this doesn't work, return an error.
 
   local result
@@ -424,72 +423,6 @@ ln_pay() {
         if [ "$?" -eq "0" ]; then
           # code tag not null, so there's an error
           trace "[ln_pay] Error code found, code=${code}"
-
-          # -1: Catchall nonspecific error.
-          # 201: Already paid with this hash using different amount or destination.
-          # 203: Permanent failure at destination. The data field of the error will be routing failure object.
-          # 205: Unable to find a route.
-          # 206: Route too expensive. Either the fee or the needed total locktime for the route exceeds your maxfeepercent or maxdelay settings, respectively. The data field of the error will indicate the actual fee as well as the feepercent percentage that the fee has of the destination payment amount. It will also indicate the actual delay along the route.
-          # 207: Invoice expired. Payment took too long before expiration, or already expired at the time you initiated payment. The data field of the error indicates now (the current time) and expiry (the invoice expiration) as UNIX epoch time in seconds.
-          # 210: Payment timed out without a payment in progress.
-
-          # Let's try pay if code NOT 207 or 201.
-
-          if [ "${code}" -eq "201" ] || [ "${code}" -eq "207" ]; then
-            trace "[ln_pay] Failure code, response will be the cli result."
-          else
-            trace "[ln_pay] Ok let's deal with potential routing failures and retry without MPP..."
-
-            if [ "${invoice_msatoshi}" = "null" ]; then
-              # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-              result=$(ln_call_lightningd legacypay -k bolt11="${bolt11}" msatoshi=${expected_msatoshi} retry_for=85)
-            else
-              result=$(ln_call_lightningd legacypay -k bolt11="${bolt11}" retry_for=85)
-            fi
-            returncode=$?
-            trace_rc ${returncode}
-            trace "[ln_pay] result=${result}"
-
-            if [ "${returncode}" -ne "0" ]; then
-              trace "[ln_pay] Failed!"
-            else
-              trace "[ln_pay] Successfully paid!"
-            fi
-
-            # Successful payment example:
-            #
-            # {
-            #    "id": 16,
-            #    "payment_hash": "f00877afeec4d771c2db68af80b8afa5dad3b495dad498828327e484c93f67d5",
-            #    "destination": "021ec6ccede19caa0bc7d7f9699c73e63cb2b79a4877529a60d7ac6a4ebb03487a",
-            #    "msatoshi": 1234,
-            #    "amount_msat": "1234msat",
-            #    "msatoshi_sent": 1235,
-            #    "amount_sent_msat": "1235msat",
-            #    "created_at": 1633373202,
-            #    "status": "complete",
-            #    "payment_preimage": "373cd9a0f83426506f1535f6ca1f08f279f0bd82d257fd3fc8cd49fbc25750f2",
-            #    "bolt11": "lntb1ps4kjlrpp57qy80tlwcnthrskmdzhcpw905hdd8dy4mt2f3q5ryljgfjflvl2sdq9u2d2zxqr3jscqp2sp5c2qykk0pdaeh2yrvn4cpkchsnyxwjnaptujggsd6ldqjfd8jhh3qrzjqwyx8nu2hygyvgc02cwdtvuxe0lcxz06qt3lpsldzcdr46my5epmj85hhvqqqtsqqqqqqqlgqqqqqqgq9q9qyyssqpnwtw6mzxu8pr5mrm8677ke8p5fjcu6dyrrvuy8j5f5p8mzv2phr2y0yx3z7mvgf5uqzzdytegg04u7hcu8ma50692cg69cdtsgw9hsph0xeha"
-            # }
-
-            # Failure response examples:
-            #
-            # {
-            #    "code": -32602,
-            #    "message": "03c05f973d9c7218e7aec4f52c2c8ab395f51f41d627c398237b5ff056f46faf09: unknown destination node_id (no public channels?)"
-            # }
-            #
-            # {
-            #    "code": 206,
-            #    "message": "Route wanted fee of 16101625msat"
-            # }
-            #
-            # {
-            #    "code": 207,
-            #    "message": "Invoice expired"
-            # }
-            #
-          fi
         else
           # code tag not found
           trace "[ln_pay] No error code..."
