@@ -137,7 +137,7 @@ services:
       - "<%= bitcoin_datapath %>:/.bitcoin"
       - "<%= bitcoin_datapath %>/createWallets.sh:/.bitcoin/createWallets.sh:ro"
       - "<%= bitcoin_datapath %>/walletnotify.sh:/.bitcoin/walletnotify.sh:ro"
-      - "<%= bitcoin_datapath %>/pubNewBlock.sh:/.bitcoin/pubNewBlock.sh:ro"
+      - "<%= bitcoin_datapath %>/blocknotify.sh:/.bitcoin/blocknotify.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
       <% if( net === 'regtest' ) { %>
