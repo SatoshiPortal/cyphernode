@@ -18,11 +18,12 @@ blocknotify(){
   local chain_tip
   chain_tip=$(echo "$chain_info" | jq '.blocks')
 
+  # Only send this new tip "bitcoin_node_newtip" to broker if it is the actual tip
   if [ "$blockheight" -ge "$chain_tip" ]; then
-    echo "[blocknotify-$$] mosquitto_pub -h broker -t bitcoin_node_new_tip -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
-    mosquitto_pub -h broker -t bitcoin_node_new_tip -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
+    echo "[blocknotify-$$] mosquitto_pub -h broker -t bitcoin_node_newtip -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+    mosquitto_pub -h broker -t bitcoin_node_newtip -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
   else
-    echo "[blocknotify-$$] Skipping publication ["$blockheight" < "$chain_tip"] on topic bitcoin_node_new_tip"
+    echo "[blocknotify-$$] Skipping publication ["${blockheight}" < "${chain_tip}"] on topic bitcoin_node_newtip"
   fi
 
   echo "[blocknotify-$$] Done"

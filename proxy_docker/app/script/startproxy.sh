@@ -101,7 +101,7 @@ if [ "${FEATURE_LIGHTNING}" = "true" ]; then
 fi
 
 ./bitcoin_node_walletnotify.sh &
-./bitcoin_node_newblock.sh &
+./bitcoin_node_newtip.sh &
 
 # For some reason, ncat doesn't like being PID 1 (Ncat: assertion failed: count <= INT_MAX QUITTING.),
 # so I had to remove "exec" before "nc" and trap SIGTERM to manage "docker stop" correctly.
