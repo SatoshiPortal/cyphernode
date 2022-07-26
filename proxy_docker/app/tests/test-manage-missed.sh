@@ -208,7 +208,7 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
-  docker stop $(docker ps -q -f "name=proxy.1")
+  docker stop $(docker ps -q -f "name=proxy[^c]")
 
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
   mine
