@@ -108,7 +108,6 @@ confirmation() {
   trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
 
   local returncode
-  local txid=$(echo "$tx_details" | jq .txid | tr -d \")
 
   ########################################################################################################
   # First of all, let's make sure we're working on watched addresses...
