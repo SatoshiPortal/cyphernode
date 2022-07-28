@@ -260,8 +260,8 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
-          manage_not_imported
-          manage_missed_conf
+          response=$(manage_not_imported)
+          response=$(manage_missed_conf)
           response=$(do_callbacks)
           returncode=$?
           ;;

@@ -5,7 +5,7 @@
 
 do_callbacks_txid() {
   (
-  flock -x 8 || return 0
+  flock --verbose -n 8 || return 0
 
   trace "Entering do_callbacks_txid()..."
 

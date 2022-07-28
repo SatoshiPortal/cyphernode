@@ -7,7 +7,7 @@
 
 newblock() {
   (
-  flock -x 7
+  flock --verbose -x 7
 
   trace "Entering newblock()..."
 
