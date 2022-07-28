@@ -17,7 +17,7 @@ services:
       - "<%= logs_datapath %>:/cnlogs"
       - container_monitor:/container_monitor
     healthcheck:
-      test: sh -c 'psql -U cyphernode -c "select 1;" && touch /container_monitor/postgres_ready && chown $USER /container_monitor/postgres_ready || rm -f /container_monitor/postgres_ready'
+      test: sh -c 'psql -U cyphernode -c "select 1;" && touch /container_monitor/postgres_ready || rm -f /container_monitor/postgres_ready'
       interval: 30s
       timeout: 10s
       retries: 10
@@ -52,7 +52,7 @@ services:
       - "<%= tor_datapath %>:/tor"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
+      test: su-exec $USER sh -c 'tor-resolve torproject.org && touch /container_monitor/tor_ready || rm -f /container_monitor/tor_ready'
       interval: 30s
       timeout: 10s
       retries: 10
@@ -93,7 +93,7 @@ services:
       - "<%= bitcoin_datapath %>/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: lightning-cli getinfo && touch /container_monitor/lightning_ready && chown -R $USER /container_monitor || rm -f /container_monitor/lightning_ready
+      test: lightning-cli getinfo && touch /container_monitor/lightning_ready || rm -f /container_monitor/lightning_ready
       interval: 30s
       timeout: 10s
       retries: 10
@@ -140,9 +140,9 @@ services:
       - container_monitor:/container_monitor
     healthcheck:
       <% if( net === 'regtest' ) { %>
-      test: sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready && chown -R $USER /container_monitor || rm -f /container_monitor/bitcoin_ready'
+      test: sh -c '[ `bitcoin-cli getblockcount` -ge 101 ] && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready'
       <% } else { %>
-      test: bitcoin-cli echo && touch /container_monitor/bitcoin_ready && chown -R $USER /container_monitor || rm -f /container_monitor/bitcoin_ready
+      test: bitcoin-cli echo && touch /container_monitor/bitcoin_ready || rm -f /container_monitor/bitcoin_ready
       <% } %>
       interval: 30s
       timeout: 10s
@@ -198,7 +198,7 @@ services:
       <% } %>
       - container_monitor:/container_monitor
     healthcheck:
-      test: curl localhost:8888/helloworld && touch /container_monitor/proxy_ready && chown -R $USER /container_monitor || rm -f /container_monitor/proxy_ready
+      test: curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready
       interval: 30s
       timeout: 10s
       retries: 10
