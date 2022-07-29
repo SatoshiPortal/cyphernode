@@ -110,7 +110,7 @@ trace_following() {
 start_test_container() {
   trace 1 "[stop_test_container] ${BCyan}Starting test container...${Color_Off}\n"
 
-  docker run -d --rm -t --name tests-gatekeeper --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-gatekeeper --network=cyphernodenet alpine:3.15.4
 
   sleep 2
 }
