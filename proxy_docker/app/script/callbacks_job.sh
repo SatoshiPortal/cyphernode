@@ -6,7 +6,7 @@
 
 do_callbacks() {
   (
-  flock --verbose -n 8 || return 0
+  flock --verbose -n 8 1>&2 || return 0
 
   trace "Entering do_callbacks()..."
 
