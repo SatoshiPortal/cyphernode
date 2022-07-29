@@ -62,7 +62,7 @@ export USER=$(id -u <%= default_username %>):$(id -g <%= default_username %>)
 
 # Let's make sure the container_monitor folder has the right ownership and
 # container readyness files are deleted before starting the stack
-docker run --rm -v cyphernode_container_monitor:/container_monitor alpine sh -c 'chown -R '$USER' /container_monitor && rm -f /container_monitor/*_ready'
+docker run --rm -v cyphernode_container_monitor:/container_monitor alpine:3.15.4 sh -c 'chown -R '$USER' /container_monitor && rm -f /container_monitor/*_ready'
 
 <% if (docker_mode == 'swarm') { %>
 docker stack deploy -c $current_path/docker-compose.yaml cyphernode
