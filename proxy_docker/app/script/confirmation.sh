@@ -98,7 +98,7 @@ confirmation() {
   local txid=$(echo "$tx_details" | jq .txid | tr -d \")
 
   (
-  flock --verbose -x 9
+  flock --verbose -x 9 1>&2 
 
   local returncode
   local tx_details=$(echo "${1}" | base64 -d)
