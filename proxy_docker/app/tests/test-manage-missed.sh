@@ -21,7 +21,7 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-manage-missed --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-manage-missed --network=cyphernodenet alpine:3.15.4
 }
 
 stop_test_container() {
