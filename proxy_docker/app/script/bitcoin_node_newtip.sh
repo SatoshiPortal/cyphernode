@@ -23,7 +23,7 @@ bitcoin_node_newtip() {
 
 processNewTip(){
   (
-  flock -x 7
+  flock --verbose -x 7 1>&2
 
   trace "[bitcoin_node_newtip] Entering processNewTip()..."
 
