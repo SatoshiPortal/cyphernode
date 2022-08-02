@@ -9,54 +9,60 @@ do_callbacks_txid() {
   trace "Entering do_callbacks_txid()..."
 
   (
-  local flock_output=$(flock --verbose --nonblock 8) || (trace "[do_callbacks_txid] Exiting - flock_output=${flock_output}" && return 0)
-  trace "[do_callbacks_txid] flock_output=${flock_output}"
-
-  # Let's check the 1-conf (newly mined) watched txid that are included in the new block...
-
-  # Let's fetch all the watching txid still being watched but not called back
-  local callbacks=$(sql "SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf IS NOT NULL AND NOT calledback1conf")
-  trace "[do_callbacks_txid] callbacks1conf=${callbacks}"
-
   local returncode
-  local address
-  local url
-  local id
-  local IFS="
-"
-  for row in ${callbacks}
-  do
-    build_callback_txid "${row}"
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq "0" ]; then
-      id=$(echo "${row}" | cut -d '|' -f1)
-      sql "UPDATE watching_by_txid SET calledback1conf=true WHERE id=${id}"
-      trace_rc $?
-    else
-      trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
-    fi
-  done
+  local flock_output
+  
+  flock_output=$(flock --verbose --nonblock 8 2>&1)
+  returncode=$?
+  trace "[do_callbacks_txid] flock_output=${flock_output}"
+  if [ "$returncode" -eq "0" ]; then
+    # Let's check the 1-conf (newly mined) watched txid that are included in the new block...
 
-  # For the n-conf, let's only check the watched txids that are already at least 1-conf...
+    # Let's fetch all the watching txid still being watched but not called back
+    local callbacks=$(sql "SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf IS NOT NULL AND NOT calledback1conf")
+    trace "[do_callbacks_txid] callbacks1conf=${callbacks}"
 
-  local callbacks=$(sql "SELECT id, txid, callbackxconf, nbxconf FROM watching_by_txid WHERE watching AND calledback1conf AND callbackxconf IS NOT NULL AND NOT calledbackxconf")
-  trace "[do_callbacks_txid] callbacksxconf=${callbacks}"
+    local returncode
+    local address
+    local url
+    local id
+    local IFS="
+  "
+    for row in ${callbacks}
+    do
+      build_callback_txid "${row}"
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -eq "0" ]; then
+        id=$(echo "${row}" | cut -d '|' -f1)
+        sql "UPDATE watching_by_txid SET calledback1conf=true WHERE id=${id}"
+        trace_rc $?
+      else
+        trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
+      fi
+    done
 
-  for row in ${callbacks}
-  do
-    build_callback_txid "${row}"
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq "0" ]; then
-      id=$(echo "${row}" | cut -d '|' -f1)
-      sql "UPDATE watching_by_txid SET calledbackxconf=true, watching=false WHERE id=${id}"
-      trace_rc $?
-    else
-      trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
-    fi
-  done
+    # For the n-conf, let's only check the watched txids that are already at least 1-conf...
 
+    local callbacks=$(sql "SELECT id, txid, callbackxconf, nbxconf FROM watching_by_txid WHERE watching AND calledback1conf AND callbackxconf IS NOT NULL AND NOT calledbackxconf")
+    trace "[do_callbacks_txid] callbacksxconf=${callbacks}"
+
+    for row in ${callbacks}
+    do
+      build_callback_txid "${row}"
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -eq "0" ]; then
+        id=$(echo "${row}" | cut -d '|' -f1)
+        sql "UPDATE watching_by_txid SET calledbackxconf=true, watching=false WHERE id=${id}"
+        trace_rc $?
+      else
+        trace "[do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
+      fi
+    done
+  else
+    trace "[do_callbacks_txid]  Exiting flock"
+  fi
   ) 8>./.callbacks.lock
 }
 
