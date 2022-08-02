@@ -531,7 +531,7 @@ ln_withdraw() {
   local satoshi=$(echo "${request}" | jq -r ".satoshi")
   local feerate=$(echo "${request}" | jq -r ".feerate")
   local all=$(echo "${request}" | jq -r ".all")
-  if [ "${all}" == true ] || [ "${all}" == "true" ] ; then
+  if [ "${all}" = true ] || [ "${all}" = "true" ] ; then
       satoshi="all"
   fi
 
