@@ -58,7 +58,7 @@ make_watch_noise(){
     trace 3 "[${me}] address=${address}"
 
     trace 2 "[${me}] watch it..."
-    local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${url0}'","confirmedCallbackURL":"'${url1}'","label":"label make some noise '${port}'"}'
+    local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${url0}'","confirmedCallbackURL":"'${url1}'","label":"label-no-space_${port}"}'
     trace 3 "[${me}] data=${data}"
     response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
     trace 3 "[${me}] response=${response}"
