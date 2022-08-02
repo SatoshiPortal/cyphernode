@@ -5,14 +5,24 @@
 . ./notify.sh
 
 do_callbacks() {
-  (
-  flock --verbose -n 8 1>&2 || return 0
-
   trace "Entering do_callbacks()..."
+  (
+  local flock_flag
+  local txid=${1}
+
+  if [ -n "${txid}" ]; then
+    flock_flag="--timeout 60" # wait 60 seconds before before failing to grab lock
+  else
+    flock_flag="--nonblock"
+  fi
+
+  trace "[do_callbacks] flock_flag=[${flock_flag}]"
+
+  local flock_output=$(flock --verbose ${flock_flag} 8) || (trace "[do_callbacks]  Exiting - flock_output=${flock_output}" && return 0)
+  trace "[do_callbacks] flock_output=${flock_output}"
 
   # If called because we received a confirmation for a specific txid, let's only
   # process that txid-related callbacks...
-  local txid=${1}
   local txid_where
   if [ -n "${txid}" ]; then
     trace "[do_callbacks] txid=${txid}"

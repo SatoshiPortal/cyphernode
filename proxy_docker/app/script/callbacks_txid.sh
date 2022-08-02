@@ -2,12 +2,15 @@
 
 . ./trace.sh
 . ./sql.sh
+. ./blockchainrpc.sh
+. ./computefees.sh
 
 do_callbacks_txid() {
-  (
-  flock --verbose -n 8 1>&2 || return 0
-
   trace "Entering do_callbacks_txid()..."
+
+  (
+  local flock_output=$(flock --verbose --nonblock 8) || (trace "[do_callbacks_txid] Exiting - flock_output=${flock_output}" && return 0)
+  trace "[do_callbacks_txid] flock_output=${flock_output}"
 
   # Let's check the 1-conf (newly mined) watched txid that are included in the new block...
 
@@ -89,7 +92,7 @@ build_callback_txid() {
 
   if [ "${returncode}" -eq "0" ]; then
     confirmations=$(echo "${tx_raw_details}" | jq '.result.confirmations')
-    if [ "${confirmations}" == "null" ]; then
+    if [ "${confirmations}" = "null" ]; then
       confirmations=0
     fi
     trace "[build_callback_txid] confirmations=${confirmations}"
