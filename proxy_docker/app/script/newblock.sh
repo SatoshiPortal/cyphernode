@@ -6,10 +6,11 @@
 . ./batching.sh
 
 newblock() {
-  (
-  flock --verbose -x 7 1>&2 
-
   trace "Entering newblock()..."
+
+  (
+  local flock_output=$(flock --verbose --timeout 60 7) || (trace "[newblock]  Exiting - flock_output=${flock_output}" && return 0)
+  trace "[newblock] flock_output=${flock_output}"
 
   local request=${1}
   local blockhash=$(echo "${request}" | cut -d ' ' -f2 | cut -d '/' -f3)
@@ -31,3 +32,4 @@ newblock() {
 
   ) 7>./.newblock.lock
 }
+

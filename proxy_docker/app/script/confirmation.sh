@@ -86,6 +86,7 @@
 
 # 2: boolean bypass_callbacks (optional)
 #
+
 confirmation() {
   trace "[confirmation] Entering confirmation()..."
 
@@ -98,14 +99,8 @@ confirmation() {
   local txid=$(echo "$tx_details" | jq .txid | tr -d \")
 
   (
-  flock --verbose -x 9 1>&2 
-
-  local returncode
-  local tx_details=$(echo "${1}" | base64 -d)
-  local bypass_callbacks=${2}
-
-  trace "[confirmation] tx_details=${tx_details}"
-  trace "[confirmation] bypass_callbacks=${bypass_callbacks}"
+  local flock_output=$(flock --verbose --timeout 60 9) || (trace "[confirmation]  Exiting - flock_output=${flock_output}" && return 0)
+  trace "[confirmation] flock_output=${flock_output}"
 
   local returncode
 
@@ -277,7 +272,7 @@ confirmation() {
     trace "[confirmation] Skipping callbacks as requested"
   fi
 
-  echo '{"result":"confirmed"}'
+  #echo '{"result":"confirmed"}'
 
   return 0
 }

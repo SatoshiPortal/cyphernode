@@ -28,7 +28,7 @@ RUN apt update && apt -y install \
  COPY app/tests/* ./tests/
  COPY --from=cyphernode/clightning:v0.11.2-debian /usr/local/bin/lightning-cli ./
 
- RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh bitcoin_node_walletnotify.sh tests/* \
+ RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh bitcoin_node_walletnotify.sh confirmation.sh tests/* \
   && chmod o+w . \
   && mkdir db
 
