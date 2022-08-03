@@ -27,7 +27,7 @@ do_callbacks_txid() {
     local url
     local id
     local IFS="
-  "
+"
     for row in ${callbacks}
     do
       build_callback_txid "${row}"
