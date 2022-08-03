@@ -21,7 +21,7 @@ do_callbacks() {
   local returncode
   local flock_output
   
-  flock_output=$(flock --verbose --timeout 60 8 2>&1)
+  flock_output=$(flock --verbose ${flock_flag} 8 2>&1)
   returncode=$?
   trace "[do_callbacks] flock_output=${flock_output}"
   if [ "$returncode" -eq "0" ]; then
