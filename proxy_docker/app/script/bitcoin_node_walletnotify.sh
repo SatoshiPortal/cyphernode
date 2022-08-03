@@ -11,7 +11,7 @@ bitcoin_node_walletnotify() {
     mosquitto_sub -h broker -t bitcoin_watching_walletnotify | while read -r message
     do
       trace "[bitcoin_node_walletnotify] Processing bitcoin_watching_walletnotify from bitcoin node"
-      sh -c "./confirmation.sh '${message}'" &
+      sh -c "./confirmation.sh '${message}'"
     done
 
     trace "[bitcoin_node_walletnotify] reconnecting in 10 secs"
