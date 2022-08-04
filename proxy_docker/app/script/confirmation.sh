@@ -277,8 +277,6 @@ confirmation() {
     trace "[confirmation] Skipping callbacks as requested"
   fi
 
-  #echo '{"result":"confirmed"}'
-
   return 0
 }
 
