@@ -23,7 +23,6 @@ do_callbacks_txid() {
     local callbacks=$(sql "SELECT id, txid, callback1conf, 1 FROM watching_by_txid WHERE watching AND callback1conf IS NOT NULL AND NOT calledback1conf")
     trace "[do_callbacks_txid] callbacks1conf=${callbacks}"
 
-    local returncode
     local address
     local url
     local id

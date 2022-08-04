@@ -1,8 +1,6 @@
 #!/bin/sh
 
 . ./trace.sh
-. ./callbacks_txid.sh
-. ./batching.sh
 
 bitcoin_node_newtip() {
   trace "Entering bitcoin_node_newtip()..."
@@ -22,14 +20,21 @@ bitcoin_node_newtip() {
 }
 
 processNewTip(){
+  trace "[processNewTip] Entering processNewTip()..."
+
   (
-  flock --verbose -x 7 1>&2
+  local returncode
+  local flock_output
+  
+  flock_output=$(flock --verbose --nonblock 7 2>&1)
+  returncode=$?
+  trace "[processNewTip] flock_output=${flock_output}"
 
-  trace "[bitcoin_node_newtip] Entering processNewTip()..."
-
-  do_callbacks_txid
-  batch_check_webhooks
-
+  if [ "$returncode" -eq "0" ]; then
+    sh -c "./processnewtip.sh"
+  else
+    trace "[processNewTip] Exiting flock"
+  fi
   ) 7>./.processnewtip.lock
 }
 
