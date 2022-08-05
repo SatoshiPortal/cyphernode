@@ -69,10 +69,15 @@ test_watches() {
 
   local label1="label$RANDOM"
   local label2="label$RANDOM"
-  local callbackurl0conf1="tests-watches:1111/callbackurl0conf1"
-  local callbackurl1conf1="tests-watches:1112/callbackurl1conf1"
-  local callbackurl1conftxid="tests-watches:1113/callbackurl1conftxid"
-  local callbackurl3conftxid="tests-watches:1114/callbackurl3conftxid"
+  local port_callbackurl0conf1=$RANDOM
+  local port_callbackurl1conf1=`expr $port_callbackurl0conf1 + 1`
+  local port_callbackurl1conftxid=`expr $port_callbackurl0conf1 + 2`
+  local port_callbackurl3conftxid=`expr $port_callbackurl0conf1 + 3`
+  
+  local callbackurl0conf1="tests-watches:$port_callbackurl0conf1/callbackurl0conf1"
+  local callbackurl1conf1="tests-watches:$port_callbackurl1conf1/callbackurl1conf1"
+  local callbackurl1conftxid="tests-watches:$port_callbackurl1conftxid/callbackurl1conftxid"
+  local callbackurl3conftxid="tests-watches:$port_callbackurl3conftxid/callbackurl3conftxid"
   local address
   local address1
   local address2
@@ -174,7 +179,7 @@ test_watches() {
   # 10. Call spend, to the address with label1 (triggers 0-conf webhook)
   # 11. Wait for label1's 0-conf webhook
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
-  start_callback_server 1111
+  start_callback_server $port_callbackurl0conf1
   # Let's use the bitcoin node directly to better simulate an external spend
   txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
@@ -197,8 +202,8 @@ test_watches() {
 
   # 13. Start a callback servers for 1-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}13. Start a callback servers for 1-conf txid watch webhook...${Color_Off}\n"
-  start_callback_server 1112
-  start_callback_server 1113
+  start_callback_server $port_callbackurl1conf1
+  start_callback_server $port_callbackurl1conftxid
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
@@ -210,7 +215,7 @@ test_watches() {
 
   # 16. Start a callback servers for 3-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}16. Start a callback servers for 3-conf txid watch webhook...${Color_Off}\n"
-  start_callback_server 1114
+  start_callback_server $port_callbackurl3conftxid
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
   trace 3 "[test_watches] Mine 2 new blocks..."
