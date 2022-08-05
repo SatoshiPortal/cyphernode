@@ -41,7 +41,7 @@ do_callbacks() {
     local address
     local url
     local IFS="
-  "
+"
     for row in ${callbacks}
     do
       build_callback "${row}"
