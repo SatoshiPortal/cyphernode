@@ -20,7 +20,7 @@ do_callbacks() {
 
   local returncode
   local flock_output
-  
+
   flock_output=$(flock --verbose ${flock_flag} 8 2>&1)
   returncode=$?
   trace "[do_callbacks] flock_output=${flock_output}"
