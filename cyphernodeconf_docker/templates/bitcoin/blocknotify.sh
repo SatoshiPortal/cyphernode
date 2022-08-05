@@ -9,8 +9,9 @@ blocknotify(){
   local blockheight
   blockheight=$(get_block_height "$blockhash")
 
-  echo "[blocknotify-$$] mosquitto_pub -h broker -t newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
-  mosquitto_pub -h broker -t newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
+  # Topic 'newblock' will be removed eventually
+  echo "[blocknotify-$$] mosquitto_pub -h broker -t newblock -t bitcoinnode/newblock -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+  mosquitto_pub -h broker -t newblock -t bitcoinnode/newblock -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
 
   local chain_info
   chain_info=$(bitcoin-cli getblockchaininfo | jq -Mc)
@@ -19,9 +20,10 @@ blocknotify(){
   chain_tip=$(echo "$chain_info" | jq '.blocks')
 
   # Only send this new tip "bitcoin_node_newtip" to broker if it is the actual tip
+  # using the --retain flag so this will overwite any previous tip
   if [ "$blockheight" -ge "$chain_tip" ]; then
-    echo "[blocknotify-$$] mosquitto_pub -h broker -t bitcoin_node_newtip -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
-    mosquitto_pub -h broker -t bitcoin_node_newtip -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
+    echo "[blocknotify-$$] mosquitto_pub -h broker -t cyphernode/bitcoin/newtip --retain -m \"{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}\""
+    mosquitto_pub -h broker -t cyphernode/bitcoin/newtip --retain -m "{\"blockhash\":\"${blockhash}\",\"blockheight\":${blockheight}}"
   else
     echo "[blocknotify-$$] Skipping publication ["${blockheight}" < "${chain_tip}"] on topic bitcoin_node_newtip"
   fi
