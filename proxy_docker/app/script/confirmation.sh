@@ -102,7 +102,7 @@ confirmation() {
   (
   local returncode
   local flock_output
-  
+
   flock_output=$(flock --verbose --timeout 60 9 2>&1)
   returncode=$?
   trace "[confirmation] flock_output=${flock_output}"

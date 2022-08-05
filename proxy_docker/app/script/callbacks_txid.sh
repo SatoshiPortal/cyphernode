@@ -12,7 +12,7 @@ do_callbacks_txid() {
   (
   local returncode
   local flock_output
-  
+
   flock_output=$(flock --verbose --nonblock 8 2>&1)
   returncode=$?
   trace "[do_callbacks_txid] flock_output=${flock_output}"
