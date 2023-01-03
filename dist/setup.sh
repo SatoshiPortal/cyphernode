@@ -556,7 +556,7 @@ install_docker() {
     fi
     if [[ ! -x $BITCOIN_DATAPATH/blocknotify.sh ]]; then
       step "     [32mmake[0m blocknotify.sh executable"
-      sudo_if_required chmod +x $BITCOIN_DATAPATH/blocknotify.sh    
+      sudo_if_required chmod +x $BITCOIN_DATAPATH/blocknotify.sh
       next
     fi
   fi
@@ -897,8 +897,8 @@ PROXYCRON_VERSION="v0.9.0-dev"
 OTSCLIENT_VERSION="v0.9.0-dev"
 PYCOIN_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
-BITCOIN_VERSION="v23.0-mosquitto-debian"
-LIGHTNING_VERSION="v0.11.2-debian"
+BITCOIN_VERSION="v24.0.1-mosquitto-debian"
+LIGHTNING_VERSION="v22.11.1-debian"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"
