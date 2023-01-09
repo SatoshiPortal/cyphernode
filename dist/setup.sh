@@ -901,7 +901,7 @@ BITCOIN_VERSION="v24.0.1-mosquitto-debian"
 LIGHTNING_VERSION="v22.11.1-debian"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
-POSTGRES_VERSION="14.0-bullseye"
+POSTGRES_VERSION="13-bullseye"
 
 SETUP_DIR=$(dirname $(realpath $0))
 
