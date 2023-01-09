@@ -8,11 +8,14 @@ echo "bitcoin ready"
 
 mkdir -p /.lightning/plibs && cd /.lightning/plibs
 
-export HOME=/.lightning/plibs
+if [ -d "/.lightning/plugins" ]; then
+  export HOME=/.lightning/plibs
+  for plugin in /.lightning/plugins/*; do
+    pip3 install --user -r $plugin/requirements.txt
+  done
+fi
 
-for plugin in /.lightning/plugins/*; do
-  pip3 install --user -r $plugin/requirements.txt
-done
+export HOME=/
 
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 
@@ -20,9 +23,9 @@ while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | aw
 
 echo "tor ready at IP ${TORIP}"
 
-exec lightningd --lightning-dir=/.lightning --proxy=$TORIP:9050
+exec lightningd --proxy=$TORIP:9050
 <% } else { %>
 
-exec lightningd --lightning-dir=/.lightning
+exec lightningd
 
 <% } %>
