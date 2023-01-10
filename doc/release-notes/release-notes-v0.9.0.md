@@ -7,8 +7,8 @@ This release contributors: @phillamy and @kexkey
 
 ## New
 
-- bitcoin_gettxoutproof endpoint
-- bitcoin_generatetoaddress endpoint
+- `bitcoin_gettxoutproof` endpoint
+- `bitcoin_generatetoaddress` endpoint
 
 
 ## Improvements
@@ -25,7 +25,8 @@ This release contributors: @phillamy and @kexkey
 - Proxy container now Debian-based
 - Removed deprecated legacypay from ln_pay
 - 60-sec timeout on locks when processing new tx confirmations
-- Upgraded traefik from 1.7 to 2.6
+- Upgraded Postgresql to 13
+- Upgraded Traefik from 1.7 to 2.6
 - Upgraded Tor from 0.4.5.6 to 0.4.7.8
 - Upgraded Bitcoin Core from v22.0 to v24.0.1
 - Upgraded Core Lightning from v0.10.2 to v22.11.1
