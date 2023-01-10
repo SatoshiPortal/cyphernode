@@ -5,23 +5,20 @@ BITCOIN_CLI='bitcoin-cli'
 while [ -z "`bitcoin-cli echo`"  ]; do echo "CYPHERNODE[createWallet]: bitcoind not ready" ; sleep 10 ; done
 echo "CYPHERNODE[createWallet]: bitcoind is ready"
 
-# Check for the basic wallets.  If not present, create.
-BASIC_WALLETS='"watching01.dat" "xpubwatching01.dat" "spending01.dat"'
+walletNameNoQuote="watching01.dat"
+$BITCOIN_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=false disable_private_keys=true \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
-CURRENT_WALLETS=`$BITCOIN_CLI listwallets`
+walletNameNoQuote="xpubwatching01.dat"
+$BITCOIN_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=false disable_private_keys=true \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
-for wallet in $BASIC_WALLETS
-do
-    echo "CYPHERNODE[createWallet]: Checking wallet [$wallet]"
-    echo "$CURRENT_WALLETS" | grep -F $wallet > /dev/null 2>&1
-
-    if [ "$?" -ne "0" ]; then
-       walletNameNoQuote=`echo $wallet | tr -d '"'`
-       $BITCOIN_CLI createwallet ${walletNameNoQuote} && echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]"
-    else
-       echo "CYPHERNODE[createWallet]: Wallet [$wallet] found"
-    fi
-done
+walletNameNoQuote="spending01.dat"
+$BITCOIN_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=true disable_private_keys=false \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
 <% if( net === 'regtest' ) { %>
 BLOCKS_TO_MINE=101
