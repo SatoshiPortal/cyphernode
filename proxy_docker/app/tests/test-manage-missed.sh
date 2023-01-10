@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR="$( dirname -- "${BASH_SOURCE[0]}"; )"; 
+DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 . $DIR/colors.sh
 . $DIR/mine.sh
 
@@ -56,7 +56,9 @@ echo -en "$a"
 return ${returncode}
 ' | base64)
 
-  exec_in_test_container sh -c 'echo '${cbserver_b64}' | base64 -d > cb-server.sh && chmod +x cb-server.sh'
+  local execcmd
+  execcmd="echo \"${cbserver_b64}\" | base64 -d > cb-server.sh && chmod +x cb-server.sh"
+  exec_in_test_container sh -c "$execcmd"
 
   trace 1 "\n\n[create_cb_server] ${BCyan}Created cb-server.sh...${Color_Off}\n"
 }
@@ -156,7 +158,7 @@ test_manage_missed_0_conf() {
 
   # wait for callback servers
   trace 3 "[test_manage_missed_0_conf] Waiting for callbacks..."
-  
+
   wait
   trace 3 "[test_manage_missed_0_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
 }
@@ -220,9 +222,9 @@ test_manage_missed_1_conf() {
 
   # wait for callback servers
   trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
-  
+
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"  
+  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
 }
 
 test_manage_missed_1_conf_dead_broker() {
@@ -282,9 +284,9 @@ test_manage_missed_1_conf_dead_broker() {
 
   # wait for callback servers
   trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
-  
+
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}" 
+  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
 }
 
 start_callback_server() {
