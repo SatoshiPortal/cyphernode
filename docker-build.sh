@@ -13,7 +13,7 @@ image() {
 
   echo "Building and pushing $image from $dir for $arch using $dockerfile tagging as $v1, $v2 and $v3..."
 
-  docker build --no-cache -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
+  docker build -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
   && docker push cyphernode/${image}:${arch}-${v3} \
   && docker push cyphernode/${image}:${arch}-${v2} \
   && docker push cyphernode/${image}:${arch}-${v1}
