@@ -16,6 +16,7 @@ rgb=<%= lightning_nodecolor %>
 
 addr=0.0.0.0:9735
 database-upgrade=true
+bitcoin-datadir=/.bitcoin
 
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 # Tor
