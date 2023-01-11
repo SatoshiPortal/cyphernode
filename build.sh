@@ -2,15 +2,15 @@
 
 TRACING=1
 
-# CYPHERNODE VERSION "v0.9.0-rc.1"
-CONF_VERSION="v0.9.0-rc.1-local"
-GATEKEEPER_VERSION="v0.9.0-rc.1-local"
-TOR_VERSION="v0.9.0-rc.1-local"
-PROXY_VERSION="v0.9.0-rc.1-local"
-NOTIFIER_VERSION="v0.9.0-rc.1-local"
-PROXYCRON_VERSION="v0.9.0-rc.1-local"
-OTSCLIENT_VERSION="v0.9.0-rc.1-local"
-PYCOIN_VERSION="v0.9.0-rc.1-local"
+# CYPHERNODE VERSION "v0.9.0-rc.2"
+CONF_VERSION="v0.9.0-rc.2-local"
+GATEKEEPER_VERSION="v0.9.0-rc.2-local"
+TOR_VERSION="v0.9.0-rc.2-local"
+PROXY_VERSION="v0.9.0-rc.2-local"
+NOTIFIER_VERSION="v0.9.0-rc.2-local"
+PROXYCRON_VERSION="v0.9.0-rc.2-local"
+OTSCLIENT_VERSION="v0.9.0-rc.2-local"
+PYCOIN_VERSION="v0.9.0-rc.2-local"
 
 trace()
 {

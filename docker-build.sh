@@ -13,7 +13,7 @@ image() {
 
   echo "Building and pushing $image from $dir for $arch using $dockerfile tagging as $v1, $v2 and $v3..."
 
-  docker build -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
+  docker build --no-cache -t cyphernode/${image}:${arch}-${v3} -t cyphernode/${image}:${arch}-${v2} -t cyphernode/${image}:${arch}-${v1} ${dir}/. \
   && docker push cyphernode/${image}:${arch}-${v3} \
   && docker push cyphernode/${image}:${arch}-${v2} \
   && docker push cyphernode/${image}:${arch}-${v1}
@@ -59,9 +59,9 @@ x86_docker="amd64"
 arm_docker="arm"
 aarch64_docker="arm64"
 
-v1="v0-rc.1"
-v2="v0.9-rc.1"
-v3="v0.9.0-rc.1"
+v1="v0-rc.2"
+v2="v0.9-rc.2"
+v3="v0.9.0-rc.2"
 
 # Build amd64 and arm64 first, building for arm will trigger the manifest creation and push on hub
 
