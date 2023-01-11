@@ -233,7 +233,7 @@ copy_file() {
   local sudo=''
   local createBackup=1
 
-  if [[ $4 == 1 ]]; then
+  if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
     sudo='sudo '
   fi
 
@@ -241,11 +241,11 @@ copy_file() {
     createBackup=$3
   fi
 
-  if [[ ! -f $sourceFile ]]; then
+  if ${sudo} [ ! -f $sourceFile ]; then
     return 1;
   fi
 
-  if [[ -f $targetFile ]]; then
+  if ${sudo} [ -f $targetFile ]; then
     ${sudo}cmp --silent $sourceFile $targetFile
     if [[ $? == 1 ]]; then
       # different content
@@ -329,8 +329,13 @@ compare_bitcoinconf() {
   local new_bitcoinconf=$1
   local old_bitcoinconf=$2
   local status
+  local sudo=''
 
-  if [[ ! -f $old_bitcoinconf || ! -f $new_bitcoinconf ]]; then
+  if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
+    sudo='sudo '
+  fi
+
+  if ${sudo} [ ! -f $old_bitcoinconf ] || ${sudo} [ ! -f $new_bitcoinconf ]; then
     return 1
   fi
 
@@ -364,76 +369,82 @@ compare_bitcoinconf() {
 }
 
 install_docker() {
-  if [ ! -d $GATEKEEPER_DATAPATH ]; then
+  local sudo=''
+
+  if [[ $SUDO_REQUIRED == 1 && ! $(id -u) == 0 ]]; then
+    sudo='sudo '
+  fi
+
+  if ${sudo} [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
     next
   fi
 
-  if [[ ! -f $GATEKEEPER_DATAPATH/installation.json ]]; then
+  if ${sudo} [ ! -f $GATEKEEPER_DATAPATH/installation.json ]; then
     # prevent mounting installation.json as a directory
     sudo_if_required touch $GATEKEEPER_DATAPATH/installation.json
   fi
 
-  if [[ ! -d $GATEKEEPER_DATAPATH/certs ]]; then
+  if ${sudo} [ ! -d $GATEKEEPER_DATAPATH/certs ]; then
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
   fi
 
-  if [[ ! -d $GATEKEEPER_DATAPATH/private ]]; then
+  if ${sudo} [ ! -d $GATEKEEPER_DATAPATH/private ]; then
     sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
 
-  if [ ! -d $current_path/.env ]; then
+  if ${sudo} [ ! -d $current_path/.env ]; then
     step "   [32mcreate[0m $current_path/.env"
     sudo_if_required mkdir -p $current_path/.env
     next
   fi
 
-  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
-  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
-  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/gatekeeper/gatekeeper.env $current_path/.env/gatekeeper.env 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1
+  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1
+  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/gatekeeper.env $current_path/.env/gatekeeper.env 1
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1
 
 
-  if [ ! -d $POSTGRES_DATAPATH ]; then
+  if ${sudo} [ ! -d $POSTGRES_DATAPATH ]; then
     step "   [32mcreate[0m $POSTGRES_DATAPATH"
     sudo_if_required mkdir -p $POSTGRES_DATAPATH/pgdata
     next
   fi
 
 
-  if [ ! -d $LOGS_DATAPATH ]; then
+  if ${sudo} [ ! -d $LOGS_DATAPATH ]; then
     step "   [32mcreate[0m $LOGS_DATAPATH"
     sudo_if_required mkdir -p $LOGS_DATAPATH
     next
   fi
 
 
-  if [ ! -d $TRAEFIK_DATAPATH ]; then
+  if ${sudo} [ ! -d $TRAEFIK_DATAPATH ]; then
     step "   [32mcreate[0m $TRAEFIK_DATAPATH"
     sudo_if_required mkdir -p $TRAEFIK_DATAPATH
     next
   fi
 
-  copy_file $cyphernodeconf_filepath/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/acme.json $TRAEFIK_DATAPATH/acme.json 1
+  copy_file $cyphernodeconf_filepath/traefik/traefik.toml $TRAEFIK_DATAPATH/traefik.toml 1
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $TRAEFIK_DATAPATH/htpasswd 1
 
 
   if [[ $FEATURE_TOR == true ]]; then
-    if [ ! -d $TOR_DATAPATH ]; then
+    if ${sudo} [ ! -d $TOR_DATAPATH ]; then
       step "   [32mcreate[0m $TOR_DATAPATH"
       sudo_if_required mkdir -p $TOR_DATAPATH
       sudo_if_required chmod 700 $TOR_DATAPATH
       next
     fi
     if [[ $TOR_TRAEFIK == true ]]; then
-      if [ ! -d $TOR_DATAPATH/traefik ]; then
+      if ${sudo} [ ! -d $TOR_DATAPATH/traefik ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/traefik"
         sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
@@ -441,7 +452,7 @@ install_docker() {
       fi
     fi
     if [[ $TOR_LIGHTNING == true ]]; then
-      if [ ! -d $TOR_DATAPATH/lightning ]; then
+      if ${sudo} [ ! -d $TOR_DATAPATH/lightning ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/lightning"
         sudo_if_required mkdir -p $TOR_DATAPATH/lightning/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/lightning/hidden_service
@@ -449,7 +460,7 @@ install_docker() {
       fi
     fi
     if [[ $TOR_BITCOIN == true ]]; then
-      if [ ! -d $TOR_DATAPATH/bitcoin ]; then
+      if ${sudo} [ ! -d $TOR_DATAPATH/bitcoin ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/bitcoin"
         sudo_if_required mkdir -p $TOR_DATAPATH/bitcoin/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/bitcoin/hidden_service
@@ -457,67 +468,67 @@ install_docker() {
       fi
     fi
 
-    copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hostname $TOR_DATAPATH/traefik/hidden_service/hostname 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_public_key 1
+    copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hostname $TOR_DATAPATH/traefik/hidden_service/hostname 1
 
     if [[ $TOR_LIGHTNING == true ]]; then
-      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hostname $TOR_DATAPATH/lightning/hidden_service/hostname 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_secret_key 1
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/lightning/hidden_service/hs_ed25519_public_key 1
+      copy_file $cyphernodeconf_filepath/tor/lightning/hidden_service/hostname $TOR_DATAPATH/lightning/hidden_service/hostname 1
     fi
     if [[ $TOR_BITCOIN == true ]]; then
-      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1
+      copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1
     fi
   fi
 
 
-  if [ ! -d $PROXY_DATAPATH ]; then
+  if ${sudo} [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
     sudo_if_required mkdir -p $PROXY_DATAPATH
     next
   fi
 
 
-  copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/postgres/postgres.env $current_path/.env/postgres.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/installer/config.sh $PROXY_DATAPATH/config.sh 1
+  copy_file $cyphernodeconf_filepath/cyphernode/info.json $PROXY_DATAPATH/info.json 1
+  copy_file $cyphernodeconf_filepath/postgres/pgpass $PROXY_DATAPATH/pgpass 1
+  copy_file $cyphernodeconf_filepath/postgres/postgres.env $current_path/.env/postgres.env 1
   sudo_if_required chmod 0600 $PROXY_DATAPATH/pgpass
-  copy_file $cyphernodeconf_filepath/proxy/proxy.env $current_path/.env/proxy.env 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/notifier/notifier.env $current_path/.env/notifier.env 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/pycoin/pycoin.env $current_path/.env/pycoin.env 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/otsclient/otsclient.env $current_path/.env/otsclient.env 1 $SUDO_REQUIRED
-  copy_file $cyphernodeconf_filepath/proxycron/proxycron.env $current_path/.env/proxycron.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/proxy/proxy.env $current_path/.env/proxy.env 1
+  copy_file $cyphernodeconf_filepath/notifier/notifier.env $current_path/.env/notifier.env 1
+  copy_file $cyphernodeconf_filepath/pycoin/pycoin.env $current_path/.env/pycoin.env 1
+  copy_file $cyphernodeconf_filepath/otsclient/otsclient.env $current_path/.env/otsclient.env 1
+  copy_file $cyphernodeconf_filepath/proxycron/proxycron.env $current_path/.env/proxycron.env 1
 
 
   if [[ $BITCOIN_INTERNAL == true ]]; then
-    if [ ! -d $BITCOIN_DATAPATH ]; then
+    if ${sudo} [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
       sudo_if_required mkdir -p $BITCOIN_DATAPATH
       next
     fi
-    if [ -d $BITCOIN_DATAPATH ]; then
+    if ${sudo} [ -d $BITCOIN_DATAPATH ]; then
 
       local cmpStatus=$(compare_bitcoinconf $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf)
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
-          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1
+          copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1
         else
           while true; do
             echo "          [31mReally copy bitcoin.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
-                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
+              [Yy]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1
                       break;;
-              [Nn]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0 $SUDO_REQUIRED
-                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0 $SUDO_REQUIRED
+              [Nn]* ) copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf.cyphernode 0
+                      copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf.cyphernode 0
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check bitcoin.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -529,32 +540,32 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1 $SUDO_REQUIRED
-        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin.conf $BITCOIN_DATAPATH/bitcoin.conf 1
+        copy_file $cyphernodeconf_filepath/bitcoin/bitcoin-client.conf $BITCOIN_DATAPATH/bitcoin-client.conf 1
       fi
     fi
 
-    copy_file $cyphernodeconf_filepath/bitcoin/entrypoint.sh $BITCOIN_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/bitcoin/createWallets.sh $BITCOIN_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/bitcoin/walletnotify.sh $BITCOIN_DATAPATH/walletnotify.sh 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/bitcoin/blocknotify.sh $BITCOIN_DATAPATH/blocknotify.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/bitcoin/entrypoint.sh $BITCOIN_DATAPATH/entrypoint.sh 1
+    copy_file $cyphernodeconf_filepath/bitcoin/createWallets.sh $BITCOIN_DATAPATH/createWallets.sh 1
+    copy_file $cyphernodeconf_filepath/bitcoin/walletnotify.sh $BITCOIN_DATAPATH/walletnotify.sh 1
+    copy_file $cyphernodeconf_filepath/bitcoin/blocknotify.sh $BITCOIN_DATAPATH/blocknotify.sh 1
 
-    if [[ ! -x $BITCOIN_DATAPATH/entrypoint.sh ]]; then
+    if ${sudo} [ ! -x $BITCOIN_DATAPATH/entrypoint.sh ]; then
       step "     [32mmake[0m entrypoint.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/entrypoint.sh
       next
     fi
-    if [[ ! -x $BITCOIN_DATAPATH/createWallets.sh ]]; then
+    if ${sudo} [ ! -x $BITCOIN_DATAPATH/createWallets.sh ]; then
       step "     [32mmake[0m createWallets.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/createWallets.sh
       next
     fi
-    if [[ ! -x $BITCOIN_DATAPATH/walletnotify.sh ]]; then
+    if ${sudo} [ ! -x $BITCOIN_DATAPATH/walletnotify.sh ]; then
       step "     [32mmake[0m walletnotify.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/walletnotify.sh
       next
     fi
-    if [[ ! -x $BITCOIN_DATAPATH/blocknotify.sh ]]; then
+    if ${sudo} [ ! -x $BITCOIN_DATAPATH/blocknotify.sh ]; then
       step "     [32mmake[0m blocknotify.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/blocknotify.sh
       next
@@ -563,16 +574,16 @@ install_docker() {
 
   if [[ $FEATURE_LIGHTNING == true ]]; then
     if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
-      if [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
+      if ${sudo} [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
         step "   [32mcreate[0m $LIGHTNING_DATAPATH"
         sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
         next
       fi
 
-      copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1
+      copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1
 
-      if [[ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]]; then
+      if ${sudo} [ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]; then
         step "     [32mmake[0m entrypoint.sh executable"
         sudo_if_required chmod +x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh
         next
@@ -581,7 +592,7 @@ install_docker() {
   fi
 
   if [[ $FEATURE_OTSCLIENT == true ]]; then
-    if [ ! -d $OTSCLIENT_DATAPATH ]; then
+    if ${sudo} [ ! -d $OTSCLIENT_DATAPATH ]; then
       step "   [32mcreate[0m $OTSCLIENT_DATAPATH"
       sudo_if_required mkdir -p $OTSCLIENT_DATAPATH
       next
@@ -669,25 +680,25 @@ install_docker() {
   copy_file $cyphernodeconf_filepath/installer/stop.sh $current_path/stop.sh 0
   copy_file $cyphernodeconf_filepath/installer/testdeployment.sh $current_path/testdeployment.sh 0
 
-  if [[ ! -x $current_path/start.sh ]]; then
+  if ${sudo} [ ! -x $current_path/start.sh ]; then
     step "     [32mmake[0m start.sh executable"
     try chmod +x $current_path/start.sh
     next
   fi
 
-  if [[ ! -x $current_path/stop.sh ]]; then
+  if ${sudo} [ ! -x $current_path/stop.sh ]; then
     step "     [32mmake[0m stop.sh executable"
     try chmod +x $current_path/stop.sh
     next
   fi
 
-  if [[ ! -x $current_path/testfeatures.sh ]]; then
+  if ${sudo} [ ! -x $current_path/testfeatures.sh ]; then
     step "     [32mmake[0m testfeatures.sh executable"
     try chmod +x $current_path/testfeatures.sh
     next
   fi
 
-  if [[ ! -x $current_path/testdeployment.sh ]]; then
+  if ${sudo} [ ! -x $current_path/testdeployment.sh ]; then
     step "     [32mmake[0m testdeployment.sh executable"
     try chmod +x $current_path/testdeployment.sh
     next
