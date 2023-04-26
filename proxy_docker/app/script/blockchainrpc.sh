@@ -78,6 +78,14 @@ get_blockchain_info() {
   return $?
 }
 
+get_mining_info() {
+  trace "Entering get_mining_info()..."
+
+  local data='{"method":"getmininginfo"}'
+  send_to_watcher_node "${data}"
+  return $?
+}
+
 get_mempool_info() {
   trace "Entering get_mempool_info()..."
 
@@ -91,6 +99,18 @@ get_blockhash() {
   local blockheight=${1}
   local data="{\"method\":\"getblockhash\",\"params\":[${blockheight}]}"
   send_to_watcher_node "${data}" | jq ".result"
+  return $?
+}
+
+get_networkhashps() {
+  trace "Entering get_networkhashps()..."
+  local request=${1}
+  local height=$(echo "${request}" | jq -r ".height")
+  local nblocks=$(echo "${request}" | jq -r ".nblocks")
+  local data="{\"method\":\"getnetworkhashps\",\"params\":[${nblocks},${height}]}"
+  local result=$(send_to_watcher_node "${data}")
+  trace "[getnetworkhashps] result = ${result}"
+  echo "${result}"
   return $?
 }
 
