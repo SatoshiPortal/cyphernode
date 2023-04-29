@@ -20,7 +20,7 @@
     "chalk": "^2.4.2",
     "coinstring": "^2.3.0",
     "colorsys": "^1.0.22",
-    "ejs": "^2.6.1",
+    "ejs": "^3.1.7",
     "inquirer": "^6.3.1",
     "lunicode": "^2.0.1",
     "parse5": "^5.1.0",
