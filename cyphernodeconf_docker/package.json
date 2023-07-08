@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "eslint": "^5.16.0",
-    "jest": "^24.8.0"
+    "jest": "^29.6.1"
   },
   "repository": "git@github.com:schulterklopfer/cyphernodeconf.git",
   "license": "MIT"
