@@ -323,6 +323,22 @@ main() {
           response=$(spend "${line}")
           returncode=$?
           ;;
+        getfeerate)
+          # POST http://192.168.111.152:8080/getfeerate
+          # BODY {"confTarget":4}
+          #
+          # args:
+          # - confTarget the required confirmation target in blocks
+          #
+          # response:
+          # - feerate, the feerate in sat/vB
+          #
+          # BODY {"feerate":20.4}
+
+          local conf_target=$(echo "${line}" | jq -er ".confTarget // empty")
+          response=$(getfeerate "${conf_target}")
+          returncode=$?
+          ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}

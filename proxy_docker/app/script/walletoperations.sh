@@ -23,12 +23,15 @@ spend() {
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
 
+  local fee_rate=$(getfeerate "${conf_target}" | jq -r ".feerate")
+  trace "[spend] fee_rate=${fee_rate}"
+
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -328,6 +331,89 @@ create_wallet() {
   local returncode=$?
 
   echo "${result}"
+
+  return ${returncode}
+}
+
+getfeeratefromurl() {
+  local url=$1
+  local priority=$2
+
+  trace "[getfeeratefromurl] url=${url}"
+  trace "[getfeeratefromurl] priority=${priority}"
+
+  local response=$(curl -s -m 3 $url)
+  local returncode=$?
+
+  if [ $returncode -ne 0 ] || [ -z "$response" ]; then
+    trace "[getfeeratefromurl] Failed to get response from $url"
+    return 1
+  fi
+
+  local feerate=$(echo $response | jq ".${priority}Fee")
+  if [ -z "$feerate" ]; then
+    trace "[getfeeratefromurl] Failed to extract $priority fee from response"
+    return 1
+  fi
+
+  echo $feerate
+  return 0
+}
+
+getfeerate() {
+  trace "Entering getfeerate()..."
+
+  local conf_target=${1}
+  trace "[getfeerate] conf_target=${conf_target}"
+
+  local priority
+  if [ "$conf_target" -lt 2 ]; then
+    priority="fastest"
+  elif [ "${conf_target}" -lt 4 ]; then
+    priority="halfHour"
+  elif [ "$conf_target" -lt 7 ]; then
+    priority="hour"
+  elif [ "$conf_target" -lt 60 ]; then
+    priority="economy"
+  else 
+    priority="minimum"
+  fi
+
+  trace "[getfeerate] priority=${priority}"
+
+  local feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
+  if [ -n "$feerate" ]; then
+    echo "{\"feerate\":\"${feerate}\"}"
+    return 0
+  fi
+
+  local feerate=$(getfeeratefromurl "https://mempool.space/api/v1/fees/recommended" "${priority}")
+  if [ -n "$feerate" ]; then
+    echo "{\"feerate\":\"${feerate}\"}"
+    return 0
+  fi
+
+  local response
+  local data='{"method":"estimatesmartfee","params":['${conf_target}']}'
+  response=$(send_to_spender_node "${data}")
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getfeerate] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local feerate=$(echo ${response} | jq ".result.feerate")
+    feerate=$(printf "%.8f" $feerate)
+    feerate=$(echo "scale=1; $feerate*100000000" | bc)
+    trace "[getfeerate] after feerate=${feerate}"
+
+    data="{\"feerate\":\"${feerate}\"}"
+  else
+    trace "[getfeerate] Faild to get feerate!"
+    data="{\"feerate\":\"0\"}"
+  fi
+
+  trace "[getfeerate] responding=${data}"
+  echo "${data}"
 
   return ${returncode}
 }
