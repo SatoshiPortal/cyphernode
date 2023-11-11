@@ -360,25 +360,38 @@ getfeeratefromurl() {
   return 0
 }
 
+getpriorityfromconftarget() {
+  local conf_target=${1}
+  trace "[getpriorityfromconftarget] conf_target=${conf_target}"
+
+  conftarget_fastest=$(($CONFTARGET_PRIORITY_FASTEST + 1))
+  conftarget_halfhour=$(($CONFTARGET_PRIORITY_HALFHOUR + 1))
+  conftarget_hour=$(($CONFTARGET_PRIORITY_HOUR + 1))
+  conftarget_economy=$(($CONFTARGET_PRIORITY_ECONOMY + 1))
+
+  local priority
+  if [ "$conf_target" -lt $conftarget_fastest ]; then
+    priority="fastest"
+  elif [ "$conf_target" -lt $conftarget_halfhour ]; then
+    priority="halfHour"
+  elif [ "$conf_target" -lt $conftarget_hour ]; then
+    priority="hour"
+  elif [ "$conf_target" -lt $conftarget_economy ]; then
+    priority="economy"
+  else 
+    priority="minimum"
+  fi
+
+  echo $priority
+}
+
 getfeerate() {
   trace "Entering getfeerate()..."
 
   local conf_target=${1}
   trace "[getfeerate] conf_target=${conf_target}"
 
-  local priority
-  if [ "$conf_target" -lt 2 ]; then
-    priority="fastest"
-  elif [ "${conf_target}" -lt 4 ]; then
-    priority="halfHour"
-  elif [ "$conf_target" -lt 7 ]; then
-    priority="hour"
-  elif [ "$conf_target" -lt 60 ]; then
-    priority="economy"
-  else 
-    priority="minimum"
-  fi
-
+  local priority=$(getpriorityfromconftarget "${conf_target}")
   trace "[getfeerate] priority=${priority}"
 
   local feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
