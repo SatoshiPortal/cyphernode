@@ -292,6 +292,9 @@ module.exports = class App {
       if (this.isChecked('torifyables', 'tor_bitcoin')) {
         this.sessionData.tor_bitcoin_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/bitcoin/hidden_service' ) ));
       }
+      if (this.isChecked('torifyables', 'tor_wasabibackend')) {
+        this.sessionData.tor_wasabibackend_hostname = await torgen.generateTorFiles(this.destinationPath( path.join( destinationDirName, 'tor/wasabibackend/hidden_service' ) ));
+      }
     }
 
     // creates keys if they don't exist or we say so.
@@ -571,7 +574,10 @@ module.exports = class App {
         docker: "cyphernode/wasabi:"+this.config.docker_versions['cyphernode/wasabi'],
         extra: {
           mixuntil: this.config.data.wasabi_mixuntil,
-          instance_count: this.config.data.wasabi_instance_count
+          instance_count: this.config.data.wasabi_instance_count,
+          torified: this.torifyables.find(data => data.value === 'tor_wasabibackend').checked,
+          clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_wasabibackend'),
+          tor_hostname: this.sessionData.tor_wasabibackend_hostname
         }
       }
     }

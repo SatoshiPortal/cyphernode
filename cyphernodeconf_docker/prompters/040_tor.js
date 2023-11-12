@@ -37,9 +37,14 @@ module.exports = {
       choices: [{
         name: "Bitcoin Node",
         value: "clearnet_bitcoin"
-      },{
+      },
+      {
         name: "Lightning Network Node",
         value: "clearnet_lightning"
+      },
+      {
+        name: "Wasabi Backend",
+        value: "clearnet_wasabibackend"
       }]
     }];
   },

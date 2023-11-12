@@ -11,7 +11,7 @@ NOTIFIER_VERSION="v0.9.0-dev-local"
 PROXYCRON_VERSION="v0.9.0-dev-local"
 OTSCLIENT_VERSION="v0.9.0-dev-local"
 PYCOIN_VERSION="v0.9.0-dev-local"
-WASABI_VERSION="v0.3.1-local"
+WASABI_VERSION="v0.4.0-dev-local"
 
 trace()
 {
