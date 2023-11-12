@@ -457,6 +457,14 @@ install_docker() {
         next
       fi
     fi
+    if [[ $TOR_WASABIBACKEND == true ]]; then
+      if [ ! -d $TOR_DATAPATH/wasabibackend ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/wasabibackend"
+        sudo_if_required mkdir -p $TOR_DATAPATH/wasabibackend/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/wasabibackend/hidden_service
+        next
+      fi
+    fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1 $SUDO_REQUIRED
     copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
@@ -472,6 +480,11 @@ install_docker() {
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1 $SUDO_REQUIRED
+    fi
+    if [[ $TOR_WASABIBACKEND == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/wasabibackend/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/wasabibackend/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hostname $TOR_DATAPATH/wasabibackend/hidden_service/hostname 1 $SUDO_REQUIRED
     fi
   fi
 
@@ -588,7 +601,7 @@ install_docker() {
       copy_file "$cyphernodeconf_filepath/wasabi/Config.json" "$WASABI_DATAPATH/$i/Config.json" 1 $SUDO_REQUIRED
     done
 
-    if [[ $NETWORK == "regtest" ]]; then
+    if [[ $NETWORK == "testnet" || $NETWORK == "regtest" ]]; then
       if [ ! -d "$WASABI_DATAPATH/backend" ]; then
         step "   [32mcreate[0m $WASABI_DATAPATH/backend"
         sudo_if_required mkdir -p $WASABI_DATAPATH/backend
@@ -913,7 +926,7 @@ LIGHTNING_VERSION="v0.10.2"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"
-WASABI_VERSION="v0.3.1"
+WASABI_VERSION="v0.4.0-dev"
 
 SETUP_DIR=$(dirname $(realpath $0))
 

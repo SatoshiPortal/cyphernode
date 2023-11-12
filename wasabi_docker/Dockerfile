@@ -1,38 +1,37 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine3.12 AS builder
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18 AS builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git patch
 
-# Version v1.1.12.2
-RUN git clone -b v1.1.12.2 --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
+# master branch
+RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 
 WORKDIR /WalletWasabi
 
-COPY WalletGenerator /WalletGenerator
+# this patch is really only needed if we are using the externally running Tor
+# so we can pass in external IP / port details
+# but now we let each wasabi instance run its own Tor for separate identities
+COPY patches/TorSettings.patch .
+RUN patch WalletWasabi/Tor/TorSettings.cs -i TorSettings.patch
+RUN rm TorSettings.patch
 
-WORKDIR /WalletGenerator
+WORKDIR /WalletWasabi/WalletWasabi.Daemon
 
-RUN dotnet build WalletGenerator.sln -c Release -o /app/ -r linux-x64
-RUN dotnet publish WalletGenerator.sln --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
-
-WORKDIR /WalletWasabi/WalletWasabi.Gui
-
-RUN dotnet build -c Release -o /app/ -r linux-x64
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
+RUN dotnet build "WalletWasabi.Daemon.csproj" -c Release -o /app/build -r linux-x64
+RUN dotnet publish "WalletWasabi.Daemon.csproj" -c Release -o /app/ --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
 
 # remove unused files
-#RUN rm /app/TorDaemons/tor-osx64.zip /app/TorDaemons/tor-win32.zip
-RUN rm -rf /app/TorDaemons
-RUN rm -rf /app/runtimes/osx /app/runtimes/tizen-armel /app/runtimes/tizen-x86 /app/runtimes/win /app/runtimes/win-x64 /app/runtimes/win--x86
-RUN rm -rf /app/Hwi/Software/hwi-osx64.zip /app/Hwi/Software/hwi-win64
+RUN rm -rf /app/runtimes/osx /app/runtimes/osx-x64 /app/runtimes/osx-arm64 /app/runtimes/tizen-armel /app/runtimes/tizen-x86 /app/runtimes/win /app/runtimes/win-x64 /app/runtimes/win-x86 /app/runtimes/win-arm64 /app/runtimes/win-arm
+RUN rm -rf /app/Microservices/Binaries/osx64 /app/Microservices/Binaries/win64
+RUN rm -rf /app/Microservices/Binaries/lin64/bitcoind /app/Microservices/Binaries/lin64/hwi
 
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.12
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18
 
 ENV APPDATA=/root/.walletwasabi/client
 
 RUN apk add --no-cache --update \
+    gcompat \
     expect \
-    tor \
     icu \
     curl \
     jq \
@@ -44,7 +43,6 @@ WORKDIR /app
 
 ADD scripts scripts
 COPY docker-entrypoint.sh docker-entrypoint.sh
-COPY torrc /etc/tor/torrc
 
 # Do not run as root user
 #RUN chown -R www-data:www-data /app /wasabi

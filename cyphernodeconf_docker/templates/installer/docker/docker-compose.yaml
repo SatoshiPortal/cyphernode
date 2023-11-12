@@ -128,6 +128,8 @@ services:
     <%   if ( net === 'regtest' ) { %>
     # regtest only
     image: cyphernode/knots:<%= bitcoin_version %>
+    <% } else if ( features.indexOf('wasabi') !== -1 && net === 'testnet' ) { %>
+    image: cyphernode/knots:<%= bitcoin_version %>
     <% } else { %>
     image: cyphernode/bitcoin:<%= bitcoin_version %>
     <% } %>
@@ -370,11 +372,13 @@ services:
   # WASABI                 #
   ##########################
 
-  <%   if ( net === 'regtest' ) { %>
-  # regtest only
+  <%   if ( net === 'regtest' || net === 'testnet' ) { %>
+  # testnet or regtest only
   wasabi-backend:
     image: cyphernode/wasabi-backend:<%= wasabi_version %>
     entrypoint: sh -c 'sleep 5 ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 5 ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
+    environment:
+      - "WASABI_BIND=http://wasabi-backend:37127/"
     volumes:
       - "<%= wasabi_datapath %>/backend:/root/.walletwasabi/backend"
       - container_monitor:/container_monitor:ro
@@ -398,10 +402,7 @@ services:
     environment:
       - "WASABI_RPC_USER=<%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %>"
       - "WASABI_RPC_CFG=/tmp/wasabi_curlcfg.properties"
-    <% if ( features.indexOf('tor') !== -1 ) { %>
-      - "TOR_HOST=tor"
-      - "TOR_PORT=9050"
-    <% } %>
+
     volumes:
       - "<%= wasabi_datapath %>/<%= index %>:/root/.walletwasabi/client"
       - container_monitor:/container_monitor:ro
@@ -413,7 +414,7 @@ services:
     <% } %>
     depends_on:
       - bitcoin
-      <%   if ( net === 'regtest' ) { %>
+      <%   if ( net === 'regtest' | net === 'testnet' ) { %>
       - wasabi-backend
       <%   } %>
 #    deploy:
