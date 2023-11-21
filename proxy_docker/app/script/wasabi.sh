@@ -657,7 +657,7 @@ wasabi_spend() {
 # wasabi_payincoinjoin <requesthandler_request_string>
 # requesthandler_request_string: JSON object with "id", "private", "amount" and "address" properties: {"id":1,"private":true,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp" }
 # id: optional.  Will use first instance with enough funds, if not supplied.
-# returns wasabi rpc response as is
+# returns { status: 'accepted', address: 'tb1qas953gcupsgtqjmdprusld027ec6hc5dde4kg7', amount: '0.00065536', paymentId: 'ba1c3cb9-44d0-47b9-9390-71b11c3c567d', instanceId: 0 }
 wasabi_payincoinjoin() {
   trace "Entering wasabi_payincoinjoin()..."
 
@@ -745,7 +745,7 @@ wasabi_payincoinjoin() {
 
     local paymentId=$(echo ${response} | jq -r ".result")
 
-    response=$(echo ${response} | jq ".result = {\"status\":\"accepted\",\"details\":{\"address\":\"${address}\",\"amount\":\"${amount}\",\"paymentId\":\"${paymentId}\",\"instanceId\":${instanceid}}}")
+    response="{\"status\":\"accepted\",\"address\":\"${address}\",\"amount\":\"${amount}\",\"paymentId\":\"${paymentId}\",\"instanceId\":${instanceid}}"
   else
     response="{\"event\":\"wasabi_payincoinjoin\",\"result\":\"error\",\"message\":\"Not enough funds\"}"
   fi
@@ -850,7 +850,9 @@ wasabi_getunspentcoins() {
   # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
   local instanceid
   if [ "$(echo "${request}" | cut -d ' ' -f1)" = "GET" ]; then
-    instanceid="null"
+    local id=$(echo $request | cut -d ' ' -f2 | cut -d '/' -f3)
+    trace "[wasabi_getunspentcoins] id=${id}"
+    instanceid="${id:-null}"
   else
     instanceid=$(echo "${request}" | jq ".instanceId")
   fi

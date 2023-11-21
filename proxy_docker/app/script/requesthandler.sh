@@ -803,7 +803,7 @@ main() {
           # - address: string, required
           # - amount: number in BTC, required
           # POST http://192.168.111.152:8080/wasabi_payincoinjoin
-          # BODY {"instanceId":1,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp", label: "my super private coins", minanonset: 90, confTarget: 6}
+          # BODY {"instanceId":1,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
           # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
 
           response=$(wasabi_payincoinjoin "${line}")
