@@ -107,16 +107,16 @@ unwatchtxidrequest() {
   local watchid=${1}
   local txid=${2}
 
-  local unconfirmedCallbackURL=${3}
-  local uc_pg uc_json
-  [ "${unconfirmedCallbackURL}" = "null" ] && uc_pg=" IS NULL" && uc_json="null" || uc_pg="='${unconfirmedCallbackURL}'" && uc_json="\"${unconfirmedCallbackURL}\""
+  local conf1CallbackURL=${3}
+  local c1_pg c1_json
+  [ "${conf1CallbackURL}" = "null" ] && c1_pg=" IS NULL" && c1_json="null" || c1_pg="='${conf1CallbackURL}'" && c1_json="\"${conf1CallbackURL}\""
 
-  local confirmedCallbackURL=${4}
-  local c_pg c_json
-  [ "${confirmedCallbackURL}" = "null" ] && c_pg=" IS NULL" && c_json="null" || c_pg="='${confirmedCallbackURL}'" && c_json="\"${confirmedCallbackURL}\""
+  local confirmedXCallbackURL=${4}
+  local cx_pg cx_json
+  [ "${confirmedXCallbackURL}" = "null" ] && cx_pg=" IS NULL" && cx_json="null" || cx_pg="='${confirmedXCallbackURL}'" && cx_json="\"${confirmedXCallbackURL}\""
 
   local returncode
-  trace "[unwatchtxidrequest] Unwatch request id ${watchid} on txid \"${txid}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\""
+  trace "[unwatchtxidrequest] Unwatch request id ${watchid} on txid \"${txid}\" with url1conf \"${conf1CallbackURL}\" and urlxconf \"${confXCallbackURL}\""
 
   if [ "${watchid}" != "null" ]; then
     sql "UPDATE watching_by_txid SET watching=false WHERE id=${watchid}"
@@ -125,11 +125,11 @@ unwatchtxidrequest() {
 
     data="{\"event\":\"unwatchtxid\",\"id\":${watchid}}"
   else
-    sql "UPDATE watching_by_txid SET watching=false WHERE txid='${txid}' AND callback0conf${uc_pg} AND callback1conf${c_pg}"
+    sql "UPDATE watching_by_txid SET watching=false WHERE txid='${txid}' AND callback1conf${c1_pg} AND callbackxconf${cx_pg}"
     returncode=$?
     trace_rc ${returncode}
 
-    data="{\"event\":\"unwatchtxid\",\"txid\":\"${txid}\",\"unconfirmedCallbackURL\":${uc_json},\"confirmedCallbackURL\":${c_json}}"
+    data="{\"event\":\"unwatchtxid\",\"txid\":\"${txid}\",\"confirmedCallbackURL\":${c1_json},\"xconfCallbackURL\":${cx_json}}"
   fi
 
   trace "[unwatchtxidrequest] responding=${data}"

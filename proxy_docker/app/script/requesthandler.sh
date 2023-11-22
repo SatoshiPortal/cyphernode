@@ -181,23 +181,23 @@ main() {
           ;;
         unwatchtxid)
           # POST http://192.168.111.152:8080/unwatchtxid
-          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackxconf"}
           # or
           # BODY {"id":3124}
 
           # args:
           # - txid: string, required
-          # - unconfirmedCallbackURL: string, optional
           # - confirmedCallbackURL: string, optional
+          # - xconfCallbackURL: string, optional
           # or
           # - id: the id returned by watchtxid
 
           local txid=$(echo "${line}" | jq -r ".txid")
-          local unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
           local confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+          local xconfCallbackURL=$(echo "${line}" | jq -r ".xconfCallbackURL")
           local watchid=$(echo "${line}" | jq ".id")
 
-          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
           returncode=$?
           ;;
         getactivewatches)
