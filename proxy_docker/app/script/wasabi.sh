@@ -628,6 +628,16 @@ wasabi_spend() {
     local txid=$(echo ${response} | jq -r ".result.txid")
     local tx_raw_details
     tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+    returncode=$?
+    # Sometimes wasabi seems to take time to broadcast so we retry
+    local retry_count=0
+    while [ "${returncode}" -ne "0" ] && [ "${retry_count}" -lt "3" ]; do
+      trace "[wasabi_spend] Error getting raw transaction, retrying..."
+      sleep 1
+      tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+      returncode=$?
+      retry_count=$((retry_count+1))
+    done
 
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
@@ -637,8 +647,11 @@ wasabi_spend() {
     trace "[wasabi_spend] fees=${fees}"
 
     local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    trace "[wasabi_spend] tx_size=${tx_size}"
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    trace "[wasabi_spend] tx_vsize=${tx_vsize}"
     local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    trace "[wasabi_spend] tx_replaceable=${tx_replaceable}"
     tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
     response=$(echo ${response} | jq ".result += {\"status\":\"accepted\",\"details\":{\"address\":\"${address}\",\"amount\":\"${amount}\",\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}")
 
