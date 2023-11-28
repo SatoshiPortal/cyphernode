@@ -40,6 +40,9 @@ trim() {
 	echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
 
+# Need to wait for tor container so we don't try to connect to it too early
+while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 5 ; done ; echo "tor ready!"
+
 while [ -z "${BITCOIN_IP}" ]; do echo "waiting for bitcoin ip" ; BITCOIN_IP=$(getent hosts bitcoin | awk '{ print $1 }') ; sleep 10 ; done
 echo "bitcoin ip is ${BITCOIN_IP}"
 
