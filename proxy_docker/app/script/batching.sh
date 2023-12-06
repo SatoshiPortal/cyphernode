@@ -451,7 +451,17 @@ batchspend() {
 
     local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
     if [ -n "${conf_target}" ]; then
-      bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
+      local fee_rate
+      fee_rate=$(getfeerate "${conf_target}")
+      returncode=$?
+      trace_rc ${returncode}
+      trace "[batchspend] fee_rate=${fee_rate}"
+      if [ "${returncode}" -eq 0 ]; then
+        # minconf, comment, subtractfeefrom, replaceable, conf_target, estimate_mode, fee_rate
+        bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, null, \"unset\", ${fee_rate}"
+      else
+        bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
+      fi
     fi
     bitcoincore_args="${bitcoincore_args}]}"
 

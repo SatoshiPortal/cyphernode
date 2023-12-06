@@ -292,12 +292,14 @@ derivepubpath_bitcoind() {
 getfeeratefromurl() {
   local url=$1
   local priority=$2
+  local response
+  local returncode
 
   trace "[getfeeratefromurl] url=${url}"
   trace "[getfeeratefromurl] priority=${priority}"
 
-  local response=$(curl -s -m 3 $url)
-  local returncode=$?
+  response=$(curl -s -m 3 $url)
+  returncode=$?
 
   if [ $returncode -ne 0 ] || [ -z "$response" ]; then
     trace "[getfeeratefromurl] Failed to get response from $url"
@@ -361,9 +363,10 @@ getfeerate() {
   fi
 
   local response
+  local returncode
   local data='{"method":"estimatesmartfee","params":['${conf_target}']}'
   response=$(send_to_spender_node "${data}")
-  local returncode=$?
+  returncode=$?
   trace_rc ${returncode}
   trace "[getfeerate] response=${response}"
 
