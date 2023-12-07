@@ -16,7 +16,7 @@
 # for i in `docker stack ps -q -f name=cyphernode_wasabi cyphernode`; do echo -e "\n################################### $i:\n$(docker service logs --tail 40 $i)" ; done
 #
 
-. walletoperations.sh
+. ./walletoperations.sh
 
 # send_to_wasabi <instance_nb> <rpc_method> <params>
 # returns wasabi rpc response as is

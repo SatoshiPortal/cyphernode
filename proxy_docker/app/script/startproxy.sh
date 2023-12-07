@@ -3,29 +3,17 @@
 . ./trace.sh
 
 trim() {
-<<<<<<< HEAD
   echo "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
-=======
-  echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
->>>>>>> 62eb311 (Merge branch 'dev' into 'features/wasabi')
 }
 
 createCurlConfig() {
 
-<<<<<<< HEAD
   if [ ''$1 = '' ]; then
-=======
-  if [[ ''$1 == '' ]]; then
->>>>>>> 62eb311 (Merge branch 'dev' into 'features/wasabi')
     trace "[startproxy] Missing file name: Check your *_BTC_NODE_RPC_CFG"
     return
   fi
 
-<<<<<<< HEAD
   if [ ''$2 = '' ]; then
-=======
-  if [[ ''$2 == '' ]]; then
->>>>>>> 62eb311 (Merge branch 'dev' into 'features/wasabi')
     trace "[startproxy] Missing content: Check your *_BTC_NODE_RPC_USER"
     return
   fi
