@@ -141,9 +141,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-
   local directories=("${current_path}/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$WASABI_DATAPATH")
-
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -405,15 +403,15 @@ install_docker() {
     next
   fi
 
-  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1
-  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1
-  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1
-  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1
-  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1
-  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1
-  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1
-  copy_file $cyphernodeconf_filepath/gatekeeper/gatekeeper.env $current_path/.env/gatekeeper.env 1
-  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1
+  copy_file $cyphernodeconf_filepath/gatekeeper/default.conf $GATEKEEPER_DATAPATH/default.conf 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/api.properties $GATEKEEPER_DATAPATH/api.properties 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/keys.properties $GATEKEEPER_DATAPATH/keys.properties 1 $SUDO_REQUIRED
+  copy_file $current_path/config.7z $GATEKEEPER_DATAPATH/config.7z 1 $SUDO_REQUIRED
+  copy_file $current_path/client.7z $GATEKEEPER_DATAPATH/client.7z 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/cert.pem $GATEKEEPER_DATAPATH/certs/cert.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/key.pem $GATEKEEPER_DATAPATH/private/key.pem 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/gatekeeper/gatekeeper.env $current_path/.env/gatekeeper.env 1 $SUDO_REQUIRED
+  copy_file $cyphernodeconf_filepath/traefik/htpasswd $GATEKEEPER_DATAPATH/htpasswd 1 $SUDO_REQUIRED
 
 
   if ${sudo} [ ! -d $POSTGRES_DATAPATH ]; then
@@ -495,6 +493,11 @@ install_docker() {
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1
+    fi
+    if [[ $TOR_WASABIBACKEND == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/wasabibackend/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/wasabibackend/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hostname $TOR_DATAPATH/wasabibackend/hidden_service/hostname 1 $SUDO_REQUIRED
     fi
     if [[ $TOR_WASABIBACKEND == true ]]; then
       copy_file $cyphernodeconf_filepath/tor/wasabibackend/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/wasabibackend/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
