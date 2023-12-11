@@ -3,7 +3,7 @@ const fs = require('fs');
 const Archive = require('./archive.js');
 const ApiKey = require('./apikey.js');
 const name = require('./name.js');
-const colorsys = require( 'colorsys');
+const colorsys = require('colorsys');
 
 
 const schemas = {
@@ -17,13 +17,13 @@ const schemas = {
   '0.2.7.wasabi': require('../schema/config-v0.2.7.wasabi.json')
 };
 
-const versionHistory = [ '0.1.0', '0.2.0', '0.2.2', '0.2.3', '0.2.4', '0.2.5.wasabi', '0.2.6.wasabi', '0.2.7.wasabi' ];
-const defaultSchemaVersion=versionHistory[0];
-const latestSchemaVersion=versionHistory[versionHistory.length-1];
+const versionHistory = ['0.1.0', '0.2.0', '0.2.2', '0.2.3', '0.2.4', '0.2.5.wasabi', '0.2.6.wasabi', '0.2.7.wasabi'];
+const defaultSchemaVersion = versionHistory[0];
+const latestSchemaVersion = versionHistory[versionHistory.length - 1];
 
 module.exports = class Config {
 
-  constructor( options ) {
+  constructor(options) {
 
     options = options || {};
     this.setup_version = options.setup_version;
@@ -38,8 +38,8 @@ module.exports = class Config {
 
     this.validators = {};
 
-    for( let v in schemas ) {
-      this.validators[v]=ajv.compile(schemas[v]);
+    for (let v in schemas) {
+      this.validators[v] = ajv.compile(schemas[v]);
     }
 
 
@@ -53,31 +53,31 @@ module.exports = class Config {
       '0.2.6.wasabi->0.2.7.wasabi': this.migrate_0_2_6_wasabi_to_0_2_7_wasabi
     };
 
-    this.setData( { schema_version: latestSchemaVersion } );
+    this.setData({ schema_version: latestSchemaVersion });
     this.isLoaded = false;
   }
 
-  generateMigrationPathToLatest( currentVersion ) {
-    if( currentVersion === latestSchemaVersion ) {
+  generateMigrationPathToLatest(currentVersion) {
+    if (currentVersion === latestSchemaVersion) {
       return;
     }
-    const index = versionHistory.indexOf( currentVersion );
-    if( index === -1 ) {
+    const index = versionHistory.indexOf(currentVersion);
+    if (index === -1) {
       return;
     }
 
     let path = [];
-    for( let i=index; i<versionHistory.length-1; i++ ) {
-      const methodLabel = versionHistory[i]+'->'+versionHistory[i+1];
-      path.push( this.migrations[methodLabel] );
+    for (let i = index; i < versionHistory.length - 1; i++) {
+      const methodLabel = versionHistory[i] + '->' + versionHistory[i + 1];
+      path.push(this.migrations[methodLabel]);
     }
 
     return path;
 
   }
 
-  setData( data ) {
-    if( !data ) {
+  setData(data) {
+    if (!data) {
       return;
     }
     this.data = data;
@@ -87,40 +87,40 @@ module.exports = class Config {
     this.validate();
   }
 
-  async serialize( path, password ) {
+  async serialize(path, password) {
     this.resolveConfigConflicts();
     this.validate();
     const configJsonString = JSON.stringify(this.data, null, 4);
-    const archive = new Archive( path, password );
-    return archive.writeEntry( 'config.json', configJsonString );
+    const archive = new Archive(path, password);
+    return archive.writeEntry('config.json', configJsonString);
   }
 
-  async deserialize( path, password ) {
+  async deserialize(path, password) {
 
-    if( fs.existsSync(path) ) {
+    if (fs.existsSync(path)) {
 
-      const archive = new Archive( path, password );
+      const archive = new Archive(path, password);
 
       const r = await archive.readEntry('config.json');
 
-      if( r.error ) {
-        throw( 'Password is wrong. Have a nice day.' );
+      if (r.error) {
+        throw ('Password is wrong. Have a nice day.');
       }
 
-      if( !r.value ) {
-        throw('config archive is corrupt.');
+      if (!r.value) {
+        throw ('config archive is corrupt.');
       }
 
-      this.setData( JSON.parse(r.value) );
+      this.setData(JSON.parse(r.value));
       this.isLoaded = true;
     }
 
     //this.resolveConfigConflicts();
     const version = this.data.schema_version || this.data.__version || defaultSchemaVersion;
-    if( version !== latestSchemaVersion ) {
+    if (version !== latestSchemaVersion) {
       // migrate here
       // create a copy of the old config
-      fs.copyFileSync( path, path+'-'+version );
+      fs.copyFileSync(path, path + '-' + version);
       await this.migrateFrom(version);
       // validate again to strip all illegal properties from config with latest version
       this.validate();
@@ -129,7 +129,7 @@ module.exports = class Config {
 
   resolveConfigConflicts() {
     // TODO solve this in config schema
-    if( this.data.features && this.data.features.length && this.data.features.indexOf('lightning') !== -1 ) {
+    if (this.data.features && this.data.features.length && this.data.features.indexOf('lightning') !== -1) {
       this.data.bitcoin_prune = false;
       delete this.data.bitcoin_prune_size;
     }
@@ -138,12 +138,12 @@ module.exports = class Config {
   validate() {
     const version = this.data.schema_version || this.data.__version;
 
-    if( !version || !this.validators[version] || Object.keys( schemas ).indexOf( version ) == -1 ) {
+    if (!version || !this.validators[version] || Object.keys(schemas).indexOf(version) == -1) {
       throw "Unknown version in data"
     }
 
     // this will assign default values from the schema
-    this.valid = this.validators[version]( this.data );
+    this.valid = this.validators[version](this.data);
     this.validateErrors = this.validators[version].errors;
 
   }
@@ -151,11 +151,11 @@ module.exports = class Config {
   async migrateFrom(sourceVersion) {
     const migrations = this.generateMigrationPathToLatest(sourceVersion)
 
-    if( !migrations ) {
+    if (!migrations) {
       return;
     }
 
-    for( let migration of migrations ) {
+    for (let migration of migrations) {
       await migration.apply(this);
     }
   }
@@ -163,7 +163,7 @@ module.exports = class Config {
   // migration methods:
   async migrate_0_1_0_to_0_2_0() {
     const currentVersion = this.data.schema_version || this.data.__version;
-    if( currentVersion != '0.1.0' ) {
+    if (currentVersion != '0.1.0') {
       return;
     }
 
@@ -176,38 +176,38 @@ module.exports = class Config {
 
     const gatekeeper_keys = this.data.gatekeeper_keys;
 
-    for( let i=0; i<gatekeeper_keys.configEntries.length; i++ ) {
+    for (let i = 0; i < gatekeeper_keys.configEntries.length; i++) {
       const apiKey = new ApiKey();
       apiKey.setFromConfigEntry(gatekeeper_keys.configEntries[i]);
       apiKey.groups.unshift('stats');
-      gatekeeper_keys.configEntries[i]=apiKey.getConfigEntry();
-      gatekeeper_keys.clientInformation[i]=apiKey.getClientInformation();
+      gatekeeper_keys.configEntries[i] = apiKey.getConfigEntry();
+      gatekeeper_keys.clientInformation[i] = apiKey.getClientInformation();
     }
 
-    const apiKeyStatsOnly = new ApiKey('000',['stats']);
+    const apiKeyStatsOnly = new ApiKey('000', ['stats']);
     await apiKeyStatsOnly.randomiseKey();
-    gatekeeper_keys.configEntries.unshift( apiKeyStatsOnly.getConfigEntry() );
-    gatekeeper_keys.clientInformation.unshift( apiKeyStatsOnly.getClientInformation() );
+    gatekeeper_keys.configEntries.unshift(apiKeyStatsOnly.getConfigEntry());
+    gatekeeper_keys.clientInformation.unshift(apiKeyStatsOnly.getClientInformation());
 
     // remove all empty props to generate proper errors
-    for( let k in this.data ) {
-      if( !this.data.hasOwnProperty(k) ) {
+    for (let k in this.data) {
+      if (!this.data.hasOwnProperty(k)) {
         continue;
       }
 
-      if( this.data[k] === '' ) {
+      if (this.data[k] === '') {
         delete this.data[k];
       }
 
     }
     // lightning_nodecolor
-    if( !this.data.lightning_nodecolor ) {
+    if (!this.data.lightning_nodecolor) {
       this.data.lightning_nodecolor =
-        colorsys.hslToHex( { h: (Math.random()*360)<<0, s: 50, l: 50 } ).substr(1);
+        colorsys.hslToHex({ h: (Math.random() * 360) << 0, s: 50, l: 50 }).substr(1);
     }
 
     // lightning_nodename
-    if( !this.data.lightning_nodename ) {
+    if (!this.data.lightning_nodename) {
       this.data.lightning_nodename = name.generate();
     }
 
@@ -218,7 +218,7 @@ module.exports = class Config {
 
   async migrate_0_2_0_to_0_2_2() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.0' ) {
+    if (currentVersion != '0.2.0') {
       return;
     }
     this.data.schema_version = '0.2.2';
@@ -229,7 +229,7 @@ module.exports = class Config {
 
   async migrate_0_2_2_to_0_2_3() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.2' ) {
+    if (currentVersion != '0.2.2') {
       return;
     }
     this.data.schema_version = '0.2.3';
@@ -237,7 +237,7 @@ module.exports = class Config {
 
   async migrate_0_2_3_to_0_2_4() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.3' ) {
+    if (currentVersion != '0.2.3') {
       return;
     }
     this.data.schema_version = '0.2.4';
@@ -245,7 +245,7 @@ module.exports = class Config {
 
   async migrate_0_2_4_to_0_2_5_wasabi() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.4' ) {
+    if (currentVersion != '0.2.4') {
       return;
     }
     this.data.schema_version = '0.2.5.wasabi';
@@ -253,7 +253,7 @@ module.exports = class Config {
 
   async migrate_0_2_5_wasabi_to_0_2_6_wasabi() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.5.wasabi' ) {
+    if (currentVersion != '0.2.5.wasabi') {
       return;
     }
     this.data.schema_version = '0.2.6.wasabi';
@@ -261,31 +261,7 @@ module.exports = class Config {
 
   async migrate_0_2_6_wasabi_to_0_2_7_wasabi() {
     const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.6.wasabi' ) {
-      return;
-    }
-    this.data.schema_version = '0.2.7.wasabi';
-  }
-
-  async migrate_0_2_6_to_wasabi() {
-    const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.6' ) {
-      return;
-    }
-    this.data.schema_version = '0.2.6.wasabi';
-  }
-
-  async migrate_0_2_5_to_0_2_6_wasabi() {
-    const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.5' ) {
-      return;
-    }
-    this.data.schema_version = '0.2.6.wasabi';
-  }
-
-  async migrate_0_2_6_wasabi_to_0_2_7_wasabi() {
-    const currentVersion = this.data.schema_version;
-    if( currentVersion != '0.2.6.wasabi' ) {
+    if (currentVersion != '0.2.6.wasabi') {
       return;
     }
     this.data.schema_version = '0.2.7.wasabi';

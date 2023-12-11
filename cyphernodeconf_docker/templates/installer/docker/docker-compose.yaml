@@ -128,11 +128,12 @@ services:
   bitcoin:
     <%   if ( net === 'regtest' ) { %>
     # regtest only
-    image: cyphernode/knots:<%= bitcoin_version %>
+    image: cyphernode/knots:v22.0-mosquitto-debian
     <% } else if ( features.indexOf('wasabi') !== -1 && net === 'testnet' ) { %>
-    image: cyphernode/knots:<%= bitcoin_version %>
+    image: cyphernode/knots:v22.0-mosquitto-debian
     <% } else { %>
     image: cyphernode/bitcoin:<%= bitcoin_version %>
+    <% } %>
     user: $USER
     command: /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
