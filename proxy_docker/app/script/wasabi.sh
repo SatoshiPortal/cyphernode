@@ -408,7 +408,7 @@ build_utxo_to_spend() {
   local utxo
   local nbUtxo
   local response
-  local builtUtxo
+  local builtUtxo=''
   local amounts
 
   response=$(send_to_wasabi ${instanceid} listunspentcoins "[]" ${WASABI_WALLET_NAME})
@@ -431,11 +431,14 @@ build_utxo_to_spend() {
   local amount
   local n=1
   local totalAmount=0
-  local IFS=$'\n'
+  local IFS='|'
+
+  # Convert newline-separated list to pipe-separated
+  utxos=$(echo "${utxos}" | tr '\n' '|')
 
   for utxo in ${utxos}
   do
-    amount=$(echo "${amounts}" | cut -d$'\n' -f$n)
+    amount=$(echo "${amounts}" | sed -n "${n}p")
     trace "[build_utxo_to_spend] n=${n}, amount=${amount}"
     n=$((n+1))
 
@@ -550,7 +553,7 @@ wasabi_spend() {
   local label
   label=$(echo "${request}" | jq -r ".label")
   # check if label provided
-  if [[ -z "${label}"  ]] || [[ "${label}" = "null" ]]; then
+  if [ -z "${label}" ] || [ "${label}" = "null" ]; then
     label="tx"
   fi
   trace "[wasabi_spend] label=${label}"
@@ -558,7 +561,7 @@ wasabi_spend() {
   local conf_target
   conf_target=$(echo "${request}" | jq -r ".confTarget")
   # check if confTarget provided
-  if [[ -z "${conf_target}"  ]] || [[ "${conf_target}" = "null" ]]; then
+  if [ -z "${conf_target}" ] || [ "${conf_target}" = "null" ]; then
     conf_target="2"
   fi
   trace "[wasabi_spend] conf_target=${conf_target}"
@@ -566,7 +569,7 @@ wasabi_spend() {
   local minanonset
   minanonset=$(echo "${request}" | jq ".minanonset")
   # check minnonset provided and is valid number > 1 , otherwise fallback to config
-  if [[ -z "${minanonset}"  ]] || [[ "${minanonset}" = "null" ]] || [[ "${minanonset}" -lt 1 ]]; then
+  if [ -z "${minanonset}" ] || [ "${minanonset}" = "null" ] || [ "${minanonset}" -lt 1 ]; then
     minanonset=$WASABI_MIXUNTIL
   fi
   trace "[wasabi_spend] minanonset=${minanonset}"
@@ -641,7 +644,7 @@ wasabi_spend() {
 
     # Sometimes raw tx are too long to be passed as paramater, so let's write
     # it to a temp file for it to be read by sqlite3 and then delete the file
-    echo "${tx_raw_details}" > rawtx-${txid}-$$.blob
+    echo "${tx_raw_details}" | jq -Mc '.result' > rawtx-${txid}-$$.blob
 
     local fees=$(compute_fees "${txid}")
     trace "[wasabi_spend] fees=${fees}"
@@ -650,9 +653,9 @@ wasabi_spend() {
     trace "[wasabi_spend] tx_size=${tx_size}"
     local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
     trace "[wasabi_spend] tx_vsize=${tx_vsize}"
-    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    local tx_replaceable=$(echo "${tx_raw_details}" | jq -r '.result."bip125-replaceable"')
     trace "[wasabi_spend] tx_replaceable=${tx_replaceable}"
-    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
+    tx_replaceable=$([ "${tx_replaceable}" = "yes" ] && echo "true" || echo "false")
     response=$(echo ${response} | jq ".result += {\"status\":\"accepted\",\"details\":{\"address\":\"${address}\",\"amount\":\"${amount}\",\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}")
 
     # Delete the temp file containing the raw tx (see above)
