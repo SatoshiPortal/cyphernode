@@ -37,11 +37,24 @@ else
 fi
 
 trim() {
-	echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
+  printf "%s" "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
 
-# Need to wait for tor container so we don't try to connect to it too early
+# Need to wait for tor container so we don't try to connect to it (or bitcoin node etc) too early
 while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 5 ; done ; echo "tor ready!"
+
+# Start the Tor service
+service tor start
+
+# Wait for Tor to be ready
+while ! service tor status >/dev/null 2>&1; do
+    echo "Waiting for Tor to start in container..."
+    sleep 1
+done
+
+echo "Tor is running in container!"
+
+cp /var/run/tor/control.authcookie ~/.walletwasabi/client/control_auth_cookie
 
 while [ -z "${BITCOIN_IP}" ]; do echo "waiting for bitcoin ip" ; BITCOIN_IP=$(getent hosts bitcoin | awk '{ print $1 }') ; sleep 10 ; done
 echo "bitcoin ip is ${BITCOIN_IP}"
@@ -50,9 +63,9 @@ network=$(cat /root/.walletwasabi/client/Config.json | jq -r '.Network')
 
 cp /root/.walletwasabi/client/Config.json /root/.walletwasabi/client/Config-ori.json
 # Wasabi needs an IP address for bitcoin p2p
-if [[ $network == "TestNet" ]]; then
+if [ "$network" = "TestNet" ]; then
   jq --arg bitcoinip "${BITCOIN_IP}:18333" '.TestNetBitcoinP2pEndPoint = $bitcoinip' /root/.walletwasabi/client/Config-ori.json > /root/.walletwasabi/client/Config.json
-elif [[ $network == "RegTest" ]]; then
+elif [ "$network" = "RegTest" ]; then
   jq --arg bitcoinip "${BITCOIN_IP}:18444" '.RegTestBitcoinP2pEndPoint = $bitcoinip' /root/.walletwasabi/client/Config-ori.json > /root/.walletwasabi/client/Config.json
 else
   jq --arg bitcoinip "${BITCOIN_IP}:8333" '.MainNetBitcoinP2pEndPoint = $bitcoinip' /root/.walletwasabi/client/Config-ori.json > /root/.walletwasabi/client/Config.json
@@ -64,7 +77,7 @@ echo "user=${user}" > ${WASABI_RPC_CFG}
 wallet_name=${WALLET_NAME:-wasabi}
 
 # check if we have a wallet file
-if [[ $network == "TestNet" || $network == "RegTest" ]]; then
+if [ "$network" = "TestNet" -o "$network" = "RegTest" ]; then
   if [ ! -d "/root/.walletwasabi/client/Wallets/$network" ]; then
     echo "Missing wallet directory. Creating it"
     mkdir -p "/root/.walletwasabi/client/Wallets/$network"

@@ -1,7 +1,16 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18 AS builder
+FROM debian:bullseye-slim as builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-RUN apk add --no-cache git patch
+RUN apt-get update && apt-get install -y --no-install-recommends wget git patch ca-certificates gpg
+
+# install dotnet sdk
+RUN wget -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o microsoft.asc.gpg
+RUN mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/
+RUN wget https://packages.microsoft.com/config/debian/11/prod.list
+RUN mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
+RUN chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg
+RUN chown root:root /etc/apt/sources.list.d/microsoft-prod.list
+RUN apt-get update && apt-get install -y dotnet-sdk-8.0
 
 # master branch
 RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
@@ -25,17 +34,30 @@ RUN rm -rf /app/runtimes/osx /app/runtimes/osx-x64 /app/runtimes/osx-arm64 /app/
 RUN rm -rf /app/Microservices/Binaries/osx64 /app/Microservices/Binaries/win64
 RUN rm -rf /app/Microservices/Binaries/lin64/bitcoind /app/Microservices/Binaries/lin64/hwi
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18
+FROM debian:bullseye-slim
 
 ENV APPDATA=/root/.walletwasabi/client
 
-RUN apk add --no-cache --update \
-    gcompat \
-    expect \
-    icu \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libevent-2.1-7 \
     curl \
     jq \
+    ca-certificates \
+    gpg \
+    wget \
+    procps \
+    tor \
+ && rm -rf /var/lib/apt/lists/* \
  && mkdir -p ${APPDATA}/Wallets/
+
+# install dotnet runtime
+RUN wget -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o microsoft.asc.gpg
+RUN mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/
+RUN wget https://packages.microsoft.com/config/debian/11/prod.list
+RUN mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
+RUN chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg
+RUN chown root:root /etc/apt/sources.list.d/microsoft-prod.list
+RUN apt-get update && apt-get install -y dotnet-runtime-8.0
 
 COPY --from=builder /app /app
 
@@ -51,7 +73,7 @@ COPY docker-entrypoint.sh docker-entrypoint.sh
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT false
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
+# Configure Tor
+RUN echo "SocksPort 127.0.0.1:37150\nControlPort 37151\nCookieAuthentication 1" > /etc/tor/torrc
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
