@@ -771,6 +771,106 @@ wasabi_payincoinjoin() {
   return ${returncode}
 }
 
+# wasabi_listpayincoinjoin <requesthandler_request_string>
+# requesthandler_request_string: JSON object with "instanceId" properties: {"instanceId":1 }
+# intanceId: optional.  Will use first instance, if not supplied.
+# returns { "payments": [{"id":"14b93930-12aa-455e-ad1e-1f96042a8cab","amount":5000,"destination":"0014b3d3ded4a1e59ec19726fd71c5f5e18830103b1e","state":[{"status":"Pending"}],"address":"tb1qk0faa49puk0vr9exl4cuta0p3qcpqwc70unuf5"}], "instanceId": 0 }
+wasabi_listpayincoinjoin() {
+  trace "Entering wasabi_listpayincoinjoin()..."
+
+  # wasabi rpc: listpaymentsincoinjoin
+
+  # args:
+  # - instanceId: integer, optional
+
+  # If no instance id supplied, will find the first instance
+
+  # {"instanceId":1}
+
+  local request=${1}
+  local returncode
+  local response
+
+  local instanceid
+  # if instanceId is provided in request, use it, otherwise use first instance
+  instanceid=$(echo "${request}" | jq ".instanceId // 0")
+  trace "[wasabi_payincoinjoin] instanceid=${instanceid}"
+
+  # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"listpaymentsincoinjoin", "params": { }}' http://wasabi_0:18099/wasabi
+  response=$(send_to_wasabi ${instanceid} listpaymentsincoinjoin "{}" ${WASABI_WALLET_NAME})
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne "0" ]; then
+    return ${returncode}
+  fi
+
+  local result=$(echo ${response} | jq -r ".result")
+
+  response="{\"payments\":${result},\"instanceId\":${instanceid}}"
+
+  echo ${response}
+
+  return ${returncode}
+}
+
+# wasabi_cancelpayincoinjoin <requesthandler_request_string>
+# requesthandler_request_string: JSON object with "instanceId", "paymentId" properties: {"instanceId":1, "paymentId":"ba1c3cb9-44d0-47b9-9390-71b11c3c567d" }
+# intanceId: Must be supplied to cancel payment on correct instance
+# paymentId: The wasabi paymentId to cancel
+# returns { "payments": [{ }], "instanceId": 0 }
+wasabi_cancelpayincoinjoin() {
+  trace "Entering wasabi_cancelpayincoinjoin()..."
+
+  # wasabi rpc: cancelpaymentincoinjoin
+
+  # args:
+  # - instanceId: integer
+  # - paymentId: string
+
+  # {"instanceId":1, "paymentId":"ba1c3cb9-44d0-47b9-9390-71b11c3c567d" }
+
+  local request=${1}
+  local returncode
+  local response
+
+  local instanceid
+  instanceid=$(echo "${request}" | jq ".instanceId")
+  trace "[wasabi_payincoinjoin] instanceid=${instanceid}"
+
+  local paymentId
+  paymentId=$(echo "${request}" | jq -r ".paymentId")
+  trace "[wasabi_payincoinjoin] paymentId=${paymentId}"
+
+  # curl -s -d '{"jsonrpc":"2.0","id":"1","method":"cancelpaymentsincoinjoin", "params": { "paymentId": "1234-abc" }}' http://wasabi_0:18099/wasabi
+  response=$(send_to_wasabi ${instanceid} cancelpaymentincoinjoin "{ \"paymentId\": \"${paymentId}\" }" ${WASABI_WALLET_NAME})
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne "0" ]; then
+    return ${returncode}
+  fi
+
+  local haserror
+  echo "${response}" | jq -e ".error" > /dev/null
+  haserror=$?
+  trace_rc ${haserror}
+  trace "[wasabi_cancelpayincoinjoin] haserror=${haserror}"
+  # "jq -e" returns 1 when error tag is null!
+  if [ "${haserror}" -ne "1" ]; then
+    local error
+    error=$(echo "${response}" | jq -r ".error.message")
+    trace "[wasabi_cancelpayincoinjoin] error=${error}"
+
+    echo "{\"event\":\"wasabi_spend\",\"result\":\"error\",\"message\":\"Invalid paymentId\"}"
+    return 1
+  else
+    response="{\"success\":true, \"paymentId\":\"${paymentId}\", \"instanceId\":${instanceid}}"
+  fi
+
+  echo ${response}
+
+  return ${returncode}
+}
+
 wasabi_gettransactions() {
   trace "Entering wasabi_gettransactions()..."
 

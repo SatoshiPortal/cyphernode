@@ -819,6 +819,28 @@ main() {
           returncode=$?
           ;;
 
+        wasabi_listpayincoinjoin)
+          # args:
+          # - instanceId: integer, optional
+          # POST http://192.168.111.152:8080/wasabi_listpayincoinjoin
+          # BODY {"instanceId":1}
+          # BODY {}
+
+          response=$(wasabi_listpayincoinjoin "${line}")
+          returncode=$?
+          ;;
+
+        wasabi_cancelpayincoinjoin)
+          # args:
+          # - instanceId: integer
+          # - pymentId: string, required
+          # POST http://192.168.111.152:8080/wasabi_cancelpayincoinjoin
+          # BODY {"instanceId":1,"paymentId":"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8"}
+
+          response=$(wasabi_cancelpayincoinjoin "${line}")
+          returncode=$?
+          ;;
+
         wasabi_getunspentcoins)
           # args:
           # - instanceId: integer, optional
