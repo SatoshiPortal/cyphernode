@@ -81,7 +81,8 @@ services:
   ##########################
 
   lightning:
-    image: cyphernode/clightning:<%= lightning_version %>
+    # image: cyphernode/clightning:<%= lightning_version %>
+    image: cln:v23.11.2-pg
     user: $USER
     command: /.lightning/bitcoin/entrypoint.sh
     <% if( lightning_expose ) { %>
@@ -118,6 +119,40 @@ services:
     <% } else { %>
     restart: always
     <% } %>
+
+  cln-postgres:
+    image: postgres:<%= postgres_version %>
+    user: $USER
+    entrypoint: sh -c 'rm -f /container_monitor/cln-postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/clnpglogs/'
+    env_file:
+      - .env/cln-postgres.env
+    volumes:
+      - "<%= lightning_datapath %>/pgdata:/var/lib/postgresql/data"
+      - "<%= logs_datapath %>/clnpglogs:/clnpglogs"
+      - container_monitor:/container_monitor
+    healthcheck:
+      test: sh -c 'psql -U cyphernode cln01 -c "select 1;" && touch /container_monitor/cln-postgres_ready || rm -f /container_monitor/cln-postgres_ready'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    stop_grace_period: 90s
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+
   <% } %>
 
   <% if( bitcoin_mode === 'internal' ) { %>
