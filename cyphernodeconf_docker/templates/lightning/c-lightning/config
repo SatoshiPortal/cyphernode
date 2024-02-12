@@ -17,7 +17,7 @@ rgb=<%= lightning_nodecolor %>
 addr=0.0.0.0:9735
 experimental-offers
 bitcoin-datadir=/.bitcoin
-wallet=postgres://cyphernode:<%= postgres_password %>@cln-postgres:5432/cln01
+wallet=postgres://cln01:<%= postgres_password %>@cln-postgres:5432/cln01
 
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 # Tor
