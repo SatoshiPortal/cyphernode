@@ -19,6 +19,13 @@ experimental-offers
 bitcoin-datadir=/.bitcoin
 wallet=postgres://cln01:<%= postgres_password %>@cln-postgres:5432/cln01
 
+# With v23.11.2, developer mode breaks:
+# - CLBOSS, when ON at the same time, makes cln crash
+# - SparkWallet, when ON the web wallet doesn't display
+# Make sure to turn CLBOSS off when developer mode on, and not using SparkWallet.
+#plugin=/usr/local/bin/clboss
+#developer
+
 # Get ready for distributed CLN!
 # clnrest-port=3010
 # clnrest-host=0.0.0.0
