@@ -19,6 +19,10 @@ experimental-offers
 bitcoin-datadir=/.bitcoin
 wallet=postgres://cln01:<%= postgres_password %>@cln-postgres:5432/cln01
 
+# Get ready for distributed CLN!
+# clnrest-port=3010
+# clnrest-host=0.0.0.0
+
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_lightning') !== -1 ) { %>
 # Tor
 # proxy=tor:9050 this has to be made at execution time because of getaddrinfo and alpine not being friends, see entrypoint.sh
