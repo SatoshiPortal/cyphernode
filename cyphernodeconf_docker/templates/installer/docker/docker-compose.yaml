@@ -216,7 +216,8 @@ services:
 
   elements:
     image: cyphernode/elements:<%= elements_version %>
-    command: $USER /.elements/entrypoint.sh
+    user: $USER
+    command: /.elements/entrypoint.sh
     <% if( elements_expose ) { %>
     ports:
       - "<%= (net === 'regtest') ? '18886:18886' : ((net === 'testnet') ? '18886:18886' : '7042:7042') %>"
@@ -226,7 +227,7 @@ services:
       - "<%= elements_datapath %>/createWallets.sh:/.elements/createWallets.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
-      test: chown -R $USER /container_monitor && su-exec $USER sh -c 'elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      test: elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready
       interval: 30s
       timeout: 10s
       retries: 10

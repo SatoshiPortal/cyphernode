@@ -5,7 +5,7 @@
 
 elements_do_callbacks_txid() {
   (
-  flock -x 200 || return 0
+  flock -x 8 || return 0
 
   trace "Entering elements_do_callbacks_txid()..."
 
@@ -53,7 +53,7 @@ elements_do_callbacks_txid() {
     fi
   done
 
-  ) 200>./.elements_callbacks.lock
+  ) 8>./.elements_callbacks.lock
 }
 
 elements_build_callback_txid() {
