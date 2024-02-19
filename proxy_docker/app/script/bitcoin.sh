@@ -334,8 +334,8 @@ getpriorityfromconftarget() {
     priority="hour"
   elif [ "$conf_target" -lt $conftarget_economy ]; then
     priority="economy"
-  else 
-    priority="minimum"
+  else
+    priority="hour"
   fi
 
   echo $priority
