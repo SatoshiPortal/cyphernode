@@ -31,17 +31,61 @@ exec_in_test_container() {
 tests_getfeerate() {
   trace 1 "\n\n[tests_getfeerate] ${BCyan}Let's test the getfeerate features!...${Color_Off}\n"
 
+  local current_mempool_values=$(curl -s -m 3 https://mempool.bullbitcoin.com/api/v1/fees/recommended)
+  trace 2 "\n\n[tests_getfeerate] Current mempool.bullbitcoin.com values: ${Cyan}${current_mempool_values}${Color_Off}\n"
+
   # bitcoin_getfeerate
   # (POST) curl -d '{"confTarget":6}' proxy:8888/bitcoin_getfeerate
   # {"feerate":0.00000001,"errors":[]}
 
-  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate...${Color_Off}\n"
-  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":6}" localhost:8888/bitcoin_getfeerate)
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate without confTarget...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{}" proxy:8888/bitcoin_getfeerate)
   trace 3 "[tests_getfeerate] response=${response}"
   local feerate=$(echo "${response}" | jq -r ".feerate")
   if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
     return 130
   fi
+
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate with confTarget=20...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":20}" proxy:8888/bitcoin_getfeerate)
+  trace 3 "[tests_getfeerate] response=${response}"
+  local feerate=$(echo "${response}" | jq -r ".feerate")
+  if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    return 130
+  fi
+
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate with confTarget=10...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":10}" proxy:8888/bitcoin_getfeerate)
+  trace 3 "[tests_getfeerate] response=${response}"
+  local feerate=$(echo "${response}" | jq -r ".feerate")
+  if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    return 130
+  fi
+
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate with confTarget=6...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":6}" proxy:8888/bitcoin_getfeerate)
+  trace 3 "[tests_getfeerate] response=${response}"
+  local feerate=$(echo "${response}" | jq -r ".feerate")
+  if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    return 130
+  fi
+
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate with confTarget=3...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":3}" proxy:8888/bitcoin_getfeerate)
+  trace 3 "[tests_getfeerate] response=${response}"
+  local feerate=$(echo "${response}" | jq -r ".feerate")
+  if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    return 130
+  fi
+
+  trace 2 "\n\n[tests_getfeerate] ${BCyan}Testing getfeerate with confTarget=1...${Color_Off}\n"
+  response=$(exec_in_test_container curl -s -H "Content-Type: application/json" -d "{\"confTarget\":1}" proxy:8888/bitcoin_getfeerate)
+  trace 3 "[tests_getfeerate] response=${response}"
+  local feerate=$(echo "${response}" | jq -r ".feerate")
+  if ! [[ $feerate =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+    return 130
+  fi
+
   trace 2 "\n\n[tests_getfeerate] ${BCyan}Tested getfeerate.${Color_Off}\n"
 }
 
