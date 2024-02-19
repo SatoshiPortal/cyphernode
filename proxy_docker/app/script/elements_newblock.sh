@@ -6,7 +6,7 @@
 
 elements_newblock() {
   (
-  flock -x 200
+  flock -x 8
 
   trace "Entering elements_newblock()..."
 
@@ -26,5 +26,5 @@ elements_newblock() {
     elements_do_callbacks_txid
   fi
 
-  ) 200>./.elements_newblock.lock 
+  ) 8>./.elements_newblock.lock 
 }

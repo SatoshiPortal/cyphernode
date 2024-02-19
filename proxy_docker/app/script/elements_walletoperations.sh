@@ -29,7 +29,7 @@ elements_spend() {
   if [ "${assetid}" = "null" ]; then
     response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
   else
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",\"${assetid}\"]}")
+    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",null,\"${assetid}\"]}")
   fi
 
   returncode=$?
