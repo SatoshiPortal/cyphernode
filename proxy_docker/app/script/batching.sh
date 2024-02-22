@@ -452,7 +452,7 @@ batchspend() {
     local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
     if [ -n "${conf_target}" ]; then
       local fee_rate
-      fee_rate=$(getfeerate "${conf_target}" | jq -r '.fee_rate')
+      fee_rate=$(getfeerate "${conf_target}" | jq -r '.feerate')
       returncode=$?
       trace_rc ${returncode}
       trace "[batchspend] fee_rate=${fee_rate}"
