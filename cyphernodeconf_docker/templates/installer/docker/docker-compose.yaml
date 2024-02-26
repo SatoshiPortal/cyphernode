@@ -81,8 +81,7 @@ services:
   ##########################
 
   lightning:
-    # image: cyphernode/clightning:<%= lightning_version %>
-    image: cln:v23.11.2-pg
+    image: cyphernode/clightning:<%= lightning_version %>
     user: $USER
     command: /.lightning/bitcoin/entrypoint.sh
     <% if( lightning_expose ) { %>
