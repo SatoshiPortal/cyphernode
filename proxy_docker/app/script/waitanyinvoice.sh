@@ -38,7 +38,7 @@ ln_waitanyinvoice() {
   if [ "${returncode}" -eq "0" ]; then
     bolt11=$(echo "${result}" | jq -r ".bolt11")
     pay_index=$(echo "${result}" | jq -r ".pay_index")
-    msatoshi_received=$(echo "${result}" | jq -r ".msatoshi_received")
+    msatoshi_received=$(echo "${result}" | jq -r ".amount_received_msat")
     status=$(echo "${result}" | jq -r ".status")
     paid_at=$(echo "${result}" | jq -r ".paid_at")
 
