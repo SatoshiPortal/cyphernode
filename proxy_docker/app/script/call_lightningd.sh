@@ -319,8 +319,16 @@ ln_pay() {
   trace "[ln_pay] bolt11=${bolt11}"
   local expected_msatoshi=$(echo "${request}" | jq ".expected_msatoshi")
   trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
+  if [ "${expected_msatoshi}" = "null" ]; then
+    expected_msatoshi=$(echo "${request}" | jq ".expectedMsatoshi")
+    trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
+  fi
   local expected_description=$(echo "${request}" | jq ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
+  if [ "${expected_description}" = "null" ]; then
+    expected_description=$(echo "${request}" | jq ".expectedDescription")
+    trace "[ln_pay] expected_description=${expected_description}"
+  fi
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
   result=$(ln_call_lightningd decodepay "${bolt11}")
