@@ -83,7 +83,11 @@ spend() {
     data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
     local message=$(echo "${response}" | jq -e ".error.message")
-    data="{\"message\":${message}}"
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
   fi
 
   trace "[spend] responding=${data}"
