@@ -124,6 +124,17 @@ sudo_if_required() {
   else
     try "$@"
   fi
+  return $?
+}
+
+sudo_mkdir_if_required() {
+  mkdir -p "$@" > /dev/null 2>&1
+  local returncode=$?
+  if [[ $returncode -ne 0 ]]; then
+    sudo mkdir -p "$@"
+    returncode=$?
+  fi
+  return $returncode
 }
 
 modify_permissions() {
@@ -139,7 +150,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("${current_path}/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -246,12 +257,13 @@ copy_file() {
   fi
 
   if ${sudo} [ -f $targetFile ]; then
-    ${sudo}cmp --silent $sourceFile $targetFile
+    # ${sudo}cmp --silent $sourceFile $targetFile
+    sudo_if_required cmp --silent $sourceFile $targetFile
     if [[ $? == 1 ]]; then
       # different content
       if [[ $createBackup == 1 ]]; then
         step "   [32mcreate[0m backup of $targetFile "
-        try ${sudo}cp $targetFile $targetFile-$(date +"%y-%m-%d-%T")
+        sudo_if_required cp -p $targetFile $targetFile-$(date +"%y-%m-%d-%T")
         next
       fi
       doCopy=1
@@ -265,7 +277,7 @@ copy_file() {
   if [[ $doCopy == 1 ]]; then
     local basename=$(basename "$sourceFile")
     step "     [32mcopy[0m $sourceFile => $targetFile "
-    try ${sudo}cp $sourceFile $targetFile
+    sudo_if_required cp -p $sourceFile $targetFile
     next
   fi
 }
@@ -276,11 +288,7 @@ create_user() {
     id -u $RUN_AS_USER > /dev/null 2>&1
     if [[ $? == 1 ]]; then
       step "   [32mcreate[0m user $RUN_AS_USER "
-      if [[ $(id -u) == 0 ]]; then
-        try useradd $RUN_AS_USER
-      else
-        try sudo useradd $RUN_AS_USER
-      fi
+      sudo_if_required useradd $RUN_AS_USER
       next
     fi
   fi
@@ -377,7 +385,7 @@ install_docker() {
 
   if ${sudo} [ ! -d $GATEKEEPER_DATAPATH ]; then
     step "   [32mcreate[0m $GATEKEEPER_DATAPATH"
-    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH
+    sudo_mkdir_if_required $GATEKEEPER_DATAPATH
     next
   fi
 
@@ -387,16 +395,16 @@ install_docker() {
   fi
 
   if ${sudo} [ ! -d $GATEKEEPER_DATAPATH/certs ]; then
-    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
+    sudo_mkdir_if_required $GATEKEEPER_DATAPATH/certs > /dev/null 2>&1
   fi
 
   if ${sudo} [ ! -d $GATEKEEPER_DATAPATH/private ]; then
-    sudo_if_required mkdir -p $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
+    sudo_mkdir_if_required $GATEKEEPER_DATAPATH/private > /dev/null 2>&1
   fi
 
   if ${sudo} [ ! -d $current_path/.env ]; then
     step "   [32mcreate[0m $current_path/.env"
-    sudo_if_required mkdir -p $current_path/.env
+    sudo_mkdir_if_required $current_path/.env
     next
   fi
 
@@ -413,21 +421,21 @@ install_docker() {
 
   if ${sudo} [ ! -d $POSTGRES_DATAPATH ]; then
     step "   [32mcreate[0m $POSTGRES_DATAPATH"
-    sudo_if_required mkdir -p $POSTGRES_DATAPATH/pgdata
+    sudo_mkdir_if_required $POSTGRES_DATAPATH/pgdata
     next
   fi
 
 
   if ${sudo} [ ! -d $LOGS_DATAPATH ]; then
     step "   [32mcreate[0m $LOGS_DATAPATH"
-    sudo_if_required mkdir -p $LOGS_DATAPATH
+    sudo_mkdir_if_required $LOGS_DATAPATH
     next
   fi
 
 
   if ${sudo} [ ! -d $TRAEFIK_DATAPATH ]; then
     step "   [32mcreate[0m $TRAEFIK_DATAPATH"
-    sudo_if_required mkdir -p $TRAEFIK_DATAPATH
+    sudo_mkdir_if_required $TRAEFIK_DATAPATH
     next
   fi
 
@@ -439,14 +447,14 @@ install_docker() {
   if [[ $FEATURE_TOR == true ]]; then
     if ${sudo} [ ! -d $TOR_DATAPATH ]; then
       step "   [32mcreate[0m $TOR_DATAPATH"
-      sudo_if_required mkdir -p $TOR_DATAPATH
+      sudo_mkdir_if_required $TOR_DATAPATH
       sudo_if_required chmod 700 $TOR_DATAPATH
       next
     fi
     if [[ $TOR_TRAEFIK == true ]]; then
       if ${sudo} [ ! -d $TOR_DATAPATH/traefik ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/traefik"
-        sudo_if_required mkdir -p $TOR_DATAPATH/traefik/hidden_service
+        sudo_mkdir_if_required $TOR_DATAPATH/traefik/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/traefik/hidden_service
         next
       fi
@@ -454,7 +462,7 @@ install_docker() {
     if [[ $TOR_LIGHTNING == true ]]; then
       if ${sudo} [ ! -d $TOR_DATAPATH/lightning ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/lightning"
-        sudo_if_required mkdir -p $TOR_DATAPATH/lightning/hidden_service
+        sudo_mkdir_if_required $TOR_DATAPATH/lightning/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/lightning/hidden_service
         next
       fi
@@ -462,7 +470,7 @@ install_docker() {
     if [[ $TOR_BITCOIN == true ]]; then
       if ${sudo} [ ! -d $TOR_DATAPATH/bitcoin ]; then
         step "   [32mcreate[0m $TOR_DATAPATH/bitcoin"
-        sudo_if_required mkdir -p $TOR_DATAPATH/bitcoin/hidden_service
+        sudo_mkdir_if_required $TOR_DATAPATH/bitcoin/hidden_service
         sudo_if_required chmod 700 $TOR_DATAPATH/bitcoin/hidden_service
         next
       fi
@@ -488,7 +496,7 @@ install_docker() {
 
   if ${sudo} [ ! -d $PROXY_DATAPATH ]; then
     step "   [32mcreate[0m $PROXY_DATAPATH"
-    sudo_if_required mkdir -p $PROXY_DATAPATH
+    sudo_mkdir_if_required $PROXY_DATAPATH
     next
   fi
 
@@ -508,7 +516,7 @@ install_docker() {
   if [[ $BITCOIN_INTERNAL == true ]]; then
     if ${sudo} [ ! -d $BITCOIN_DATAPATH ]; then
       step "   [32mcreate[0m $BITCOIN_DATAPATH"
-      sudo_if_required mkdir -p $BITCOIN_DATAPATH
+      sudo_mkdir_if_required $BITCOIN_DATAPATH
       next
     fi
     if ${sudo} [ -d $BITCOIN_DATAPATH ]; then
@@ -576,12 +584,23 @@ install_docker() {
     if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
       if ${sudo} [ ! -d $LIGHTNING_DATAPATH/bitcoin ]; then
         step "   [32mcreate[0m $LIGHTNING_DATAPATH"
-        sudo_if_required mkdir -p $LIGHTNING_DATAPATH/bitcoin
+        sudo_mkdir_if_required $LIGHTNING_DATAPATH/bitcoin
+        next
+      fi
+      if ${sudo} [ ! -d $LIGHTNING_DATAPATH/pgdata ]; then
+        step "   [32mcreate[0m ${LIGHTNING_DATAPATH}/pgdata"
+        sudo_mkdir_if_required $LIGHTNING_DATAPATH/pgdata
+        next
+      fi
+      if ${sudo} [ ! -d $LOGS_DATAPATH/clnpglogs ]; then
+        step "   [32mcreate[0m ${LOGS_DATAPATH}/clnpglogs"
+        sudo_mkdir_if_required $LOGS_DATAPATH/clnpglogs
         next
       fi
 
       copy_file $cyphernodeconf_filepath/lightning/c-lightning/config $LIGHTNING_DATAPATH/config 1
       copy_file $cyphernodeconf_filepath/lightning/c-lightning/entrypoint.sh $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh 1
+      copy_file $cyphernodeconf_filepath/lightning/c-lightning/cln-postgres.env $current_path/.env/cln-postgres.env 1
 
       if ${sudo} [ ! -x $LIGHTNING_DATAPATH/bitcoin/entrypoint.sh ]; then
         step "     [32mmake[0m entrypoint.sh executable"
@@ -594,7 +613,7 @@ install_docker() {
   if [[ $FEATURE_OTSCLIENT == true ]]; then
     if ${sudo} [ ! -d $OTSCLIENT_DATAPATH ]; then
       step "   [32mcreate[0m $OTSCLIENT_DATAPATH"
-      sudo_if_required mkdir -p $OTSCLIENT_DATAPATH
+      sudo_mkdir_if_required $OTSCLIENT_DATAPATH
       next
     fi
   fi
@@ -682,32 +701,32 @@ install_docker() {
 
   if ${sudo} [ ! -x $current_path/start.sh ]; then
     step "     [32mmake[0m start.sh executable"
-    try chmod +x $current_path/start.sh
+    sudo_if_required chmod +x $current_path/start.sh
     next
   fi
 
   if ${sudo} [ ! -x $current_path/stop.sh ]; then
     step "     [32mmake[0m stop.sh executable"
-    try chmod +x $current_path/stop.sh
+    sudo_if_required chmod +x $current_path/stop.sh
     next
   fi
 
   if ${sudo} [ ! -x $current_path/testfeatures.sh ]; then
     step "     [32mmake[0m testfeatures.sh executable"
-    try chmod +x $current_path/testfeatures.sh
+    sudo_if_required chmod +x $current_path/testfeatures.sh
     next
   fi
 
   if ${sudo} [ ! -x $current_path/testdeployment.sh ]; then
     step "     [32mmake[0m testdeployment.sh executable"
-    try chmod +x $current_path/testdeployment.sh
+    sudo_if_required chmod +x $current_path/testdeployment.sh
     next
   fi
 }
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("${current_path}/.env" "$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -909,7 +928,7 @@ OTSCLIENT_VERSION="v0.9.0-dev"
 PYCOIN_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v24.0.1-mosquitto-debian"
-LIGHTNING_VERSION="v22.11.1-debian"
+LIGHTNING_VERSION="v23.11.2-pg"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"

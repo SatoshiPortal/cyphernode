@@ -3,8 +3,10 @@
 rm -f /container_monitor/lightning_ready
 
 while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 10 ; done
-
 echo "bitcoin ready"
+
+while [ ! -f "/container_monitor/cln-postgres_ready" ]; do echo "postgres not ready" ; sleep 10 ; done
+echo "postgres ready"
 
 mkdir -p /.lightning/plibs && cd /.lightning/plibs
 

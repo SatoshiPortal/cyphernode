@@ -26,34 +26,48 @@ ln_create_invoice() {
   local id
 
   local request=${1}
+
+  local cln_args
+
   local msatoshi=$(echo "${request}" | jq -r ".msatoshi")
   trace "[ln_create_invoice] msatoshi=${msatoshi}"
+  if [ "${msatoshi}" = "null" ]; then
+    cln_args='msatoshi="any"'
+  else
+    cln_args="msatoshi=${msatoshi}"
+  fi
   local label=$(echo "${request}" | jq -r ".label")
   trace "[ln_create_invoice] label=${label}"
+  local esclabel=$(echo "${request}" | jq ".label")
+  trace "[ln_create_invoice] esclabel=${esclabel}"
   local description=$(echo "${request}" | jq -r ".description")
   trace "[ln_create_invoice] description=${description}"
+  local escdescription=$(echo "${request}" | jq ".description")
+  trace "[ln_create_invoice] escdescription=${escdescription}"
   local expiry=$(echo "${request}" | jq -r ".expiry")
   trace "[ln_create_invoice] expiry=${expiry}"
+  if [ "${expiry}" != "null" ]; then
+    cln_args="${cln_args} expiry=${expiry}"
+  fi
   local callback_url=$(echo "${request}" | jq -r ".callbackUrl")
   trace "[ln_create_invoice] callback_url=${callback_url}"
+  pgcallback_url=${callback_url}
   if [ "${callback_url}" != "null" ]; then
     # If not null, let's add double-quotes so we don't need to add the double-quotes in the sql insert,
     # so if it's null, it will insert the actual sql NULL value.
-    callback_url="'${callback_url}'"
+    pgcallback_url="'${callback_url}'"
+  fi
+  trace "[ln_create_invoice] pgcallback_url=${pgcallback_url}"
+  local deschashonly=$(echo "${request}" | jq -r ".deschashonly")
+  trace "[ln_create_invoice] deschashonly=${deschashonly}"
+  if [ "${deschashonly}" = "true" ]; then
+    trace "[ln_create_invoice] using description hash"
+    cln_args="${cln_args} deschashonly=true"
   fi
 
-  #/proxy $ ./lightning-cli invoice 10000 "t1" "t1d" 60
-  #{
-  #  "payment_hash": "a74e6cccb06e26bcddc32c43674f9c3cf6b018a4cb9e9ff7f835cc59b091ae06",
-  #  "expires_at": 1546648644,
-  #  "bolt11": "lnbc100n1pwzllqgpp55a8xen9sdcntehwr93pkwnuu8nmtqx9yew0flalcxhx9nvy34crqdq9wsckgxqzpucqp2rzjqt04ll5ft3mcuy8hws4xcku2pnhma9r9mavtjtadawyrw5kgzp7g7zr745qq3mcqqyqqqqlgqqqqqzsqpcr85k33shzaxscpj29fadmjmfej6y2p380x9w4kxydqpxq87l6lshy69fry9q2yrtu037nt44x77uhzkdyn8043n5yj8tqgluvmcl69cquaxr68"
-  #}
+  trace "[ln_create_invoice] ./lightning-cli -k invoice 'label=${esclabel}' 'description=${escdescription}' ${cln_args}"
+  result=$(./lightning-cli -k invoice 'label='${esclabel}'' 'description='${escdescription}'' ${cln_args})
 
-  if [ "${msatoshi}" = "null" ]; then
-    result=$(ln_call_lightningd invoice "any" "${label}" "${description}" ${expiry})
-  else
-    result=$(ln_call_lightningd invoice ${msatoshi} "${label}" "${description}" ${expiry})
-  fi
   returncode=$?
   trace_rc ${returncode}
   trace "[ln_create_invoice] result=${result}"
@@ -72,26 +86,13 @@ ln_create_invoice() {
     local connectstring=$(get_connection_string)
 
     id=$(sql "INSERT INTO ln_invoice (label, bolt11, callback_url, payment_hash, expires_at, msatoshi, description, status)"\
-" VALUES ('${label}','${bolt11}', ${callback_url},'${payment_hash}', ${expires_at}, ${msatoshi}, '${description}', 'unpaid')"\
+" VALUES ('${label}','${bolt11}', ${pgcallback_url},'${payment_hash}', ${expires_at}, ${msatoshi}, '${description}', 'unpaid')"\
 " RETURNING id" \
     "SELECT id FROM ln_invoice WHERE bolt11='${bolt11}'")
     trace_rc $?
 
-    # {
-    #   "id":123,
-    #   "label":"",
-    #   "bolt11":"",
-    #   "connectstring":"",
-    #   "callbackUrl":"",
-    #   "payment_hash":"",
-    #   "msatoshi":123456,
-    #   "status":"unpaid",
-    #   "description":"",
-    #   "expires_at":21312312
-    # }
-
     data="{\"id\":${id},"
-    data="${data}\"label\":\"${label}\","
+    data="${data}\"label\":${esclabel},"
     data="${data}\"bolt11\":\"${bolt11}\","
     if [ -n "${connectstring}" ]; then
       data="${data}\"connectstring\":\"${connectstring}\","
@@ -102,9 +103,10 @@ ln_create_invoice() {
     data="${data}\"payment_hash\":\"${payment_hash}\","
     if [ "${msatoshi}" != "null" ]; then
       data="${data}\"msatoshi\":${msatoshi},"
+      data="${data}\"amount_msat\":${msatoshi},"
     fi
     data="${data}\"status\":\"unpaid\","
-    data="${data}\"description\":\"${description}\","
+    data="${data}\"description\":${escdescription},"
     data="${data}\"expires_at\":${expires_at}}"
     trace "[ln_create_invoice] data=${data}"
   fi
@@ -317,17 +319,25 @@ ln_pay() {
   trace "[ln_pay] bolt11=${bolt11}"
   local expected_msatoshi=$(echo "${request}" | jq ".expected_msatoshi")
   trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
-  local expected_description=$(echo "${request}" | jq -r ".expected_description")
+  if [ "${expected_msatoshi}" = "null" ]; then
+    expected_msatoshi=$(echo "${request}" | jq ".expectedMsatoshi")
+    trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
+  fi
+  local expected_description=$(echo "${request}" | jq ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
+  if [ "${expected_description}" = "null" ]; then
+    expected_description=$(echo "${request}" | jq ".expectedDescription")
+    trace "[ln_pay] expected_description=${expected_description}"
+  fi
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
   result=$(ln_call_lightningd decodepay "${bolt11}")
   returncode=$?
 
   if [ "${returncode}" -eq "0" ]; then
-    local invoice_msatoshi=$(echo "${result}" | jq ".msatoshi")
+    local invoice_msatoshi=$(echo "${result}" | jq ".amount_msat")
     trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
-    local invoice_description=$(echo "${result}" | jq -r ".description")
+    local invoice_description=$(echo "${result}" | jq ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
     # The amount must match if not "any"
@@ -342,7 +352,7 @@ ln_pay() {
       # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
       # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
-      result="{\"result\":\"error\",\"expected_description\":\"${expected_description}\",\"invoice_description\":\"${invoice_description}\"}"
+      result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
       trace "[ln_pay] Expected description <> Invoice description"
       returncode=1
     else
@@ -376,9 +386,9 @@ ln_pay() {
 
       if [ "${invoice_msatoshi}" = "null" ]; then
         # "any" amount on the invoice, we force paying the expected_msatoshi provided to ln_pay by the user
-        result=$(ln_call_lightningd pay -k bolt11="${bolt11}" msatoshi=${expected_msatoshi} retry_for=85)
+        result=$(ln_call_lightningd pay -k bolt11=${bolt11} amount_msat=${expected_msatoshi} retry_for=85)
       else
-        result=$(ln_call_lightningd pay -k bolt11="${bolt11}" retry_for=85)
+        result=$(ln_call_lightningd pay -k bolt11=${bolt11} retry_for=85)
       fi
       returncode=$?
       trace_rc ${returncode}
@@ -513,7 +523,7 @@ ln_getroute() {
   local msatoshi=${2}
   local riskfactor=${3}
 
-  result=$(ln_call_lightningd getroute -k id="${id}" msatoshi=${msatoshi} riskfactor=${riskfactor})
+  result=$(ln_call_lightningd getroute -k id="${id}" amount_msat=${msatoshi} riskfactor=${riskfactor})
   returncode=$?
 
   echo "${result}"
