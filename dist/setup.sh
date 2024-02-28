@@ -501,9 +501,9 @@ install_docker() {
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1
     fi
     if [[ $TOR_ELEMENTS == true ]]; then
-      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_secret_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_public_key 1 $SUDO_REQUIRED
-      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hostname $TOR_DATAPATH/elements/hidden_service/hostname 1 $SUDO_REQUIRED
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_secret_key 1
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_public_key 1
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hostname $TOR_DATAPATH/elements/hidden_service/hostname 1
     fi
   fi
 
@@ -595,7 +595,7 @@ install_docker() {
   fi
 
   if [[ $FEATURE_ELEMENTS == true ]]; then
-    if [ ! -d $ELEMENTS_DATAPATH ]; then
+    if ${sudo} [ ! -d $ELEMENTS_DATAPATH ]; then
       step "   [32mcreate[0m $ELEMENTS_DATAPATH"
       sudo_if_required mkdir -p $ELEMENTS_DATAPATH
       next
@@ -607,15 +607,15 @@ install_docker() {
 
       if [[ $cmpStatus == 'dataloss' ]]; then
         if [[ $ALWAYSYES == 1 ]]; then
-          copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+          copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
         else
           while true; do
             echo "          [31mReally copy elements.conf with pruning option?[0m"
             read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
             case $yn in
-              [Yy]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+              [Yy]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
                       break;;
-              [Nn]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf.cyphernode 0 $SUDO_REQUIRED
+              [Nn]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf.cyphernode 0
                       echo "          [31mYour cyphernode installation is most likely broken.[0m"
                       echo "          [31mPlease check elements.conf.cyphernode on how to repair it manually.[0m";
                       break;;
@@ -627,21 +627,33 @@ install_docker() {
         if [[ $cmpStatus == 'reindex' ]]; then
           echo "  [33mWarning[0m Reindexing will take some time."
         fi
-        copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1 $SUDO_REQUIRED
+        copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
       fi
     fi
 
-    copy_file $cyphernodeconf_filepath/elements/entrypoint.sh $ELEMENTS_DATAPATH/entrypoint.sh 1 $SUDO_REQUIRED
-    copy_file $cyphernodeconf_filepath/elements/createWallets.sh $ELEMENTS_DATAPATH/createWallets.sh 1 $SUDO_REQUIRED
+    copy_file $cyphernodeconf_filepath/elements/entrypoint.sh $ELEMENTS_DATAPATH/entrypoint.sh 1
+    copy_file $cyphernodeconf_filepath/elements/createWallets.sh $ELEMENTS_DATAPATH/createWallets.sh 1
+    copy_file $cyphernodeconf_filepath/elements/walletnotify.sh $ELEMENTS_DATAPATH/walletnotify.sh 1
+    copy_file $cyphernodeconf_filepath/elements/blocknotify.sh $ELEMENTS_DATAPATH/blocknotify.sh 1
 
-    if [[ ! -x $ELEMENTS_DATAPATH/entrypoint.sh ]]; then
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/entrypoint.sh ]; then
       step "     [32mmake[0m entrypoint.sh executable"
       sudo_if_required chmod +x $ELEMENTS_DATAPATH/entrypoint.sh
       next
     fi
-    if [[ ! -x $ELEMENTS_DATAPATH/createWallets.sh ]]; then
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/createWallets.sh ]; then
       step "     [32mmake[0m createWallets.sh executable"
       sudo_if_required chmod +x $ELEMENTS_DATAPATH/createWallets.sh
+      next
+    fi
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/walletnotify.sh ]; then
+      step "     [32mmake[0m walletnotify.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/walletnotify.sh
+      next
+    fi
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/blocknotify.sh ]; then
+      step "     [32mmake[0m blocknotify.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/blocknotify.sh
       next
     fi
   fi

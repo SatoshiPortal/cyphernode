@@ -83,6 +83,35 @@ module.exports = {
       message: prefix()+'What is your default derivation path?'+utils.getHelp('derivation_path'),
       filter: utils.trimFilter,
       validate: utils.derivationPathValidator
+    },
+    {
+      when: function(props) { return props.features.indexOf('elements') !== -1  },
+      type: 'confirm',
+      name: 'use_elements_xpub',
+      default: utils.getDefault( 'use_elements_xpub' )||false,
+      message: prefix()+'Use a default elements xpub key to watch or generate adresses?'+utils.getHelp('use_elements_xpub'),
+    },
+    {
+      when: function( props ) {
+        return props.use_elements_xpub;
+      },
+      type: 'input',
+      name: 'elements_xpub',
+      default: utils.getDefault( 'elements_xpub' ),
+      message: prefix()+'What is your default elements xpub key?'+utils.getHelp('elements_xpub'),
+      filter: utils.trimFilter,
+      validate: utils.xkeyValidator
+    },
+    {
+      when: function( props ) {
+        return props.use_elements_xpub;
+      },
+      type: 'input',
+      name: 'elements_derivation_path',
+      default: utils.getDefault( 'elements_derivation_path' ),
+      message: prefix()+'What is your default elements derivation path?'+utils.getHelp('elements_derivation_path'),
+      filter: utils.trimFilter,
+      validate: utils.derivationPathValidator
     }];
   },
   templates: function( props ) {

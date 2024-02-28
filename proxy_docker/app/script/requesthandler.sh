@@ -19,6 +19,7 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./batching.sh
+. ./elements.sh
 . ./elements_callbacks_job.sh
 . ./elements_watchrequest.sh
 . ./elements_unwatchrequest.sh
@@ -27,6 +28,7 @@
 . ./elements_manage_missed_conf.sh
 . ./elements_walletoperations.sh
 . ./elements_newblock.sh
+. ./elements_getactivewatches.sh
 
 main() {
   trace "Entering main()..."
@@ -261,8 +263,8 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
-          elements_manage_not_imported
-          elements_manage_missed_conf
+          response=$(elements_manage_not_imported)
+          response=$(elements_manage_missed_conf)
           response=$(elements_do_callbacks)
           response=$(manage_not_imported)
           response=$(manage_missed_conf)
@@ -780,6 +782,12 @@ main() {
           response=$(serve_ots_info "${line}")
           returncode=$?
           ;;
+        elements_get_txns_spending)
+          # curl (GET) http://192.168.111.152:8080/elements_get_txns_spending/20/10
+
+          response=$(elements_get_txns_spending "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
+          returncode=$?
+          ;;
         elements_getnewaddress)
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
           # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
@@ -889,6 +897,44 @@ main() {
           # http://192.168.111.152:8080/elements_getblockchaininfo
 
           response=$(elements_get_blockchain_info)
+          returncode=$?
+          ;;
+        elements_generatetoaddress)
+          # GET with no parameters ==> http://192.168.111.152:8080/elements_generatetoaddress
+          # POST http://192.168.111.152:8080/elements_generatetoaddress
+          # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(elements_generatetoaddress "${line}")
+          else
+            response=$(elements_generatetoaddress "{}")
+          fi
+          returncode=$?
+          ;;
+        elements_gettxoutproof)
+          # POST http://192.168.111.152:8080/elements_gettxoutproof
+          # BODY
+          # {
+	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
+	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
+          # }
+          response=$(elements_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
+          returncode=$?
+          ;;
+        elements_deriveindex)
+          # curl GET http://192.168.111.152:8080/elements_deriveindex/25-30
+          # curl GET http://192.168.111.152:8080/elements_deriveindex/34
+
+          response=$(elements_deriveindex "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        elements_derivepubpath)
+          # POST http://192.168.111.152:8080/elements_derivepubpath
+          # BODY {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+          # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
+          # BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
+
+          response=$(elements_derivepubpath "${line}")
           returncode=$?
           ;;
         elements_getmempoolinfo)

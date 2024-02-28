@@ -45,7 +45,8 @@ elements_confirmation() {
   local addresses=$(echo "${tx_details}" | jq -r ".result.details[].address")
 
   local notfirst=false
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${addresses}
   do
     trace "[elements_confirmation] address=${address}"
@@ -66,7 +67,7 @@ elements_confirmation() {
 
   local tx=$(sql "SELECT id FROM elements_tx WHERE txid='${txid}'")
   local id_inserted
-  local tx_raw_details=$(elements_get_rawtransaction ${txid} true | tr -d '\n')
+  local tx_raw_details=$(elements_get_rawtransaction "${txid}" true | tr -d '\n')
   local tx_nb_conf=$(echo "${tx_details}" | jq -r '.result.confirmations // 0')
   local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
 
@@ -176,7 +177,7 @@ elements_confirmation() {
       trace "[elements_confirmation] Let's now grow the watch window in the case of a xpub watcher"
 
       pub32_index=$(echo "${row}" | cut -d '|' -f5)
-      elements_extend_watchers ${watching_by_pub32_id} ${pub32_index}
+      elements_extend_watchers "${watching_by_pub32_id}" "${pub32_index}"
     fi
     ########################################################################################################
 
@@ -204,9 +205,13 @@ elements_confirmation() {
   if [ -z "${bypass_callbacks}" ]; then
     trace "[elements_confirmation] Let's do the callbacks!"
     elements_do_callbacks "${txid}"
+  else
+    trace "[elements_confirmation] Skipping callbacks as requested"
   fi
 
   echo '{"result":"confirmed"}'
 
   return 0
 }
+
+case "${0}" in *elements_confirmation.sh) elements_confirmation "$@";; esac

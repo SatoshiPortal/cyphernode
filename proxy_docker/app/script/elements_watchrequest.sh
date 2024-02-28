@@ -217,6 +217,7 @@ elements_watchpub32request() {
     return 1
   fi
   trace "[elements_watchpub32request] nstart=${nstart}"
+
   local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL // empty")
   trace "[elements_watchpub32request] cb0conf_url=${cb0conf_url}"
   local cb1conf_url=$(echo "${request}" | jq -r ".confirmedCallbackURL // empty")
@@ -436,7 +437,8 @@ elements_insert_watches() {
   local address
   local unblinded_address unblinded_address_pg
 
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${addresses}
   do
     # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses

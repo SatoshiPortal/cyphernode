@@ -11,6 +11,7 @@
     "features",
     "net",
     "use_xpub",
+    "use_elements_xpub",
     "installer_mode",
     "run_as_different_user",
     "docker_mode",
@@ -147,6 +148,23 @@
         "required": [
           "elements_datapath",
           "elements_expose"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "use_elements_xpub": {
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "elements_xpub",
+          "elements_derivation_path"
         ]
       }
     },
@@ -310,6 +328,30 @@
       "$id": "#/properties/derivation_path",
       "type": "string",
       "title": "Default derivation path",
+      "default": "0/n",
+      "examples": [
+        "0/n"
+      ]
+    },
+    "use_elements_xpub": {
+      "$id": "#/properties/use_elements_xpub",
+      "type": "boolean",
+      "title": "Use elements xpub key?",
+      "default": false,
+      "examples": [
+        false
+      ]
+    },
+    "elements_xpub": {
+      "$id": "#/properties/elements_xpub",
+      "type": "string",
+      "title": "Default elements xpub to derive addresses from",
+      "pattern": "^(\\w+)$"
+    },
+    "elements_derivation_path": {
+      "$id": "#/properties/elements_derivation_path",
+      "type": "string",
+      "title": "Default elements derivation path",
       "default": "0/n",
       "examples": [
         "0/n"
