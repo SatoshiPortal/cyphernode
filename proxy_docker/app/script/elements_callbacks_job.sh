@@ -5,10 +5,9 @@
 . ./notify.sh
 
 elements_do_callbacks() {
+  trace "Entering elements_do_callbacks()..."
   (
   flock -x 8 || return 0
-
-  trace "Entering elements_do_callbacks()..."
 
   # If called because we received a confirmation for a specific txid, let's only
   # process that txid-related callbacks...
@@ -26,7 +25,8 @@ elements_do_callbacks() {
   local returncode
   local address
   local url
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${callbacks}
   do
     elements_build_callback ${row}
@@ -44,7 +44,7 @@ elements_do_callbacks() {
 
   for row in ${callbacks}
   do
-    elements_build_callback ${row}
+    elements_build_callback "${row}"
     returncode=$?
     if [ "${returncode}" -eq 0 ]; then
       address=$(echo "${row}" | cut -d '|' -f2)
@@ -198,9 +198,11 @@ elements_curl_callback() {
   local returncode
   local response
 
-  response=$(notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS})
+  response=$(notify_web "${1}" "${2}" "${TOR_ADDR_WATCH_WEBHOOKS}")
   returncode=$?
   trace_rc ${returncode}
 
   return ${returncode}
 }
+
+case "${0}" in *elements_callbacks_job.sh) elements_do_callbacks "$@";; esac

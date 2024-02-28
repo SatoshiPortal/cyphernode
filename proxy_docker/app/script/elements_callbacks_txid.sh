@@ -2,6 +2,9 @@
 
 . ./trace.sh
 . ./sql.sh
+. ./elements_blockchainrpc.sh
+. ./notify.sh
+. ./elements_computefees.sh
 
 elements_do_callbacks_txid() {
   (
@@ -19,10 +22,11 @@ elements_do_callbacks_txid() {
   local address
   local url
   local id
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${callbacks}
   do
-    elements_build_callback_txid ${row}
+    elements_build_callback_txid "${row}"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
@@ -41,7 +45,7 @@ elements_do_callbacks_txid() {
 
   for row in ${callbacks}
   do
-    elements_build_callback_txid ${row}
+    elements_build_callback_txid "${row}"
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
@@ -59,7 +63,7 @@ elements_do_callbacks_txid() {
 elements_build_callback_txid() {
   trace "Entering elements_build_callback_txid()..."
 
-  local row=$@
+  local row="$@"
   local id
   local txid
   local url
@@ -82,13 +86,13 @@ elements_build_callback_txid() {
   nbxconf=$(echo "${row}" | cut -d '|' -f4)
   trace "[elements_build_callback_txid] nbxconf=${nbxconf}"
 
-  tx_raw_details=$(elements_get_rawtransaction ${txid})
+  tx_raw_details=$(elements_get_rawtransaction "${txid}")
   returncode=$?
   trace_rc ${returncode}
 
   if [ "${returncode}" -eq "0" ]; then
     confirmations=$(echo "${tx_raw_details}" | jq '.result.confirmations')
-    if [ "${confirmations}" == "null" ]; then
+    if [ "${confirmations}" = "null" ]; then
       confirmations=0
     fi
     trace "[elements_build_callback_txid] confirmations=${confirmations}"
@@ -118,11 +122,11 @@ elements_build_callback_txid() {
       trace "[elements_build_callback_txid] tx_size=${tx_size}"
       local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
       trace "[elements_build_callback_txid] tx_vsize=${tx_vsize}"
-      local fees=$(compute_fees "${txid}")
+      local fees=$(elements_compute_fees "${txid}")
       trace "[elements_build_callback_txid] fees=${fees}"
       local tx_blockhash=$(echo "${tx_raw_details}" | jq '.result.blockhash')
       trace "[elements_build_callback_txid] tx_blockhash=${tx_blockhash}"
-      local tx_blockheight=$(get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
+      local tx_blockheight=$(elements_get_block_info $(echo ${tx_blockhash} | tr -d '"') | jq '.result.height')
       trace "[elements_build_callback_txid] tx_blockheight=${tx_blockheight}"
       local tx_blocktime=$(echo "${tx_raw_details}" | jq '.result.blocktime')
       trace "[elements_build_callback_txid] tx_blocktime=${tx_blocktime}"

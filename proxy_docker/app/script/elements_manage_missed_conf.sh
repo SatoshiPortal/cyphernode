@@ -16,7 +16,8 @@ elements_manage_not_imported() {
 
   local result
   local returncode
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     address=$(echo "${row}" | cut -d '|' -f1)
@@ -81,7 +82,8 @@ elements_manage_missed_conf() {
   local calledback0conf
   local txid
   local txids
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${received_watches}
   do
     watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM elements_watching WHERE address='${address}'")
@@ -113,7 +115,7 @@ elements_manage_missed_conf() {
       latesttxid=$(echo "${received_address}" | jq -r ".txids | last")
       trace "[elements_manage_missed_conf] latesttxid=${latesttxid}"
       data='{"method":"gettransaction","params":["'${latesttxid}'"]}'
-      tx=$(send_to_elements_spender_node ${data})
+      tx=$(send_to_elements_spender_node "${data}")
       blocktime=$(echo "${tx}" | jq '.result.blocktime')
       txtime=$(echo "${tx}" | jq '.result.time')
 
@@ -134,3 +136,5 @@ elements_manage_missed_conf() {
 
   return 0
 }
+
+case "${0}" in *elements_manage_missed_conf.sh) elements_manage_not_imported "$@"; elements_manage_missed_conf "$@";; esac

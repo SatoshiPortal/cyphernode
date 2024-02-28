@@ -41,8 +41,8 @@ elements_spend() {
     trace "[elements_spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(elements_get_transaction ${txid} "spender")
-    tx_raw_details=$(elements_get_rawtransaction ${txid} | tr -d '\n')
+    tx_details=$(elements_get_transaction "${txid}" "spender")
+    tx_raw_details=$(elements_get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
@@ -253,14 +253,14 @@ elements_getbalancebyxpub() {
   local data
   local returncode
 
-  # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
+  # addresses=$(./elements-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[elements_getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_elements_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
-  # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
+  addresses=$(send_to_xpub_elements_watcher_wallet "${data}" | jq ".result | keys" | tr -d '\n ')
+  # ./elements-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
   data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[elements_getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_elements_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_elements_watcher_wallet "${data}" | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_getbalancebyxpub] balance=${balance}"
@@ -336,7 +336,7 @@ elements_create_wallet() {
   trace "[elements_create_wallet] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_elements_watcher_node ${rpcstring})
+  result=$(send_to_elements_watcher_node "${rpcstring}")
   local returncode=$?
 
   echo "${result}"

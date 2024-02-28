@@ -515,6 +515,51 @@ test_spender_functions() {
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 
+test_elements_watcher_functions() {
+  trace 1 "\n\n[test_elements_watcher_functions] ${BCyan}Let's test elements watcher functions...${Color_Off}\n"
+
+  local id=${1}
+  local token=$(generate_token ${id})
+  local has_access=${2}
+
+  # Watcher can:
+  # action_elements_watch=watcher
+  test_authorization "elements_watch" "${token}" ${has_access} || return 10
+
+  # action_elements_unwatch=watcher
+  test_authorization "elements_unwatch" "${token}" ${has_access} || return 20
+
+  # action_elements_gettxoutproof=watcher
+  test_authorization "elements_gettxoutproof" "${token}" ${has_access} || return 220
+
+  # action_elements_validateaddress=watcher
+  test_authorization "elements_validateaddress" "${token}" ${has_access} || return 230
+}
+
+test_elements_spender_functions() {
+  trace 1 "\n\n[test_elements_spender_functions] ${BCyan}Let's test elements spender functions...${Color_Off}\n"
+
+  local id=${1}
+  local token=$(generate_token ${id})
+  local has_access=${2}
+
+  # Spender can do what the watcher can do, plus:
+  # action_elements_get_txns_spending=spender
+  test_authorization "elements_get_txns_spending" "${token}" ${has_access} || return 10
+
+  # action_elements_getnewaddress=spender
+  test_authorization "elements_getnewaddress" "${token}" ${has_access} || return 35
+
+  # action_elements_spend=spender
+  test_authorization "elements_spend" "${token}" ${has_access} || return 40
+
+  # action_elements_deriveindex=spender
+  test_authorization "elements_deriveindex" "${token}" ${has_access} || return 60
+
+  # action_elements_derivepubpath=spender
+  test_authorization "elements_derivepubpath" "${token}" ${has_access} || return 65
+}
+
 test_admin_functions() {
   trace 1 "\n\n[test_admin_functions] ${BCyan}Let's test admin functions...${Color_Off}\n"
 
@@ -608,6 +653,14 @@ test_expired 003 \
 && test_spender_functions 001 false \
 && test_spender_functions 002 true \
 && test_spender_functions 003 true \
+&& test_elements_watcher_functions 000 false \
+&& test_elements_watcher_functions 001 true \
+&& test_elements_watcher_functions 002 true \
+&& test_elements_watcher_functions 003 true \
+&& test_elements_spender_functions 000 false \
+&& test_elements_spender_functions 001 false \
+&& test_elements_spender_functions 002 true \
+&& test_elements_spender_functions 003 true \
 && test_internal_functions 000 false \
 && test_internal_functions 001 false \
 && test_internal_functions 002 false \
