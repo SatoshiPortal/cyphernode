@@ -156,7 +156,7 @@ ln_manage_callback() {
   data="${data}\"pay_index\":${pay_index},"
   data="${data}\"msatoshi_received\":${msatoshi_received},"
   data="${data}\"paid_at\":${paid_at},"
-  data="${data}\"description\":\"${description}\","
+  data="${data}\"description\":$(echo "${description}" | jq -Ra),"
   data="${data}\"expires_at\":${expires_at}}"
   trace "[ln_manage_callback] data=${data}"
 

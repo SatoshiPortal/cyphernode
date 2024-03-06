@@ -1,27 +1,22 @@
-FROM debian:bullseye-slim as builder
+FROM mcr.microsoft.com/dotnet/sdk:7.0 as builder
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends wget git patch ca-certificates gpg
+RUN apt update && apt install -y --no-install-recommends git
 
-# install dotnet sdk
-RUN wget -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o microsoft.asc.gpg
-RUN mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/
-RUN wget https://packages.microsoft.com/config/debian/11/prod.list
-RUN mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
-RUN chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg
-RUN chown root:root /etc/apt/sources.list.d/microsoft-prod.list
-RUN apt-get update && apt-get install -y dotnet-sdk-8.0
+# v2.0.4 branch
+RUN git clone --single-branch --branch v2.0.4 --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
 
-# master branch 
-RUN git clone --recursive https://github.com/zkSNACKs/WalletWasabi.git /WalletWasabi
+WORKDIR /WalletWasabi
 
+RUN dotnet restore "WalletWasabi.Backend/WalletWasabi.Backend.csproj"
 
 WORKDIR /WalletWasabi/WalletWasabi.Backend
 
-RUN dotnet build -c Release -o /app/ -r linux-x64
-RUN dotnet publish --output /app/ -c Release --disable-parallel --no-cache /p:DebugType=none /p:DebugSymbols=false /p:ErrorReport=none
+RUN dotnet build "WalletWasabi.Backend.csproj" -c Release -o /app/build
+RUN dotnet publish "WalletWasabi.Backend.csproj" -c Release -o /app/publish
 
-FROM debian:bullseye-slim
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -30,16 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     procps \
  && rm -rf /var/lib/apt/lists/*
 
-# install dotnet runtime
-RUN wget -O - https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o microsoft.asc.gpg
-RUN mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/
-RUN wget https://packages.microsoft.com/config/debian/11/prod.list
-RUN mv prod.list /etc/apt/sources.list.d/microsoft-prod.list
-RUN chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg
-RUN chown root:root /etc/apt/sources.list.d/microsoft-prod.list
-RUN apt-get update && apt-get install -y dotnet-sdk-8.0
-
-COPY --from=builder /app /app
+COPY --from=builder /app/publish /app
 
 WORKDIR /app
 

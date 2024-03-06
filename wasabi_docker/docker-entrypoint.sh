@@ -31,6 +31,9 @@ termi_wotor() {
 
 # If TOR_HOST is defined, it means Tor has been installed in Cyphernode setup, use it!
 if [ -n "${TOR_HOST}" ]; then
+  # Need to wait for tor container so we don't try to connect to it (or bitcoin node etc) too early
+  while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 5 ; done ; echo "tor ready!"
+
   trap termi_wotor TERM INT
 else
   trap termi_wtor TERM INT
@@ -39,9 +42,6 @@ fi
 trim() {
   printf "%s" "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
-
-# Need to wait for tor container so we don't try to connect to it (or bitcoin node etc) too early
-while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 5 ; done ; echo "tor ready!"
 
 # Start the Tor service
 service tor start
@@ -92,6 +92,6 @@ else
     /app/scripts/generateWallet.sh $wallet_name > "/root/.walletwasabi/client/Wallets/$wallet_name.seed"
   fi
 fi
-  
+
 dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name &
 wait $!
