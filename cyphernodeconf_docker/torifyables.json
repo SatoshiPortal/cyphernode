@@ -26,5 +26,9 @@
   {
     "name": "TXID Watches Callbacks (webhooks)",
     "value": "tor_txidwatcheswebhooks"
+  },
+  {
+    "name": "Wasabi Backend",
+    "value": "tor_wasabibackend"
   }
 ]

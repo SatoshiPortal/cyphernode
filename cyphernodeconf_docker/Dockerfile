@@ -1,17 +1,17 @@
-FROM golang:1.13.15-alpine3.12 as builder-torgen
+FROM golang:1.17-alpine3.16 as builder-torgen
 
 RUN apk add git build-base
 
-RUN mkdir -p /go/src/torgen
+RUN mkdir -p /go/src
 
-COPY torgen/torgen.go /go/src/torgen
+COPY torgen /go/src/torgen
 
-WORKDIR /go/src/torgen
+WORKDIR /go/src/torgen/src
 
 RUN go get
 
 RUN go build torgen.go
-RUN chmod +x /go/src/torgen/torgen
+RUN chmod +x /go/src/torgen/src/torgen
 
 FROM alpine:3.12.4 as builder-qrencode
 
@@ -35,7 +35,7 @@ FROM node:15.11.0-alpine3.12
 ENV EDITOR=/usr/bin/nano
 
 COPY . /app
-COPY --from=builder-torgen /go/src/torgen/torgen /app/torgen
+COPY --from=builder-torgen /go/src/torgen/src/torgen /app/torgen
 COPY --from=builder-qrencode /usr/local/bin/qrencode /usr/local/bin/
 COPY --from=builder-qrencode /usr/local/lib/libqrencode.so.4.1.0 /usr/local/lib/libqrencode.so.4
 

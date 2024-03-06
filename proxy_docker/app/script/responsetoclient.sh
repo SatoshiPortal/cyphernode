@@ -2,21 +2,20 @@
 
 . ./trace.sh
 
-response_to_client()
-{
+response_to_client() {
   trace "Entering response_to_client()..."
 
   local response=${1}
   local returncode=${2}
   local contenttype=${3}
-  local length=$(echo -en "${response}" | wc -c)
+  local length=$(echo -n "${response}" | wc -c)
 
   [ -z "${contenttype}" ] && contenttype="application/json"
 
-  ([ -z "${returncode}" ] || [ "${returncode}" -eq "0" ]) && echo -ne "HTTP/1.1 200 OK\r\n"
-  [ -n "${returncode}" ] && [ "${returncode}" -ne "0" ] && echo -ne "HTTP/1.1 400 Bad Request\r\n"
+  ([ -z "${returncode}" ] || [ "${returncode}" -eq "0" ]) && echo -n "HTTP/1.1 200 OK\r\n"
+  [ -n "${returncode}" ] && [ "${returncode}" -ne "0" ] && echo -n "HTTP/1.1 400 Bad Request\r\n"
 
-  echo -en "Content-Type: ${contenttype}\r\nContent-Length: ${length}\r\n\r\n${response}"
+  echo -n "Content-Type: ${contenttype}\r\nContent-Length: ${length}\r\n\r\n${response}"
 
   # Small delay needed for the data to be processed correctly by peer
   sleep 1
@@ -38,10 +37,10 @@ htmlfile_response_to_client()
   trace "[htmlfile_response_to_client] file_length=${file_length}"
 
   [ -r "${pathfile}" ] \
-  && echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ${file_length}\r\n\r\n" \
+  && echo -n "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ${file_length}\r\n\r\n" \
   && cat ${pathfile}
 
-  [ ! -r "${pathfile}" ] && echo -ne "HTTP/1.1 404 Not Found\r\n"
+  [ ! -r "${pathfile}" ] && echo -n "HTTP/1.1 404 Not Found\r\n"
 
   # Small delay needed for the data to be processed correctly by peer
   sleep 1
@@ -63,13 +62,13 @@ binfile_response_to_client()
   trace "[file_response_to_client] file_length=${file_length}"
 
   [ -r "${pathfile}" ] \
-  && echo -ne "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Disposition: inline; filename=\"${filename}\"\r\nContent-Length: ${file_length}\r\n\r\n" \
+  && echo -n "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Disposition: inline; filename=\"${filename}\"\r\nContent-Length: ${file_length}\r\n\r\n" \
   && cat ${pathfile}
 
-  [ ! -r "${pathfile}" ] && echo -ne "HTTP/1.1 404 Not Found\r\n"
+  [ ! -r "${pathfile}" ] && echo -n "HTTP/1.1 404 Not Found\r\n"
 
   # Small delay needed for the data to be processed correctly by peer
   sleep 1
 }
 
-case "${0}" in *responsetoclient.sh) response_to_client $@;; esac
+case "${0}" in *responsetoclient.sh) response_to_client "$@";; esac

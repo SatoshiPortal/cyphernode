@@ -1,6 +1,6 @@
 #!/bin/sh
 
-apk add --update --no-cache openssl curl jq coreutils postgresql > /dev/null
+apk add --update --no-cache openssl curl jq coreutils postgresql > /dev/null 2>&1
 
 . /gatekeeper/keys.properties
 

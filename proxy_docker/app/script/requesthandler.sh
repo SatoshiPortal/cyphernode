@@ -10,7 +10,6 @@
 . ./watchrequest.sh
 . ./unwatchrequest.sh
 . ./getactivewatches.sh
-. ./confirmation.sh
 . ./blockchainrpc.sh
 . ./responsetoclient.sh
 . ./trace.sh
@@ -19,7 +18,6 @@
 . ./bitcoin.sh
 . ./call_lightningd.sh
 . ./ots.sh
-. ./newblock.sh
 . ./batching.sh
 . ./wasabi.sh
 . ./cyphernode_props.sh
@@ -64,14 +62,15 @@ main() {
     fi
     # line=content-length: 406
     case "${line}" in *[cC][oO][nN][tT][eE][nN][tT]-[lL][eE][nN][gG][tT][hH]*)
-      content_length=$(echo "${line}" | cut -d ':' -f2)
+      content_length=$(echo "${line}" | cut -d ' ' -f2)
       trace "[main] content_length=${content_length}";
       ;;
     esac
     if [ ${step} -eq 1 ]; then
       trace "[main] step=${step}"
       if [ "${http_method}" = "POST" ] && [ "${content_length}" -gt "0" ]; then
-        read -rd '' -n ${content_length} line
+#        read -rd '' -n ${content_length} line
+        line=$(dd bs=1 count=${content_length} 2>/dev/null)
         line=$(echo "${line}" | jq -c)
         trace "[main] line=${line}"
       fi
@@ -182,23 +181,23 @@ main() {
           ;;
         unwatchtxid)
           # POST http://192.168.111.152:8080/unwatchtxid
-          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackxconf"}
           # or
           # BODY {"id":3124}
 
           # args:
           # - txid: string, required
-          # - unconfirmedCallbackURL: string, optional
           # - confirmedCallbackURL: string, optional
+          # - xconfCallbackURL: string, optional
           # or
           # - id: the id returned by watchtxid
 
           local txid=$(echo "${line}" | jq -r ".txid")
-          local unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
           local confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+          local xconfCallbackURL=$(echo "${line}" | jq -r ".xconfCallbackURL")
           local watchid=$(echo "${line}" | jq ".id")
 
-          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
           returncode=$?
           ;;
         getactivewatches)
@@ -215,18 +214,6 @@ main() {
         get_unused_addresses_by_watchlabel)
           # curl (GET) 192.168.111.152:8080/get_unused_addresses_by_watchlabel/<label>/<count>
           response=$(get_unused_addresses_by_watchlabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
-          returncode=$?
-          ;;
-        conf)
-          # curl (GET) 192.168.111.152:8080/conf/b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387
-
-          response=$(confirmation_request "${line}")
-          returncode=$?
-          ;;
-        newblock)
-          # curl (GET) 192.168.111.152:8080/newblock/000000000000005c987120f3b6f995c95749977ef1a109c89aa74ce4bba97c1f
-
-          response=$(newblock "${line}")
           returncode=$?
           ;;
         getbestblockhash)
@@ -268,8 +255,8 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
-          manage_not_imported
-          manage_missed_conf
+          response=$(manage_not_imported)
+          response=$(manage_missed_conf)
           response=$(do_callbacks)
           returncode=$?
           ;;
@@ -328,7 +315,7 @@ main() {
         validateaddress)
           # GET http://192.168.111.152:8080/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
 
-          response=$(validateaddress $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
         spend)
@@ -564,6 +551,28 @@ main() {
           response=$(bitcoin_estimatesmartfee "$(echo "${line}" | jq -r ".confTarget")")
           returncode=$?
           ;;
+        bitcoin_generatetoaddress)
+          # GET with no parameters ==> http://192.168.111.152:8080/bitcoin_generatetoaddress
+          # POST http://192.168.111.152:8080/bitcoin_generatetoaddress
+          # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(bitcoin_generatetoaddress "${line}")
+          else
+            response=$(bitcoin_generatetoaddress "{}")
+          fi
+          returncode=$?
+          ;;
+        bitcoin_gettxoutproof)
+          # POST http://192.168.111.152:8080/bitcoin_gettxoutproof
+          # BODY
+          # {
+	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
+	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
+          # }
+          response=$(bitcoin_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
+          returncode=$?
+          ;;
         deriveindex)
           # curl GET http://192.168.111.152:8080/deriveindex/25-30
           # curl GET http://192.168.111.152:8080/deriveindex/34
@@ -797,6 +806,41 @@ main() {
           response=$(wasabi_spend "${line}")
           returncode=$?
           ;;
+        wasabi_payincoinjoin)
+          # args:
+          # - instanceId: integer, optional
+          # - address: string, required
+          # - amount: number in BTC, required
+          # POST http://192.168.111.152:8080/wasabi_payincoinjoin
+          # BODY {"instanceId":1,"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+          # BODY {"amount":0.00103440,"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"}
+
+          response=$(wasabi_payincoinjoin "${line}")
+          returncode=$?
+          ;;
+
+        wasabi_listpayincoinjoin)
+          # args:
+          # - instanceId: integer, optional
+          # POST http://192.168.111.152:8080/wasabi_listpayincoinjoin
+          # BODY {"instanceId":1}
+          # BODY {}
+
+          response=$(wasabi_listpayincoinjoin "${line}")
+          returncode=$?
+          ;;
+
+        wasabi_cancelpayincoinjoin)
+          # args:
+          # - instanceId: integer
+          # - pymentId: string, required
+          # POST http://192.168.111.152:8080/wasabi_cancelpayincoinjoin
+          # BODY {"instanceId":1,"paymentId":"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8"}
+
+          response=$(wasabi_cancelpayincoinjoin "${line}")
+          returncode=$?
+          ;;
+
         wasabi_getunspentcoins)
           # args:
           # - instanceId: integer, optional

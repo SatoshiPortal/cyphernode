@@ -19,4 +19,4 @@ response_to_client()
 	sleep 0.2s
 }
 
-case "${0}" in *responsetoclient.sh) response_to_client $@;; esac
+case "${0}" in *responsetoclient.sh) response_to_client "$@";; esac

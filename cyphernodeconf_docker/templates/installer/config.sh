@@ -22,6 +22,7 @@ TOR_TXID_WATCH_WEBHOOKS=<%= (torifyables && torifyables.indexOf('tor_txidwatches
 TOR_TRAEFIK=<%= (torifyables && torifyables.indexOf('tor_traefik') !== -1)?'true':'false' %>
 TOR_BITCOIN=<%= (torifyables && torifyables.indexOf('tor_bitcoin') !== -1)?'true':'false' %>
 TOR_LIGHTNING=<%= (torifyables && torifyables.indexOf('tor_lightning') !== -1)?'true':'false' %>
+TOR_WASABIBACKEND=<%= (torifyables && torifyables.indexOf('tor_wasabibackend') !== -1)?'true':'false' %>
 <% } %>
 DOCKER_MODE=<%= docker_mode %>
 RUN_AS_USER=<%= run_as_different_user?username:'' %>
@@ -39,6 +40,7 @@ WASABI_RPCPASSWORD=<%= wasabi_rpcpassword %>
 WASABI_INSTANCE_COUNT=<%= wasabi_instance_count %>
 WASABI_DATAPATH=<%= wasabi_datapath %>
 WASABI_MIXUNTIL=<%= wasabi_mixuntil %>
+WASABI_WALLET_NAME=wasabi
 <% } %>
 <% if ( bitcoin_mode==="internal" ) { %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>

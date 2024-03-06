@@ -1,5 +1,11 @@
 {
+<% if (net === 'regtest') { %>
   "Network": "RegTest",
+<% } else if (net === 'testnet') { %>
+  "Network": "TestNet",
+<% } else if (net === 'mainnet') { %>
+  "Network": "Main",
+<% } %>
   "BitcoinRpcConnectionString": "<%= bitcoin_rpcuser %>:<%= bitcoin_rpcpassword %>",
   "MainNetBitcoinP2pEndPoint": "bitcoin:8333",
   "TestNetBitcoinP2pEndPoint": "bitcoin:18333",

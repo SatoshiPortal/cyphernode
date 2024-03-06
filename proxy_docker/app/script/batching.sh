@@ -3,6 +3,7 @@
 . ./trace.sh
 . ./sendtobitcoinnode.sh
 . ./bitcoin.sh
+. ./blockchainrpc.sh
 
 createbatcher() {
   trace "Entering createbatcher()..."
@@ -421,7 +422,8 @@ batchspend() {
     local tx_raw_details
     local address
     local amount
-    local IFS=$'\n'
+    local IFS="
+"
     for row in ${batching}
     do
       trace "[batchspend] row=${row}"
@@ -445,11 +447,16 @@ batchspend() {
       fi
     done
 
-    local bitcoincore_args="{\"method\":\"sendmany\",\"params\":[\"\", {${recipientsjson}}"
+    trace "[batchspend] recipientsjson=${recipientsjson}"
+
+    local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
     if [ -n "${conf_target}" ]; then
       bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
     fi
     bitcoincore_args="${bitcoincore_args}]}"
+
+    trace "[batchspend] bitcoincore_args=${bitcoincore_args}"
+
     data=$(send_to_spender_node "${bitcoincore_args}")
     returncode=$?
     trace_rc ${returncode}
@@ -543,7 +550,8 @@ batch_check_webhooks() {
   local batching=$(sql "SELECT address, amount, r.id, webhook_url, b.id, t.txid, t.hash, t.timereceived, t.fee, t.size, t.vsize, t.is_replaceable::text, t.conf_target, t.id FROM recipient r, batcher b, tx t WHERE r.batcher_id=b.id AND r.tx_id=t.id AND NOT calledback AND tx_id IS NOT NULL AND webhook_url IS NOT NULL")
   trace "[batch_check_webhooks] batching=${batching}"
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${batching}
   do
     trace "[batch_check_webhooks] row=${row}"
@@ -621,7 +629,8 @@ batch_webhooks() {
   outputs=$(echo "${webhooks_data}" | jq -Mc ".[]")
 
   local output
-  local IFS=$'\n'
+  local IFS="
+"
   for output in ${outputs}
   do
     webhook_url=$(echo "${output}" | jq -r ".webhookUrl")
@@ -686,7 +695,8 @@ listbatchers() {
   local response
   local batcher
   local jsonstring
-  local IFS=$'\n'
+  local IFS="
+"
   for batcher in ${batchers}
   do
     jsonstring=$(echo ${batcher} | cut -d '|' -f2)
@@ -846,7 +856,6 @@ getbatchdetails() {
     if [ -n "${tx_id}" ]; then
       # Using txid
       outerclause="AND r.tx_id=${tx_id}"
-      
       tx=$(sql "SELECT '\"txid\":\"' || txid || '\",\"hash\":\"' || hash || '\",\"details\":{\"firstseen\":' || timereceived || ',\"size\":' || size || ',\"vsize\":' || vsize || ',\"replaceable\":' || is_replaceable || ',\"fee\":' || fee || '}' FROM tx WHERE id=${tx_id}")
     else
       # null txid
@@ -857,7 +866,8 @@ getbatchdetails() {
     outputs=$(sql "SELECT '{\"outputId\":' || id || ',\"outputLabel\":\"' || COALESCE(label, '') || '\",\"address\":\"' || address || '\",\"amount\":' || amount || ',\"addedTimestamp\":\"' || inserted_ts || '\"}' FROM recipient r WHERE batcher_id=${batcher_id} ${outerclause}")
 
     local output
-    local IFS=$'\n'
+  local IFS="
+"
     for output in ${outputs}
     do
       if [ -n "${outputsjson}" ]; then

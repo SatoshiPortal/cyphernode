@@ -24,7 +24,7 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-watches --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-watches --network=cyphernodenet alpine:3.15.4
 }
 
 stop_test_container() {
@@ -67,12 +67,17 @@ test_watches() {
 
   # 20. Call getactivewatches, make sure label1 and label2 are not there
 
-  local label1="label$RANDOM"
-  local label2="label$RANDOM"
-  local callbackurl0conf1="tests-watches:1111/callbackurl0conf1"
-  local callbackurl1conf1="tests-watches:1112/callbackurl1conf1"
-  local callbackurl1conftxid="tests-watches:1113/callbackurl1conftxid"
-  local callbackurl3conftxid="tests-watches:1114/callbackurl3conftxid"
+  local label1="watch label$RANDOM"
+  local label2="watch label$RANDOM"
+  local port_callbackurl0conf1=$RANDOM
+  local port_callbackurl1conf1=`expr $port_callbackurl0conf1 + 1`
+  local port_callbackurl1conftxid=`expr $port_callbackurl0conf1 + 2`
+  local port_callbackurl3conftxid=`expr $port_callbackurl0conf1 + 3`
+
+  local callbackurl0conf1="tests-watches:$port_callbackurl0conf1/callbackurl0conf1"
+  local callbackurl1conf1="tests-watches:$port_callbackurl1conf1/callbackurl1conf1"
+  local callbackurl1conftxid="tests-watches:$port_callbackurl1conftxid/callbackurl1conftxid"
+  local callbackurl3conftxid="tests-watches:$port_callbackurl3conftxid/callbackurl3conftxid"
   local address
   local address1
   local address2
@@ -110,7 +115,7 @@ test_watches() {
 
   # 2. Call watch on the address with label1
   trace 2 "\n\n[test_watches] ${BCyan}2. watch 1...${Color_Off}\n"
-  local data='{"address":"'${address1}'","unconfirmedCallbackURL":"'${callbackurl0conf1}'","confirmedCallbackURL":"'${callbackurl1conf1}'","label":"watch_'${label1}'"}'
+  local data='{"address":"'${address1}'","unconfirmedCallbackURL":"'${callbackurl0conf1}'","confirmedCallbackURL":"'${callbackurl1conf1}'","label":"'${label1}'"}'
   trace 3 "[test_watches] data=${data}"
   response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
   trace 3 "[test_watches] response=${response}"
@@ -122,7 +127,7 @@ test_watches() {
 
   # 3. Call watch on the address with label2
   trace 2 "\n\n[test_watches] ${BCyan}3. watch 2...${Color_Off}\n"
-  local data='{"address":"'${address2}'","unconfirmedCallbackURL":"dummy","confirmedCallbackURL":"dummy","label":"watch_'${label2}'"}'
+  local data='{"address":"'${address2}'","unconfirmedCallbackURL":"dummy","confirmedCallbackURL":"dummy","label":"'${label2}'"}'
   trace 3 "[test_watches] data=${data}"
   response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
   trace 3 "[test_watches] response=${response}"
@@ -136,13 +141,13 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}4. Call getactivewatches, search for addresses with label1 and label2...${Color_Off}\n"
   response=$(exec_in_test_container curl proxy:8888/getactivewatches)
   # trace 3 "[test_watches] response=${response}"
-  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"watch_${label1}\"))[0].address")
+  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"${label1}\"))[0].address")
   trace 3 "[test_watches] address=${address}"
   if [ "${address}" != "${address1}" ]; then
     trace 1 "\n\n[test_watches] ${On_Red}${BBlack} 4. Call getactivewatches, search for address with label1: \"${address}\" != \"${address1}\"!                                           ${Color_Off}\n"
     return 30
   fi
-  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"watch_${label2}\"))[0].address")
+  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"${label2}\"))[0].address")
   trace 3 "[test_watches] address=${address}"
   if [ "${address}" != "${address2}" ]; then
     trace 1 "\n\n[test_watches] ${On_Red}${BBlack} 4. Call getactivewatches, search for address with label2: \"${address}\" != \"${address2}\"!                                           ${Color_Off}\n"
@@ -163,7 +168,7 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}7. Call getactivewatches, check that label2 is not there...${Color_Off}\n"
   response=$(exec_in_test_container curl proxy:8888/getactivewatches)
   # trace 3 "[test_watches] response=${response}"
-  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"watch_${label2}\"))[0].address")
+  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"${label2}\"))[0].address")
   trace 3 "[test_watches] address=${address}"
   if [ "${address}" = "${address2}" ]; then
     trace 1 "\n\n[test_watches] ${On_Red}${BBlack} 4. Call getactivewatches, found address2: \"${address}\" = \"${address2}\"!                                           ${Color_Off}\n"
@@ -174,7 +179,7 @@ test_watches() {
   # 10. Call spend, to the address with label1 (triggers 0-conf webhook)
   # 11. Wait for label1's 0-conf webhook
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
-  start_callback_server 1111
+  start_callback_server $port_callbackurl0conf1
   # Let's use the bitcoin node directly to better simulate an external spend
   txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
@@ -197,8 +202,8 @@ test_watches() {
 
   # 13. Start a callback servers for 1-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}13. Start a callback servers for 1-conf txid watch webhook...${Color_Off}\n"
-  start_callback_server 1112
-  start_callback_server 1113
+  start_callback_server $port_callbackurl1conf1
+  start_callback_server $port_callbackurl1conftxid
 
   # 14. Generate a block (triggers 1-conf webhook)
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
@@ -210,7 +215,7 @@ test_watches() {
 
   # 16. Start a callback servers for 3-conf txid watch webhook
   trace 2 "\n\n[test_watches] ${BCyan}16. Start a callback servers for 3-conf txid watch webhook...${Color_Off}\n"
-  start_callback_server 1114
+  start_callback_server $port_callbackurl3conftxid
 
   # 17. Generate 2 blocks (triggers 3-conf webhook)
   trace 3 "[test_watches] Mine 2 new blocks..."
@@ -224,13 +229,13 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}20. Call getactivewatches, make sure label1 and label2 are not there...${Color_Off}\n"
   response=$(exec_in_test_container curl proxy:8888/getactivewatches)
   # trace 3 "[test_watches] response=${response}"
-  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"watch_${label1}\"))[0].address")
+  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"${label1}\"))[0].address")
   trace 3 "[test_watches] address=${address}"
   if [ "${address}" = "${address1}" ]; then
     trace 1 "\n\n[test_watches] ${On_Red}${BBlack} 4. Call getactivewatches, found address1: \"${address}\" = \"${address1}\"!                                           ${Color_Off}\n"
     return 70
   fi
-  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"watch_${label2}\"))[0].address")
+  address=$(echo "${response}" | jq -r ".watches | map(select(.label == \"${label2}\"))[0].address")
   trace 3 "[test_watches] address=${address}"
   if [ "${address}" = "${address2}" ]; then
     trace 1 "\n\n[test_watches] ${On_Red}${BBlack} 4. Call getactivewatches, found address2: \"${address}\" = \"${address2}\"!                                           ${Color_Off}\n"

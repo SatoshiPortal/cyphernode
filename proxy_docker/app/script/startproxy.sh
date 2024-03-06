@@ -3,17 +3,17 @@
 . ./trace.sh
 
 trim() {
-  echo -e "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
+  echo "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
 
 createCurlConfig() {
 
-  if [[ ''$1 == '' ]]; then
+  if [ ''$1 = '' ]; then
     trace "[startproxy] Missing file name: Check your *_BTC_NODE_RPC_CFG"
     return
   fi
 
-  if [[ ''$2 == '' ]]; then
+  if [ ''$2 = '' ]; then
     trace "[startproxy] Missing content: Check your *_BTC_NODE_RPC_USER"
     return
   fi
@@ -92,13 +92,20 @@ rm -f ${DB_PATH}/.dbfailed
 
 chmod 0600 $DB_FILE
 
-createCurlConfig ${WATCHER_BTC_NODE_RPC_CFG} ${WATCHER_BTC_NODE_RPC_USER}
-createCurlConfig ${SPENDER_BTC_NODE_RPC_CFG} ${SPENDER_BTC_NODE_RPC_USER}
-createCurlConfig ${WASABI_RPC_CFG} ${WASABI_RPC_USER}
+createCurlConfig "${WATCHER_BTC_NODE_RPC_CFG}" "${WATCHER_BTC_NODE_RPC_USER}"
+createCurlConfig "${SPENDER_BTC_NODE_RPC_CFG}" "${SPENDER_BTC_NODE_RPC_USER}"
+createCurlConfig "${WASABI_RPC_CFG}" "${WASABI_RPC_USER}"
 
 . ${DB_PATH}/config.sh
 if [ "${FEATURE_LIGHTNING}" = "true" ]; then
   ./waitanyinvoice.sh &
 fi
 
-exec nc -vlkp${PROXY_LISTENING_PORT} -e ./requesthandler.sh
+./bitcoin_node_walletnotify.sh &
+./bitcoin_node_newtip.sh &
+
+# For some reason, ncat doesn't like being PID 1 (Ncat: assertion failed: count <= INT_MAX QUITTING.),
+# so I had to remove "exec" before "nc" and trap SIGTERM to manage "docker stop" correctly.
+trap "pkill nc" TERM
+nc -vlkp${PROXY_LISTENING_PORT} -w 3m -e ./requesthandler.sh &
+wait

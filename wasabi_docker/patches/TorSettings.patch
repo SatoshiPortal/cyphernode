@@ -1,0 +1,29 @@
+diff --git a/WalletWasabi/Tor/TorSettings.cs b/WalletWasabi/Tor/TorSettings.cs
+index 38197e0dd..64266bcd6 100644
+--- a/WalletWasabi/Tor/TorSettings.cs
++++ b/WalletWasabi/Tor/TorSettings.cs
+@@ -59,10 +59,22 @@ public class TorSettings
+ 	public string CookieAuthFilePath { get; }
+ 
+ 	/// <summary>Tor SOCKS5 endpoint.</summary>
+-	public EndPoint SocksEndpoint { get; } = new IPEndPoint(IPAddress.Loopback, 37150);
++	public EndPoint SocksEndpoint { get; } = new IPEndPoint(
++		!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TORIP"))
++			? IPAddress.Parse(Environment.GetEnvironmentVariable("TORIP")!)
++			: IPAddress.Loopback,
++		!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TOR_PORT"))
++			? int.Parse(Environment.GetEnvironmentVariable("TOR_PORT")!)
++			: 37150);
+ 
+ 	/// <summary>Tor control endpoint.</summary>
+-	public EndPoint ControlEndpoint { get; set; } = new IPEndPoint(IPAddress.Loopback, 37151);
++	public EndPoint ControlEndpoint { get; set; } = new IPEndPoint(
++		!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TORIP"))
++			? IPAddress.Parse(Environment.GetEnvironmentVariable("TORIP")!)
++			: IPAddress.Loopback,
++		!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("TOR_CONTROL_PORT"))
++			? int.Parse(Environment.GetEnvironmentVariable("TOR_CONTROL_PORT")!)
++			: 37151);
+ 	public int RpcVirtualPort => 80;
+ 	public int RpcOnionPort => 37129;
+ 

@@ -3,11 +3,11 @@
 . ./trace.sh
 . ./sql.sh
 
-get_txns_by_watchlabel(){
+get_txns_by_watchlabel() {
   trace "Entering get_txns_by_watchlabel() for label ${1}..."
   local label_txns
   query=$(cat <<-HERE
-	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.vout, wtxn.amount, tx.blockhash, tx.blocktime, tx.timereceived 
+	SELECT w32.label, w.address, tx.txid, tx.confirmations,tx.blockheight, wtxn.vout, wtxn.amount, tx.blockhash, tx.blocktime, tx.timereceived
 	FROM watching_by_pub32 as w32
 	INNER JOIN watching AS w ON w32.id = w.watching_by_pub32_id
 	INNER JOIN watching_tx AS wtxn ON w.id = wtxn.watching_id
@@ -31,7 +31,8 @@ HERE
   echo "$label_txns_json"
   return ${returncode}
 }
-get_unused_addresses_by_watchlabel(){
+
+get_unused_addresses_by_watchlabel() {
   trace "Entering get_unused_addresses_by_watchlabel() for label ${1}..."
   local label_unused_addrs
   query=$(cat <<-HERE
@@ -61,6 +62,7 @@ HERE
   echo "$label_unused_addrs_json"
   return ${returncode}
 }
+
 getactivewatches() {
   trace "Entering getactivewatches()..."
 
@@ -75,7 +77,8 @@ getactivewatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -138,7 +141,8 @@ getactivewatchesxpub() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -170,7 +174,8 @@ getactivexpubwatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then

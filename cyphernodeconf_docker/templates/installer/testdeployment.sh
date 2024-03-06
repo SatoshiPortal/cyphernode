@@ -85,13 +85,15 @@ fi
 
 printf "\r\n\033[0;92mDepending on your current location and DNS settings, point your favorite browser to one of the following URLs to access Cyphernode's status page:\r\n"
 printf "\r\n"
-printf "\033[0;95m<% cns.forEach(cn => { %><%= ('https://' + cn + ':' + traefik_https_port + '/welcome\\r\\n') %><% }) %>\033[0m\r\n"
+printf "\033[0;95m<%= ('https://127.0.0.1:' + traefik_https_port + '/welcome\\r\\n') %>"
+printf "<%= ('https://localhost:' + traefik_https_port + '/welcome\\r\\n') %>"
+printf "<%= ('https://yourdomain:' + traefik_https_port + '/welcome\\r\\n') %>\033[0m\r\n"
 <% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_traefik') !== -1 ) { %>
 printf "\033[0;92mYou can also use Tor Browser and navigate to your onion address:\r\n\r\n"
-printf "\033[0;95mhttps://${TOR_TRAEFIK_HOSTNAME}:<%= traefik_https_port %>/welcome\033[0m\r\n\r\n"
+printf "\033[0;95mhttp://${TOR_TRAEFIK_HOSTNAME}/welcome\033[0m\r\n\r\n"
 
 printf "\033[0;92mTor Browser on mobile?  We got you:\r\n\r\n\033[0m"
-docker run --rm -it cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "https://${TOR_TRAEFIK_HOSTNAME}:443/welcome"
+docker run --rm -it cyphernode/cyphernodeconf:<%= conf_version %> $USER qrencode -t UTF8 "http://${TOR_TRAEFIK_HOSTNAME}/welcome"
 printf "\r\n"
 
 <% } %>
