@@ -521,7 +521,7 @@ wasabi_spend() {
   local response
 
   local amount
-  amount=$(echo "${request}" | jq ".amount")
+  amount=$(echo "${request}" | jq ".amount | tonumber")
   if [ "${amount}" = "null" ]; then
     # amount tag null but required
     trace "[wasabi_spend] amount is required"
@@ -694,7 +694,7 @@ wasabi_payincoinjoin() {
   local response
 
   local amount
-  amount=$(echo "${request}" | jq ".amount")
+  amount=$(echo "${request}" | jq ".amount | tonumber")
   if [ "${amount}" = "null" ]; then
     # amount tag null but required
     trace "[wasabi_payincoinjoin] amount is required"
