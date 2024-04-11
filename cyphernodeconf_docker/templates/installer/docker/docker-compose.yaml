@@ -419,7 +419,7 @@ services:
   # testnet or regtest only
   wasabi-backend:
     image: cyphernode/wasabi-backend:<%= wasabi_version %>
-    entrypoint: sh -c 'sleep 5 ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 5 ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
+    entrypoint: sh -c 'sleep 5 ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 5 ; done ; echo "bitcoin ready!" ; exec /app/docker-entrypoint.sh'
     environment:
       - "WASABI_BIND=http://wasabi-backend:37127/"
     volumes:
@@ -433,9 +433,20 @@ services:
     <% } %>
     depends_on:
       - bitcoin
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
   <%   } %>
 
   <%   for ( let index=0; index<wasabi_instance_count; index++ ) { %>
@@ -460,9 +471,20 @@ services:
       <%   if ( net === 'regtest' | net === 'testnet' ) { %>
       - wasabi-backend
       <%   } %>
-#    deploy:
-#      placement:
-#        constraints: [node.hostname==dev]
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
   <%   } %>
   <% } %>
 

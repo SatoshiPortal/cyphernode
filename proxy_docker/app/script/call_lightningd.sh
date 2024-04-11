@@ -66,7 +66,7 @@ ln_create_invoice() {
   fi
 
   trace "[ln_create_invoice] ./lightning-cli -k invoice 'label=${esclabel}' 'description=${escdescription}' ${cln_args}"
-  result=$(./lightning-cli -k invoice 'label='${esclabel}'' 'description='${escdescription}'' ${cln_args})
+  result=$(ln_call_lightningd -k invoice label="${esclabel}" description="${escdescription}" ${cln_args})
 
   returncode=$?
   trace_rc ${returncode}

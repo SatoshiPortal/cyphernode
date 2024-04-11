@@ -1,44 +1,5 @@
 #!/usr/bin/env sh
 
-# Tor is not running as part of Cyphernode, try to kill it locally in here
-termi_wtor() {
-  echo "SIGTERM or SIGINT detected!"
-
-  local dotnetpid=$(pidof dotnet)
-  local torpid=$(pidof tor)
-  echo "dotnetpid=${dotnetpid}"
-  echo "torpid=${torpid}"
-
-  kill -TERM ${dotnetpid} ${torpid}
-  echo "Waiting for dotnet and tor to end..."
-
-  while [ -e /proc/${dotnetpid} ] && [ -e /proc/${torpid} ]; do sleep 1; done
-}
-
-# Tor is running as part of Cyphernode, don't try to kill it locally in here
-termi_wotor() {
-  echo "SIGTERM or SIGINT detected!"
-
-  local dotnetpid=$(pidof dotnet)
-
-  echo "dotnetpid=${dotnetpid}"
-
-  kill -TERM ${dotnetpid}
-  echo "Waiting for dotnet to end..."
-
-  while [ -e /proc/${dotnetpid} ]; do sleep 1; done
-}
-
-# If TOR_HOST is defined, it means Tor has been installed in Cyphernode setup, use it!
-if [ -n "${TOR_HOST}" ]; then
-  # Need to wait for tor container so we don't try to connect to it (or bitcoin node etc) too early
-  while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 5 ; done ; echo "tor ready!"
-
-  trap termi_wotor TERM INT
-else
-  trap termi_wtor TERM INT
-fi
-
 trim() {
   printf "%s" "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
@@ -93,5 +54,4 @@ else
   fi
 fi
 
-dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name &
-wait $!
+exec dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name
