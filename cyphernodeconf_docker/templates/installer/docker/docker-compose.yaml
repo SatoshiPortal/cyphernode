@@ -452,7 +452,7 @@ services:
   <%   for ( let index=0; index<wasabi_instance_count; index++ ) { %>
   wasabi_<%= index %>:
     image: cyphernode/wasabi:<%= wasabi_version %>
-    entrypoint: sh -c 'sleep <%= (index+1) * 5 + 11 %> ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep <%= index * 5 + 10 %> ; done ; echo "bitcoin ready!" ; /app/docker-entrypoint.sh'
+    entrypoint: sh -c 'sleep <%= (index+1) * 5 + 11 %> ; while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep <%= index * 5 + 10 %> ; done ; echo "bitcoin ready!" ; exec /app/docker-entrypoint.sh'
     environment:
       - "WASABI_RPC_USER=<%= wasabi_rpcuser %>:<%= wasabi_rpcpassword %>"
       - "WASABI_RPC_CFG=/tmp/wasabi_curlcfg.properties"
