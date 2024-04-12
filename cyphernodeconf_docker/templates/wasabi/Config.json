@@ -9,7 +9,7 @@
   "MainNetBackendUri": "https://api.wasabiwallet.io/",
   "TestNetClearnetBackendUri": "http://wasabi-backend:37127/",
   "RegTestBackendUri": "http://wasabi-backend:37127/",
-  "UseTor": <%= net === 'regtest' ?'false':'true' %>,
+  "UseTor": <%= (net === 'regtest' || net === 'testnet') ? 'false' : 'true' %>,
   "TerminateTorOnExit": false,
   "DownloadNewVersion": false,
   "StartLocalBitcoinCoreOnStartup": false,
