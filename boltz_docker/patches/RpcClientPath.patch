@@ -1,0 +1,25 @@
+diff --git a/lib/Config.ts b/lib/Config.ts
+index 51cc409..6351003 100644
+--- a/lib/Config.ts
++++ b/lib/Config.ts
+@@ -27,6 +27,7 @@ type PostgresConfig = {
+ type ChainConfig = {
+   host: string;
+   port: number;
++  path?: string;
+ 
+   // Cookie file authentication is preferred if both, cookie and user/password, are configured
+   cookie?: string;
+diff --git a/lib/chain/RpcClient.ts b/lib/chain/RpcClient.ts
+index fbd4d02..ada99f4 100644
+--- a/lib/chain/RpcClient.ts
++++ b/lib/chain/RpcClient.ts
+@@ -11,7 +11,7 @@ class RpcClient {
+     this.options = {
+       host: config.host,
+       port: config.port,
+-      path: '/',
++      path: config.path ?? '/',
+       method: 'POST',
+     };
+ 

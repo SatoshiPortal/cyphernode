@@ -455,6 +455,40 @@ services:
     <% } %>
   <% } %>
 
+  <% if ( features.indexOf('boltz') !== -1 ) { %>
+  ##########################
+  # BOLTZ                  #
+  ##########################
+
+  boltz:
+    image: cyphernode/boltz:<%= boltz_version %>
+    user: $USER
+    entrypoint: /boltz-backend/bin/boltzd --datadir=/.boltz --configpath=/.boltz/boltz.conf
+    volumes:
+      - "<%= boltz_datapath %>:/.boltz"
+      - "<%= lightning_datapath %>:/.lightning:ro" # for access to grpc certs
+    depends_on:
+      - bitcoin
+      - lightning
+      - elements
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+  <% } %>
+
   ##########################
   # GATEKEEPER             #
   ##########################

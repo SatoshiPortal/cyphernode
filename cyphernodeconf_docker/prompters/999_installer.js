@@ -411,6 +411,44 @@ module.exports = {
       message: prefix()+'Where is your otsclient data?'+utils.getHelp('otsclient_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('boltz') !== -1 },
+      type: 'list',
+      name: 'boltz_datapath',
+      default: utils.getDefault( 'boltz_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/boltz",
+          value: utils.setupDir()+"/cyphernode/boltz"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/boltz",
+          value: utils.defaultDataDirBase()+"/cyphernode/boltz"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/boltz",
+          value: utils.defaultDataDirBase()+"/.cyphernode/boltz"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/boltz",
+          value: utils.defaultDataDirBase()+"/boltz"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your boltz data?'+utils.getHelp('boltz_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('boltz') !== -1 && props.boltz_datapath === '_custom'},
+      type: 'input',
+      name: 'boltz_datapath_custom',
+      default: utils.getDefault( 'boltz_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your boltz data?'+utils.getHelp('boltz_datapath_custom'),
+    },
+    {
       type: 'confirm',
       name: 'gatekeeper_expose',
       default: utils.getDefault( 'gatekeeper_expose' ),

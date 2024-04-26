@@ -14,9 +14,16 @@ export HOME=/.lightning/plibs
 
 if [ -d "/.lightning/plugins" ]; then
   for plugin in /.lightning/plugins/*; do
-    pip3 install --user -r $plugin/requirements.txt
+    if [ -f "$plugin/requirements.txt" ]; then
+      pip3 install --user -r $plugin/requirements.txt
+    fi
   done
 fi
+
+EXTRA_ARGS=""
+<% if ( features.indexOf('boltz') !== -1 ) { %>
+  EXTRA_ARGS="--grpc-port=9291 --hold-grpc-host=* --hold-grpc-port=9292"
+<% } %>
 
 #export HOME=/
 
@@ -26,9 +33,9 @@ while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | aw
 
 echo "tor ready at IP ${TORIP}"
 
-exec lightningd --lightning-dir=/.lightning --proxy=$TORIP:9050
+exec lightningd --lightning-dir=/.lightning --proxy=$TORIP:9050 $EXTRA_ARGS
 <% } else { %>
 
-exec lightningd --lightning-dir=/.lightning
+exec lightningd --lightning-dir=/.lightning $EXTRA_ARGS
 
 <% } %>

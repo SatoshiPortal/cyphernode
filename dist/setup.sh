@@ -138,7 +138,7 @@ sudo_mkdir_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "elements" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$BOLTZ_DATAPTH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -150,7 +150,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$BOLTZ_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -223,6 +223,7 @@ configure() {
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
              -e ELEMENTS_VERSION=$ELEMENTS_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e BOLTZ_VERSION=$BOLTZ_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
@@ -696,6 +697,32 @@ install_docker() {
     fi
   fi
 
+  if [[ $FEATURE_BOLTZ == true ]]; then
+    if ${sudo} [ ! -d $BOLTZ_DATAPATH ]; then
+      step "   [32mcreate[0m $BOLTZ_DATAPATH"
+      sudo_mkdir_if_required $BOLTZ_DATAPATH
+      next
+    fi
+
+    copy_file $cyphernodeconf_filepath/boltz/boltz.conf $BOLTZ_DATAPATH/boltz.conf 1
+
+    if [[ $FEATURE_LIGHTNING == true ]]; then
+      if [[ $LIGHTNING_IMPLEMENTATION == "c-lightning" ]]; then
+        # grab the hold plugin from the boltz-backend repo for c-lightning
+        step "   [32mcreate[0m bolt hold plugin"
+        git clone -n --depth=1 --filter=tree:0 https://github.com/BoltzExchange/boltz-backend.git -b v3.5.0 \
+          && cd boltz-backend \
+          && git sparse-checkout set --no-cone tools/plugins \
+          && git checkout
+
+        sudo_mkdir_if_required $LIGHTNING_DATAPATH/plugins
+        copy_file $PWD/tools/plugins/__init__.py $LIGHTNING_DATAPATH/plugins/__init__.py 1
+        sudo_if_required cp -r $PWD/tools/plugins/hold $LIGHTNING_DATAPATH/plugins/hold
+        next
+      fi
+    fi
+  fi
+
   docker swarm join-token worker > /dev/null 2>&1
   local noSwarm=$?;
 
@@ -804,7 +831,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$BOLTZ_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -908,7 +935,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH" "$BOLTZ_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -1008,6 +1035,7 @@ CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v24.0.1-mosquitto-debian"
 ELEMENTS_VERSION="v23.2.1"
 LIGHTNING_VERSION="v23.11.2-pg"
+BOLTZ_VERSION="v0.9.0-dev"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"
@@ -1069,6 +1097,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
     OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
     PYCOIN_VERSION="$PYCOIN_VERSION-local"
+    BOLTZ_VERSION="$BOLTZ_VERSION-local"
   fi
 fi
 

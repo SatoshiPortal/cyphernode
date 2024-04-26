@@ -22,5 +22,9 @@
   {
     "name": "Elements node",
     "value": "elements"
+  },
+  {
+    "name": "Boltz server",
+    "value": "boltz"
   }
 ]

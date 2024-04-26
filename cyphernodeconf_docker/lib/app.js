@@ -94,6 +94,7 @@ module.exports = class App {
       bitcoin_version: process.env.BITCOIN_VERSION,
       elements_version: process.env.ELEMENTS_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
+      boltz_version: process.env.BOLTZ_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
@@ -156,6 +157,7 @@ module.exports = class App {
         'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
+        'cyphernode/boltz': this.sessionData.boltz_version,
         'eclipse-mosquitto': this.sessionData.mosquitto_version
       }
     } );
@@ -374,6 +376,7 @@ module.exports = class App {
       'bitcoin_datapath',
       'elements_datapath',
       'lightning_datapath',
+      'boltz_datapath',
       'otsclient_datapath'
     ];
 
@@ -581,6 +584,10 @@ module.exports = class App {
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
       },
+      boltz: {
+        networks: ['cyphernodenet', 'cyphernodeappsnet'],
+        docker: "cyphernode/boltz:"+this.config.docker_versions['cyphernode/boltz'],
+      }
     }
 
     for( let feature of this.features ) {

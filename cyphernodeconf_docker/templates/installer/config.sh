@@ -5,6 +5,7 @@ FEATURE_BATCHER=<%= (features.indexOf('batcher') != -1)?'true':'false' %>
 FEATURE_SPECTER=<%= (features.indexOf('specter') != -1)?'true':'false' %>
 FEATURE_ELEMENTS=<%= (features.indexOf('elements') != -1)?'true':'false' %>
 FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
+FEATURE_BOLTZ=<%= (features.indexOf('boltz') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
 GATEKEEPER_DATAPATH=<%= gatekeeper_datapath %>
@@ -39,4 +40,7 @@ BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 BITCOIN_NETWORK=<%= net %>
 <% if ( features.indexOf('elements') !== -1 ) { %>
 ELEMENTS_DATAPATH=<%= elements_datapath %>
+<% } %>
+<% if ( features.indexOf('boltz') !== -1 ) { %>
+BOLTZ_DATAPATH=<%= boltz_datapath %>
 <% } %>
