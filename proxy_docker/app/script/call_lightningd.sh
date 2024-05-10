@@ -324,10 +324,10 @@ ln_pay() {
     expected_msatoshi=$(echo "${request}" | jq ".expectedMsatoshi")
     trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
   fi
-  local expected_description=$(echo "${request}" | jq ".expected_description")
+  local expected_description=$(echo "${request}" | jq -r ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
   if [ "${expected_description}" = "null" ]; then
-    expected_description=$(echo "${request}" | jq ".expectedDescription")
+    expected_description=$(echo "${request}" | jq -r ".expectedDescription")
     trace "[ln_pay] expected_description=${expected_description}"
   fi
 
