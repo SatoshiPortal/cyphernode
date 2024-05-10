@@ -336,7 +336,7 @@ ln_pay() {
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".amount_msat")
     trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
-    local invoice_description=$(echo "${result}" | jq ".description")
+    local invoice_description=$(echo "${result}" | jq -r ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
     # The amount must match if not "any"
@@ -351,7 +351,7 @@ ln_pay() {
       # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
       # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
-      result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
+      result="{\"result\":\"error\",\"expected_description\":\"${expected_description}\",\"invoice_description\":\"${invoice_description}\"}"
       trace "[ln_pay] Expected description <> Invoice description"
       returncode=1
     else
