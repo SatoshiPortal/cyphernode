@@ -882,6 +882,12 @@ main() {
           response=$(elements_newblock "${line}")
           returncode=$?
           ;;
+        elements_getbalance)
+          # curl (GET) http://192.168.111.152:8080/elements_getbalance
+
+          response=$(elements_getbalance)
+          returncode=$?
+          ;;
         elements_gettransaction)
           # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
 
