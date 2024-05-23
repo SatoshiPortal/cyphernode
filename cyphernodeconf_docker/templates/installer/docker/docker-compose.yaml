@@ -8,7 +8,6 @@ services:
 
   postgres:
     image: postgres:<%= postgres_version %>
-    user: $USER
     entrypoint: sh -c 'rm -f /container_monitor/postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/cnlogs/'
     env_file:
       - .env/postgres.env
@@ -121,7 +120,6 @@ services:
 
   cln-postgres:
     image: postgres:<%= postgres_version %>
-    user: $USER
     entrypoint: sh -c 'rm -f /container_monitor/cln-postgres_ready ; exec docker-entrypoint.sh -c logging_collector=true -c log_directory=/clnpglogs/'
     env_file:
       - .env/cln-postgres.env
