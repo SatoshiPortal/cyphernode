@@ -6,6 +6,8 @@ DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 
 # This needs to be run in regtest
 # You need jq installed for these tests to run correctly
+#
+# Something like rpcworkqueue=1000 in bitcoin.conf is recommended due to the number of blocks we mine
 
 # This will test the elements peg in and claim functionality
 #
