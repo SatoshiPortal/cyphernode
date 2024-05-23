@@ -59,6 +59,8 @@ createbatcher() {
   fi
 
   echo "${response}"
+
+  return ${returncode}
 }
 
 updatebatcher() {
@@ -125,6 +127,8 @@ updatebatcher() {
   fi
 
   echo "${response}"
+
+  return ${returncode}
 }
 
 addtobatch() {
@@ -204,6 +208,10 @@ addtobatch() {
   if [ -z "${batcher_id}" ]; then
     # batcherLabel not found
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
+
+    echo "${response}"
+
+    return 1
   else
     # Check if address already pending for this batcher...
     inserted_id=$(sql "SELECT id FROM recipient WHERE LOWER(address)=LOWER('${address}') AND tx_id IS NULL AND batcher_id=${batcher_id}")
@@ -247,6 +255,8 @@ addtobatch() {
   fi
 
   echo "${response}"
+
+  return ${returncode}
 }
 
 removefrombatch() {
@@ -279,6 +289,8 @@ removefrombatch() {
     # id is required
     trace "[removefrombatch] id missing"
     response='{"result":null,"error":{"code":-32700,"message":"outputId is required","data":'${request}'}}'
+
+    returncode=1
   else
     # We don't want to remove an already spent output
     batcher_id=$(sql "SELECT batcher_id FROM recipient WHERE id=${id} AND tx_id IS NULL")
@@ -308,10 +320,14 @@ removefrombatch() {
       fi
     else
       response='{"result":null,"error":{"code":-32700,"message":"Output not found or already spent","data":'${request}'}}'
+
+      returncode=1
     fi
   fi
 
   echo "${response}"
+
+  return ${returncode}
 }
 
 batchspend() {
@@ -344,6 +360,7 @@ batchspend() {
   local request=${1}
   local response
   local returncode=0
+  local spentreturncode=0
   local row
   local whereclause
 
@@ -376,6 +393,8 @@ batchspend() {
   if [ -z "${batcher}" ]; then
     # batcherLabel not found
     response='{"result":null,"error":{"code":-32700,"message":"batcher not found","data":'${request}'}}'
+
+    returncode=1
   else
     # All good, let's try to batch spend!
 
@@ -447,6 +466,16 @@ batchspend() {
       fi
     done
 
+    if [ -z "${recipientsjson}" ]; then
+      # Empty batch!
+      response='{"result":null,"error":{"code":-32700,"message":"Empty batch, aborting","data":'${request}'}}'
+
+      trace "[batchspend] responding=${response}"
+      echo "${response}"
+
+      return 1
+    fi
+
     trace "[batchspend] recipientsjson=${recipientsjson}"
 
     local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
@@ -457,13 +486,47 @@ batchspend() {
 
     trace "[batchspend] bitcoincore_args=${bitcoincore_args}"
 
-    data=$(send_to_spender_node "${bitcoincore_args}")
+    # Let's insert a temporary row in the database so we know the spend process has begun
+
+    local txid="ONGOING-$$"
+    id_inserted=$(sql "INSERT INTO tx (txid)"\
+" VALUES ('${txid}')"\
+" RETURNING id" \
+"SELECT id FROM tx WHERE txid='${txid}'")
     returncode=$?
     trace_rc ${returncode}
-    trace "[batchspend] data=${data}"
 
     if [ "${returncode}" -eq 0 ]; then
-      local txid=$(echo "${data}" | jq -r ".result")
+      trace "[batchspend] id_inserted: ${id_inserted}"
+      sql "UPDATE recipient SET tx_id=${id_inserted} WHERE id IN (${whereclause})"
+      returncode=$?
+      trace_rc ${returncode}
+
+      if [ "${returncode}" -ne 0 ]; then
+        message="Could not flag outputs as spent in the database, will not try to spend"
+      fi
+
+    else
+      # INSERT didn't work, we won't try to spend
+        message="Could not insert batch transaction in the database, will not try to spend"
+    fi
+
+    if [ "${returncode}" -ne 0 ]; then
+      response='{"result":null,"error":{"code":-32700,"message":'${message}',"data":'${request}'}}'
+
+      trace "[batchspend] responding=${response}"
+      echo "${response}"
+
+      return 1
+    fi
+
+    data=$(send_to_spender_node "${bitcoincore_args}")
+    spentreturncode=$?
+    trace_rc ${spentreturncode}
+    trace "[batchspend] data=${data}"
+
+    if [ "${spentreturncode}" -eq 0 ]; then
+      txid=$(echo "${data}" | jq -r ".result")
       trace "[batchspend] txid=${txid}"
 
       # Let's get transaction details on the spending wallet so that we have fee information
@@ -487,17 +550,14 @@ batchspend() {
       returncode=$?
       trace_rc ${returncode}
 
-      # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
-      id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target)"\
-" VALUES ('${txid}', '${tx_hash}', 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target})"\
-" RETURNING id" \
-"SELECT id FROM tx WHERE txid='${txid}'")
+      # Let's update the tx in our little DB -- then we'll already have it when receiving confirmation
+      sql "UPDATE tx"\
+" SET txid='${txid}', hash='${tx_hash}', confirmations=0, timereceived=${tx_ts_firstseen}, fee=${fees}, size=${tx_size}, vsize=${tx_vsize}, is_replaceable=${tx_replaceable}, conf_target=${conf_target}"\
+" WHERE id=${id_inserted}"
       returncode=$?
       trace_rc ${returncode}
-      if [ "${returncode}" -eq 0 ]; then
-        trace "[batchspend] id_inserted: ${id_inserted}"
-        sql "UPDATE recipient SET tx_id=${id_inserted} WHERE id IN (${whereclause})"
-        trace_rc $?
+      if [ "${returncode}" -ne 0 ]; then
+        trace "[batchspend] ERROR updating the tx in database"
       fi
 
       # Use the selected row above (before the insert)
@@ -515,13 +575,46 @@ batchspend() {
       batch_webhooks "[${webhooks_data}]" '"batcherId":'${batcher_id}',"confTarget":'${conf_target}',"nbOutputs":'${count}',"oldest":"'${oldest}'","total":'${total}',"status":"accepted","txid":"'${txid}'","hash":"'${tx_hash}'","details":{"firstseen":'${tx_ts_firstseen}',"size":'${tx_size}',"vsize":'${tx_vsize}',"replaceable":'${tx_replaceable}',"fee":'${fees}'}'
 
     else
-      local message=$(echo "${data}" | jq -e ".error.message")
+      # "Insufficient funds" is the only error we accept to be a retryable error
+
+      # jq -e will have a return code of 1 if the supplied tag is null.
+      local errorstring
+      local errorcode
+      errorstring=$(echo "${data}" | jq -e ".error")
+      if [ "$?" -eq "0" ]; then
+        # Error tag not null, so there's an error
+        errorcode=$(echo "${errorstring}" | jq -r ".code")
+        trace "[batchspend] errorcode: ${errorcode}"
+        message=$(echo "${errorstring}" | jq ".message")
+        trace "[batchspend] message: ${message}"
+      fi
+
+      if [ "${errorcode}" -eq "-6" ]; then
+        # There's insufficient funds, we'll retry later, let's clear the tx_id for the outputs
+        sql "UPDATE recipient SET tx_id=null WHERE id IN (${whereclause})"
+        returncode=$?
+        trace_rc ${returncode}
+      else
+        # We don't want to retry because we need to investigate the failure
+        local txid="DEFECT-$$"
+        trace "[batchspend] txid=${txid}"
+
+        # Let's update the dummy tx to set it to DEFECT!
+        sql "UPDATE tx SET txid='${txid}' WHERE id=${id_inserted}"
+        returncode=$?
+        trace_rc ${returncode}
+      fi
+
+      # local message=$(echo "${data}" | jq -e ".error.message")
       response='{"result":null,"error":{"code":-32700,"message":'${message}',"data":'${request}'}}'
+      returncode=1
     fi
   fi
 
   trace "[batchspend] responding=${response}"
   echo "${response}"
+
+  return ${returncode}
 }
 
 batch_check_webhooks() {
@@ -555,6 +648,13 @@ batch_check_webhooks() {
   for row in ${batching}
   do
     trace "[batch_check_webhooks] row=${row}"
+
+    txid=$(echo "${row}" | cut -d '|' -f6)
+    trace "[batch_check_webhooks] txid=${txid}"
+
+    case "${txid}" in DEFECT-*) continue;; esac
+    case "${txid}" in ONGOING-*) continue;; esac
+
     address=$(echo "${row}" | cut -d '|' -f1)
     trace "[batch_check_webhooks] address=${address}"
     amount=$(echo "${row}" | cut -d '|' -f2)
@@ -565,8 +665,6 @@ batch_check_webhooks() {
     trace "[batch_check_webhooks] webhook_url=${webhook_url}"
     batcher_id=$(echo "${row}" | cut -d '|' -f5)
     trace "[batch_check_webhooks] batcher_id=${batcher_id}"
-    txid=$(echo "${row}" | cut -d '|' -f6)
-    trace "[batch_check_webhooks] txid=${txid}"
     tx_hash=$(echo "${row}" | cut -d '|' -f7)
     trace "[batch_check_webhooks] tx_hash=${tx_hash}"
     tx_ts_firstseen=$(echo "${row}" | cut -d '|' -f8)
