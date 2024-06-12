@@ -23,12 +23,15 @@ spend() {
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
 
+  local fee_rate=$(getfeerate "${conf_target}" | jq -r ".feerate")
+  trace "[spend] fee_rate=${fee_rate}"
+
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"

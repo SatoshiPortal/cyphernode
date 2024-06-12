@@ -571,6 +571,22 @@ main() {
           response=$(bitcoin_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
           returncode=$?
           ;;
+        bitcoin_getfeerate)
+          # POST http://192.168.111.152:8080/bitcoin_getfeerate
+          # BODY {"confTarget":4}
+          #
+          # args:
+          # - confTarget the required confirmation target in blocks
+          #
+          # response:
+          # - feerate, the feerate in sat/vB
+          #
+          # BODY {"feerate":20.4}
+
+          local conf_target=$(echo "${line}" | jq -er ".confTarget // empty")
+          response=$(getfeerate "${conf_target}")
+          returncode=$?
+          ;;
         deriveindex)
           # curl GET http://192.168.111.152:8080/deriveindex/25-30
           # curl GET http://192.168.111.152:8080/deriveindex/34

@@ -1858,6 +1858,28 @@ Proxy response:
 }
 ```
 
+### Get an estimation of current Bitcoin fees based on mempool.space rates
+
+This will retrieve a fee rate by converting confTarget to a fee priority and retrieving the current rate from mempool.space
+
+```http
+POST http://cyphernode:8888/bitcoin_getfeerate
+with body...
+{"confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "feerate": 25,
+  },
+  "error": null,
+  "id": null
+}
+```
+
 ### Mine blocks immediately to a specified address (before the RPC call returns)
 
 This will call the Bitcoin Core generatetoaddress RPC call and return the result as is.
