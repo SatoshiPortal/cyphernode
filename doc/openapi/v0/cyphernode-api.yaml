@@ -802,6 +802,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getnetworkhashps:
+    post:
+      tags:
+        - "mining"
+        - "hashrate"
+        - "core features"
+      summary: "Get hashrate per seconds matching nblocks and height provided."
+      description: "Returns hash per seconds."
+      operationId: "getNetworkHashps"
+      requestBody:
+        description: "Block height and number of blocks requested."
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                height:
+                  type: "number"
+                nblocks:
+                  type: "number"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                required:
+                  - "result"
+                properties:
+                  result:
+                    $ref: '#/components/schemas/TypeHashString'
+                  error:
+                    type: "string"
+                  id:
+                    type: "string"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /getbestblockhash:
     get:
       tags:
@@ -873,6 +918,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InstallationInfo'
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '404':
+          $ref: '#/components/schemas/ApiResponseNotFound'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /getmininginfo:
+    get:
+      tags:
+        - "stats"
+        - "core features"
+      summary: "Show mining info"
+      description: "Returns mining information."
+      operationId: "getMiningInfo"
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MiningInfo'
         '403':
           $ref: '#/components/schemas/ApiResponseNotAllowed'
         '404':
@@ -3128,6 +3198,22 @@ components:
           type: "object"
           additionalProperties:
             $ref: '#/components/schemas/TypeBip9SoftFork'
+    MiningInfo:
+      type: "object"
+      properties:
+        blocks:
+          type: "integer"
+        difficulty:
+          type: "number"
+        networkhashps:
+          type: "number"
+        pooledtx:
+          type: "integer"
+        chain:
+          type: "string"
+          enum: ["test", "main"]
+        warnings:
+          type: "string"
     InstallationInfo:
       type: "object"
       properties:
