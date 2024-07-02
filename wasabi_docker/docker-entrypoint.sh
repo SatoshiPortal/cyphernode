@@ -54,4 +54,17 @@ else
   fi
 fi
 
-exec dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name
+dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name &
+
+WASABI_PID=$!
+
+# wait 30 seconds for wasabi to start
+sleep 30
+
+# start coinjoin
+echo "Starting coinjoin"
+response=$(curl -s --config ${WASABI_RPC_CFG} -d "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"startcoinjoin\"}" localhost:18099/$wallet_name)
+
+echo $response | jq
+
+wait $WASABI_PID
