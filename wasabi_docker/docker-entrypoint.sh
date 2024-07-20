@@ -1,5 +1,17 @@
 #!/usr/bin/env sh
 
+delayed_startcoinjoin() {
+  echo "Delaying startcoinjoin, starting in 120 seconds..."
+
+  # Wait 120 seconds for wasabi to start
+  sleep 120
+
+  echo "Starting coinjoin"
+  response=$(curl --config ${WASABI_RPC_CFG} -sd '{"jsonrpc":"2.0","id":"1","method":"startcoinjoin","params":["",false,false]}' http://localhost:18099/$wallet_name)
+
+  echo $response | jq
+}
+
 trim() {
   printf "%s" "$1" | sed -e 's/^[[:space:]]*//' | sed -e 's/[[:space:]]*$//'
 }
@@ -54,17 +66,6 @@ else
   fi
 fi
 
-dotnet WalletWasabi.Daemon.dll --wallet=$wallet_name &
+delayed_startcoinjoin &
 
-WASABI_PID=$!
-
-# wait 30 seconds for wasabi to start
-sleep 30
-
-# start coinjoin
-echo "Starting coinjoin"
-response=$(curl -s --config ${WASABI_RPC_CFG} -d "{\"jsonrpc\":\"2.0\",\"id\":\"0\",\"method\":\"startcoinjoin\"}" localhost:18099/$wallet_name)
-
-echo $response | jq
-
-wait $WASABI_PID
+exec dotnet WalletWasabi.Daemon.dll --LogLevel=DEBUG --wallet=$wallet_name
