@@ -30,6 +30,7 @@
 . ./elements_newblock.sh
 . ./elements_getactivewatches.sh
 . ./elements_pegin.sh
+. ./elements_pegout.sh
 
 main() {
   trace "Entering main()..."
@@ -961,6 +962,13 @@ main() {
           # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71"}
 
           response=$(elements_claimpegin "${line}")
+          returncode=$?
+          ;;
+        elements_sendtomainchain)
+          # curl POST http://192.168.111.152:8080/elements_sendtomainchain
+          # BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true}
+
+          response=$(elements_sendtomainchain "${line}")
           returncode=$?
           ;;
         *)
