@@ -19,7 +19,7 @@ elements_sendtomainchain() {
 
   returncode=$?
   trace_rc ${returncode}
-  trace "[elements_getpeginaddress] response=${response}"
+  trace "[elements_sendtomainchain] response=${response}"
 
   echo "${response}"
 
