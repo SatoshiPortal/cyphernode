@@ -38,7 +38,7 @@ ln_waitanyinvoice() {
   if [ "${returncode}" -eq "0" ]; then
     bolt11=$(echo "${result}" | jq -r ".bolt11")
     pay_index=$(echo "${result}" | jq -r ".pay_index")
-    msatoshi_received=$(echo "${result}" | jq -r ".msatoshi_received")
+    msatoshi_received=$(echo "${result}" | jq -r ".amount_received_msat")
     status=$(echo "${result}" | jq -r ".status")
     paid_at=$(echo "${result}" | jq -r ".paid_at")
 
@@ -46,7 +46,7 @@ ln_waitanyinvoice() {
     row=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE callback_url<>'' AND NOT calledback AND bolt11='${bolt11}'")
 
     if [ -n "${row}" ]; then
-      ln_manage_callback ${row}
+      ln_manage_callback "${row}"
     fi
 
     sql "UPDATE cyphernode_props SET value='${pay_index}' WHERE property='pay_index'"

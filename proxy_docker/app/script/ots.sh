@@ -45,7 +45,7 @@ serve_ots_stamp() {
       errorstring="Duplicate stamping request, hash already exists in DB and been OTS requested"
       returncode=1
     else
-      errorstring=$(request_ots_stamp "${hash}" ${id_inserted})
+      errorstring=$(request_ots_stamp "${hash}" "${id_inserted}")
       returncode=$?
     fi
   else
@@ -56,7 +56,7 @@ serve_ots_stamp() {
     returncode=$?
     trace_rc ${returncode}
     if [ "${returncode}" -eq "0" ]; then
-      errorstring=$(request_ots_stamp "${hash}" ${id_inserted})
+      errorstring=$(request_ots_stamp "${hash}" "${id_inserted}")
       returncode=$?
       trace_rc ${returncode}
     else
@@ -94,7 +94,7 @@ request_ots_stamp() {
 
   trace "[request_ots_stamp] Stamping..."
   trace "[request_ots_stamp] curl -s ${OTSCLIENT_CONTAINER}/stamp/${hash}"
-  result=$(curl -s ${OTSCLIENT_CONTAINER}/stamp/${hash})
+  result=$(curl -s "${OTSCLIENT_CONTAINER}/stamp/${hash}")
   returncode=$?
   trace_rc ${returncode}
   trace "[request_ots_stamp] Stamping result=${result}"
@@ -163,7 +163,8 @@ serve_ots_backoffice() {
   local requested
   local upgraded
   local id
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${callbacks}
   do
     trace "[serve_ots_backoffice] row=${row}"
@@ -178,13 +179,13 @@ serve_ots_backoffice() {
 
     if [ "${requested}" != "t" ]; then
       # Re-request the unrequested calls to ots_stamp
-      request_ots_stamp "${hash}" ${id}
+      request_ots_stamp "${hash}" "${id}"
       returncode=$?
     else
       if [ "${upgraded}" != "t" ]; then
         # Upgrade requested calls to ots_stamp that have not been called back yet
         trace "[serve_ots_backoffice] curl -s ${OTSCLIENT_CONTAINER}/upgrade/${hash}"
-        result=$(curl -s ${OTSCLIENT_CONTAINER}/upgrade/${hash})
+        result=$(curl -s "${OTSCLIENT_CONTAINER}/upgrade/${hash}")
         returncode=$?
         trace_rc ${returncode}
         trace "[serve_ots_backoffice] result=${result}"
@@ -216,7 +217,7 @@ serve_ots_backoffice() {
         if [ -n ${url} ]; then
           trace "[serve_ots_backoffice] url is not empty, now trying to call it!"
 
-          response=$(notify_web "${url}" ${TOR_OTS_WEBHOOKS})
+          response=$(notify_web "${url}" "${TOR_OTS_WEBHOOKS}")
           returncode=$?
           trace_rc ${returncode}
 
@@ -416,7 +417,7 @@ request_ots_info() {
 
   trace "[request_ots_info] Parsing..."
   trace "[request_ots_info] curl -s -d \"${data}\" ${OTSCLIENT_CONTAINER}/info"
-  result=$(curl -s -d "${data}" ${OTSCLIENT_CONTAINER}/info)
+  result=$(curl -s -d "${data}" "${OTSCLIENT_CONTAINER}/info")
   returncode=$?
   trace_rc ${returncode}
   trace "[request_ots_info] OTS info result=${result}"

@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-dotnet WalletWasabi.Backend.dll
+exec dotnet WalletWasabi.Backend.dll --LogLevel=DEBUG --log-level=DEBUG

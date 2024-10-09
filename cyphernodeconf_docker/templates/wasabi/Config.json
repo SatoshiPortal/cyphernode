@@ -6,14 +6,15 @@
 <% } else if (net === 'mainnet') { %>
   "Network": "Main",
 <% } %>
-  "MainNetBackendUriV3": "http://wasabiukrxmkdgve5kynjztuovbg43uxcbcxn6y2okcrsg7gb6jdmbad.onion/",
-  "MainNetFallbackBackendUri": "https://wasabiwallet.io/",
-  "TestNetBackendUriV3": "http://testwnp3fugjln6vh5vpj7mvq3lkqqwjj3c2aafyu7laxz42kgwh2rad.onion/",
-  "TestNetFallbackBackendUri": "https://wasabiwallet.co/",
-  "RegTestBackendUriV3": "http://wasabi-backend:37127/",
-  "RegTestFallbackBackendUri": "http://wasabi-backend:37127/",
-  "UseTor": <%= net === 'regtest'?'false':'true' %>,
-  "TorSocks5EndPoint": "tor:9050",
+  "MainNetBackendUri": "https://api.wasabiwallet.io/",
+  "TestNetClearnetBackendUri": "http://wasabi-backend:37127/",
+  "RegTestBackendUri": "http://wasabi-backend:37127/",
+  "UseTor": <%= (net === 'regtest' || net === 'testnet') ? 'false' : 'true' %>,
+  "TerminateTorOnExit": false,
+  "DownloadNewVersion": false,
+  "StartLocalBitcoinCoreOnStartup": false,
+  "StopLocalBitcoinCoreOnShutdown": false,
+  "LocalBitcoinCoreDataDir": "/root/.bitcoin",
   "MainNetBitcoinP2pEndPoint": "bitcoin:8333",
   "TestNetBitcoinP2pEndPoint": "bitcoin:18333",
   "RegTestBitcoinP2pEndPoint": "bitcoin:18444",
@@ -21,11 +22,13 @@
   "PrivacyLevelSome": 2,
   "PrivacyLevelFine": 2,
   "PrivacyLevelStrong": <%= wasabi_mixuntil %>,
-  "DustThreshold": "0.00000001",
   "JsonRpcServerEnabled": true,
   "JsonRpcUser": "<%= wasabi_rpcuser %>",
   "JsonRpcPassword": "<%= wasabi_rpcpassword %>",
   "JsonRpcServerPrefixes": [
     "http://*:18099/"
-  ]
+  ],
+  "DustThreshold": "0.00000001",
+  "EnableGpu": true,
+  "CoordinatorIdentifier": "CoinJoinCoordinatorIdentifier"
 }

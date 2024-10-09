@@ -55,6 +55,7 @@ curl_it() {
   local returncode
   local response
   local rnd=$(dd if=/dev/urandom bs=5 count=1 | xxd -pc 5)
+  local curlUserPassword
 
   if [ "${tor}" = "true" ] && [ -n "${TOR_HOST}" ]; then
     # If we want to use tor and the tor host config exists
@@ -63,13 +64,20 @@ curl_it() {
     tor=""
   fi
 
+  # Add basic auth if configured
+  if [ -n "${CURL_USER}" ] && [ -n "${CURL_PASSWORD}" ]; then
+    curlUserPassword="--user "${CURL_USER}:${CURL_PASSWORD}""
+  else
+    curlUserPassword=""
+  fi
+
   if [ -n "${data}" ]; then
-    trace "[curl_it] curl ${tor} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
-    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
+    trace "[curl_it] curl ${tor} ${curlUserPassword} -o webresponse-${rnd} -m 20 -w \"%{http_code}\" -H \"Content-Type: application/json\" -H \"X-Forwarded-Proto: https\" -d \"${data}\" -k ${url}"
+    rc=$(curl ${tor} ${curlUserPassword} -o webresponse-${rnd} -m 20 -w "%{http_code}" -H "Content-Type: application/json" -H "X-Forwarded-Proto: https" -d "${data}" -k ${url})
     returncode=$?
   else
-    trace "[curl_it] curl ${tor} -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
-    rc=$(curl ${tor} -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
+    trace "[curl_it] curl ${tor} ${curlUserPassword} -o webresponse-$$ -m 20 -w \"%{http_code}\" -k ${url}"
+    rc=$(curl ${tor} ${curlUserPassword} -o webresponse-${rnd} -m 20 -w "%{http_code}" -k ${url})
     returncode=$?
   fi
   trace "[curl_it] HTTP return code=${rc}"
