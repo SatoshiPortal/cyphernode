@@ -196,6 +196,12 @@ testbatching() {
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
 
+  # The batchspend should have triggered the safety net mechanism of flagging the recipient's txid as DEFECT-
+  # When this happens, a manual intervention is needed to make sure the payment has not been broadcast to avoid double-payments.
+  # In this case, an output amount was too large so we know the payment has not been done.  Let's just remove the DEFECT- flag.
+  trace 2 "\n\n[testbatching] ${BCyan}Cleaning up the failed batchspend...${Color_Off}\n"
+  docker exec -it $(docker ps -q -f "name=proxy\.") psql -U cyphernode -h postgres -c "UPDATE recipient SET tx_id = NULL WHERE id IN (${id}, ${id2}); DELETE FROM tx WHERE id = (SELECT tx_id FROM recipient WHERE id = ${id});"
+
   # getbatchdetails the default batcher
   trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
   response=$(exec_in_test_container curl -sd '{}' proxy:8888/getbatchdetails)

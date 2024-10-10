@@ -56,3 +56,5 @@ announce-addr=<%= locals.lightning_external_ip %>:9735
 <% } %>
 <% } %>
 <% } %>
+
+experimental-anchors
