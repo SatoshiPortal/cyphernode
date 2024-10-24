@@ -59,11 +59,15 @@ get_transaction() {
   trace "[get_transaction] txid=${txid}"
   local to_spender_node=${2}
   trace "[get_transaction] to_spender_node=${to_spender_node}"
+  local wallet=${3}
+  trace "[get_transaction] wallet=${wallet}"
 
   local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
   trace "[get_transaction] data=${data}"
   if [ -z "${to_spender_node}" ]; then
     send_to_watcher_node "${data}"
+  elif [ -n "${wallet}" ]; then
+    send_to_spender_node "${data}" "${wallet}"
   else
     send_to_spender_node "${data}"
   fi
