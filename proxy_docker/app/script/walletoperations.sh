@@ -69,6 +69,10 @@ spend() {
   trace "[spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+  local wallet=$(echo "${request}" | jq ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[spend] wallet=${wallet}"
+  fi
 
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
@@ -81,7 +85,11 @@ spend() {
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}" "${wallet}")
+  else
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -91,7 +99,7 @@ spend() {
     trace "[spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction "${txid}" "spender")
+    tx_details=$(get_transaction "${txid}" "spender" "${wallet}")
     tx_raw_details=$(get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
@@ -478,21 +486,31 @@ bumpfee() {
   local request=${1}
   local txid=$(echo "${request}" | jq -r ".txid")
   trace "[bumpfee] txid=${txid}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  trace "[bumpfee] wallet=${wallet}"
 
   local confTarget
   local response
   local returncode
+
+  data="{\"method\":\"bumpfee\",\"params\":[\"${txid}\""
 
   # jq -e will have a return code of 1 if the supplied tag is null.
   confTarget=$(echo "${request}" | jq -e ".confTarget")
   if [ "$?" -ne "0" ]; then
     # confTarget tag null, so there's no confTarget
     trace "[bumpfee] confTarget="
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+  else
+    data="${data},{\"confTarget\":${confTarget}}"
+    trace "[bumpfee] confTarget=${confTarget}"
+  fi
+  data="${data}]}"
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
     returncode=$?
   else
-    trace "[bumpfee] confTarget=${confTarget}"
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    response=$(send_to_spender_node "${data}")
     returncode=$?
   fi
 
@@ -540,9 +558,16 @@ get_txns_spending() {
 getbalance() {
   trace "Entering getbalance()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalance"}'
-  response=$(send_to_spender_node "${data}")
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalance] response=${response}"
@@ -553,7 +578,7 @@ getbalance() {
 
     data="{\"balance\":${balance}}"
   else
-    trace "[getbalance] Coudn't get balance!"
+    trace "[getbalance] Couldn't get balance!"
     data=""
   fi
 
@@ -566,9 +591,14 @@ getbalance() {
 getbalances() {
   trace "Entering getbalances()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalances"}'
-  response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalances] response=${response}"
@@ -648,6 +678,9 @@ getnewaddress() {
 
   local label=${2}
   trace "[getnewaddress] label=${label}"
+
+  local wallet=${3}
+  trace "[getnewaddress] wallet=${wallet}"
 
   local response
   local jqop

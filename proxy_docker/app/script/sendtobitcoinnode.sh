@@ -41,7 +41,14 @@ send_to_watcher_node_wallet() {
 
 send_to_spender_node() {
   trace "Entering send_to_spender_node()..."
-  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${SPENDER_BTC_NODE_DEFAULT_WALLET}" "${SPENDER_BTC_NODE_RPC_CFG}" "$@"
+
+  local walletname=${SPENDER_BTC_NODE_DEFAULT_WALLET}
+  if [ -n "$2" ]; then
+    walletname="spending${2}.dat"
+  fi
+  trace "[send_to_spender_node]wallet: ${walletname}"
+
+  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${wallet}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}

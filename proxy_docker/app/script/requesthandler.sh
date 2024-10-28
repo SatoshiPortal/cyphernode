@@ -266,14 +266,26 @@ main() {
           ;;
         getbalance)
           # curl (GET) http://192.168.111.152:8080/getbalance
+          # curl (GET) http://192.168.111.152:8080/getbalance/01 (spending wallet number)
 
-          response=$(getbalance)
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "getbalance" ]; then
+            walletname=""
+          fi
+
+          response=$(getbalance "${walletname}")
           returncode=$?
           ;;
         getbalances)
           # curl (GET) http://192.168.111.152:8080/getbalances
+          # curl (GET) http://192.168.111.152:8080/getbalances/01 (spending wallet number)
 
-          response=$(getbalances)
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "getbalances" ]; then
+            walletname=""
+          fi
+
+          response=$(getbalances "${walletname}")
           returncode=$?
           ;;
         getbalancebyxpub)
@@ -314,17 +326,22 @@ main() {
           # BODY {"addressType":"bech32","label":"myLabel"}
           # BODY {"label":"myLabel"}
           # BODY {"addressType":"p2sh-segwit"}
+          # BODY {"addressType":"bech32","label":"myLabel","wallet":"01"}
+          # BODY {"label":"myLabel","wallet":"01"}
+          # BODY {"addressType":"p2sh-segwit","wallet":"01"}
+          # BODY {"wallet":"01"}
           # BODY {}
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
             address_type=$(echo "${line}" | jq -er ".addressType // empty")
             label=$(echo "${line}" | jq -er ".label // empty")
+            wallet=$(echo "${line}" | jq -er ".wallet // empty")
           else
             address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           fi
 
-          response=$(getnewaddress "${address_type}" "${label}")
+          response=$(getnewaddress "${address_type}" "${label}" "${wallet}")
           returncode=$?
           ;;
         validateaddress)
@@ -336,6 +353,7 @@ main() {
         spend)
           # POST http://192.168.111.152:8080/spend
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false,"wallet":"01"}
 
           response=$(spend "${line}")
           returncode=$?
@@ -395,6 +413,8 @@ main() {
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4,"wallet":"01"}
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","wallet":"01"}
 
           response=$(bumpfee "${line}")
           returncode=$?
