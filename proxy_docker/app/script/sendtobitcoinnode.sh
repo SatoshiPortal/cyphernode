@@ -48,7 +48,7 @@ send_to_spender_node() {
   fi
   trace "[send_to_spender_node]wallet: ${walletname}"
 
-  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${wallet}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
+  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${walletname}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
