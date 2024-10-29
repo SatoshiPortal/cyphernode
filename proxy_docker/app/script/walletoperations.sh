@@ -69,7 +69,7 @@ spend() {
   trace "[spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
-  local wallet=$(echo "${request}" | jq ".wallet // empty")
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
   if [ -n "${wallet}" ]; then
     trace "[spend] wallet=${wallet}"
   fi
