@@ -288,6 +288,22 @@ main() {
           response=$(getbalancebyxpublabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
+        listunspent)
+          # All params are optional:
+          #
+          # curl (POST) http://192.168.111.152:8080/listunspent
+          # BODY {"minconf":1,"maxconf":9999999,"addresses":["2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"]}
+          # BODY {"minamount":0.0001,"maxamount":0.1,"maxcount":10}
+          # BODY {"minamount":0.0001,"maxamount":0.1,"maxcount":10,"wallet":"01"}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(listunspent "${line}")
+          else
+            response=$(listunspent "{}")
+          fi
+
+          returncode=$?
+          ;;
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
           # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
@@ -322,6 +338,43 @@ main() {
 
           response=$(spend "${line}")
           returncode=$?
+          ;;
+        sendmany)
+          # POST http://192.168.111.152:8080/sendmany
+          # BODY {"amounts":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233,"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"confTarget":6,"replaceable":true,"subtractfeefromamount":false}
+          # BODY {"amounts":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233,"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"replaceable":true,"subtractfeefromamount":false,"fee_rate":0.0001,"wallet":"01"}
+
+          response=$(sendmany "${line}")
+          ;;
+        createrawtransaction)
+          # POST http://192.168.111.152:8080/createrawtransaction
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233}}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"locktime":1234,"replaceable":true,"wallet":"01"}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"wallet":"01"}
+
+          response=$(createrawtransaction "${line}")
+          ;;
+        decoderawtransaction)
+          # POST http://192.168.111.152:8080/decoderawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(decoderawtransaction "${line}")
+          ;;
+        fundrawtransaction)
+          # POST http://192.168.111.152:8080/fundrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","options":{"changeAddress":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"},"wallet":"01"}
+
+          response=$(fundrawtransaction "${line}")
+          ;;
+        signrawtransaction)
+          # POST http://192.168.111.152:8080/signrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(signrawtransaction "${line}")
           ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee

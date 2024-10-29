@@ -58,6 +58,7 @@ DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 # action_getbalances=spender
 # action_getbalancebyxpub=spender
 # action_getbalancebyxpublabel=spender
+# action_listunspent=spender
 # action_getnewaddress=spender
 # action_spend=spender
 # action_bumpfee=spender
@@ -511,6 +512,24 @@ test_spender_functions() {
   test_authorization "getbatchdetails" "${token}" ${has_access} || return 155
 
   test_authorization "bitcoin_generatetoaddress" "${token}" ${has_access} || return 160
+
+  # action_listunspent=spender
+  test_authorization "listunspent" "${token}" ${has_access} || return 165
+
+  # action_sendmany=spender
+  test_authorization "sendmany" "${token}" ${has_access} || return 170
+
+  # action_createrawtransaction=spender
+  test_authorization "createrawtransaction" "${token}" ${has_access} || return 175
+
+  # action_fundrawtransaction=spender
+  test_authorization "fundrawtransaction" "${token}" ${has_access} || return 180
+
+  # action_decoderawtransaction=spender
+  test_authorization "decoderaqtransaction" "${token}" ${has_access} || return 185
+
+  # action_signrawtransaction=spender
+  test_authorization "signrawtransaction" "${token}" ${has_access} || return 190
 
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
