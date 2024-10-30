@@ -531,6 +531,9 @@ test_spender_functions() {
   # action_signrawtransaction=spender
   test_authorization "signrawtransaction" "${token}" ${has_access} || return 190
 
+  # action_sendrawtransaction=spender
+  test_authorization "sendrawtransaction" "${token}" ${has_access} || return 195
+
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 

@@ -414,6 +414,38 @@ signrawtransaction() {
   return ${returncode}
 }
 
+sendrawtransaction() {
+  trace "Entering sendrawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[sendrawtransaction] wallet=${wallet}"
+  fi
+  local rawtx=$(echo "${request}" | jq -r ".hex")
+  trace "[sendrawtransaction] rawtx=${rawtx}"
+  local maxfeerate=$(echo "${request}" | jq -r ".maxfeerate // 0.1")
+  trace "[sendrawtransaction] maxfeerate=${maxfeerate}"
+
+  local response
+
+  local data='{"method":"sendrawtransaction","params":["'${rawtx}'",'${maxfeerate}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[sendrawtransaction] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 bumpfee() {
   trace "Entering bumpfee()..."
 

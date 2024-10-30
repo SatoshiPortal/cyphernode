@@ -376,6 +376,14 @@ main() {
 
           response=$(signrawtransaction "${line}")
           ;;
+        sendrawtransaction)
+          # POST http://192.168.111.152:8080/sendrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","maxfeerate":0.00000010,"wallet":"01"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(sendrawtransaction "${line}")
+          ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
