@@ -289,7 +289,7 @@ createrawtransaction() {
     local rawtx=$(echo ${response} | jq -rc ".result")
     trace "[createrawtransaction] rawtx=${rawtx}"
 
-    data="{\"rawtx\":\"${rawtx}\"}"
+    data="{\"hex\":\"${rawtx}\"}"
   else
     trace "[createrawtransaction] Couldn't get rawtx!"
     local message=$(echo "${response}" | jq -e ".error.message")
@@ -379,7 +379,20 @@ fundrawtransaction() {
   trace_rc ${returncode}
   trace "[fundrawtransaction] response=${response}"
 
-  echo "${response}"
+  if [ "${returncode}" -eq 0 ]; then
+    local data=$(echo ${response} | jq -rc ".result")
+  else
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[fundrawtransaction] responding=${data}"
+
+  echo "${data}"
 
   return ${returncode}
 }
@@ -409,7 +422,20 @@ signrawtransaction() {
   trace_rc ${returncode}
   trace "[signrawtransaction] response=${response}"
 
-  echo "${response}"
+  if [ "${returncode}" -eq 0 ]; then
+    local data=$(echo ${response} | jq -rc ".result")
+  else
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[signrawtransaction] responding=${data}"
+
+  echo "${data}"
 
   return ${returncode}
 }

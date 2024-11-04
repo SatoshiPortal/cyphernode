@@ -345,6 +345,7 @@ main() {
           # BODY {"amounts":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233,"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"replaceable":true,"subtractfeefromamount":false,"fee_rate":0.0001,"wallet":"01"}
 
           response=$(sendmany "${line}")
+          returncode=$?
           ;;
         createrawtransaction)
           # POST http://192.168.111.152:8080/createrawtransaction
@@ -353,6 +354,7 @@ main() {
           # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"wallet":"01"}
 
           response=$(createrawtransaction "${line}")
+          returncode=$?
           ;;
         decoderawtransaction)
           # POST http://192.168.111.152:8080/decoderawtransaction
@@ -360,6 +362,7 @@ main() {
           # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
 
           response=$(decoderawtransaction "${line}")
+          returncode=$?
           ;;
         fundrawtransaction)
           # POST http://192.168.111.152:8080/fundrawtransaction
@@ -368,6 +371,7 @@ main() {
           # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","options":{"changeAddress":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"},"wallet":"01"}
 
           response=$(fundrawtransaction "${line}")
+          returncode=$?
           ;;
         signrawtransaction)
           # POST http://192.168.111.152:8080/signrawtransaction
@@ -375,6 +379,7 @@ main() {
           # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
 
           response=$(signrawtransaction "${line}")
+          returncode=$?
           ;;
         sendrawtransaction)
           # POST http://192.168.111.152:8080/sendrawtransaction
@@ -383,6 +388,7 @@ main() {
           # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
 
           response=$(sendrawtransaction "${line}")
+          returncode=$?
           ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
