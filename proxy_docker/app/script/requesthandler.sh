@@ -291,6 +291,7 @@ main() {
         listunspent)
           # All params are optional:
           #
+          # curl (GET) http://192.168.111.152:8080/listunspent
           # curl (POST) http://192.168.111.152:8080/listunspent
           # BODY {"minconf":1,"maxconf":9999999,"addresses":["2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"]}
           # BODY {"minamount":0.0001,"maxamount":0.1,"maxcount":10}
@@ -396,6 +397,27 @@ main() {
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
 
           response=$(bumpfee "${line}")
+          returncode=$?
+          ;;
+        lockunspent)
+          # POST http://192.168.111.152:8080/lockunspent
+          # BODY {"unlock":true,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
+          # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
+          # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}],"wallet":"01"}
+
+          response=$(lockunspent "${line}")
+          returncode=$?
+          ;;
+        listlockunspent)
+          # curl (GET) http://192.168.111.152:8080/listlockunspent
+          # curl (GET) http://192.168.111.152:8080/listlockunspent/01 (spending wallet number)
+
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "listlockunspent" ]; then
+            walletname=""
+          fi
+
+          response=$(listlockunspent "${walletname}")
           returncode=$?
           ;;
         createbatcher)

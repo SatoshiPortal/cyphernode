@@ -534,6 +534,12 @@ test_spender_functions() {
   # action_sendrawtransaction=spender
   test_authorization "sendrawtransaction" "${token}" ${has_access} || return 195
 
+  # action_lockunspent=spender
+  test_authorization "lockunspent" "${token}" ${has_access} || return 200
+
+  # action_listlockunspent=spender
+  test_authorization "listlockunspent" "${token}" ${has_access} || return 205
+
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 

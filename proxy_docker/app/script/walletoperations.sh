@@ -695,6 +695,75 @@ getnewaddress() {
   return ${returncode}
 }
 
+lockunspent() {
+  trace "Entering lockunspent()..."
+
+  local request=${1}
+  local unlock=$(echo "${request}" | jq -r ".unlock // false")
+  local utxos=$(echo "${request}" | jq -r ".utxos")
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  local response
+  local data='{"method":"lockunspent","params":['${unlock}','${utxos}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[lockunspent] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local success=$(echo ${response} | jq ".result")
+    trace "[lockunspent] success=${success}"
+
+    data="{\"success\":${success}}"
+  else
+    trace "[lockunspent] Couldn't lock/unlock unspent!"
+    data=""
+  fi
+
+  trace "[lockunspent] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+listlockunspent() {
+  trace "Entering listlockunspent()..."
+
+  local wallet=${1}
+  local response
+  local data='{"method":"listlockunspent"}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[listlockunspent] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local locked_utxos=$(echo ${response} | jq ".result")
+    trace "[listlockunspent] locked_utxos=${locked_utxos}"
+
+    data="{\"locked_utxos\":${locked_utxos}}"
+  else
+    trace "[listlockunspent] Couldn't list locked unspent!"
+    data=""
+  fi
+
+  trace "[listlockunspent] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
 create_wallet() {
   trace "[Entering create_wallet()]"
 
