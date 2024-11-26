@@ -590,6 +590,9 @@ batchspend() {
       fi
 
       if [ "${errorcode}" -eq "-6" ]; then
+        trace "[batchspend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}"
+
         # There's insufficient funds, we'll retry later, let's clear the tx_id for the outputs
         sql "UPDATE recipient SET tx_id=null WHERE id IN (${whereclause})"
         returncode=$?
