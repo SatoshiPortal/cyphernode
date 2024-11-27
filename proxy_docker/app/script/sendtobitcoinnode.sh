@@ -82,4 +82,28 @@ send_to_bitcoin_node() {
   return ${returncode}
 }
 
+send_batch_to_bitcoin_node() {
+  trace "Entering send_batch_to_bitcoin_node()..."
+  local returncode
+  local result
+  local errorstring
+  local node_url=${1}
+  local config=${2}
+  local data=${3}
+
+  trace "[send_batch_to_bitcoin_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
+  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d "${data}" "${node_url}")
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[send_batch_to_bitcoin_node] result=${result}"
+
+  # Since there's an independant response for each batch item, we won't check for errors here.
+
+  # Output response to stdout before exiting with return code
+  echo "${result}"
+
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 case "${0}" in *sendtobitcoinnode.sh) send_to_bitcoin_node "$@";; esac
