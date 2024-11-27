@@ -82,11 +82,12 @@ spend() {
     data="{\"status\":\"accepted\""
     data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
+    local errorstring=$(echo "${response}" | jq -e ".error")
     local message=$(echo "${response}" | jq -e ".error.message")
     if [ -n "${message}" ]; then
-      if [ "${message}" = "Insufficient funds" ]; then
-        trace "[spend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}\""
-        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}"
+      if [ "${message}" = "\"Insufficient funds\"" ]; then
+        trace "[spend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"spend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"spend\",\"error\":\"${errorstring}\"}"
       fi
 
       data="{\"message\":${message}}"
