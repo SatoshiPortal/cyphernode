@@ -320,6 +320,12 @@ getpriorityfromconftarget() {
   local conf_target=${1}
   trace "[getpriorityfromconftarget] conf_target=${conf_target}"
 
+  # default to hour priority if no conf_target is provided
+  if [ -z "${conf_target}" ] || [ "${conf_target}" = "null" ]; then
+    conf_target=6
+    trace "[getpriorityfromconftarget] defaulted conf_target=${conf_target}"
+  fi
+
   conftarget_fastest=$(($CONFTARGET_PRIORITY_FASTEST + 1))
   conftarget_halfhour=$(($CONFTARGET_PRIORITY_HALFHOUR + 1))
   conftarget_hour=$(($CONFTARGET_PRIORITY_HOUR + 1))
@@ -346,20 +352,28 @@ getfeerate() {
 
   local conf_target=${1}
   trace "[getfeerate] conf_target=${conf_target}"
-
   local priority=$(getpriorityfromconftarget "${conf_target}")
   trace "[getfeerate] priority=${priority}"
+  local feerate
 
-  local feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
-  if [ -n "$feerate" ]; then
-    echo "{\"feerate\":\"${feerate}\"}"
-    return 0
-  fi
+  if [ "${BITCOIN_NETWORK}" = "mainnet" ]; then
+    feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
 
-  local feerate=$(getfeeratefromurl "https://mempool.space/api/v1/fees/recommended" "${priority}")
-  if [ -n "$feerate" ]; then
-    echo "{\"feerate\":\"${feerate}\"}"
-    return 0
+    feerate=$(getfeeratefromurl "https://mempool.space/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
+  elif [ "${BITCOIN_NETWORK}" = "testnet" ]; then
+   feerate=$(getfeeratefromurl "https://mempool.space/testnet/api/v1/fees/recommended" "${priority}")
+   if [ -n "$feerate" ]; then
+     echo "{\"feerate\":\"${feerate}\"}"
+     return 0
+   fi
   fi
 
   local response
@@ -371,10 +385,9 @@ getfeerate() {
   trace "[getfeerate] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local feerate=$(echo ${response} | jq ".result.feerate")
-    feerate=$(printf "%.8f" $feerate)
-    feerate=$(echo "scale=1; $feerate*100000000" | bc)
-    trace "[getfeerate] after feerate=${feerate}"
+    feerate=$(echo ${response} | jq ".result.feerate")
+    feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 }")
+    trace "[getfeerate] feerate=${feerate}"
 
     data="{\"feerate\":\"${feerate}\"}"
   else
