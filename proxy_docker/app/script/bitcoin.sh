@@ -386,7 +386,7 @@ getfeerate() {
 
   if [ "${returncode}" -eq 0 ]; then
     feerate=$(echo ${response} | jq ".result.feerate")
-    feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 }")
+    feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 / 1024 }")
     trace "[getfeerate] feerate=${feerate}"
 
     data="{\"feerate\":\"${feerate}\"}"
