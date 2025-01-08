@@ -14,7 +14,7 @@ importaddress_rpc() {
   local data='{"method":"importaddress","params":{"address":"'${address}'","label":"'${label}'","rescan":false}}'
   # local data="{\"method\":\"importaddress\",\"params\":[\"${address}\",\"\",false]}"
   local result
-  result=$(send_to_watcher_node ${data})
+  result=$(send_to_watcher_node "${data}")
   local returncode=$?
 
   echo "${result}"
@@ -48,7 +48,7 @@ importmulti_rpc() {
 #  trace "[importmulti_rpc] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_watcher_node_wallet ${walletname} ${rpcstring})
+  result=$(send_to_watcher_node_wallet "${walletname}" "${rpcstring}")
   local returncode=$?
 
   echo "${result}"

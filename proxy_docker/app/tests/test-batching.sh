@@ -47,7 +47,7 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-batching --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-batching --network=cyphernodenet alpine:3.15.4
 }
 
 stop_test_container() {
@@ -195,6 +195,12 @@ testbatching() {
     exit 55
   fi
   trace 2 "\n\n[testbatching] ${BCyan}Tested batchspend.${Color_Off}\n"
+
+  # The batchspend should have triggered the safety net mechanism of flagging the recipient's txid as DEFECT-
+  # When this happens, a manual intervention is needed to make sure the payment has not been broadcast to avoid double-payments.
+  # In this case, an output amount was too large so we know the payment has not been done.  Let's just remove the DEFECT- flag.
+  trace 2 "\n\n[testbatching] ${BCyan}Cleaning up the failed batchspend...${Color_Off}\n"
+  docker exec -it $(docker ps -q -f "name=proxy\.") psql -U cyphernode -h postgres -c "UPDATE recipient SET tx_id = NULL WHERE id IN (${id}, ${id2}); DELETE FROM tx WHERE id = (SELECT tx_id FROM recipient WHERE id = ${id});"
 
   # getbatchdetails the default batcher
   trace 2 "\n\n[testbatching] ${BCyan}Testing getbatchdetails...${Color_Off}\n"
@@ -394,7 +400,7 @@ start_callback_server() {
   trace 1 "\n\n[start_callback_server] ${BCyan}Let's start a callback server!...${Color_Off}\n"
 
   port=${1:-${callbackserverport}}
-  docker run --rm -t --name tests-batching-cb --network=cyphernodenet alpine sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker run --rm -t --name tests-batching-cb --network=cyphernodenet alpine:3.15.4 sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
 }
 
 TRACING=3

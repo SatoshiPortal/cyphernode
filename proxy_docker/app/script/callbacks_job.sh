@@ -5,76 +5,93 @@
 . ./notify.sh
 
 do_callbacks() {
-  (
-  flock -x 200 || return 0
-
   trace "Entering do_callbacks()..."
-
-  # If called because we received a confirmation for a specific txid, let's only
-  # process that txid-related callbacks...
+  (
+  local flock_flag
   local txid=${1}
-  local txid_where
+
   if [ -n "${txid}" ]; then
-    trace "[do_callbacks] txid=${txid}"
-    txid_where=" AND txid='${txid}'"
+    flock_flag="--timeout 60" # wait 60 seconds before before failing to grab lock
+  else
+    flock_flag="--nonblock"
   fi
 
-  # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON w.watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
-  trace "[do_callbacks] callbacks0conf=${callbacks}"
+  trace "[do_callbacks] flock_flag=[${flock_flag}]"
 
   local returncode
-  local address
-  local url
-  local IFS=$'\n'
-  for row in ${callbacks}
-  do
-    build_callback ${row}
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq 0 ]; then
-      address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching SET calledback0conf=true WHERE address='${address}'"
-      trace_rc $?
+  local flock_output
+
+  flock_output=$(flock --verbose ${flock_flag} 8 2>&1)
+  returncode=$?
+  trace "[do_callbacks] flock_output=${flock_output}"
+  if [ "$returncode" -eq "0" ]; then
+
+    # If called because we received a confirmation for a specific txid, let's only
+    # process that txid-related callbacks...
+    local txid_where
+    if [ -n "${txid}" ]; then
+      trace "[do_callbacks] txid=${txid}"
+      txid_where=" AND txid='${txid}'"
     fi
-  done
 
-  callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w JOIN watching_tx wt ON w.id = wt.watching_id JOIN tx t ON wt.tx_id = t.id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
-  trace "[do_callbacks] callbacks1conf=${callbacks}"
+    # Let's fetch all the watching addresses still being watched but not called back
+    local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w LEFT JOIN watching_tx ON w.id = watching_id LEFT JOIN tx ON tx.id = tx_id LEFT JOIN watching_by_pub32 w32 ON w.watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[do_callbacks] callbacks0conf=${callbacks}"
 
-  for row in ${callbacks}
-  do
-    build_callback ${row}
-    returncode=$?
-    if [ "${returncode}" -eq 0 ]; then
-      address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE watching SET calledback1conf=true, watching=false WHERE address='${address}'"
-      trace_rc $?
-    fi
-  done
+    local address
+    local url
+    local IFS="
+"
+    for row in ${callbacks}
+    do
+      build_callback "${row}"
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -eq 0 ]; then
+        address=$(echo "${row}" | cut -d '|' -f2)
+        sql "UPDATE watching SET calledback0conf=true WHERE address='${address}'"
+        trace_rc $?
+      fi
+    done
 
-  if [ -z "${txid}" ]; then
-    trace "[do_callbacks] Processing LN callbacks..."
-
-    callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
-    trace "[do_callbacks] ln_callbacks=${callbacks}"
+    callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, hash FROM watching w JOIN watching_tx wt ON w.id = wt.watching_id JOIN tx t ON wt.tx_id = t.id LEFT JOIN watching_by_pub32 w32 ON watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[do_callbacks] callbacks1conf=${callbacks}"
 
     for row in ${callbacks}
     do
-      ln_manage_callback ${row}
-      trace_rc $?
+      build_callback "${row}"
+      returncode=$?
+      if [ "${returncode}" -eq 0 ]; then
+        address=$(echo "${row}" | cut -d '|' -f2)
+        sql "UPDATE watching SET calledback1conf=true, watching=false WHERE address='${address}'"
+        trace_rc $?
+      fi
     done
-  else
-    trace "[do_callbacks] called for a specific txid, skipping LN callbacks"
-  fi
 
-  ) 200>./.callbacks.lock
+    if [ -z "${txid}" ]; then
+      trace "[do_callbacks] Processing LN callbacks..."
+
+      callbacks=$(sql "SELECT id, label, bolt11, callback_url, payment_hash, msatoshi, status, pay_index, msatoshi_received, paid_at, description, expires_at FROM ln_invoice WHERE NOT calledback AND callback_failed")
+      trace "[do_callbacks] ln_callbacks=${callbacks}"
+
+      for row in ${callbacks}
+      do
+        ln_manage_callback "${row}"
+        trace_rc $?
+      done
+    else
+      trace "[do_callbacks] called for a specific txid, skipping LN callbacks"
+    fi
+  else
+    trace "[do_callbacks]  Exiting flock"
+  fi
+  ) 8>./.callbacks.lock
 }
 
 ln_manage_callback() {
   trace "Entering ln_manage_callback()..."
 
-  local row=$@
+  local row="$@"
   trace "[ln_manage_callback] row=${row}"
 
   local id=$(echo "${row}" | cut -d '|' -f1)
@@ -139,7 +156,7 @@ ln_manage_callback() {
   data="${data}\"pay_index\":${pay_index},"
   data="${data}\"msatoshi_received\":${msatoshi_received},"
   data="${data}\"paid_at\":${paid_at},"
-  data="${data}\"description\":\"${description}\","
+  data="${data}\"description\":$(echo "${description}" | jq -Ra),"
   data="${data}\"expires_at\":${expires_at}}"
   trace "[ln_manage_callback] data=${data}"
 
@@ -161,7 +178,7 @@ ln_manage_callback() {
 build_callback() {
   trace "Entering build_callback()..."
 
-  local row=$@
+  local row="$@"
   local id
   local url
   local data
@@ -270,7 +287,7 @@ build_callback() {
   if [ -n "${pub32_index}" ]; then
     data="${data}\"pub32\":\"${pub32}\","
     data="${data}\"pub32_label\":\"${label}\","
-    derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
+    derivation_path=$(echo "$derivation_path" | sed -En "s/n/${pub32_index}/p")
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
   data="${data}\"eventMessage\":\"${event_message}\"}"
@@ -286,11 +303,11 @@ curl_callback() {
   local returncode
   local response
 
-  response=$(notify_web "${1}" "${2}" ${TOR_ADDR_WATCH_WEBHOOKS})
+  response=$(notify_web "${1}" "${2}" "${TOR_ADDR_WATCH_WEBHOOKS}")
   returncode=$?
   trace_rc ${returncode}
 
   return ${returncode}
 }
 
-case "${0}" in *callbacks_job.sh) do_callbacks $@;; esac
+case "${0}" in *callbacks_job.sh) do_callbacks "$@";; esac

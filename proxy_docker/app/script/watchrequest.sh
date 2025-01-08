@@ -97,7 +97,7 @@ watchrequest() {
 '"message":"Invalid address",'\
 '"data":{'\
 '"event":"watch",'\
-'"address":'"${address}"','\
+'"address":"'${address}'",'\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}','\
 '"label":'${label_json}','\
@@ -307,7 +307,7 @@ watchpub32() {
   fi
 
   if [ -z "${error_msg}" ]; then
-    local subspath=$(echo -e $path | sed -En "s/n/${nstart}-${last_n}/p")
+    local subspath=$(echo "$path" | sed -En "s/n/${nstart}-${last_n}/p")
     trace "[watchpub32] subspath=${subspath}"
     local addresses
     addresses=$(derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
@@ -436,7 +436,8 @@ insert_watches() {
   local nstart=${6}
   local inserted_values
 
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${addresses}
   do
     # (address, label, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)

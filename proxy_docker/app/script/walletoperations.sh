@@ -19,16 +19,27 @@ spend() {
   trace "[spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[spend] wallet=${wallet}"
+  fi
 
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
+
+  local fee_rate=$(getfeerate "${conf_target}" | jq -r ".feerate")
+  trace "[spend] fee_rate=${fee_rate}"
 
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}" "${wallet}")
+  else
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -38,8 +49,8 @@ spend() {
     trace "[spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction ${txid} "spender")
-    tx_raw_details=$(get_rawtransaction ${txid} | tr -d '\n')
+    tx_details=$(get_transaction "${txid}" "spender" "${wallet}")
+    tx_raw_details=$(get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
     local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
@@ -82,8 +93,18 @@ spend() {
     data="{\"status\":\"accepted\""
     data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
+    local errorstring=$(echo "${response}" | jq -e ".error")
     local message=$(echo "${response}" | jq -e ".error.message")
-    data="{\"message\":${message}}"
+    if [ -n "${message}" ]; then
+      if [ "${message}" = "\"Insufficient funds\"" ]; then
+        trace "[spend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"spend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"spend\",\"error\":\"${errorstring}\"}"
+      fi
+
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
   fi
 
   trace "[spend] responding=${data}"
@@ -98,21 +119,31 @@ bumpfee() {
   local request=${1}
   local txid=$(echo "${request}" | jq -r ".txid")
   trace "[bumpfee] txid=${txid}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  trace "[bumpfee] wallet=${wallet}"
 
   local confTarget
   local response
   local returncode
+
+  data="{\"method\":\"bumpfee\",\"params\":[\"${txid}\""
 
   # jq -e will have a return code of 1 if the supplied tag is null.
   confTarget=$(echo "${request}" | jq -e ".confTarget")
   if [ "$?" -ne "0" ]; then
     # confTarget tag null, so there's no confTarget
     trace "[bumpfee] confTarget="
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+  else
+    data="${data},{\"confTarget\":${confTarget}}"
+    trace "[bumpfee] confTarget=${confTarget}"
+  fi
+  data="${data}]}"
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
     returncode=$?
   else
-    trace "[bumpfee] confTarget=${confTarget}"
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    response=$(send_to_spender_node "${data}")
     returncode=$?
   fi
 
@@ -133,7 +164,7 @@ bumpfee() {
 get_txns_spending() {
   trace "Entering get_txns_spending()... with count: $1 , skip: $2"
   local count="$1"
-  local skip="$2" 
+  local skip="$2"
   local response
   local data="{\"method\":\"listtransactions\",\"params\":[\"*\",${count:-10},${skip:-0}]}"
   response=$(send_to_spender_node "${data}")
@@ -160,9 +191,16 @@ get_txns_spending() {
 getbalance() {
   trace "Entering getbalance()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalance"}'
-  response=$(send_to_spender_node "${data}")
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalance] response=${response}"
@@ -173,7 +211,7 @@ getbalance() {
 
     data="{\"balance\":${balance}}"
   else
-    trace "[getbalance] Coudn't get balance!"
+    trace "[getbalance] Couldn't get balance!"
     data=""
   fi
 
@@ -186,15 +224,20 @@ getbalance() {
 getbalances() {
   trace "Entering getbalances()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalances"}'
-  response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local balances=$(echo ${response} | jq ".result")
+    local balances=$(echo "${response}" | jq ".result")
     trace "[getbalances] balances=${balances}"
 
     data="{\"balances\":${balances}}"
@@ -219,7 +262,7 @@ getbalancebyxpublabel() {
   xpub=$(sql "SELECT pub32 FROM watching_by_pub32 WHERE label='${label}'")
   trace "[getbalancebyxpublabel] xpub=${xpub}"
 
-  getbalancebyxpub ${xpub} "getbalancebyxpublabel"
+  getbalancebyxpub "${xpub}" "getbalancebyxpublabel"
   returncode=$?
 
   return ${returncode}
@@ -244,11 +287,11 @@ getbalancebyxpub() {
   # addresses=$(./bitcoin-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_watcher_wallet ${data} | jq ".result | keys" | tr -d '\n ')
+  addresses=$(send_to_xpub_watcher_wallet "${data}" | jq ".result | keys" | tr -d '\n ')
   # ./bitcoin-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
   data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_watcher_wallet ${data} | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
+  balance=$(send_to_xpub_watcher_wallet "${data}" | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[getbalancebyxpub] balance=${balance}"
@@ -268,6 +311,9 @@ getnewaddress() {
 
   local label=${2}
   trace "[getnewaddress] label=${label}"
+
+  local wallet=${3}
+  trace "[getnewaddress] wallet=${wallet}"
 
   local response
   local jqop
@@ -291,6 +337,11 @@ getnewaddress() {
   trace "[getnewaddress] data=${data}"
 
   response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getnewaddress] response=${response}"
@@ -324,7 +375,7 @@ create_wallet() {
   trace "[create_wallet] rpcstring=${rpcstring}"
 
   local result
-  result=$(send_to_watcher_node ${rpcstring})
+  result=$(send_to_watcher_node "${rpcstring}")
   local returncode=$?
 
   echo "${result}"

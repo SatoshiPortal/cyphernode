@@ -174,11 +174,11 @@
     "schema_version": {
       "type": "string",
       "enum": [
-        "0.2.5.wasabi"
+        "0.2.6.wasabi"
       ],
       "default": "0.3.0",
       "examples": [
-        "0.2.5.wasabi"
+        "0.2.6.wasabi"
       ]
     },
     "setup_version": {

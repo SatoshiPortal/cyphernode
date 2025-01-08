@@ -10,7 +10,7 @@ deriveindex() {
   trace "[deriveindex] index=${index}"
 
   local pub32=$DERIVATION_PUB32
-  local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
+  local path=$(echo "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
 
   local data="{\"pub32\":\"${pub32}\",\"path\":\"${path}\"}"
   trace "[deriveindex] data=${data}"
@@ -24,7 +24,7 @@ derivepubpath() {
 
   # {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
 
-  send_to_pycoin $1
+  send_to_pycoin "$1"
   return $?
 }
 
@@ -57,7 +57,7 @@ lowercase_if_bech32() {
 
   # Let's lowercase bech32 addresses
   local lowercased_address
-  lowercased_address=$(echo ${address} | tr '[:upper:]' '[:lower:]')
+  lowercased_address=$(echo "${address}" | tr '[:upper:]' '[:lower:]')
   case "${lowercased_address}" in
     bc*|tb*|bcrt*)
       address="${lowercased_address}"
@@ -260,7 +260,7 @@ deriveindex_bitcoind() {
   local pub32=${DERIVATION_PUB32}
   trace "[deriveindex_bitcoind] pub32=${pub32}"
 
-  local path=$(echo -e "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
+  local path=$(echo "$DERIVATION_PATH" | sed -En "s/n/${index}/p")
   trace "[deriveindex_bitcoind] path=${path}"
 
   bitcoind_derive_addresses "${pub32}" "${path}"
@@ -287,6 +287,118 @@ derivepubpath_bitcoind() {
   bitcoind_derive_addresses "${pub32}" "${path}"
 
   return $?
+}
+
+getfeeratefromurl() {
+  local url=$1
+  local priority=$2
+  local response
+  local returncode
+
+  trace "[getfeeratefromurl] url=${url}"
+  trace "[getfeeratefromurl] priority=${priority}"
+
+  response=$(curl -s -m 3 $url)
+  returncode=$?
+
+  if [ $returncode -ne 0 ] || [ -z "$response" ]; then
+    trace "[getfeeratefromurl] Failed to get response from $url"
+    return 1
+  fi
+
+  local feerate=$(echo $response | jq ".${priority}Fee")
+  if [ -z "$feerate" ]; then
+    trace "[getfeeratefromurl] Failed to extract $priority fee from response"
+    return 1
+  fi
+
+  echo $feerate
+  return 0
+}
+
+getpriorityfromconftarget() {
+  local conf_target=${1}
+  trace "[getpriorityfromconftarget] conf_target=${conf_target}"
+
+  # default to hour priority if no conf_target is provided
+  if [ -z "${conf_target}" ] || [ "${conf_target}" = "null" ]; then
+    conf_target=6
+    trace "[getpriorityfromconftarget] defaulted conf_target=${conf_target}"
+  fi
+
+  conftarget_fastest=$(($CONFTARGET_PRIORITY_FASTEST + 1))
+  conftarget_halfhour=$(($CONFTARGET_PRIORITY_HALFHOUR + 1))
+  conftarget_hour=$(($CONFTARGET_PRIORITY_HOUR + 1))
+  conftarget_economy=$(($CONFTARGET_PRIORITY_ECONOMY + 1))
+
+  local priority
+  if [ "$conf_target" -lt $conftarget_fastest ]; then
+    priority="fastest"
+  elif [ "$conf_target" -lt $conftarget_halfhour ]; then
+    priority="halfHour"
+  elif [ "$conf_target" -lt $conftarget_hour ]; then
+    priority="hour"
+  elif [ "$conf_target" -lt $conftarget_economy ]; then
+    priority="economy"
+  else
+    priority="hour"
+  fi
+
+  echo $priority
+}
+
+getfeerate() {
+  trace "Entering getfeerate()..."
+
+  local conf_target=${1}
+  trace "[getfeerate] conf_target=${conf_target}"
+  local priority=$(getpriorityfromconftarget "${conf_target}")
+  trace "[getfeerate] priority=${priority}"
+  local feerate
+
+  if [ "${BITCOIN_NETWORK}" = "mainnet" ]; then
+    feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
+
+    feerate=$(getfeeratefromurl "https://mempool.space/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
+  elif [ "${BITCOIN_NETWORK}" = "testnet" ]; then
+   feerate=$(getfeeratefromurl "https://mempool.space/testnet/api/v1/fees/recommended" "${priority}")
+   if [ -n "$feerate" ]; then
+     echo "{\"feerate\":\"${feerate}\"}"
+     return 0
+   fi
+  fi
+
+  local response
+  local returncode
+  local data='{"method":"estimatesmartfee","params":['${conf_target}']}'
+  response=$(send_to_spender_node "${data}")
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[getfeerate] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    feerate=$(echo ${response} | jq ".result.feerate")
+    feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 / 1000 }")
+    trace "[getfeerate] feerate=${feerate}"
+
+    data="{\"feerate\":\"${feerate}\"}"
+  else
+    trace "[getfeerate] Faild to get feerate!"
+    data="{\"feerate\":\"0\"}"
+  fi
+
+  trace "[getfeerate] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
 }
 
 # xpub = P2PKH / P2SH = 1addr or 3addr = pkh()
@@ -452,25 +564,25 @@ derivepubpath_bitcoind() {
 
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/26-30"}' localhost:8888/derivepubpath
 # {"addresses":[{"address":"mmaVh4SYCQhSmLWwFz7TuJ6WrQRYy8ertu"},{"address":"msriobrSwkReTfzvQr78de6RBfcbVCDxmX"},{"address":"mp377o3ifAGT5hnDBFjzmm8dFKEC9Cr4ct"},{"address":"mkxWm27kekHJC2kH1HgiT18xHrLMriZ3rc"},{"address":"mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/26-30"}' localhost:8888/derivepubpath_bitcoind
 # ["mmaVh4SYCQhSmLWwFz7TuJ6WrQRYy8ertu","msriobrSwkReTfzvQr78de6RBfcbVCDxmX","mp377o3ifAGT5hnDBFjzmm8dFKEC9Cr4ct","mkxWm27kekHJC2kH1HgiT18xHrLMriZ3rc","mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath 
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath
 # {"addresses":[{"address":"mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"}]}
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath_bitcoind   
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl -d '{"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/30"}' localhost:8888/derivepubpath_bitcoind
 # ["mwoQwJckE6otryPNyeYwknsMCwjgyNWdjh"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/26-30         
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/26-30
 # {"addresses":[{"address":"2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV"},{"address":"2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP"},{"address":"2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6"},{"address":"2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH"},{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex_bitcoind/26-30
 # ["2NFLhFghAPKEPuZCKoeXYYxuaBxhKXbmhBV","2N7gepbQtRM5Hm4PTjvGadj9wAwEwnAsKiP","2Mth8XDZpXkY9d95tort8HYEAuEesow2tF6","2MwqEmAXhUw6H7bJwMhD13HGWVEj2HgFiNH","2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"]
-# 
-# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/30   
+#
+# docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex/30
 # {"addresses":[{"address":"2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"}]}
-# 
+#
 # docker exec -it $(docker ps -q -f "name=cyphernode_proxy\.") curl localhost:8888/deriveindex_bitcoind/30
 # ["2N2Y4BVRdrRFhweub2ehHXveGZC3nryMEJw"]
-# 
+#

@@ -4,6 +4,8 @@
 
 # You need jq installed for these tests to run correctly
 # You need to configure cyphernode with a default xpub for these tests to work.
+# Use upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
+# for these tests to succeed.
 
 # This will test:
 #
@@ -22,7 +24,7 @@ trace() {
 }
 
 start_test_container() {
-  docker run -d --rm -t --name tests-derive --network=cyphernodenet alpine
+  docker run -d --rm -t --name tests-derive --network=cyphernodenet alpine:3.15.4
 }
 
 stop_test_container() {
