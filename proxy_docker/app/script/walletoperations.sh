@@ -27,15 +27,18 @@ spend() {
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
 
+  local fee_rate=$(getfeerate "${conf_target}" | jq -r ".feerate")
+  trace "[spend] fee_rate=${fee_rate}"
+
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
   if [ -n "${wallet}" ]; then
-    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}" "${wallet}")
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}" "${wallet}")
   else
-    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
   fi
   local returncode=$?
   trace_rc ${returncode}
@@ -90,8 +93,14 @@ spend() {
     data="{\"status\":\"accepted\""
     data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
+    local errorstring=$(echo "${response}" | jq -e ".error")
     local message=$(echo "${response}" | jq -e ".error.message")
     if [ -n "${message}" ]; then
+      if [ "${message}" = "\"Insufficient funds\"" ]; then
+        trace "[spend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"spend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"spend\",\"error\":\"${errorstring}\"}"
+      fi
+
       data="{\"message\":${message}}"
     else
       data="{\"message\":null}"

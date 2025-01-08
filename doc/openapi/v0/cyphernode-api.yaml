@@ -1822,6 +1822,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
+  /bitcoin_getfeerate:
+    post:
+      tags:
+        - "core features"
+        - "bitcoin"
+      summary: "Returns current fee estimation based on mempool.space rates"
+      description: "Returns current fee estimation based on mempool.space rates"
+      operationId: "getfeerate"
+      requestBody:
+        description: "Conf Target"
+        required: true
+        content:
+          application/json:
+            schema:
+              type: "object"
+              properties:
+                confTarget:
+                  type: "number"
+      responses:
+        '200':
+          description: "operation successful"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                properties:
+                  result:
+                    type: "object"
+                    properties:
+                      feerate:
+                        type: "number"
+                  error:
+                    type: "object"
+                  id:
+                    type: "number"
+        '403':
+          $ref: '#/components/schemas/ApiResponseNotAllowed'
+        '405':
+          $ref: '#/components/schemas/ApiResponseInvalidInput'
+        '503':
+          description: "Resource temporarily unavailable"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseTemporarilyUnavailable'
   /bitcoin_gettxoutproof:
     post:
       tags:

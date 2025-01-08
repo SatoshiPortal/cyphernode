@@ -480,7 +480,17 @@ batchspend() {
 
     local bitcoincore_args='{"method":"sendmany","params":["", {'${recipientsjson}'}'
     if [ -n "${conf_target}" ]; then
-      bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
+      local fee_rate
+      fee_rate=$(getfeerate "${conf_target}" | jq -r '.feerate')
+      returncode=$?
+      trace_rc ${returncode}
+      trace "[batchspend] fee_rate=${fee_rate}"
+      if [ "${returncode}" -eq 0 ]; then
+        # minconf, comment, subtractfeefrom, replaceable, conf_target, estimate_mode, fee_rate
+        bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, null, \"unset\", ${fee_rate}"
+      else
+        bitcoincore_args="${bitcoincore_args}, 1, \"\", null, null, ${conf_target}"
+      fi
     fi
     bitcoincore_args="${bitcoincore_args}]}"
 
@@ -590,6 +600,9 @@ batchspend() {
       fi
 
       if [ "${errorcode}" -eq "-6" ]; then
+        trace "[batchspend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}"
+
         # There's insufficient funds, we'll retry later, let's clear the tx_id for the outputs
         sql "UPDATE recipient SET tx_id=null WHERE id IN (${whereclause})"
         returncode=$?
