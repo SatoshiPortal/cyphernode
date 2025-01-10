@@ -670,7 +670,11 @@ getnewaddress() {
   fi
   trace "[getnewaddress] data=${data}"
 
-  response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getnewaddress] response=${response}"
@@ -722,7 +726,12 @@ lockunspent() {
     data="{\"success\":${success}}"
   else
     trace "[lockunspent] Couldn't lock/unlock unspent!"
-    data=""
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
   fi
 
   trace "[lockunspent] responding=${data}"
@@ -755,7 +764,12 @@ listlockunspent() {
     data="{\"locked_utxos\":${locked_utxos}}"
   else
     trace "[listlockunspent] Couldn't list locked unspent!"
-    data=""
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
   fi
 
   trace "[listlockunspent] responding=${data}"
