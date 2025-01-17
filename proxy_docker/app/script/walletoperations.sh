@@ -4,6 +4,56 @@
 . ./sendtobitcoinnode.sh
 . ./bitcoin.sh
 
+listunspent() {
+  trace "Entering listunspent()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  trace "[listunspent] wallet=${wallet}"
+  local minconf=$(echo "${request}" | jq -r ".minconf // 0")
+  trace "[listunspent] minconf=${minconf}"
+  local maxconf=$(echo "${request}" | jq -r ".maxconf // null")
+  trace "[listunspent] maxconf=${maxconf}"
+  local addresses=$(echo "${request}" | jq -r ".addresses // []")
+  trace "[listunspent] addresses=${addresses}"
+
+  local minamount=$(echo "${request}" | jq -r ".minamount // 0")
+  trace "[listunspent] minamount=${minamount}"
+  local maxamount=$(echo "${request}" | jq -r ".maxamount // 9999999")
+  trace "[listunspent] maxamount=${maxamount}"
+  local maxcount=$(echo "${request}" | jq -r ".maxcount // 9999999")
+  trace "[listunspent] maxcount=${maxcount}"
+
+  local response
+
+  local data='{"method":"listunspent","params":['${minconf}','${maxconf}','${addresses}',false,{"minimumAmount":'${minamount}',"maximumAmount":'${maxamount}',"maximumCount":'${maxcount}'}]}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[listunspent] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local utxos=$(echo ${response} | jq -rc ".result")
+    trace "[listunspent] utxos=${utxos}"
+
+    data="{\"utxos\":${utxos}}"
+  else
+    trace "[listunspent] Couldn't get utxos!"
+    data=""
+  fi
+
+  trace "[listunspent] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
 spend() {
   trace "Entering spend()..."
 
@@ -19,16 +69,27 @@ spend() {
   trace "[spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[spend] subtractfeefromamount=${subtractfeefromamount}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[spend] wallet=${wallet}"
+  fi
 
   # Let's lowercase bech32 addresses
   address=$(lowercase_if_bech32 "${address}")
+
+  local fee_rate=$(getfeerate "${conf_target}" | jq -r ".feerate")
+  trace "[spend] fee_rate=${fee_rate}"
 
   local response
   local id_inserted
   local tx_details
   local tx_raw_details
 
-  response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}" "${wallet}")
+  else
+    response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
@@ -38,7 +99,7 @@ spend() {
     trace "[spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(get_transaction "${txid}" "spender")
+    tx_details=$(get_transaction "${txid}" "spender" "${wallet}")
     tx_raw_details=$(get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
@@ -82,8 +143,14 @@ spend() {
     data="{\"status\":\"accepted\""
     data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"amount\":${amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
+    local errorstring=$(echo "${response}" | jq -e ".error")
     local message=$(echo "${response}" | jq -e ".error.message")
     if [ -n "${message}" ]; then
+      if [ "${message}" = "\"Insufficient funds\"" ]; then
+        trace "[spend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"spend\",\"error\":\"${errorstring}\"}\""
+        mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"spend\",\"error\":\"${errorstring}\"}"
+      fi
+
       data="{\"message\":${message}}"
     else
       data="{\"message\":null}"
@@ -96,27 +163,354 @@ spend() {
   return ${returncode}
 }
 
+sendmany() {
+  trace "Entering sendmany()..."
+
+  local data
+  local request=${1}
+  local amounts=$(echo "${request}" | jq -r ".amounts")
+  trace "[sendmany] amounts=${amounts}"
+  local conf_target=$(echo "${request}" | jq ".confTarget")
+  trace "[sendmany] confTarget=${conf_target}"
+  local replaceable=$(echo "${request}" | jq ".replaceable")
+  trace "[sendmany] replaceable=${replaceable}"
+  local fee_rate=$(echo "${request}" | jq ".feeRate")
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[sendmany] wallet=${wallet}"
+  fi
+
+  local response
+  local id_inserted
+  local tx_details
+  local tx_raw_details
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", ${amounts},6,\"\",[],${replaceable},${conf_target},\"unset\",${fee_rate}]}" "${wallet}")
+  else
+    response=$(send_to_spender_node "{\"method\":\"sendmany\",\"params\":[\"\", ${amounts},6,\"\",[],${replaceable},${conf_target},\"unset\",${fee_rate}]}")
+  fi
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[sendmany] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local txid=$(echo "${response}" | jq -r ".result")
+    trace "[sendmany] txid=${txid}"
+
+    # Let's get transaction details on the spending wallet so that we have fee information
+    tx_details=$(get_transaction "${txid}" "spender" "${wallet}")
+    tx_raw_details=$(get_rawtransaction "${txid}" | tr -d '\n')
+
+    # Amounts and fees are negative when spending so we absolute those fields
+    local tx_hash=$(echo "${tx_raw_details}" | jq -r '.result.hash')
+    local tx_ts_firstseen=$(echo "${tx_details}" | jq '.result.timereceived')
+    local tx_amount=$(echo "${tx_details}" | jq '.result.amount | fabs' | awk '{ printf "%.8f", $0 }')
+    local tx_size=$(echo "${tx_raw_details}" | jq '.result.size')
+    local tx_vsize=$(echo "${tx_raw_details}" | jq '.result.vsize')
+    local tx_replaceable=$(echo "${tx_details}" | jq -r '.result."bip125-replaceable"')
+    tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
+    local fees=$(echo "${tx_details}" | jq '.result.fee | fabs' | awk '{ printf "%.8f", $0 }')
+
+    ########################################################################################################
+    # Let's publish the event if needed
+    local event_message
+    event_message=$(echo "${request}" | jq -er ".eventMessage")
+    if [ "$?" -ne "0" ]; then
+      # event_message tag null, so there's no event_message
+      trace "[sendmany] event_message="
+      event_message=
+    else
+      # There's an event message, let's publish it!
+
+      trace "[sendmany] mosquitto_pub -h broker -t sendmany -m \"{\"txid\":\"${txid}\",\"amounts\":${amounts},\"tx_amount\":${tx_amount},\"fees\":\"${fees}\",\"eventMessage\":\"${event_message}\"}\""
+      response=$(mosquitto_pub -h broker -t sendmany -m "{\"txid\":\"${txid}\",\"amounts\":${amounts},\"tx_amount\":${tx_amount},\"fees\":\"${fees}\",\"eventMessage\":\"${event_message}\"}")
+      returncode=$?
+      trace_rc ${returncode}
+    fi
+    ########################################################################################################
+
+    # Let's insert the txid in our little DB -- then we'll already have it when receiving confirmation
+    id_inserted=$(sql "INSERT INTO tx (txid, hash, confirmations, timereceived, fee, size, vsize, is_replaceable, conf_target)"\
+" VALUES ('${txid}', '${tx_hash}', 0, ${tx_ts_firstseen}, ${fees}, ${tx_size}, ${tx_vsize}, ${tx_replaceable}, ${conf_target})"\
+" RETURNING id" \
+    "SELECT id FROM tx WHERE txid='${txid}'")
+    trace_rc $?
+    
+    echo "${amounts}" | jq -r 'to_entries[] | "\(.key) \(.value)"' | while read -r address amount; do
+      sql "INSERT INTO recipient (address, amount, tx_id) VALUES ('${address}', ${amount}, ${id_inserted})"\
+" ON CONFLICT DO NOTHING"
+      trace_rc $?
+    done
+#    sql "INSERT INTO recipient (address, amount, tx_id) VALUES ('${address}', ${amount}, ${id_inserted})"\
+#" ON CONFLICT DO NOTHING"
+#    trace_rc $?
+
+    data="{\"status\":\"accepted\""
+    data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"amounts\":${amounts},\"tx_amount\":${tx_amount},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees}}}"
+  else
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[sendmany] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+createrawtransaction() {
+  trace "Entering createrawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[createrawtransaction] wallet=${wallet}"
+  fi
+  local inputs=$(echo "${request}" | jq -r ".inputs")
+  trace "[createrawtransaction] inputs=${inputs}"
+  local outputs=$(echo "${request}" | jq -r ".outputs")
+  trace "[createrawtransaction] outputs=${outputs}"
+  local locktime=$(echo "${request}" | jq -r ".locktime // null")
+  trace "[createrawtransaction] locktime=${locktime}"
+  local replaceable=$(echo "${request}" | jq -r ".replaceable // true")
+
+  local response
+
+  local data='{"method":"createrawtransaction","params":['${inputs}','${outputs}','${locktime}','${replaceable}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[createrawtransaction] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local rawtx=$(echo ${response} | jq -rc ".result")
+    trace "[createrawtransaction] rawtx=${rawtx}"
+
+    data="{\"hex\":\"${rawtx}\"}"
+  else
+    trace "[createrawtransaction] Couldn't get rawtx!"
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[createrawtransaction] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+decoderawtransaction() {
+  trace "Entering decoderawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[decoderawtransaction] wallet=${wallet}"
+  fi
+  local rawtx=$(echo "${request}" | jq -r ".hex")
+  trace "[decoderawtransaction] rawtx=${rawtx}"
+
+  local response
+
+  local data='{"method":"decoderawtransaction","params":["'${rawtx}'"]}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[decoderawtransaction] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local tx=$(echo ${response} | jq -rc ".result")
+    trace "[decoderawtransaction] tx=${tx}"
+
+    data="{\"tx\":${tx}}"
+  else
+    trace "[decoderawtransaction] Couldn't decode tx!"
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[decoderawtransaction] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+fundrawtransaction() {
+  trace "Entering fundrawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[fundrawtransaction] wallet=${wallet}"
+  fi
+  local rawtx=$(echo "${request}" | jq -r ".hex")
+  trace "[fundrawtransaction] rawtx=${rawtx}"
+  local options=$(echo "${request}" | jq -r ".options")
+  trace "[fundrawtransaction] options=${options}"
+
+  local response
+
+  local data='{"method":"fundrawtransaction","params":["'${rawtx}'",'${options}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[fundrawtransaction] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local data=$(echo ${response} | jq -rc ".result")
+  else
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[fundrawtransaction] responding=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}
+
+signrawtransaction() {
+  trace "Entering signrawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[signrawtransaction] wallet=${wallet}"
+  fi
+  local rawtx=$(echo "${request}" | jq -r ".hex")
+  trace "[signrawtransaction] rawtx=${rawtx}"
+
+  local response
+
+  local data='{"method":"signrawtransactionwithwallet","params":["'${rawtx}'"]}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[signrawtransaction] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local data=$(echo ${response} | jq -rc ".result")
+  else
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[signrawtransaction] responding=${data}"
+
+  echo "${data}"
+
+  return ${returncode}
+}
+
+sendrawtransaction() {
+  trace "Entering sendrawtransaction()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[sendrawtransaction] wallet=${wallet}"
+  fi
+  local rawtx=$(echo "${request}" | jq -r ".hex")
+  trace "[sendrawtransaction] rawtx=${rawtx}"
+  local maxfeerate=$(echo "${request}" | jq -r ".maxfeerate // 0.1")
+  trace "[sendrawtransaction] maxfeerate=${maxfeerate}"
+
+  local response
+
+  local data='{"method":"sendrawtransaction","params":["'${rawtx}'",'${maxfeerate}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[sendrawtransaction] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 bumpfee() {
   trace "Entering bumpfee()..."
 
   local request=${1}
   local txid=$(echo "${request}" | jq -r ".txid")
   trace "[bumpfee] txid=${txid}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  trace "[bumpfee] wallet=${wallet}"
 
   local confTarget
   local response
   local returncode
+
+  data="{\"method\":\"bumpfee\",\"params\":[\"${txid}\""
 
   # jq -e will have a return code of 1 if the supplied tag is null.
   confTarget=$(echo "${request}" | jq -e ".confTarget")
   if [ "$?" -ne "0" ]; then
     # confTarget tag null, so there's no confTarget
     trace "[bumpfee] confTarget="
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+  else
+    data="${data},{\"confTarget\":${confTarget}}"
+    trace "[bumpfee] confTarget=${confTarget}"
+  fi
+  data="${data}]}"
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
     returncode=$?
   else
-    trace "[bumpfee] confTarget=${confTarget}"
-    response=$(send_to_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    response=$(send_to_spender_node "${data}")
     returncode=$?
   fi
 
@@ -164,9 +558,16 @@ get_txns_spending() {
 getbalance() {
   trace "Entering getbalance()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalance"}'
-  response=$(send_to_spender_node "${data}")
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalance] response=${response}"
@@ -177,7 +578,7 @@ getbalance() {
 
     data="{\"balance\":${balance}}"
   else
-    trace "[getbalance] Coudn't get balance!"
+    trace "[getbalance] Couldn't get balance!"
     data=""
   fi
 
@@ -190,9 +591,14 @@ getbalance() {
 getbalances() {
   trace "Entering getbalances()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalances"}'
-  response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getbalances] response=${response}"
@@ -273,6 +679,9 @@ getnewaddress() {
   local label=${2}
   trace "[getnewaddress] label=${label}"
 
+  local wallet=${3}
+  trace "[getnewaddress] wallet=${wallet}"
+
   local response
   local jqop
   local addedfieldstoresponse
@@ -294,7 +703,11 @@ getnewaddress() {
   fi
   trace "[getnewaddress] data=${data}"
 
-  response=$(send_to_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[getnewaddress] response=${response}"
@@ -314,6 +727,85 @@ getnewaddress() {
   fi
 
   trace "[getnewaddress] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+lockunspent() {
+  trace "Entering lockunspent()..."
+
+  local request=${1}
+  local unlock=$(echo "${request}" | jq -r ".unlock // false")
+  local utxos=$(echo "${request}" | jq -r ".utxos")
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  local response
+  local data='{"method":"lockunspent","params":['${unlock}','${utxos}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[lockunspent] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local success=$(echo ${response} | jq ".result")
+    trace "[lockunspent] success=${success}"
+
+    data="{\"success\":${success}}"
+  else
+    trace "[lockunspent] Couldn't lock/unlock unspent!"
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[lockunspent] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
+listlockunspent() {
+  trace "Entering listlockunspent()..."
+
+  local wallet=${1}
+  local response
+  local data='{"method":"listlockunspent"}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[listlockunspent] response=${response}"
+
+  if [ "${returncode}" -eq 0 ]; then
+    local locked_utxos=$(echo ${response} | jq ".result")
+    trace "[listlockunspent] locked_utxos=${locked_utxos}"
+
+    data="{\"locked_utxos\":${locked_utxos}}"
+  else
+    trace "[listlockunspent] Couldn't list locked unspent!"
+    local message=$(echo "${response}" | jq -e ".error.message")
+    if [ -n "${message}" ]; then
+      data="{\"message\":${message}}"
+    else
+      data="{\"message\":null}"
+    fi
+  fi
+
+  trace "[listlockunspent] responding=${data}"
   echo "${data}"
 
   return ${returncode}
