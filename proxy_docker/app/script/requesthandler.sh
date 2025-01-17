@@ -189,23 +189,23 @@ main() {
           ;;
         unwatchtxid)
           # POST http://192.168.111.152:8080/unwatchtxid
-          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","xconfCallbackURL":"192.168.111.233:1111/callbackxconf"}
           # or
           # BODY {"id":3124}
 
           # args:
           # - txid: string, required
-          # - unconfirmedCallbackURL: string, optional
           # - confirmedCallbackURL: string, optional
+          # - xconfCallbackURL: string, optional
           # or
           # - id: the id returned by watchtxid
 
           local txid=$(echo "${line}" | jq -r ".txid")
-          local unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
           local confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+          local xconfCallbackURL=$(echo "${line}" | jq -r ".xconfCallbackURL")
           local watchid=$(echo "${line}" | jq ".id")
 
-          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+          response=$(unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
           returncode=$?
           ;;
         getactivewatches)
@@ -279,14 +279,26 @@ main() {
           ;;
         getbalance)
           # curl (GET) http://192.168.111.152:8080/getbalance
+          # curl (GET) http://192.168.111.152:8080/getbalance/01 (spending wallet number)
 
-          response=$(getbalance)
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "getbalance" ]; then
+            walletname=""
+          fi
+
+          response=$(getbalance "${walletname}")
           returncode=$?
           ;;
         getbalances)
           # curl (GET) http://192.168.111.152:8080/getbalances
+          # curl (GET) http://192.168.111.152:8080/getbalances/01 (spending wallet number)
 
-          response=$(getbalances)
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "getbalances" ]; then
+            walletname=""
+          fi
+
+          response=$(getbalances "${walletname}")
           returncode=$?
           ;;
         getbalancebyxpub)
@@ -301,6 +313,23 @@ main() {
           response=$(getbalancebyxpublabel "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
+        listunspent)
+          # All params are optional:
+          #
+          # curl (GET) http://192.168.111.152:8080/listunspent
+          # curl (POST) http://192.168.111.152:8080/listunspent
+          # BODY {"minconf":1,"maxconf":9999999,"addresses":["2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"]}
+          # BODY {"minamount":0.0001,"maxamount":0.1,"maxcount":10}
+          # BODY {"minamount":0.0001,"maxamount":0.1,"maxcount":10,"wallet":"01"}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(listunspent "${line}")
+          else
+            response=$(listunspent "{}")
+          fi
+
+          returncode=$?
+          ;;
         getnewaddress)
           # curl (GET) http://192.168.111.152:8080/getnewaddress
           # curl (GET) http://192.168.111.152:8080/getnewaddress/bech32
@@ -310,17 +339,22 @@ main() {
           # BODY {"addressType":"bech32","label":"myLabel"}
           # BODY {"label":"myLabel"}
           # BODY {"addressType":"p2sh-segwit"}
+          # BODY {"addressType":"bech32","label":"myLabel","wallet":"01"}
+          # BODY {"label":"myLabel","wallet":"01"}
+          # BODY {"addressType":"p2sh-segwit","wallet":"01"}
+          # BODY {"wallet":"01"}
           # BODY {}
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
             address_type=$(echo "${line}" | jq -er ".addressType // empty")
             label=$(echo "${line}" | jq -er ".label // empty")
+            wallet=$(echo "${line}" | jq -er ".wallet // empty")
           else
             address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           fi
 
-          response=$(getnewaddress "${address_type}" "${label}")
+          response=$(getnewaddress "${address_type}" "${label}" "${wallet}")
           returncode=$?
           ;;
         validateaddress)
@@ -332,16 +366,91 @@ main() {
         spend)
           # POST http://192.168.111.152:8080/spend
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false}
+          # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","amount":0.00233,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","confTarget":6,"replaceable":true,"subtractfeefromamount":false,"wallet":"01"}
 
           response=$(spend "${line}")
+          returncode=$?
+          ;;
+        sendmany)
+          # POST http://192.168.111.152:8080/sendmany
+          # BODY {"amounts":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233,"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"confTarget":6,"replaceable":true,"subtractfeefromamount":false}
+          # BODY {"amounts":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233,"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"replaceable":true,"subtractfeefromamount":false,"fee_rate":0.0001,"wallet":"01"}
+
+          response=$(sendmany "${line}")
+          returncode=$?
+          ;;
+        createrawtransaction)
+          # POST http://192.168.111.152:8080/createrawtransaction
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233}}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"locktime":1234,"replaceable":true,"wallet":"01"}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"wallet":"01"}
+
+          response=$(createrawtransaction "${line}")
+          returncode=$?
+          ;;
+        decoderawtransaction)
+          # POST http://192.168.111.152:8080/decoderawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(decoderawtransaction "${line}")
+          returncode=$?
+          ;;
+        fundrawtransaction)
+          # POST http://192.168.111.152:8080/fundrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","options":{"changeAddress":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp"},"wallet":"01"}
+
+          response=$(fundrawtransaction "${line}")
+          returncode=$?
+          ;;
+        signrawtransaction)
+          # POST http://192.168.111.152:8080/signrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(signrawtransaction "${line}")
+          returncode=$?
+          ;;
+        sendrawtransaction)
+          # POST http://192.168.111.152:8080/sendrawtransaction
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","maxfeerate":0.00000010,"wallet":"01"}
+          # BODY {"hex":"02000000000101b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd33870000000000ffffffff01a08601000000000017a914f","wallet":"01"}
+
+          response=$(sendrawtransaction "${line}")
           returncode=$?
           ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648"}
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4,"wallet":"01"}
+          # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","wallet":"01"}
 
           response=$(bumpfee "${line}")
+          returncode=$?
+          ;;
+        lockunspent)
+          # POST http://192.168.111.152:8080/lockunspent
+          # BODY {"unlock":true,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
+          # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
+          # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}],"wallet":"01"}
+
+          response=$(lockunspent "${line}")
+          returncode=$?
+          ;;
+        listlockunspent)
+          # curl (GET) http://192.168.111.152:8080/listlockunspent
+          # curl (GET) http://192.168.111.152:8080/listlockunspent/01 (spending wallet number)
+
+          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${walletname}" = "listlockunspent" ]; then
+            walletname=""
+          fi
+
+          response=$(listlockunspent "${walletname}")
           returncode=$?
           ;;
         createbatcher)
@@ -582,6 +691,22 @@ main() {
 	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
           # }
           response=$(bitcoin_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
+          returncode=$?
+          ;;
+        bitcoin_getfeerate)
+          # POST http://192.168.111.152:8080/bitcoin_getfeerate
+          # BODY {"confTarget":4}
+          #
+          # args:
+          # - confTarget the required confirmation target in blocks
+          #
+          # response:
+          # - feerate, the feerate in sat/vB
+          #
+          # BODY {"feerate":20.4}
+
+          local conf_target=$(echo "${line}" | jq -er ".confTarget // empty")
+          response=$(getfeerate "${conf_target}")
           returncode=$?
           ;;
         deriveindex)

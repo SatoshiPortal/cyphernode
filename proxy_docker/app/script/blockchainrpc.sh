@@ -17,7 +17,7 @@ getestimatesmartfee() {
 
   local nb_blocks=${1}
   trace "[getestimatesmartfee] nb_blocks=${nb_blocks}"
-  send_to_watcher_node "{\"method\":\"estimatesmartfee\",\"params\":[${nb_blocks}]}" | jq ".result.feerate" | awk '{ printf "%.8f", $0 }'
+  send_to_watcher_node "{\"method\":\"estimatesmartfee\",\"params\":[${nb_blocks},\"economical\"]}" | jq ".result.feerate" | awk '{ printf "%.8f", $0 }'
   return $?
 }
 
@@ -59,11 +59,15 @@ get_transaction() {
   trace "[get_transaction] txid=${txid}"
   local to_spender_node=${2}
   trace "[get_transaction] to_spender_node=${to_spender_node}"
+  local wallet=${3}
+  trace "[get_transaction] wallet=${wallet}"
 
   local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
   trace "[get_transaction] data=${data}"
   if [ -z "${to_spender_node}" ]; then
     send_to_watcher_node "${data}"
+  elif [ -n "${wallet}" ]; then
+    send_to_spender_node "${data}" "${wallet}"
   else
     send_to_spender_node "${data}"
   fi
@@ -110,7 +114,7 @@ bitcoin_estimatesmartfee() {
 
   local conf_target=${1}
   trace "[bitcoin_estimatesmartfee] conf_target=${conf_target}"
-  local data="{\"method\":\"estimatesmartfee\",\"params\":[${conf_target}]}"
+  local data="{\"method\":\"estimatesmartfee\",\"params\":[${conf_target},\"economical\"]}"
   trace "[bitcoin_estimatesmartfee] data=${data}"
   send_to_watcher_node "${data}"
   return $?

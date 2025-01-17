@@ -41,7 +41,14 @@ send_to_watcher_node_wallet() {
 
 send_to_spender_node() {
   trace "Entering send_to_spender_node()..."
-  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${SPENDER_BTC_NODE_DEFAULT_WALLET}" "${SPENDER_BTC_NODE_RPC_CFG}" "$@"
+
+  local walletname=${SPENDER_BTC_NODE_DEFAULT_WALLET}
+  if [ -n "$2" ]; then
+    walletname="spending${2}.dat"
+  fi
+  trace "[send_to_spender_node]wallet: ${walletname}"
+
+  send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${walletname}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -74,6 +81,30 @@ send_to_bitcoin_node() {
       trace "[send_to_bitcoin_node] Node responded, no error found in response, yayy!"
     fi
   fi
+
+  # Output response to stdout before exiting with return code
+  echo "${result}"
+
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
+send_batch_to_bitcoin_node() {
+  trace "Entering send_batch_to_bitcoin_node()..."
+  local returncode
+  local result
+  local errorstring
+  local node_url=${1}
+  local config=${2}
+  local data=${3}
+
+  trace "[send_batch_to_bitcoin_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
+  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d "${data}" "${node_url}")
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[send_batch_to_bitcoin_node] result=${result}"
+
+  # Since there's an independant response for each batch item, we won't check for errors here.
 
   # Output response to stdout before exiting with return code
   echo "${result}"
