@@ -206,7 +206,7 @@ elements_getbalances() {
   trace "[elements_getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local balances=$(echo ${response} | jq ".result")
+    local balances=$(echo "${response}" | jq ".result")
     trace "[elements_getbalances] balances=${balances}"
 
     data="{\"balances\":${balances}}"
@@ -231,7 +231,7 @@ elements_getbalancebyxpublabel() {
   xpub=$(sql "SELECT pub32 FROM elements_watching_by_pub32 WHERE label='${label}'")
   trace "[elements_getbalancebyxpublabel] xpub=${xpub}"
 
-  elements_getbalancebyxpub ${xpub} "elements_getbalancebyxpublabel"
+  elements_getbalancebyxpub "${xpub}" "elements_getbalancebyxpublabel"
   returncode=$?
 
   return ${returncode}

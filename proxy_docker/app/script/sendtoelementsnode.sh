@@ -5,13 +5,13 @@
 send_to_elements_watcher_node() {
   trace "Entering send_to_elements_watcher_node()..."
   local node_payload
-  node_payload="$(send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_DEFAULT_WALLET} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@)"
+  node_payload="$(send_to_elements_node "${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_DEFAULT_WALLET}" "${WATCHER_ELEMENTS_NODE_RPC_CFG}" "$@")"
   local returncode=$?
   trace_rc ${returncode}
   if [ "${returncode}" -ne 0 ]; then
     # Ok, since we now have multiple watching wallets, we need to try them all if it fails
     # We have 2 right now: watching and watching-for-xpubs
-    node_payload="$(send_to_elements_watcher_node_wallet ${WATCHER_BTC_NODE_XPUB_WALLET} $@)"
+    node_payload="$(send_to_elements_watcher_node_wallet "${WATCHER_BTC_NODE_XPUB_WALLET}" "$@")"
     returncode=$?
     trace_rc ${returncode}
   fi
@@ -22,7 +22,7 @@ send_to_elements_watcher_node() {
 send_to_xpub_elements_watcher_wallet() {
   trace "Entering send_to_xpub_elements_watcher_wallet()..."
 
-  send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_XPUB_WALLET} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node "${WATCHER_ELEMENTS_NODE_RPC_URL}/${WATCHER_ELEMENTS_NODE_XPUB_WALLET}" "${WATCHER_ELEMENTS_NODE_RPC_CFG}" "$@"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -33,7 +33,7 @@ send_to_elements_watcher_node_wallet() {
   local walletname=$1
   shift
   trace "[send_to_elements_watcher_node_wallet] walletname=${walletname}"
-  send_to_elements_node ${WATCHER_ELEMENTS_NODE_RPC_URL}/${walletname} ${WATCHER_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node "${WATCHER_ELEMENTS_NODE_RPC_URL}/${walletname}" "${WATCHER_ELEMENTS_NODE_RPC_CFG}" "$@"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -42,7 +42,7 @@ send_to_elements_watcher_node_wallet() {
 send_to_elements_spender_node()
 {
   trace "Entering send_to_elements_spender_node()..."
-  send_to_elements_node ${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET} ${SPENDER_ELEMENTS_NODE_RPC_CFG} $@
+  send_to_elements_node "${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}" "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "$@"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
@@ -76,6 +76,30 @@ send_to_elements_node()
       trace "[send_to_elements_node] Node responded, no error found in response, yayy!"
     fi
   fi
+
+  # Output response to stdout before exiting with return code
+  echo "${result}"
+
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
+send_batch_to_elements_node() {
+  trace "Entering send_batch_to_elements_node()..."
+  local returncode
+  local result
+  local errorstring
+  local node_url=${1}
+  local config=${2}
+  local data=${3}
+
+  trace "[send_batch_to_elements_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
+  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d "${data}" "${node_url}")
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[send_batch_to_elements_node] result=${result}"
+
+  # Since there's an independant response for each batch item, we won't check for errors here.
 
   # Output response to stdout before exiting with return code
   echo "${result}"

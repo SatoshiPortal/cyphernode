@@ -70,7 +70,7 @@ start_test_container() {
 stop_test_container() {
   trace 1 "\n\n[stop_test_container] ${BCyan}Stopping existing containers if they are running...${Color_Off}\n"
 
-  # docker stop tests-manage-missed
+  # docker stop tests-elements-manage-missed
   local containers=$(docker ps -q -f "name=tests-elements-manage-missed")
   if [ -n "${containers}" ]; then
     docker stop ${containers}
@@ -78,11 +78,11 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-elements-manage-missed $@
+  docker exec -it tests-elements-manage-missed "$@"
 }
 
 exec_in_test_container_nonint() {
-  docker exec -t tests-manage-missed "$@"
+  docker exec -t tests-elements-manage-missed "$@"
 }
 
 wait_for_proxy() {
@@ -99,7 +99,7 @@ wait_for_broker() {
   trace 1 "\n\n[wait_for_broker] ${BCyan}Waiting for the broker to be ready...${Color_Off}\n"
 
   # First ping the containers to make sure they're up...
-  docker exec -t tests-manage-missed sh -c 'while true ; do ping -c 1 broker ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+  docker exec -t tests-elements-manage-missed sh -c 'while true ; do ping -c 1 broker ; [ "$?" -eq "0" ] && break ; sleep 5; done'
 }
 
 test_elements_manage_missed_0_conf() {
@@ -204,8 +204,8 @@ test_elements_manage_missed_1_conf() {
   trace 3 "[test_elements_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
   docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.00001
 
-  trace 3 "[test_elements_manage_missed_1_conf] Sleeping for 10 seconds to let the 0-conf callbacks to happen..."
-  sleep 10
+  trace 3 "[test_elements_manage_missed_1_conf] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
+  sleep 20
 
   trace 3 "[test_elements_manage_missed_1_conf] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
@@ -266,7 +266,7 @@ test_elements_manage_missed_1_conf_dead_broker() {
   trace 3 "[test_elements_manage_missed_1_conf_dead_broker] response=${response}"
 
   trace 3 "[test_elements_manage_missed_1_conf_dead_broker] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.00001
 
   trace 3 "[test_elements_manage_missed_1_conf_dead_broker] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
   sleep 20
@@ -275,7 +275,7 @@ test_elements_manage_missed_1_conf_dead_broker() {
   docker stop $(docker ps -q -f "name=broker")
 
   trace 3 "[test_elements_manage_missed_1_conf_dead_broker] Mine a new block..."
-  mine
+  elements_mine
 
   wait_for_broker
 
@@ -283,10 +283,10 @@ test_elements_manage_missed_1_conf_dead_broker() {
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 
   # wait for callback servers
-  trace 3 "[test_elements_manage_missed_1_conf] Waiting for callbacks..."
+  trace 3 "[test_elements_manage_missed_1_conf_dead_broker] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_elements_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
+  trace 3 "[test_elements_manage_missed_1_conf_dead_broker] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
 }
 
 start_callback_server() {

@@ -12,15 +12,6 @@ elements_get_best_block_hash() {
   return $?
 }
 
-elements_getestimatesmartfee() { ## TODO: Check if this endpoint exists and do we really want it here?
-  trace "Entering elements_getestimatesmartfee()..."
-
-  local nb_blocks=${1}
-  trace "[elements_getestimatesmartfee] nb_blocks=${nb_blocks}"
-  send_to_elements_watcher_node "{\"method\":\"estimatesmartfee\",\"params\":[${nb_blocks}]}" | jq ".result.feerate" | awk '{ printf "%.8f", $0 }'
-  return $?
-}
-
 elements_get_block_info() {
   trace "Entering elements_get_block_info()..."
 
@@ -37,7 +28,7 @@ elements_get_best_block_info() {
 
   local block_hash=$(echo "$(elements_get_best_block_hash)" | jq -r ".result")
   trace "[elements_get_best_block_info] block_hash=${block_hash}"
-  elements_get_block_info ${block_hash}
+  elements_get_block_info "${block_hash}"
   return $?
 }
 
@@ -108,17 +99,6 @@ elements_validateaddress() {
   trace "[elements_validateaddress] address=${address}"
   local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
   trace "[elements_validateaddress] data=${data}"
-  send_to_elements_watcher_node "${data}"
-  return $?
-}
-
-elements_estimatesmartfee() {
-  trace "Entering elements_estimatesmartfee()..."
-
-  local conf_target=${1}
-  trace "[elements_estimatesmartfee] conf_target=${conf_target}"
-  local data="{\"method\":\"estimatesmartfee\",\"params\":[${conf_target}]}"
-  trace "[elements_estimatesmartfee] data=${data}"
   send_to_elements_watcher_node "${data}"
   return $?
 }

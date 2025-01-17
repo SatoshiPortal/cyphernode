@@ -27,7 +27,6 @@
 . ./elements_blockchainrpc.sh
 . ./elements_manage_missed_conf.sh
 . ./elements_walletoperations.sh
-. ./elements_newblock.sh
 . ./elements_getactivewatches.sh
 
 main() {

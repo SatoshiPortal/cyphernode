@@ -2,22 +2,16 @@
 
 rm -f /container_monitor/elements_ready
 
-while [ ! -f "/container_monitor/bitcoin_ready" ]; do echo "bitcoin not ready" ; sleep 10 ; done
+<% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_elements') !== -1 ) { %>
+while [  ! -f "/container_monitor/tor_ready" ];
+do
+    echo "CYPHERNODE[entrypoint]: Waiting for Tor to be ready before starting elementsd"
+    sleep 10
+done
+echo "CYPHERNODE[entrypoint]: Tor is ready - Starting elementsd"
+<% } %>
 
-echo "bitcoin ready"
-
+# Create default wallets if they are not loaded
 /.elements/createWallets.sh &
 
-<% if ( features.indexOf('tor') !== -1 && torifyables && torifyables.indexOf('tor_elements') !== -1 ) { %>
-#while [ ! -f "/container_monitor/tor_ready" ]; do echo "tor not ready" ; sleep 10 ; done
-while [ -z "${TORIP}" ]; do echo "tor not ready" ; TORIP=$(getent hosts tor | awk '{ print $1 }') ; sleep 10 ; done
-
-#TORIP=$(getent hosts tor | awk '{ print $1 }')
-echo "tor ready at IP ${TORIP}"
-
-exec elementsd --proxy=$TORIP:9050
-<% } else { %>
-
 exec elementsd
-
-<% } %>
