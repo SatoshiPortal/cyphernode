@@ -84,13 +84,15 @@ spend() {
   local id_inserted
   local tx_details
   local tx_raw_details
+  local returncode
 
   if [ -n "${wallet}" ]; then
     response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}" "${wallet}")
   else
     response=$(send_to_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},null,\"unset\",false,${fee_rate}]}")
   fi
-  local returncode=$?
+
+  returncode=$?
   trace_rc ${returncode}
   trace "[spend] response=${response}"
 
@@ -236,7 +238,7 @@ sendmany() {
 " RETURNING id" \
     "SELECT id FROM tx WHERE txid='${txid}'")
     trace_rc $?
-    
+
     echo "${amounts}" | jq -r 'to_entries[] | "\(.key) \(.value)"' | while read -r address amount; do
       sql "INSERT INTO recipient (address, amount, tx_id) VALUES ('${address}', ${amount}, ${id_inserted})"\
 " ON CONFLICT DO NOTHING"

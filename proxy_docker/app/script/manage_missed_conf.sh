@@ -110,6 +110,7 @@ manage_missed_conf() {
       trace "[manage_missed_conf] We got something to check..."
 
       latesttxid=$(echo "${received_watch}" | jq -r ".txids | last")
+      trace "[manage_missed_conf] latesttxid=${latesttxid}"
       data="{\"method\":\"gettransaction\",\"params\":[\"${latesttxid}\",true,true]}"
       trace "[manage_missed_conf] calling method=${data}"
 

@@ -136,7 +136,7 @@ bitcoin_generatetoaddress() {
   local data
   data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
 
-  trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
+  trace "[bitcoin_generatetoaddress] data=${data}"
 
   send_to_spender_node "${data}"
   return $?

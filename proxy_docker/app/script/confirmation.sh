@@ -181,7 +181,7 @@ confirmation() {
 " ON CONFLICT (txid) DO"\
 " UPDATE SET blockhash=${tx_blockhash}, blockheight=${tx_blockheight}, blocktime=${tx_blocktime}, confirmations=${tx_nb_conf}"\
 " RETURNING id" \
-"SELECT id FROM tx WHERE txid='${txid}'")
+      "SELECT id FROM tx WHERE txid='${txid}'")
       trace_rc $?
 
     else
@@ -230,7 +230,7 @@ confirmation() {
         # those additional addresses in watching_tx!
         watching_id=$(echo "${row}" | cut -d '|' -f1)
         sql "INSERT INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"\
-  " ON CONFLICT DO NOTHING"
+" ON CONFLICT DO NOTHING"
         trace_rc $?
       else
         trace "[confirmation] For this tx, there's already watching_tx rows"
@@ -276,6 +276,8 @@ confirmation() {
   else
     trace "[confirmation] Skipping callbacks as requested"
   fi
+
+  echo '{"result":"confirmed"}'
 
   return 0
 }
