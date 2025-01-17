@@ -384,16 +384,23 @@ getfeerate() {
   trace_rc ${returncode}
   trace "[getfeerate] response=${response}"
 
+  # If we couldn't get the feerate from a mempool.space instance or our node, let's set it to 1.
+
   if [ "${returncode}" -eq 0 ]; then
     feerate=$(echo ${response} | jq ".result.feerate")
-    feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 / 1000 }")
-    trace "[getfeerate] feerate=${feerate}"
 
-    data="{\"feerate\":\"${feerate}\"}"
+    if [ "${feerate}" = "null" ]; then
+      feerate="1"
+    else
+      feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 / 1000 }")
+    fi
   else
     trace "[getfeerate] Faild to get feerate!"
-    data="{\"feerate\":\"0\"}"
+    feerate="1"
   fi
+  trace "[getfeerate] feerate=${feerate}"
+
+  data="{\"feerate\":\"${feerate}\"}"
 
   trace "[getfeerate] responding=${data}"
   echo "${data}"

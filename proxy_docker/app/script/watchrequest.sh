@@ -435,6 +435,7 @@ insert_watches() {
   local xpub_id=${5}
   local nstart=${6}
   local inserted_values
+  local address
 
   local IFS="
 "

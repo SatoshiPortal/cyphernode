@@ -9,7 +9,7 @@ mine() {
   local nbblocks=${1:-1}
 
   echo ; echo "About to mine ${nbblocks} block(s)..."
-  docker exec -t $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat -generate ${nbblocks}
+  docker exec -t $(docker ps -q -f "name=cyphernode_bitcoin$2\.") bitcoin-cli -rpcwallet=spending01.dat -generate ${nbblocks}
 }
 
 elements_mine() {

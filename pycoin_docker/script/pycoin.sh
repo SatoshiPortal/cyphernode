@@ -24,7 +24,8 @@ derive() {
 
   echo -n "{\"addresses\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for address in ${result}
   do
     if ${notfirst}; then
