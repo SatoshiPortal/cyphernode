@@ -25,15 +25,15 @@ walletnotify(){
         echo "[walletnotify-$$] It's a watching wallet ["$walletname"] - Adding topic cyphernode/bitcoin/walletnotify"
         echo "[walletnotify-$$] mosquitto_pub -h broker -t cyphernode/bitcoin/walletnotify -m \"$tx\" "
         mosquitto_pub -h broker -t cyphernode/bitcoin/walletnotify -m $(echo $tx | base64 -w 0)
+
+        echo "[walletnotify-$$] mosquitto_pub -h broker -t bitcoinnode/walletnotify -m \"$tx\" "
+        mosquitto_pub -h broker -t bitcoinnode/walletnotify -m $(echo $tx | base64 -w 0)
       fi
       break;
     else
       echo "[walletnotify-$$] Did not find ["$txid"] in wallet ["$walletname"] : ${error}"
     fi
   fi
-
-  echo "[walletnotify-$$] mosquitto_pub -h broker -t bitcoinnode/walletnotify -m \"$tx\" "
-  mosquitto_pub -h broker -t bitcoinnode/walletnotify -m $(echo $tx | base64 -w 0)
 
   echo "[walletnotify-$$] Done"
 }

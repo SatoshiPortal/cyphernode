@@ -7,59 +7,77 @@
 elements_do_callbacks() {
   trace "Entering elements_do_callbacks()..."
   (
-  flock -x 8 || return 0
-
-  # If called because we received a confirmation for a specific txid, let's only
-  # process that txid-related callbacks...
+  local flock_flag
   local txid=${1}
-  local txid_where
+
   if [ -n "${txid}" ]; then
-    trace "[elements_do_callbacks] txid=${txid}"
-    txid_where=" AND txid='${txid}'"
+    flock_flag="--timeout 60" # wait 60 seconds before before failing to grab lock
+  else
+    flock_flag="--nonblock"
   fi
 
-  # Let's fetch all the watching addresses still being watched but not called back
-  local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w LEFT JOIN elements_watching_tx ON w.id = elements_watching_id LEFT JOIN elements_tx ON elements_tx.id = elements_tx_id LEFT JOIN elements_watching_by_pub32 w32 ON w.elements_watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND elements_watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
-  trace "[elements_do_callbacks] callbacks0conf=${callbacks}"
+  trace "[do_callbacks] flock_flag=[${flock_flag}]"
 
   local returncode
-  local address
-  local url
-  local IFS="
+  local flock_output
+
+  flock_output=$(flock --verbose ${flock_flag} 8 2>&1)
+  returncode=$?
+  trace "[do_callbacks] flock_output=${flock_output}"
+  if [ "$returncode" -eq "0" ]; then
+
+    # If called because we received a confirmation for a specific txid, let's only
+    # process that txid-related callbacks...
+    local txid_where
+    if [ -n "${txid}" ]; then
+      trace "[elements_do_callbacks] txid=${txid}"
+      txid_where=" AND txid='${txid}'"
+    fi
+
+    # Let's fetch all the watching addresses still being watched but not called back
+    local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w LEFT JOIN elements_watching_tx ON w.id = elements_watching_id LEFT JOIN elements_tx ON elements_tx.id = elements_tx_id LEFT JOIN elements_watching_by_pub32 w32 ON w.elements_watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND elements_watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[elements_do_callbacks] callbacks0conf=${callbacks}"
+
+    local address
+    local url
+    local IFS="
 "
-  for row in ${callbacks}
-  do
-    elements_build_callback ${row}
-    returncode=$?
-    trace_rc ${returncode}
-    if [ "${returncode}" -eq 0 ]; then
-      address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE elements_watching SET calledback0conf=true WHERE address='${address}'"
-      trace_rc $?
-    fi
-  done
+    for row in ${callbacks}
+    do
+      elements_build_callback "${row}"
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -eq 0 ]; then
+        address=$(echo "${row}" | cut -d '|' -f2)
+        sql "UPDATE elements_watching SET calledback0conf=true WHERE address='${address}'"
+        trace_rc $?
+      fi
+    done
 
-  callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w JOIN elements_watching_tx wt ON w.id = wt.elements_watching_id JOIN elements_tx t ON wt.elements_tx_id = t.id LEFT JOIN elements_watching_by_pub32 w32 ON elements_watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
-  trace "[elements_do_callbacks] callbacks1conf=${callbacks}"
+    callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w JOIN elements_watching_tx wt ON w.id = wt.elements_watching_id JOIN elements_tx t ON wt.elements_tx_id = t.id LEFT JOIN elements_watching_by_pub32 w32 ON elements_watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[elements_do_callbacks] callbacks1conf=${callbacks}"
 
-  for row in ${callbacks}
-  do
-    elements_build_callback "${row}"
-    returncode=$?
-    if [ "${returncode}" -eq 0 ]; then
-      address=$(echo "${row}" | cut -d '|' -f2)
-      sql "UPDATE elements_watching SET calledback1conf=true, watching=false WHERE address='${address}'"
-      trace_rc $?
-    fi
-  done
+    for row in ${callbacks}
+    do
+      elements_build_callback "${row}"
+      returncode=$?
+      if [ "${returncode}" -eq 0 ]; then
+        address=$(echo "${row}" | cut -d '|' -f2)
+        sql "UPDATE elements_watching SET calledback1conf=true, watching=false WHERE address='${address}'"
+        trace_rc $?
+      fi
+    done
 
+  else
+    trace "[do_callbacks]  Exiting flock"
+  fi
   ) 8>./.elements_callbacks.lock
 }
 
 elements_build_callback() {
   trace "Entering elements_build_callback()..."
 
-  local row=$@
+  local row="$@"
   local id
   local url
   local data
@@ -117,13 +135,7 @@ elements_build_callback() {
   trace "[elements_build_callback] confirmations=${confirmations}"
   ts_firstseen=$(echo "${row}" | cut -d '|' -f7)
   trace "[elements_build_callback] ts_firstseen=${ts_firstseen}"
-
-  # If node in pruned mode, we can't calculate the fees and then we don't want
-  # to send 0.00000000 as fees but empty string to distinguish.
   fee=$(echo "${row}" | cut -d '|' -f8)
-  if [ -n "${fee}" ]; then
-    fee=$(echo "${fee}" | awk '{ printf "%.8f", $0 }')
-  fi
   trace "[elements_build_callback] fee=${fee}"
   size=$(echo "${row}" | cut -d '|' -f9)
   trace "[elements_build_callback] size=${size}"
@@ -182,7 +194,7 @@ elements_build_callback() {
   if [ -n "${pub32_index}" ]; then
     data="${data}\"pub32\":\"${pub32}\","
     data="${data}\"pub32_label\":\"${label}\","
-    derivation_path=$(echo -e $derivation_path | sed -En "s/n/${pub32_index}/p")
+    derivation_path=$(echo "$derivation_path" | sed -En "s/n/${pub32_index}/p")
     data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
   fi
   data="${data}\"eventMessage\":\"${event_message}\"}"

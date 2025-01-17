@@ -2,24 +2,33 @@
 
 ELEMENTS_CLI='elements-cli'
 
-while [ ! -f "/container_monitor/elements_ready" ]; do echo "CYPHERNODE: elementsd not ready" ; sleep 10 ; done
+while [ -z "`elements-cli echo`"  ]; do echo "CYPHERNODE[createWallet]: elementsd not ready" ; sleep 10 ; done
+echo "CYPHERNODE[createWallet]: elementsd is ready"
 
-echo "CYPHERNODE: elementsd is ready"
+walletNameNoQuote="watching01.dat"
+$ELEMENTS_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=false disable_private_keys=true \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
-# Check for the basic wallets.  If not present, create.
-BASIC_WALLETS='"watching01.dat" "xpubwatching01.dat" "spending01.dat"'
+walletNameNoQuote="xpubwatching01.dat"
+$ELEMENTS_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=false disable_private_keys=true \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
-CURRENT_WALLETS=`$ELEMENTS_CLI listwallets`
+walletNameNoQuote="spending01.dat"
+$ELEMENTS_CLI -named createwallet wallet_name=${walletNameNoQuote} descriptors=true disable_private_keys=false \
+&& echo "CYPHERNODE[createWallet]: new wallet created : [$walletNameNoQuote]" \
+|| echo "CYPHERNODE[createWallet]: Wallet [$walletNameNoQuote] found"
 
-for wallet in $BASIC_WALLETS
-do
-    echo "CYPHERNODE: Checking wallet [$wallet]"
-    echo "$CURRENT_WALLETS" | grep -F $wallet > /dev/null 2>&1
+<% if( net === 'regtest' ) { %>
+BLOCKS_TO_MINE=101
 
-    if [ "$?" -ne "0" ]; then
-       walletNameNoQuote=`echo $wallet | tr -d '"'`
-       $ELEMENTS_CLI createwallet ${walletNameNoQuote} && echo "CYPHERNODE: new wallet created : [$walletNameNoQuote]"
-    else
-       echo "CYPHERNODE: Wallet [$wallet] found"
-    fi
-done
+MIN_BALANCE=1.00000000
+balance=`elements-cli -rpcwallet=spending01.dat getbalance | jq '.bitcoin'`
+echo "CYPHERNODE[createWallet]: Current balance [$balance] - Min balance is [$MIN_BALANCE]"
+
+[ `expr $balance \>= $MIN_BALANCE` -eq 0 ] && \
+  echo "CYPHERNODE[createWallet]: Balance is less than $MIN_BALANCE - mining $BLOCKS_TO_MINE blocks" && \
+  elements-cli -rpcwallet=spending01.dat -generate $BLOCKS_TO_MINE && \
+  echo "CYPHERNODE[createWallet]: Done mining $BLOCKS_TO_MINE blocks"
+<% } %>
