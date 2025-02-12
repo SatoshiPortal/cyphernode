@@ -160,7 +160,7 @@ test_manage_missed_0_conf() {
   trace 3 "[test_manage_missed_0_conf] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_manage_missed_0_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
+  trace 3 "[test_manage_missed_0_conf] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
 }
 
 test_manage_missed_1_conf() {
@@ -224,7 +224,7 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
+  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
 }
 
 test_manage_missed_1_conf_dead_broker() {
@@ -286,7 +286,170 @@ test_manage_missed_1_conf_dead_broker() {
   trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done - Waiting for callbacks...${Color_Off}"
+  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
+}
+
+test_manage_missed_0_conf_multiple_txids() {
+  # Missed 0-conf:
+  # 1. Get new address
+  # 2. Watch it
+  # 2. Watch it again with a different callback url
+  # 3. Stop proxy
+  # 4. sendtoaddress while proxy is offline
+  # 4. sendtoaddress again while proxy is offline
+  # 5. Start proxy
+  # 6. Call executecallbacks
+  # 7. Check if 0-conf callback is called for each callback url and for each tx
+  # 8. Mine a block
+  # 9. Check if 1-conf callback is called for each callback url and for each tx
+
+  local id0=$RANDOM
+  local id1=$RANDOM
+  local id2=$RANDOM
+  local id3=$RANDOM
+
+  local port0=${id0}
+  local port1=${id1}
+  local port2=${id2}
+  local port3=${id3}
+
+  local callbackurl0conf="http://${callbackservername}:${port0}/callbackurl0conf"
+  local callbackurl1conf="http://${callbackservername}:${port1}/callbackurl1conf"
+  local callbackurl0conftx2="http://${callbackservername}:${port2}/callbackurl0conf-tx2"
+  local callbackurl1conftx2="http://${callbackservername}:${port3}/callbackurl1conf-tx2"
+
+  trace 1 "\n[test_manage_missed_0_conf_multiple_txids] ${BCyan}Let's miss a 0-conf!...${Color_Off}"
+
+  trace 2 "[test_manage_missed_0_conf_multiple_txids] getnewaddress..."
+  local response=$(exec_in_test_container curl -d '{"label":"missed0conftest"}' proxy:8888/getnewaddress)
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] response=${response}"
+  local address=$(echo "${response}" | jq -r ".address")
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] address=${address}"
+
+  start_callback_server $port0 ${address} &
+  start_callback_server $port1 ${address} &
+  start_callback_server $port2 ${address} &
+  start_callback_server $port3 ${address} &
+
+  trace 2 "[test_manage_missed_0_conf_multiple_txids] watch it..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${callbackurl0conf}'","confirmedCallbackURL":"'${callbackurl1conf}'","label":"missed0conftest"}'
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] response=${response}"
+
+  trace 2 "[test_manage_missed_0_conf_multiple_txids] watch it 2..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${callbackurl0conftx2}'","confirmedCallbackURL":"'${callbackurl1conftx2}'","label":"missed0conftest-tx2"}'
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] response=${response}"
+
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] Shutting down the proxy..."
+  # There are two container names containing "proxy": proxy and proxycron
+  # Let's exclude proxycron
+  docker stop $(docker ps -q -f "name=proxy[^c]")
+
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] Sending coins to watched address while proxy is down..."
+  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] Sending coins again to watched address while proxy is down..."
+  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
+
+  wait_for_proxy
+
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] Calling executecallbacks..."
+  exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
+
+  # 1 conf callback should be called after this
+  mine
+
+  # wait for callback servers
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] Waiting for callbacks..."
+
+  wait
+  trace 3 "[test_manage_missed_0_conf_multiple_txids] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
+}
+
+test_manage_missed_1_conf_multiple_txids() {
+  # Missed 1-conf:
+  # 1. Get new address
+  # 2. Watch it
+  # 2. Watch it again with a different callback url
+  # 3. sendtoaddress
+  # 3. sendtoaddress again
+  # 4. Check if 0-conf callback is called for each callback url and for each tx
+  # 5. Stop proxy
+  # 6. Mine a new block
+  # 7. Start proxy
+  # 8. Call executecallbacks
+  # 9. Check if 1-conf callback is called for each callback url and for each tx
+
+  local id0=$RANDOM
+  local id1=$RANDOM
+  local id2=$RANDOM
+  local id3=$RANDOM
+
+  local port0=${id0}
+  local port1=${id1}
+  local port2=${id2}
+  local port3=${id3}
+
+  local callbackurl0conf="http://${callbackservername}:${port0}/callbackurl0conf"
+  local callbackurl1conf="http://${callbackservername}:${port1}/callbackurl1conf"
+  local callbackurl0conftx2="http://${callbackservername}:${port2}/callbackurl0conf-tx2"
+  local callbackurl1conftx2="http://${callbackservername}:${port3}/callbackurl1conf-tx2"
+
+  trace 1 "\n[test_manage_missed_1_conf_multiple_txids] ${BCyan}Let's miss a 1-conf!...${Color_Off}"
+
+  trace 2 "[test_manage_missed_1_conf_multiple_txids] getnewaddress..."
+  local response=$(exec_in_test_container curl -d '{"label":"missed0conftest"}' proxy:8888/getnewaddress)
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] response=${response}"
+  local address=$(echo "${response}" | jq -r ".address")
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] address=${address}"
+
+  start_callback_server $port0 ${address} &
+  start_callback_server $port1 ${address} &
+  start_callback_server $port2 ${address} &
+  start_callback_server $port3 ${address} &
+
+  trace 2 "[test_manage_missed_1_conf_multiple_txids] watch it..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${callbackurl0conf}'","confirmedCallbackURL":"'${callbackurl1conf}'","label":"missed1conftest"}'
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] response=${response}"
+
+  trace 2 "[test_manage_missed_1_conf_multiple_txids] watch it 2..."
+  local data='{"address":"'${address}'","unconfirmedCallbackURL":"'${callbackurl0conftx2}'","confirmedCallbackURL":"'${callbackurl1conftx2}'","label":"missed1conftest-tx2"}'
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] data=${data}"
+  response=$(exec_in_test_container curl -d "${data}" proxy:8888/watch)
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] response=${response}"
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Sending coins to watched address while proxy is up..."
+  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Sending coins again to watched address while proxy is up..."
+  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
+  sleep 20
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Shutting down the proxy..."
+  # There are two container names containing "proxy": proxy and proxycron
+  # Let's exclude proxycron
+  docker stop $(docker ps -q -f "name=proxy[^c]")
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Mine a new block..."
+  mine
+
+  wait_for_proxy
+
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Calling executecallbacks..."
+  exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
+
+  # wait for callback servers
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] Waiting for callbacks..."
+
+  wait
+  trace 3 "[test_manage_missed_1_conf_multiple_txids] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
 }
 
 start_callback_server() {
@@ -309,8 +472,13 @@ exec_in_test_container apk add --update curl
 create_cb_server
 callbackservername="tests-manage-missed"
 
-test_manage_missed_0_conf
-test_manage_missed_1_conf
-test_manage_missed_1_conf_dead_broker
+wait_for_proxy
+
+test_manage_missed_0_conf && \
+test_manage_missed_1_conf && \
+test_manage_missed_1_conf_dead_broker && \
+test_manage_missed_0_conf_multiple_txids && \
+test_manage_missed_1_conf_multiple_txids && \
+trace 1 "\n\n[tests-manage-missed] ${BCyan}All tests passed!${Color_Off}\n"
 
 stop_test_container
