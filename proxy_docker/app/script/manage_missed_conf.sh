@@ -86,7 +86,8 @@ manage_missed_conf() {
   for received_watch in ${received_watches}
   do
     address=$(echo "${received_watch}" | jq -r '.address')
-    watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM watching WHERE address='${address}'")
+    # Getting the earliest one still being watched
+    watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM watching WHERE address='${address}' AND watching ORDER BY inserted_ts ASC LIMIT 1")
     trace "[manage_missed_conf] watching=${watching}"
     if [ ${#watching} -eq 0 ]; then
       trace "[manage_missed_conf] Nothing missed!"
@@ -95,43 +96,35 @@ manage_missed_conf() {
 
     inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" +%s)
     trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
-    calledback0conf=$(echo "${watching}" | cut -d '|' -f3)
-    trace "[manage_missed_conf] calledback0conf=${calledback0conf}"
-    confirmations=$(echo "${received_watch}" | jq -r ".confirmations")
-    trace "[manage_missed_conf] confirmations=${confirmations}"
 
-    if [ "${confirmations}" -eq "0" ] && [ "${calledback0conf}" = "t" ]; then
-      # 0-conf and calledback0conf is true, so let's skip this one
-      trace "[manage_missed_conf] Nothing missed!"
-    else
-      # 0-conf and calledback0conf false, let's call confirmation
-      # or
-      # 1-conf and calledback1conf false, let's call confirmation
-      trace "[manage_missed_conf] We got something to check..."
+    # This received address is still being watched by Cyphernode watcher, let's process missed conf for
+    # the transactions that happened after watching the address.
+    trace "[manage_missed_conf] Let's process missed conf for the transactions that happened after watching this address"
 
-      latesttxid=$(echo "${received_watch}" | jq -r ".txids | last")
-      trace "[manage_missed_conf] latesttxid=${latesttxid}"
-      data="{\"method\":\"gettransaction\",\"params\":[\"${latesttxid}\",true,true]}"
+    txids=$(echo "${received_watch}" | jq -r ".txids[]")
+    trace "[manage_missed_conf] txids=${txids}"
+
+    for txid in ${txids}; do
+      trace "[manage_missed_conf] Checking txid=${txid}"
+
+      data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true,true]}"
       trace "[manage_missed_conf] calling method=${data}"
 
       tx=$(send_to_watcher_node "${data}")
 
-      blocktime=$(echo "${tx}" | jq '.result.blocktime')
       txtime=$(echo "${tx}" | jq '.result.time')
 
-      trace "[manage_missed_conf] blocktime=${blocktime}"
-      trace "[manage_missed_conf] txtime=${txtime}"
       trace "[manage_missed_conf] inserted_ts=${inserted_ts}"
-      trace "[manage_missed_conf] confirmations=${confirmations}"
+      trace "[manage_missed_conf] txtime=${txtime}"
 
       if [ "${txtime}" -ge "${inserted_ts}" ]; then
         # Broadcast or mined after watch, we missed it!
-        trace "[manage_missed_conf] Broadcast or mined after watch, we missed it!"
+        trace "[manage_missed_conf] Broadcast or mined after watch, we might have missed it!"
         # We skip the callbacks because do_callbacks is called right after in
         # requesthandler.executecallbacks (where we're from)
         confirmation "$(echo "${tx}" | jq -Mc '.result' | base64 -w 0)" "true"
       fi
-    fi
+    done
   done
 
   return 0
