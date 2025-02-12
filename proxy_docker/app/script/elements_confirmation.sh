@@ -246,7 +246,7 @@ elements_confirmation() {
 " ON CONFLICT (txid) DO"\
 " UPDATE SET blockhash=${tx_blockhash}, blockheight=${tx_blockheight}, blocktime=${tx_blocktime}, confirmations=${tx_nb_conf}"\
 " RETURNING id" \
-"SELECT id FROM elements_tx WHERE txid='${txid}'")
+      "SELECT id FROM elements_tx WHERE txid='${txid}'")
       trace_rc $?
 
     else

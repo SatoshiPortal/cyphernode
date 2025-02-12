@@ -283,10 +283,10 @@ test_manage_missed_1_conf_dead_broker() {
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 
   # wait for callback servers
-  trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
+  trace 3 "[test_manage_missed_1_conf_dead_broker] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
 }
 
 test_manage_missed_0_conf_multiple_txids() {
