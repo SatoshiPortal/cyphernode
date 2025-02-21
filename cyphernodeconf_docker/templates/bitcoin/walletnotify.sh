@@ -11,6 +11,13 @@ walletnotify(){
   local error
   local watching_wallet
 
+  # The Bitcoin node may have several other wallets used for other purposes than the ones by Cyphernode, so
+  # we need to filter out the transactions from those other wallets before publishing them to the Cyphernode MQTT topics.
+
+  # We are using the cyphernode/bitcoin/walletnotify topic for Cyphernode purposes (watcher, confirmation management, etc.) and
+  # using the bitcoinnode/walletnotify topic for other purposes, like the cypherapps that are subscribed to it on the broker.
+  # We are only publishing transactions useful for Cyphernode on the Cyphernode's topic and all the others to the Cypherapps one.
+
   if [ "${walletname}" = "watching01.dat" ] || [ "${walletname}" = "xpubwatching01.dat" ] || [ "${walletname}" = "spending01.dat" ]; then
     echo "[walletnotify-$$] tx=(bitcoin-cli -rpcwallet=$walletname gettransaction $txid true true)"
     tx=$(bitcoin-cli -rpcwallet="$walletname" gettransaction "$txid" true true 2>&1)
