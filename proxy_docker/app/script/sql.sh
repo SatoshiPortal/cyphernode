@@ -8,6 +8,7 @@ sql() {
   local select_id=${2}
   local response
   local inserted_id
+  local returncode
 
   trace "[sql] psql -qAtX -h postgres -U cyphernode -c \"${1}\""
   response=$(psql -qAtX -h postgres -U cyphernode -c "${1}")
