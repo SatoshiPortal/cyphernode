@@ -4,7 +4,7 @@
 
 # Let's replace uniqueness constraint on idx_elements_watching_by_txid_1x in elements_watching_by_txid
 
-SCRIPT_NAME="sqlmigrate20250212_0.9.0_elements-0.9.1_replace_index.sh"
+SCRIPT_NAME="sqlmigrate20250311_0.8.0-0.9.0_elements.sh"
 
 trace "[$SCRIPT_NAME] Checking if index 'idx_elements_watching_by_txid_1x' exists..."
 table_descr=$(psql -qAtX -h postgres -U cyphernode -c "SELECT 1 FROM pg_indexes WHERE indexname = 'idx_elements_watching_by_txid_1x';")
