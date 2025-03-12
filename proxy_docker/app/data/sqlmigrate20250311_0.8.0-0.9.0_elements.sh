@@ -15,7 +15,7 @@ if [ -n "$table_descr" ]; then
   returncode=$?
   trace_rc ${returncode}
 
-  SQL_ST="CREATE INDEX idx_elements_watching_by_txid_1x ON elements_watching_by_txid (txid, COALESCE(callback1conf, ''), COALESCE(callbackxconf, ''))"
+  SQL_ST="CREATE UNIQUE INDEX idx_elements_watching_by_txid_1x ON elements_watching_by_txid (txid, COALESCE(callback1conf, ''), COALESCE(callbackxconf, ''))"
   trace "[$SCRIPT_NAME] $SQL_ST"
   psql -qAtX -h postgres -U cyphernode -c "$SQL_ST"
   returncode=$?
