@@ -225,8 +225,8 @@ elements_confirmation() {
       local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
       tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
-      # The fees in elements are unblinded - assetId changes depending on the netowrk
-      local fees=$(echo "${tx_details}" | jq '.decoded.fee | values[0] | fabs' | awk '{ printf "%.8f", $0 }')
+      # The fees are moving !!
+      local fees=$(echo "${tx_details}" | jq '.fee.bitcoin | fabs' | awk '{ printf "%.8f", $0 }')
       trace "[elements_confirmation] fees=${fees}"
 
       # If we missed 0-conf...
