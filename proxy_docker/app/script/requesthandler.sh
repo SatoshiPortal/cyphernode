@@ -1067,6 +1067,35 @@ main() {
           response=$(elements_get_mempool_info)
           returncode=$?
           ;;
+        elements_watchtxid)
+          # POST http://192.168.111.152:8080/elements_watchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackXconf","nbxconf":6}
+          # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/elements_watchtxid
+
+          response=$(elements_watchtxidrequest "${line}")
+          returncode=$?
+          ;;
+        elements_unwatchtxid)
+          # POST http://192.168.111.152:8080/elements_unwatchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackxconf"}
+          # or
+          # BODY {"id":3124}
+
+          # args:
+          # - txid: string, required
+          # - confirmedCallbackURL: string, optional
+          # - xconfCallbackURL: string, optional
+          # or
+          # - id: the id returned by watchtxid
+
+          local txid=$(echo "${line}" | jq -r ".txid")
+          local confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+          local xconfCallbackURL=$(echo "${line}" | jq -r ".xconfCallbackURL")
+          local watchid=$(echo "${line}" | jq ".id")
+
+          response=$(elements_unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
+          returncode=$?
+          ;;
         *)
           response='{"error": {"code": -32601, "message": "Method not found"}, "id": "1"}'
           returncode=1

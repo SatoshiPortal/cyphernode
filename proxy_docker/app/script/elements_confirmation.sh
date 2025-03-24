@@ -225,8 +225,8 @@ elements_confirmation() {
       local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
       tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
-      # The fees in elements are unblinded
-      local fees=$(echo "${tx_details}" | jq '.decoded.fee.b2e15d0d7a0c94e4e2ce0fe6e8691b9e451377f6e46e8045a86f7c4b5d4f0f23 | fabs' | awk '{ printf "%.8f", $0 }')
+      # The fees are moving !!
+      local fees=$(echo "${tx_details}" | jq '.fee.bitcoin | fabs' | awk '{ printf "%.8f", $0 }')
       trace "[elements_confirmation] fees=${fees}"
 
       # If we missed 0-conf...
