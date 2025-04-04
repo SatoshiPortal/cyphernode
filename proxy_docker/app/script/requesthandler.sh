@@ -422,6 +422,41 @@ main() {
           response=$(sendrawtransaction "${line}")
           returncode=$?
           ;;
+        createfundedpsbt)
+          # POST http://192.168.111.152:8080/createfundedpsbt
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233}}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"locktime":1234,"options":{}"replaceable":true},"wallet":"01"}
+          # BODY {"inputs":[{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","vout":0}],"outputs":{"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp":0.00233},"wallet":"01"}
+
+          response=$(createfundedpsbt "${line}")
+          returncode=$?
+          ;;
+        processpsbt)
+          # POST http://192.168.111.152:8080/processpsbt
+          # BODY {"psbt":"cHNidP8BAJoCAAAAAmSFBxSzet6d9IQeX3bpQKQRStIxmaQVw5e+qLgMXU/lAAAAAAD9////SzgDmzTMTyIZlSY0OX0fskhBP9WvnWbD57FVJ6pD8gYEAAAAAP3///8C3mdnAAAAAAAWABS5Fm1aRnlsv2IK3i3id7VbDsImDICWmAIAAAAAFgAU0Gg0od2UJtwuCvuFVGP9n+3jlTcAAAAAAAEBHwAAAAIAAAAAFgAUNdLkOealkIM0ckDxRCxgzVJuo7wAAAAA"}
+          # BODY {"psbt":"cHNidP8BAJ...","wallet":"01"}
+          # BODY {"psbt":"cHNidP8BAJ...","wallet":"01","sign":false}
+          # BODY {"psbt":"cHNidP8BAJ...","sign":false, finalize:false}
+
+          response=$(processpsbt "${line}")
+          returncode=$?
+          ;;
+        finalizepsbt)
+          # POST http://192.168.111.152:8080/finalizepsbt
+          # BODY {"psbt":"cHNidP8BAJoCAAAAAmSFBxSzet6d9IQeX3bpQKQRStIxmaQVw5e+qLgMXU/lAAAAAAD9////SzgDmzTMTyIZlSY0OX0fskhBP9WvnWbD57FVJ6pD8gYEAAAAAP3///8C3mdnAAAAAAAWABS5Fm1aRnlsv2IK3i3id7VbDsImDICWmAIAAAAAFgAU0Gg0od2UJtwuCvuFVGP9n+3jlTcAAAAAAAEBHwAAAAIAAAAAFgAUNdLkOealkIM0ckDxRCxgzVJuo7wAAAAA"}
+          # BODY {"psbt":"cHNidP8BAJ...","wallet":"01"}
+          # BODY {"psbt":"cHNidP8BAJ...","wallet":"01","extract":false}
+
+          response=$(finalizepsbt "${line}")
+          returncode=$?
+          ;;
+        testmempoolaccept)
+          # POST http://192.168.111.152:8080/testmempoolaccept
+          # BODY {"rawtx":"0200000000010124b5f4c2d8222647418287757bf047fdbee4c4acab7dcb7bacf85ebdc4fe101e0100000000fdffffff02001bb700000000001600146048ff3629d0d53670d0885a8ed67a52a64aaeebb85216020000000016001406ce9d65e6b513a0436f57e19d5ed8fc91c62ed4024730440220121a654484cdcec53d59a8511a95176bfbf33be4f0b1ddb16d576f163c6f7bfc02203532d6c06067575acd5aa21d115b7e8deb3be1b04c3f090c018c3fbbab17284d01210261729ae9bee845b374cd912facef17ff10ec7417b778cecc8b42ce6bd13cc77e00000000"}
+
+          response=$(testmempoolaccept "${line}")
+          returncode=$?
+          ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}

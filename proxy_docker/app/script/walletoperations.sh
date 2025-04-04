@@ -482,6 +482,110 @@ sendrawtransaction() {
   return ${returncode}
 }
 
+createfundedpsbt() {
+  trace "Entering createfundedpsbt()..."
+
+  local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[createfundedpsbt] wallet=${wallet}"
+  fi
+  local inputs=$(echo "${request}" | jq -r ".inputs")
+  trace "[createfundedpsbt] inputs=${inputs}"
+  local outputs=$(echo "${request}" | jq -r ".outputs")
+  trace "[createfundedpsbt] outputs=${outputs}"
+  local locktime=$(echo "${request}" | jq -r ".locktime // null")
+  trace "[createfundedpsbt] locktime=${locktime}"
+  local options=$(echo "${request}" | jq -r ".options // {}")
+  trace "[createfundedpsbt] options=${options}"
+
+  local response
+
+  local data='{"method":"walletcreatefundedpsbt","params":['${inputs}','${outputs}','${locktime}','${options}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[processpsbt] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
+processpsbt() {
+  trace "Entering processpsbt()..."
+
+  local request=${1}
+  trace "[processpsbt] request=${request}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[processpsbt] wallet=${wallet}"
+  fi
+  local psbt=$(echo "${request}" | jq -r ".psbt")
+  trace "[processpsbt] psbt=${psbt}"
+  local sign=$(echo "${request}" | jq -r ".sign // if .sign == null then true else .sign end")
+  trace "[processpsbt] sign=${sign}"
+  local finalize=$(echo "${request}" | jq -r ".finalize // if .finalize == null then true else .finalize end")
+  trace "[processpsbt] finalize=${finalize}"
+
+  local response
+
+  local data='{"method":"walletprocesspsbt","params":["'${psbt}'",'${sign}',"DEFAULT",true,'${finalize}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[processpsbt] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
+finalizepsbt() {
+  trace "Entering finalizepsbt()..."
+
+  local request=${1}
+  trace "[finalizepsbt] request=${request}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[finalizepsbt] wallet=${wallet}"
+  fi
+  local psbt=$(echo "${request}" | jq -r ".psbt")
+  trace "[finalizepsbt] psbt=${psbt}"
+  local extract=$(echo "${request}" | jq -r ".extract // if .extract == null then true else .extract end")
+  trace "[finalizepsbt] extract=${sign}"
+
+  local response
+
+  local data='{"method":"finalizepsbt","params":["'${psbt}'",'${extract}']}'
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[finalizepsbt] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 bumpfee() {
   trace "Entering bumpfee()..."
 
