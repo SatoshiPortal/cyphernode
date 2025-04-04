@@ -544,6 +544,18 @@ test_spender_functions() {
   # action_listlockunspent=spender
   test_authorization "listlockunspent" "${token}" ${has_access} || return 205
 
+  # action_createfundedpsbt=spender
+  test_authorization "createfundedpsbt" "${token}" ${has_access} || return 210
+
+  # action_processpsbt=spender
+  test_authorization "processpsbt" "${token}" ${has_access} || return 215
+
+  # action_finalizepsbt=spender
+  test_authorization "finalizepsbt" "${token}" ${has_access} || return 220
+
+  # action_testmempoolaccept=spender
+  test_authorization "testmempoolaccept" "${token}" ${has_access} || return 225
+
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 

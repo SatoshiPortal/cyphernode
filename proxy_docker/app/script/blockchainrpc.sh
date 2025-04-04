@@ -172,3 +172,24 @@ bitcoin_gettxoutproof() {
 
   return $?
 }
+
+testmempoolaccept() {
+  trace "Entering testmempoolaccept()..."
+
+  local request=${1}
+  trace "[testmempoolaccept] request=${request}"
+  local rawtx=$(echo "${request}" | jq -r ".rawtx")
+  trace "[testmempoolaccept] rawtx=${rawtx}"
+
+
+  local data='{"method":"testmempoolaccept","params":[[]"'${rawtx}'"]]}'
+  local response=$(send_to_spender_node "${data}")
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[testmempoolaccept] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
