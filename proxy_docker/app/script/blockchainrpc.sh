@@ -182,7 +182,7 @@ testmempoolaccept() {
   trace "[testmempoolaccept] rawtx=${rawtx}"
 
 
-  local data='{"method":"testmempoolaccept","params":[[]"'${rawtx}'"]]}'
+  local data='{"method":"testmempoolaccept","params":[["'${rawtx}'"]]}'
   local response=$(send_to_spender_node "${data}")
 
   local returncode=$?
