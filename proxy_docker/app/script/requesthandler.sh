@@ -28,6 +28,7 @@
 . ./elements_manage_missed_conf.sh
 . ./elements_walletoperations.sh
 . ./elements_getactivewatches.sh
+. ./paymentalist.sh
 
 main() {
   trace "Entering main()..."
@@ -1094,6 +1095,22 @@ main() {
           local watchid=$(echo "${line}" | jq ".id")
 
           response=$(elements_unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
+          returncode=$?
+          ;;
+        check_bolt11_mrh)
+          # POST http://192.168.111.152:8080/check_bolt11_mrh
+          # BODY {"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3"}
+          # BODY {"bolt11":"lntb1pdca82tpp5g...", "network":"testnet"}
+          # BODY {"bolt11":"lntb1pdca82tpp5g...", "network":"bitcoin"}
+          
+          local j=$(echo "${line}" | jq -r)
+          trace "[check_bolt11_mrh] jq: ${j}"
+          local bolt11=$(echo "${line}" | jq -r ".bolt11")
+          trace "[check_bolt11_mrh] bolt11: ${bolt11}"
+          local network=$(echo "${line}" | jq -r ".network // \"bitcoin\"")
+          trace "[check_bolt11_mrh] network: ${network}"
+
+          response=$(check_bolt11_mrh "${bolt11}" "${network}")
           returncode=$?
           ;;
         *)

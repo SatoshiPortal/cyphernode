@@ -424,6 +424,33 @@ services:
     restart: always
     <% } %>
 
+  <% if ( features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1 ) { %>
+  ##########################
+  # PAYMENTALIST           #
+  ##########################
+
+  paymentalist:
+    image: cyphernode/paymentalist:<%= paymentalist_version %>
+    user: $USER
+    stop_grace_period: 30s
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+  <% } %>
+
   <% if ( features.indexOf('otsclient') !== -1 ) { %>
   ##########################
   # OTSCLIENT              #
