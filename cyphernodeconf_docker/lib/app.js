@@ -94,6 +94,7 @@ module.exports = class App {
       bitcoin_version: process.env.BITCOIN_VERSION,
       elements_version: process.env.ELEMENTS_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
+      paymentalist_version: process.env.PAYMENTALIST_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
@@ -156,7 +157,8 @@ module.exports = class App {
         'traefik': this.sessionData.traefik_version,
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
-        'eclipse-mosquitto': this.sessionData.mosquitto_version
+        'eclipse-mosquitto': this.sessionData.mosquitto_version,
+        'cyphernode/paymentalist': this.sessionData.paymentalist_version
       }
     } );
 
@@ -493,6 +495,13 @@ module.exports = class App {
         host: 'pycoin',
         networks: ['cyphernodenet'],
         docker: 'cyphernode/pycoin:'+this.config.docker_versions['cyphernode/pycoin']
+      },
+      {
+        name: 'Paymentalist',
+        label: 'paymentalist',
+        host: 'paymentalist',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/paymentalist:'+this.config.docker_versions['cyphernode/paymentalist']
       },
       {
         name: 'Postgres',
