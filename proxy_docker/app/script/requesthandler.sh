@@ -457,6 +457,20 @@ main() {
           response=$(testmempoolaccept "${line}")
           returncode=$?
           ;;
+        getaddressinfo)
+          # POST http://192.168.111.152:8080/getaddressinfo
+          # BODY {"address": "tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv", "wallet": "01"}
+          # BODY {"address": "tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv"}
+
+          response=$(getaddressinfo "${line}")
+          returncode=$?
+          ;;
+        decodescript)
+          # GET http://192.168.111.152:8080/decodescript/001450282b3679af5c7094cb33d6d9d320884a4f3270
+
+          response=$(decodescript "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
         bumpfee)
           # POST http://192.168.111.152:8080/bumpfee
           # BODY {"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","confTarget":4}

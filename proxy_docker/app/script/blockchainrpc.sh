@@ -193,3 +193,43 @@ testmempoolaccept() {
 
   return ${returncode}
 }
+
+getaddressinfo() {
+  trace "Entering getaddressinfo()..."
+
+  local request=${1}
+  trace "[getaddressinfo] request=${request}"
+  local address=$(echo "${request}" | jq -r ".address")
+  trace "[getaddressinfo] address=${address}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[getaddressinfo] wallet=${wallet}"
+  fi
+
+  local data='{"method":"getaddressinfo","params":["'${address}'"]}'
+  local response
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getaddressinfo] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
+decodescript() {
+  trace "Entering decodescript()..."
+
+  local script=${1}
+  trace "[decodescript] scriptPubKey=${script}"
+  local data="{\"method\":\"decodescript\",\"params\":[\"${script}\"]}"
+  trace "[decodescript] data=${data}"
+  send_to_watcher_node "${data}"
+  return $?
+}
