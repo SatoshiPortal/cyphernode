@@ -417,6 +417,12 @@ test_watcher_functions() {
 
   test_authorization "validateaddress" "${token}" ${has_access} || return 230
 
+  # action_decodescript=watcher
+  test_authorization "decodescript" "${token}" ${has_access} || return 240
+
+  # action_getaddressinfo=watcher
+  test_authorization "getaddressinfo" "${token}" ${has_access} || return 250
+
   trace 1 "\n\n[test_watcher_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 
