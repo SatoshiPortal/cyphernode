@@ -433,6 +433,8 @@ services:
     image: cyphernode/paymentalist:<%= paymentalist_version %>
     user: $USER
     stop_grace_period: 30s
+    volumes:
+      - "<%= logs_datapath %>:/cnlogs"
     networks:
       - cyphernodenet
     <% if ( docker_mode === 'swarm' ) { %>

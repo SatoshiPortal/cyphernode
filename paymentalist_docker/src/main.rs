@@ -3,6 +3,8 @@ use crate::config::Config;
 use axum::{routing::post, Router};
 use http::server::start_server;
 use std::io;
+use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use tracing::{error, info};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -13,16 +15,34 @@ mod http;
 #[tokio::main]
 #[allow(dead_code)]
 async fn main() {
-    let fmt_layer = fmt::layer().with_writer(io::stdout).with_ansi(false);
+    // Set up stdout logging
+    let stdout_layer = fmt::layer()
+        .with_writer(io::stdout)
+        .with_ansi(false);
+
+    // Set up file logging
+    let log_path = "/cnlogs/paymentalist.log";
+    let file_appender = tracing_appender::rolling::never("/cnlogs", "paymentalist.log");
+    let file_layer = fmt::layer()
+        .with_writer(file_appender)
+        .with_ansi(false);
+
+    // Set file permissions to 600 (rw for owner only)
+    if let Ok(metadata) = fs::metadata(log_path) {
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(0o600); // Set to rw------- (600)
+        fs::set_permissions(log_path, permissions).expect("Failed to set log file permissions");
+    }
 
     // Set up environment filter with a default that's very permissive
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,paymentalist=debug,tower_http=debug"));
 
-    // Register both layers
+    // Register all layers
     tracing_subscriber::registry()
         .with(env_filter)
-        .with(fmt_layer)
+        .with(stdout_layer)
+        .with(file_layer)
         .init();
 
     info!("Starting Paymentalist service");
