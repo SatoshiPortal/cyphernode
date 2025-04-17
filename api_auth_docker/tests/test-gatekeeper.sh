@@ -50,6 +50,7 @@ DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 # action_bitcoin_estimatesmartfee=watcher
 # action_bitcoin_gettxoutproof=watcher
 # action_validateaddress=watcher
+# action_check_bolt11_mrh=watcher
 
 #
 # # Spender can do what the watcher can do, plus:
@@ -405,6 +406,9 @@ test_watcher_functions() {
 
   # action_ln_paystatus=watcher
   test_authorization "ln_paystatus" "${token}" ${has_access} || return 207
+
+  # action_check_bolt11_mrh=watcher
+  test_authorization "check_bolt11_mrh" "${token}" ${has_access} || return 208
 
   # action_bitcoin_estimatesmartfee=watcher
   test_authorization "bitcoin_estimatesmartfee" "${token}" ${has_access} || return 210
