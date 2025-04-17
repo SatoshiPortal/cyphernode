@@ -24,7 +24,7 @@ services:
     stop_grace_period: 90s
     networks:
       - cyphernodenet
-    
+
     deploy:
       replicas: 1
       placement:
@@ -35,9 +35,9 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
 
-  
+
+
   ##########################
   # TOR                    #
   ##########################
@@ -57,7 +57,7 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
-    
+
     deploy:
       replicas: 1
       placement:
@@ -68,12 +68,12 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
-  
 
-  
 
-  
+
+
+
+
   ##########################
   # BITCOIN                #
   ##########################
@@ -81,7 +81,7 @@ services:
   bitcoin:
     image: cyphernode/bitcoin:v22.0
     command: $USER /.bitcoin/entrypoint.sh
-    
+
     volumes:
       - "cn-dir/dist/cyphernode/bitcoin:/.bitcoin"
       - "cn-dir/dist/cyphernode/bitcoin/createWallets.sh:/.bitcoin/createWallets.sh:ro"
@@ -94,11 +94,11 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
-    
+
     depends_on:
       - tor
-    
-    
+
+
     deploy:
       replicas: 1
       placement:
@@ -109,8 +109,8 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
-  
+
+
 
   ##########################
   # PROXY                  #
@@ -120,18 +120,18 @@ services:
     image: cyphernode/proxy:v0.9.0-dev-local
     command: $USER ./startproxy.sh
     env_file:
-      - .env/proxy.env 
-    
+      - .env/proxy.env
+
     volumes:
       - "cn-dir/dist/cyphernode/logs:/cnlogs"
       - "cn-dir/dist/cyphernode/proxy:/proxy/db"
-      
-      
+
+
       - "cn-dir/dist/cyphernode/otsclient:/proxy/otsfiles"
-      
-      
+
+
       - "cn-dir/dist/cyphernode/tor:/proxy/tor"
-      
+
       - container_monitor:/container_monitor
     healthcheck:
       test: chown -R $USER /container_monitor && su-exec $USER sh -c 'curl localhost:8888/helloworld && touch /container_monitor/proxy_ready || rm -f /container_monitor/proxy_ready'
@@ -143,7 +143,7 @@ services:
       - cyphernodenet
     depends_on:
       - postgres
-    
+
     deploy:
       replicas: 1
       placement:
@@ -154,7 +154,7 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
 
   ##########################
   # PROXYCRON              #
@@ -168,7 +168,7 @@ services:
       - cyphernodenet
     depends_on:
       - proxy
-    
+
     deploy:
       replicas: 1
       placement:
@@ -179,7 +179,7 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
 
   ##########################
   # BROKER                 #
@@ -190,7 +190,7 @@ services:
     networks:
       - cyphernodenet
       - cyphernodeappsnet
-    
+
     deploy:
       replicas: 1
       placement:
@@ -201,7 +201,7 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
 
   ##########################
   # NOTIFIER               #
@@ -210,10 +210,10 @@ services:
   notifier:
     image: cyphernode/notifier:v0.9.0-dev-local
     command: $USER ./startnotifier.sh
-    
+
     env_file:
       - .env/notifier.env
-    
+
     volumes:
       - "cn-dir/dist/cyphernode/logs:/cnlogs"
     networks:
@@ -221,7 +221,7 @@ services:
       - cyphernodeappsnet
     depends_on:
       - broker
-    
+
     deploy:
       replicas: 1
       placement:
@@ -232,7 +232,7 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
 
   ##########################
   # PYCOIN                 #
@@ -243,12 +243,12 @@ services:
     command: $USER ./startpycoin.sh
     env_file:
       - .env/pycoin.env
-    
+
     volumes:
       - "cn-dir/dist/cyphernode/logs:/cnlogs"
     networks:
       - cyphernodenet
-    
+
     deploy:
       replicas: 1
       placement:
@@ -259,9 +259,9 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
 
-  
+
+
   ##########################
   # OTSCLIENT              #
   ##########################
@@ -277,7 +277,7 @@ services:
       - "cn-dir/dist/cyphernode/bitcoin/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
     networks:
       - cyphernodenet
-    
+
     deploy:
       replicas: 1
       placement:
@@ -288,8 +288,8 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
-  
+
+
 
   ##########################
   # GATEKEEPER             #
@@ -301,7 +301,7 @@ services:
     command: $USER
     env_file:
       - .env/gatekeeper.env
-    
+
     volumes:
       - "cn-dir/dist/cyphernode/logs:/cnlogs"
       - "cn-dir/dist/cyphernode/gatekeeper/certs:/etc/ssl/certs:ro"
@@ -319,7 +319,7 @@ services:
       - cyphernodeappsnet
     depends_on:
       - proxy
-    
+
     deploy:
       replicas: 1
       placement:
@@ -330,7 +330,7 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
 
   ##########################
   # TRAEFIK                #
@@ -350,7 +350,7 @@ services:
       - cyphernodeappsnet
     depends_on:
       - gatekeeper
-    
+
     deploy:
       replicas: 1
       placement:
@@ -361,7 +361,29 @@ services:
         delay: 1s
       update_config:
         parallelism: 1
-    
+
+  ##########################
+  # PAYMENTALIST           #
+  ##########################
+
+  paymentalist:
+    image: cyphernode/paymentalist:v0.9.0-dev-local
+    user: $USER
+    volumes:
+      - "/cn-dir/dist/cyphernode/logs:/cnlogs"
+    stop_grace_period: 30s
+    networks:
+      - cyphernodenet
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
 
 volumes:
   container_monitor:
