@@ -558,6 +558,9 @@ test_spender_functions() {
   # action_testmempoolaccept=spender
   test_authorization "testmempoolaccept" "${token}" ${has_access} || return 225
 
+  # action_decodepsbt=spender
+  test_authorization "decodepsbt" "${token}" ${has_access} || return 230
+
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
 

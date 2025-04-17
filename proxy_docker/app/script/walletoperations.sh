@@ -586,6 +586,27 @@ finalizepsbt() {
   return ${returncode}
 }
 
+decodepsbt() {
+  trace "Entering decodepsbt()..."
+
+  local request=${1}
+  trace "[decodepsbt] request=${request}"
+
+  local psbt=$(echo "${request}" | jq -r ".psbt")
+  trace "[decodepsbt] psbt=${psbt}"
+
+  local data='{"method":"decodepsbt","params":["'${psbt}'"]}'
+  local response=$(send_to_spender_node "${data}")
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[decodepsbt] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
 bumpfee() {
   trace "Entering bumpfee()..."
 
