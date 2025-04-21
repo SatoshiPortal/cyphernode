@@ -16,6 +16,7 @@ RUN cargo fetch
 
 COPY ./src ./src
 COPY ./config ./config
+COPY ./test ./test
 
 RUN cargo build --release
 
@@ -29,9 +30,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY --from=builder /usr/src/paymentalist/target/release/paymentalist /usr/local/bin/paymentalist
+COPY --from=builder /usr/src/paymentalist/target/release/create_reverse_swap /usr/local/bin/create_reverse_swap
 COPY --from=builder /usr/src/paymentalist/config /app/config
 
 RUN chmod +x /usr/local/bin/paymentalist
+RUN chmod +x /usr/local/bin/create_reverse_swap
 
 ENV RUST_LOG=info,paymentalist=debug,tower_http=debug
 

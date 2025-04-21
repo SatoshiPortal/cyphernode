@@ -1,3 +1,76 @@
+# Paymentalist Docker
+
+This repository contains a Docker container with tools for interacting with the Boltz network, including a reverse swap utility.
+
+## Building the Container
+
+To build the container, run:
+
+```bash
+docker build -t paymentalist .
+```
+
+## Running the Reverse Swap Script
+
+The container includes a command-line utility for creating reverse swaps. To use it:
+
+```bash
+docker run -it paymentalist create_reverse_swap [OPTIONS]
+```
+
+### Available Options
+
+- `-n, --network <NETWORK>`: The network to use (mainnet or testnet)
+  - Default: mainnet
+  - Example: `-n testnet`
+
+- `-c, --claim-address <ADDRESS>`: The claim address for the swap (required)
+  - Example: `-c lq1qqd4etnrx4hptrg94j3826lyzmqa78p7et8k52khv0cv948vxeauy96kty8ere8xdjd08x70qvua39tpt8n366m7lu25yd0ker`
+
+- `-i, --invoice-amount <AMOUNT>`: The invoice amount in satoshis
+  - Default: 1000
+  - Example: `-i 5000`
+
+### Example Usage
+
+Create a reverse swap on mainnet:
+```bash
+docker run -it paymentalist create_reverse_swap \
+  -n mainnet \
+  -c lq1qqd4etnrx4hptrg94j3826lyzmqa78p7et8k52khv0cv948vxeauy96kty8ere8xdjd08x70qvua39tpt8n366m7lu25yd0ker \
+  -i 1000
+```
+
+Create a reverse swap on testnet:
+```bash
+docker run -it paymentalist create_reverse_swap \
+  -n testnet \
+  -c YOUR_TESTNET_ADDRESS \
+  -i 1000
+```
+
+### Output
+
+The script will output:
+1. A validation message
+2. The reverse swap ID
+3. The invoice that needs to be paid
+
+## Notes
+
+- The script uses a hardcoded mnemonic for testing purposes. In a production environment, you should use your own secure mnemonic.
+- Make sure to use the correct network (mainnet/testnet) that matches your claim address.
+- The claim address must be a valid Liquid address for the specified network.
+
+## Example
+```
+docker run -it cyphernode/paymentalist:v0.9.0-dev-local create_reverse_swap --network testnet --claim-address tlq1qqtzkefxathskcl5svkfwscd6eyhua8f8v9snpxdy7fe8lu3x6c0v93k3stc4e79avd4d9z76vm30yc3564z6wl5wcs2v409fl  --invoice-amount 1000
+VALIDATED RESPONSE!
+REVERSE SWAP ID: DxQkFTua5pA3
+INVOICE: lntb10u1p5qve7ssp5gwtmd79va4x3cpta689c0p0mahz0zmnky8usk50uk33agdfxc0zspp5eqraufs5xkk0ztxfsswdksv0t6a32dekahtfd3run773ed22w30qdpz2djkuepqw3hjqnpdgf2yxgrpv3j8yetnwvxqyp2xqcqz95rzjqt8lh9k5dfmdd3kfrvdd682u0gjvat79rld78d5223fnwltzcslf6zzxeyqq28qqqqqqqqqqqqqqq9gq2y9qyysgqhcvdlclcthfegu4rt24n8jqcn8pcewu8wp7v7x7ejpevu9y5ycx9uy2ppruyknmd2jpjmzx8fudls57ngepp2c5xddlm7d05jsetsdqpqc28at
+```
+
+
 # Paymentalist Web Service
 
 ```bash
