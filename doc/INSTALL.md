@@ -6,6 +6,8 @@
 
 We are providing an installer to help you setup Cyphernode.  All the Docker images used by Cyphernode have been prebuilt for x86 and ARM (RPi) architectures and are hosted on the Docker hub public registry, Cyphernode repository (https://hub.docker.com/u/cyphernode/).
 
+> If you are using `docker compose` instead of `docker-compose`, create a symbolic link since `setup.sh` executes the `docker-compose` command
+
 You can clone the git repository and install:
 
 ```shell
