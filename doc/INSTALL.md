@@ -9,7 +9,7 @@ We are providing an installer to help you setup Cyphernode.  All the Docker imag
 You can clone the git repository and install:
 
 ```shell
-git clone https://github.com/SatoshiPortal/cyphernode.git
+git clone -b master https://github.com/SatoshiPortal/cyphernode.git
 cd cyphernode/dist
 ./setup.sh
 ```
