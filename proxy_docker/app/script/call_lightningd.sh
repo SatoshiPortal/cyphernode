@@ -371,12 +371,18 @@ ln_pay() {
 
       if [ "${complete}" != "null" ]; then
         trace "[ln_pay] responding complete"
-        echo "${complete}"
+
+        # Add the "already_paid" flag to indicate this was a previously paid invoice
+        local already_paid=$(echo "${complete}" | jq '. + {"already_paid": true}')
+        echo "${already_paid}"
         return 0
       fi
       if [ "${pending}" != "null" ]; then
         trace "[ln_pay] responding pending"
-        echo "${pending}"
+
+        # Add the "already_paid" flag to indicate this was a previously paid invoice
+        local already_paid=$(echo "${pending}" | jq '. + {"already_paid": true}')
+        echo "${already_paid}"
         return 1
       fi
 
