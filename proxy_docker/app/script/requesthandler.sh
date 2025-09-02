@@ -1147,7 +1147,7 @@ main() {
           ;;
         elements_sendtomainchain)
           # curl POST http://192.168.111.152:8080/elements_sendtomainchain
-          # BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true}
+          # BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true,"wallet":"04"}
 
           response=$(elements_sendtomainchain "${line}")
           returncode=$?

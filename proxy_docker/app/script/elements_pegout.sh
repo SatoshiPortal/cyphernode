@@ -7,6 +7,8 @@ elements_sendtomainchain() {
   trace "Entering elements_sendtomainchain()..."
 
   local request=${1}
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  trace "[elements_sendtomainchain] wallet=${wallet}"
   local address=$(echo "${request}" | jq -r ".address")
   trace "[elements_sendtomainchain] address=${address}"
   local amount=$(echo "${request}" | jq -r ".amount")
@@ -15,7 +17,13 @@ elements_sendtomainchain() {
   trace "[elements_sendtomainchain] subtractfeefromamount=${subtractfeefromamount}"
 
   local response
-  response=$(send_to_elements_spender_node "{\"method\":\"sendtomainchain\",\"params\":[\"${address}\",${amount},${subtractfeefromamount}]}")
+  local data="{\"method\":\"sendtomainchain\",\"params\":[\"${address}\",${amount},${subtractfeefromamount}]}"
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
 
   returncode=$?
   trace_rc ${returncode}
