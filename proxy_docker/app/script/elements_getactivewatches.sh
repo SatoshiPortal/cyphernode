@@ -31,7 +31,8 @@ HERE
   echo "$label_txns_json"
   return ${returncode}
 }
-elements_get_unused_addresses_by_watchlabel(){
+
+elements_get_unused_addresses_by_watchlabel() {
   trace "Entering elements_get_unused_addresses_by_watchlabel() for label ${1}..."
   local label_unused_addrs
   query=$(cat <<-HERE
@@ -76,7 +77,8 @@ elements_getactivewatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -139,7 +141,8 @@ elements_getactivewatchesxpub() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then
@@ -171,7 +174,8 @@ elements_getactivexpubwatches() {
 
   echo -n "{\"watches\":["
 
-  local IFS=$'\n'
+  local IFS="
+"
   for row in ${watches}
   do
     if ${notfirst}; then

@@ -105,7 +105,7 @@ elements_watchrequest() {
 '"message":"Invalid address",'\
 '"data":{'\
 '"event":"elements_watch",'\
-'"address":'"${address}"','\
+'"address":"'${address}'",'\
 '"assetId":'${assetid_json}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}','\
@@ -306,7 +306,7 @@ elements_watchpub32() {
   fi
 
   if [ -z "${error_msg}" ]; then
-    local subspath=$(echo -e $path | sed -En "s/n/${nstart}-${last_n}/p")
+    local subspath=$(echo "$path" | sed -En "s/n/${nstart}-${last_n}/p")
     trace "[elements_watchpub32] subspath=${subspath}"
     local addresses
     addresses=$(elements_derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
@@ -535,7 +535,7 @@ elements_watchtxidrequest() {
 
     return 1
   else
-    txid_pg="'${address}'"
+    txid_pg="'${txid}'"
   fi
   trace "[elements_watchtxidrequest] txid=${txid}, txid_pg=${txid_pg}"
 
@@ -554,7 +554,7 @@ elements_watchtxidrequest() {
   trace "[elements_watchtxidrequest] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}, cb1conf_url_pg_where=${cb1conf_url_pg_where}, cb1conf_url_json=${cb1conf_url_json}"
 
   local cbxconf_url cbxconf_url_pg cbxconf_url_pg_where
-  cbxconf_url=$(echo "${request}" | jq -e ".xconfCallbackURL")
+  cbxconf_url=$(echo "${request}" | jq -re ".xconfCallbackURL")
   if [ "$?" -ne "0" ]; then
     # cbxconf_url not found or null
     cbxconf_url_json="null"

@@ -50,6 +50,7 @@ DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 # action_bitcoin_estimatesmartfee=watcher
 # action_bitcoin_gettxoutproof=watcher
 # action_validateaddress=watcher
+# action_check_bolt11_mrh=watcher
 
 #
 # # Spender can do what the watcher can do, plus:
@@ -58,6 +59,7 @@ DIR="$( dirname -- "${BASH_SOURCE[0]}"; )";
 # action_getbalances=spender
 # action_getbalancebyxpub=spender
 # action_getbalancebyxpublabel=spender
+# action_listunspent=spender
 # action_getnewaddress=spender
 # action_spend=spender
 # action_bumpfee=spender
@@ -405,12 +407,21 @@ test_watcher_functions() {
   # action_ln_paystatus=watcher
   test_authorization "ln_paystatus" "${token}" ${has_access} || return 207
 
+  # action_check_bolt11_mrh=watcher
+  test_authorization "check_bolt11_mrh" "${token}" ${has_access} || return 208
+
   # action_bitcoin_estimatesmartfee=watcher
   test_authorization "bitcoin_estimatesmartfee" "${token}" ${has_access} || return 210
 
   test_authorization "bitcoin_gettxoutproof" "${token}" ${has_access} || return 220
 
   test_authorization "validateaddress" "${token}" ${has_access} || return 230
+
+  # action_decodescript=watcher
+  test_authorization "decodescript" "${token}" ${has_access} || return 240
+
+  # action_getaddressinfo=watcher
+  test_authorization "getaddressinfo" "${token}" ${has_access} || return 250
 
   trace 1 "\n\n[test_watcher_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }
@@ -511,6 +522,48 @@ test_spender_functions() {
   test_authorization "getbatchdetails" "${token}" ${has_access} || return 155
 
   test_authorization "bitcoin_generatetoaddress" "${token}" ${has_access} || return 160
+
+  # action_listunspent=spender
+  test_authorization "listunspent" "${token}" ${has_access} || return 165
+
+  # action_sendmany=spender
+  test_authorization "sendmany" "${token}" ${has_access} || return 170
+
+  # action_createrawtransaction=spender
+  test_authorization "createrawtransaction" "${token}" ${has_access} || return 175
+
+  # action_fundrawtransaction=spender
+  test_authorization "fundrawtransaction" "${token}" ${has_access} || return 180
+
+  # action_decoderawtransaction=spender
+  test_authorization "decoderaqtransaction" "${token}" ${has_access} || return 185
+
+  # action_signrawtransaction=spender
+  test_authorization "signrawtransaction" "${token}" ${has_access} || return 190
+
+  # action_sendrawtransaction=spender
+  test_authorization "sendrawtransaction" "${token}" ${has_access} || return 195
+
+  # action_lockunspent=spender
+  test_authorization "lockunspent" "${token}" ${has_access} || return 200
+
+  # action_listlockunspent=spender
+  test_authorization "listlockunspent" "${token}" ${has_access} || return 205
+
+  # action_createfundedpsbt=spender
+  test_authorization "createfundedpsbt" "${token}" ${has_access} || return 210
+
+  # action_processpsbt=spender
+  test_authorization "processpsbt" "${token}" ${has_access} || return 215
+
+  # action_finalizepsbt=spender
+  test_authorization "finalizepsbt" "${token}" ${has_access} || return 220
+
+  # action_testmempoolaccept=spender
+  test_authorization "testmempoolaccept" "${token}" ${has_access} || return 225
+
+  # action_decodepsbt=spender
+  test_authorization "decodepsbt" "${token}" ${has_access} || return 230
 
   trace 1 "\n\n[test_spender_functions] ${On_IGreen}${BBlack} SUCCESS with user ${id}! ${Color_Off}\n"
 }

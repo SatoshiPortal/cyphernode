@@ -32,9 +32,9 @@ ln_create_invoice() {
   local msatoshi=$(echo "${request}" | jq -r ".msatoshi")
   trace "[ln_create_invoice] msatoshi=${msatoshi}"
   if [ "${msatoshi}" = "null" ]; then
-    cln_args='msatoshi="any"'
+    cln_args='amount_msat="any"'
   else
-    cln_args="msatoshi=${msatoshi}"
+    cln_args="amount_msat=${msatoshi}"
   fi
   local label=$(echo "${request}" | jq -r ".label")
   trace "[ln_create_invoice] label=${label}"
@@ -322,10 +322,10 @@ ln_pay() {
     expected_msatoshi=$(echo "${request}" | jq ".expectedMsatoshi")
     trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
   fi
-  local expected_description=$(echo "${request}" | jq ".expected_description")
+  local expected_description=$(echo "${request}" | jq -r ".expected_description")
   trace "[ln_pay] expected_description=${expected_description}"
   if [ "${expected_description}" = "null" ]; then
-    expected_description=$(echo "${request}" | jq ".expectedDescription")
+    expected_description=$(echo "${request}" | jq -r ".expectedDescription")
     trace "[ln_pay] expected_description=${expected_description}"
   fi
 
@@ -336,7 +336,7 @@ ln_pay() {
   if [ "${returncode}" -eq "0" ]; then
     local invoice_msatoshi=$(echo "${result}" | jq ".amount_msat")
     trace "[ln_pay] invoice_msatoshi=${invoice_msatoshi}"
-    local invoice_description=$(echo "${result}" | jq ".description")
+    local invoice_description=$(echo "${result}" | jq -r ".description")
     trace "[ln_pay] invoice_description=${invoice_description}"
 
     # The amount must match if not "any"
@@ -351,7 +351,7 @@ ln_pay() {
       # If expected description is not empty but doesn't correspond to invoice_description, there'a problem.
       # (we don't care about the description if expected description is empty.  Amount is the most important thing)
 
-      result="{\"result\":\"error\",\"expected_description\":${expected_description},\"invoice_description\":${invoice_description}}"
+      result="{\"result\":\"error\",\"expected_description\":\"${expected_description}\",\"invoice_description\":\"${invoice_description}\"}"
       trace "[ln_pay] Expected description <> Invoice description"
       returncode=1
     else
@@ -371,12 +371,18 @@ ln_pay() {
 
       if [ "${complete}" != "null" ]; then
         trace "[ln_pay] responding complete"
-        echo "${complete}"
+
+        # Add the "already_paid" flag to indicate this was a previously paid invoice
+        local already_paid=$(echo "${complete}" | jq '. + {"already_paid": true}')
+        echo "${already_paid}"
         return 0
       fi
       if [ "${pending}" != "null" ]; then
         trace "[ln_pay] responding pending"
-        echo "${pending}"
+
+        # Add the "already_paid" flag to indicate this was a previously paid invoice
+        local already_paid=$(echo "${pending}" | jq '. + {"already_paid": true}')
+        echo "${already_paid}"
         return 1
       fi
 

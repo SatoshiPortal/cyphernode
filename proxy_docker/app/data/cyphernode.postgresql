@@ -135,6 +135,7 @@ CREATE TABLE cyphernode_props (
   value VARCHAR,
   inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_cp_property ON cyphernode_props (property);
 CREATE UNIQUE INDEX idx_cp_catprop ON cyphernode_props (category, property);
 
 INSERT INTO cyphernode_props (id, category, property, value) VALUES (1, 'cyphernode', 'version', '0.2');
@@ -179,7 +180,7 @@ CREATE TABLE elements_watching (
   id SERIAL PRIMARY KEY,
   address VARCHAR,
   label VARCHAR,
-  unblinded_address VARCHAR UNIQUE,
+  unblinded_address VARCHAR,
   watching BOOLEAN DEFAULT FALSE,
   callback0conf VARCHAR,
   calledback0conf BOOLEAN DEFAULT FALSE,
@@ -194,6 +195,7 @@ CREATE TABLE elements_watching (
 );
 CREATE INDEX idx_elements_watching_address ON elements_watching (address);
 CREATE UNIQUE INDEX idx_elements_watching_01 ON elements_watching (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, ''));
+CREATE INDEX idx_elements_watching_unblinded_address ON elements_watching (unblinded_address);
 CREATE INDEX idx_elements_watching_label ON elements_watching (label);
 CREATE INDEX idx_elements_watching_watching ON elements_watching (watching);
 CREATE INDEX idx_elements_watching_imported ON elements_watching (imported);

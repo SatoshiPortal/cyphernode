@@ -9,17 +9,14 @@ mine() {
   local nbblocks=${1:-1}
 
   echo ; echo "About to mine ${nbblocks} block(s)..."
-  docker exec -t $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat -generate ${nbblocks}
+  docker exec -t $(docker ps -q -f "name=cyphernode_bitcoin$2\.") bitcoin-cli -rpcwallet=spending01.dat -generate ${nbblocks}
 }
 
 elements_mine() {
   local nbblocks=${1:-1}
-  local minedaddr
 
   echo ; echo "About to mine ${nbblocks} block(s)..."
-  minedaddr=$(docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat getnewaddress | tr -d '\r')
-  echo ; echo "minedaddr=${minedaddr}"
-  docker exec -it $(docker ps -q -f "name=cyphernode.elements") elements-cli -rpcwallet=spending01.dat generatetoaddress ${nbblocks} "${minedaddr}"
+  docker exec -t $(docker ps -q -f "name=cyphernode_elements") elements-cli -rpcwallet=spending01.dat -generate ${nbblocks}
 }
 
 case "${1}" in

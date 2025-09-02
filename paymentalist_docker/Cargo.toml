@@ -1,0 +1,47 @@
+[package]
+name = "paymentalist"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "paymentalist"
+path = "src/main.rs"
+
+[[bin]]
+name = "create_reverse_swap"
+path = "test/bin/create_reverse_swap.rs"
+
+[dependencies]
+# resolve issues with boltz-client dependencies
+elements = { version = "0.21.0", features = ["serde"] }
+#secp256k1-zkp = { version = "0.9.0", features = ["musig", "rand-std"] }
+bitcoin_hashes = "0.13.0"
+
+boltz-client = { git = "https://github.com/SatoshiPortal/boltz-rust", rev = "3a6d3f4b21ca2510fac7b9c59a2401ab2ea9c744" }
+
+# Command line argument parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# Config
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8.20"
+
+# Web server
+axum = "0.8.3"
+tokio = { version = "1.35", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["trace"] }
+hyper = "1.2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+[patch.crates-io]
+secp256k1-zkp = { git = "https://github.com/danielgranhao/rust-secp256k1-zkp.git", rev = "eac2e479255a6e32b5588bc25ee53c642fdd8395" }

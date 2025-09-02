@@ -1858,6 +1858,28 @@ Proxy response:
 }
 ```
 
+### Get an estimation of current Bitcoin fees based on mempool.space rates
+
+This will retrieve a fee rate by converting confTarget to a fee priority and retrieving the current rate from mempool.space
+
+```http
+POST http://cyphernode:8888/bitcoin_getfeerate
+with body...
+{"confTarget":2}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "feerate": 25,
+  },
+  "error": null,
+  "id": null
+}
+```
+
 ### Mine blocks immediately to a specified address (before the RPC call returns)
 
 This will call the Bitcoin Core generatetoaddress RPC call and return the result as is.
@@ -1901,5 +1923,30 @@ Proxy response:
   "error": null,
   "id": null
 
+}
+```
+
+
+#### Validate a bolt11 invoice and check if it has a magic route hint
+
+If the bolt11 includes a boltz route hint a liquid network address will be included in the response.  If the bolt11 does not include a boltz route hint, only the original invoice will be returned.
+
+```http
+POST http://cyphernode:8888/check_bolt11_mrh
+with body...
+{"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3"}
+or
+{"bolt11":"lntb1pdca82tpp5g...", "network":"bitcoin"}
+```
+
+Proxy response:
+
+```json
+{
+  "result": {
+    "liquid_address": "lq1qqwz4h6506xxdwxpuxkj93wz5yvcaasp0wfhx0dysa6yacc84erpdh9y8qz0epkc97cej8sxmjsmjmzx543mhqh7eh5r8tqsmj",
+    "amount_sats": 1061,
+    "original_invoice": "lnbc11110n1pnlfshcsp5dtzgydc0nfxdvznw4h87afa0nfrr8agc2807fpxcmva6m5q4qdtqpp5vd98catyj6eclaqf9rwjj3plyrk7t8pc3gzrhg4t6n0q8ndyk5wqdqhfehjq3r9wd3hy6tsw35k7msxqyp2xqcqz95rzjqgnan5zzk7rq88mtl4vqem7uedqde34zgh9e8e3jg63yufgjnhzl7zzxeyqq28qqqqqqqqqqqqqqq9gq2y9qyysgq2r73mthfs223rjl4jgmwl3lp9gwe6dmk2unjkd08edn65zhhefzze58wjzucwduzat4cct47leacuzf449a9zyjnafkytggq8y4mvcsqsawr3a"
+  }
 }
 ```

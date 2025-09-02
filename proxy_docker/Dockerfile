@@ -20,11 +20,9 @@ RUN apt update && apt -y install \
  COPY app/data/* ./
  COPY app/script/* ./
  COPY app/tests/* ./tests/
- COPY --from=cyphernode/clightning:v22.11.1-debian /usr/local/bin/lightning-cli ./
+ COPY --from=cyphernode/clightning:v23.11.2-pg /usr/local/bin/lightning-cli ./
 
- RUN chmod +x startproxy.sh requesthandler.sh lightning-cli sqlmigrate*.sh waitanyinvoice.sh \
-              bitcoin_node_walletnotify.sh bitcoin_node_newtip.sh elements_node_walletnotify.sh elements_node_newtip.sh \
-              confirmation.sh processnewtip.sh elements_confirmation.sh elements_processnewtip.sh tests/* \
+ RUN chmod +x *.sh tests/* \
   && chmod o+w . \
   && mkdir db
 

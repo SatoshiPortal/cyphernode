@@ -17,7 +17,7 @@ getestimatesmartfee() {
 
   local nb_blocks=${1}
   trace "[getestimatesmartfee] nb_blocks=${nb_blocks}"
-  send_to_watcher_node "{\"method\":\"estimatesmartfee\",\"params\":[${nb_blocks}]}" | jq ".result.feerate" | awk '{ printf "%.8f", $0 }'
+  send_to_watcher_node "{\"method\":\"estimatesmartfee\",\"params\":[${nb_blocks},\"economical\"]}" | jq ".result.feerate" | awk '{ printf "%.8f", $0 }'
   return $?
 }
 
@@ -59,11 +59,15 @@ get_transaction() {
   trace "[get_transaction] txid=${txid}"
   local to_spender_node=${2}
   trace "[get_transaction] to_spender_node=${to_spender_node}"
+  local wallet=${3}
+  trace "[get_transaction] wallet=${wallet}"
 
   local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
   trace "[get_transaction] data=${data}"
   if [ -z "${to_spender_node}" ]; then
     send_to_watcher_node "${data}"
+  elif [ -n "${wallet}" ]; then
+    send_to_spender_node "${data}" "${wallet}"
   else
     send_to_spender_node "${data}"
   fi
@@ -110,7 +114,7 @@ bitcoin_estimatesmartfee() {
 
   local conf_target=${1}
   trace "[bitcoin_estimatesmartfee] conf_target=${conf_target}"
-  local data="{\"method\":\"estimatesmartfee\",\"params\":[${conf_target}]}"
+  local data="{\"method\":\"estimatesmartfee\",\"params\":[${conf_target},\"economical\"]}"
   trace "[bitcoin_estimatesmartfee] data=${data}"
   send_to_watcher_node "${data}"
   return $?
@@ -132,7 +136,7 @@ bitcoin_generatetoaddress() {
   local data
   data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
 
-  trace "[bitcoin_bitcoin_generatetoaddress] data=${data}"
+  trace "[bitcoin_generatetoaddress] data=${data}"
 
   send_to_spender_node "${data}"
   return $?
@@ -166,5 +170,66 @@ bitcoin_gettxoutproof() {
 
   send_to_watcher_node "${data}"
 
+  return $?
+}
+
+testmempoolaccept() {
+  trace "Entering testmempoolaccept()..."
+
+  local request=${1}
+  trace "[testmempoolaccept] request=${request}"
+  local rawtx=$(echo "${request}" | jq -r ".rawtx")
+  trace "[testmempoolaccept] rawtx=${rawtx}"
+
+
+  local data='{"method":"testmempoolaccept","params":[["'${rawtx}'"]]}'
+  local response=$(send_to_spender_node "${data}")
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[testmempoolaccept] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
+getaddressinfo() {
+  trace "Entering getaddressinfo()..."
+
+  local request=${1}
+  trace "[getaddressinfo] request=${request}"
+  local address=$(echo "${request}" | jq -r ".address")
+  trace "[getaddressinfo] address=${address}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[getaddressinfo] wallet=${wallet}"
+  fi
+
+  local data='{"method":"getaddressinfo","params":["'${address}'"]}'
+  local response
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_spender_node "${data}")
+  fi
+
+  local returncode=$?
+  trace_rc ${returncode}
+  trace "[getaddressinfo] response=${response}"
+
+  echo "${response}"
+
+  return ${returncode}
+}
+
+decodescript() {
+  trace "Entering decodescript()..."
+
+  local script=${1}
+  trace "[decodescript] scriptPubKey=${script}"
+  local data="{\"method\":\"decodescript\",\"params\":[\"${script}\"]}"
+  trace "[decodescript] data=${data}"
+  send_to_watcher_node "${data}"
   return $?
 }

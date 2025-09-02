@@ -100,9 +100,6 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
-    <% if (docker_mode == 'compose') { %>
-    restart: always
-    <% } %>
     depends_on:
       - bitcoin
     <% if ( features.indexOf('tor') !== -1 ) { %>
@@ -229,7 +226,11 @@ services:
       - "<%= elements_datapath %>/blocknotify.sh:/.elements/blocknotify.sh:ro"
       - container_monitor:/container_monitor
     healthcheck:
+      <% if( net === 'regtest' ) { %>
+      test: sh -c '[ `elements-cli getblockcount` -ge 101 ] && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready'
+      <% } else { %>
       test: elements-cli echo && touch /container_monitor/elements_ready || rm -f /container_monitor/elements_ready
+      <% } %>
       interval: 30s
       timeout: 10s
       retries: 10
@@ -422,6 +423,35 @@ services:
     <% } else { %>
     restart: always
     <% } %>
+
+  <% if ( features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1 ) { %>
+  ##########################
+  # PAYMENTALIST           #
+  ##########################
+
+  paymentalist:
+    image: cyphernode/paymentalist:<%= paymentalist_version %>
+    user: $USER
+    stop_grace_period: 30s
+    volumes:
+      - "<%= logs_datapath %>:/cnlogs"
+    networks:
+      - cyphernodenet
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+  <% } %>
 
   <% if ( features.indexOf('otsclient') !== -1 ) { %>
   ##########################

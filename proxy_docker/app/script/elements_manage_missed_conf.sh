@@ -49,25 +49,24 @@ elements_manage_missed_conf() {
     return 0
   fi
 
-  local received
-  local received_addresses
   local received_watches
+  local data
 
-  data='{"method":"listreceivedbyaddress","params":[0,false,true]}'
-  received=$(send_to_elements_spender_node "${data}")
-  trace "[elements_manage_missed_conf] received=${received}"
-  received_addresses=$(echo "${received}" | jq -r ".result[].address" | sort)
-  trace "[elements_manage_missed_conf] received_addresses=${received_addresses}"
-
-  # Let's extract addresses that are in the watches list as well as in the received_addresses list
-  echo "${watches}" > elements_watches-$$
-  echo "${received_addresses}" > elements_received_addresses-$$
-  received_watches=$(comm -12 elements_watches-$$ elements_received_addresses-$$)
+  for address in ${watches}
+  do
+    if [ -n "${data}" ]; then
+      data=${data}','
+    fi
+    data=${data}'{"id":"'${address}'","method":"listreceivedbyaddress","params":[0,true,true,"'${address}'"]}'
+  done
+  received_watches=$(send_batch_to_elements_node "${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}" "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "[${data}]")
   trace "[elements_manage_missed_conf] received_watches=${received_watches}"
-  rm elements_watches-$$ elements_received_addresses-$$
+  # received_watches=[{"result":[],"error":null,"id":"bcrt1q05laru93h7qkf8v0ujaezzsgvakh0t6ytdz8xk"},{"result":[],"error":null,"id":"bcrt1q597re8ayjlls2saz0ypxfks4f22r38zmynwqsx"},{"result":[],"error":null,"id":"bcrt1q65pc8vqznl2l5wk4fd800l5lv0w9dml2c6rws6"},{"result":[{"involvesWatchonly":true,"address":"bcrt1q7xun0gcgt4hu8xtc8e7ttzkw64sp6yun4pzumk","amount":0.00010000,"confirmations":1,"label":"missed1conftest","txids":["05f1912ebdf1538964c7f0d4fb0643e7e35c21cba82e080518c11bebec1aeec4"]}],"error":null,"id":"bcrt1q7xun0gcgt4hu8xtc8e7ttzkw64sp6yun4pzumk"},{"result":[],"error":null,"id":"bcrt1qe3x9zv59xeepgqzgsyhn6s7n3ewkck7wlnmv4f"},{"result":[],"error":null,"id":"bcrt1qegp66u24qjt5m8e7r8z7c243csv7x9e2w55j00"},{"result":[],"error":null,"id":"bcrt1qfhkpv4mghzps09g6t2f693yhh6qqvhw0hyq0yz"},{"result":[],"error":null,"id":"bcrt1qg7hruwvec90fe3ku7unqgccgu6r6mkwrcm7lzj"},{"result":[{"involvesWatchonly":true,"address":"bcrt1qpzwcuhl0tmen8wu26rfyw4eaeq9ku3xqva85ft","amount":0.00010000,"confirmations":3,"label":"missed1conftest","txids":["fb045d4bae557fbae17d4338b15bdab90deff46c1b22c8dd0d34e2100f081d8e"]}],"error":null,"id":"bcrt1qpzwcuhl0tmen8wu26rfyw4eaeq9ku3xqva85ft"},{"result":[],"error":null,"id":"bcrt1qq38fekxvxgn3cw859ps3alf4acugm3h8svzshy"},{"result":[],"error":null,"id":"bcrt1qr8ur0fdc3h9yeqjverc8x2lxjkyp6mlfg0ht03"},{"result":[{"involvesWatchonly":true,"address":"bcrt1qt09cttrcpdfcfr6wltkzdv48ep7h3acux6v8tl","amount":0.00010000,"confirmations":5,"label":"missed1conftest","txids":["4e859d9ce6c173d8373b2222127687bb697311161ec36deff2f1a12282c88b27"]}],"error":null,"id":"bcrt1qt09cttrcpdfcfr6wltkzdv48ep7h3acux6v8tl"},{"result":[{"involvesWatchonly":true,"address":"bcrt1qwdpehjzu6sszp7zgdsud7se6trv2rt35szrcqz","amount":0.00010000,"confirmations":8,"label":"missed1conftest","txids":["bab2adb187ed0d04c8ca0d93f6c94eb2a5c7cccef39d9fb00bd9dab92210f68a"]}],"error":null,"id":"bcrt1qwdpehjzu6sszp7zgdsud7se6trv2rt35szrcqz"},{"result":null,"error":{"code":-4,"message":"address_filter parameter was invalid"},"id":"tb1q7g0zneqlww82vafshwgf5rz6mhgj2lkpkkt08x"},{"result":null,"error":{"code":-4,"message":"address_filter parameter was invalid"},"id":"tb1qpf55tg76lurah3z67d3tk93tc2yzmntspsjqnc"},{"result":null,"error":{"code":-4,"message":"address_filter parameter was invalid"},"id":"tb1qx5jwlzjscz2k6cfse8tn4pdrlye8es7epz5msc"}]
 
-  local received
-  local received_address
+  received_watches=$(echo "${received_watches}" | jq -Mc '.[] | select(.result != [] and .result != null) | .result[0]')
+  trace "[elements_manage_missed_conf] received_watches=${received_watches}"
+
+  local received_watch
   local confirmations
   local watching
   local latesttxid
@@ -84,54 +83,48 @@ elements_manage_missed_conf() {
   local txids
   local IFS="
 "
-  for address in ${received_watches}
+  for received_watch in ${received_watches}
   do
-    watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM elements_watching WHERE address='${address}'")
+    address=$(echo "${received_watch}" | jq -r '.address')
+    # Getting the earliest one still being watched
+    watching=$(sql "SELECT address, inserted_ts, calledback0conf FROM elements_watching WHERE address='${address}' AND watching ORDER BY inserted_ts ASC LIMIT 1")
     trace "[elements_manage_missed_conf] watching=${watching}"
     if [ ${#watching} -eq 0 ]; then
       trace "[elements_manage_missed_conf] Nothing missed!"
       continue
     fi
 
-    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" -D '%Y-%m-%d %H:%M:%S' +"%s")
+    inserted_ts=$(date -d "$(echo "${watching}" | cut -d '|' -f2)" +%s)
     trace "[elements_manage_missed_conf] inserted_ts=${inserted_ts}"
-    calledback0conf=$(echo "${watching}" | cut -d '|' -f3)
-    trace "[elements_manage_missed_conf] calledback0conf=${calledback0conf}"
 
-    received_address=$(echo "${received}" | jq -Mc ".result | map(select(.address==\"${address}\"))[0]")
-    trace "[elements_manage_missed_conf] received_address=${received_address}"
-    confirmations=$(echo "${received_address}" | jq -r ".confirmations")
-    trace "[elements_manage_missed_conf] confirmations=${confirmations}"
+    # This received address is still being watched by Cyphernode watcher, let's process missed conf for
+    # the transactions that happened after watching the address.
+    trace "[elements_manage_missed_conf] Let's process missed conf for the transactions that happened after watching this address"
 
-    if [ "${confirmations}" -eq "0" ] && [ "${calledback0conf}" = "t" ]; then
-      # 0-conf and calledback0conf is true, so let's skip this one
-      trace "[elements_manage_missed_conf] Nothing missed!"
-    else
-      # 0-conf and calledback0conf false, let's call confirmation
-      # or
-      # 1-conf and calledback1conf false, let's call confirmation
-      trace "[elements_manage_missed_conf] We got something to check..."
+    txids=$(echo "${received_watch}" | jq -r ".txids[]")
+    trace "[elements_manage_missed_conf] txids=${txids}"
 
-      latesttxid=$(echo "${received_address}" | jq -r ".txids | last")
-      trace "[elements_manage_missed_conf] latesttxid=${latesttxid}"
-      data='{"method":"gettransaction","params":["'${latesttxid}'"]}'
+    for txid in ${txids}; do
+      trace "[elements_manage_missed_conf] Checking txid=${txid}"
+
+      data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true,true]}"
+      trace "[elements_manage_missed_conf] calling method=${data}"
+
       tx=$(send_to_elements_spender_node "${data}")
-      blocktime=$(echo "${tx}" | jq '.result.blocktime')
+
       txtime=$(echo "${tx}" | jq '.result.time')
 
-      trace "[elements_manage_missed_conf] blocktime=${blocktime}"
-      trace "[elements_manage_missed_conf] txtime=${txtime}"
       trace "[elements_manage_missed_conf] inserted_ts=${inserted_ts}"
-      trace "[elements_manage_missed_conf] confirmations=${confirmations}"
+      trace "[elements_manage_missed_conf] txtime=${txtime}"
 
       if [ "${txtime}" -ge "${inserted_ts}" ]; then
         # Broadcast or mined after watch, we missed it!
-        trace "[elements_manage_missed_conf] Broadcast or mined after watch, we missed it!"
+        trace "[elements_manage_missed_conf] Broadcast or mined after watch, we might have missed it!"
         # We skip the callbacks because do_callbacks is called right after in
         # requesthandler.executecallbacks (where we're from)
-        elements_confirmation "${latesttxid}" "true"
+        elements_confirmation "$(echo "${tx}" | jq -Mc '.result' | base64 -w 0)" "true"
       fi
-    fi
+    done
   done
 
   return 0

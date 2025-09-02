@@ -289,6 +289,125 @@ derivepubpath_bitcoind() {
   return $?
 }
 
+getfeeratefromurl() {
+  local url=$1
+  local priority=$2
+  local response
+  local returncode
+
+  trace "[getfeeratefromurl] url=${url}"
+  trace "[getfeeratefromurl] priority=${priority}"
+
+  response=$(curl -s -m 3 $url)
+  returncode=$?
+
+  if [ $returncode -ne 0 ] || [ -z "$response" ]; then
+    trace "[getfeeratefromurl] Failed to get response from $url"
+    return 1
+  fi
+
+  local feerate=$(echo $response | jq ".${priority}Fee")
+  if [ -z "$feerate" ]; then
+    trace "[getfeeratefromurl] Failed to extract $priority fee from response"
+    return 1
+  fi
+
+  echo $feerate
+  return 0
+}
+
+getpriorityfromconftarget() {
+  local conf_target=${1}
+  trace "[getpriorityfromconftarget] conf_target=${conf_target}"
+
+  # default to hour priority if no conf_target is provided
+  if [ -z "${conf_target}" ] || [ "${conf_target}" = "null" ]; then
+    conf_target=6
+    trace "[getpriorityfromconftarget] defaulted conf_target=${conf_target}"
+  fi
+
+  conftarget_fastest=$(($CONFTARGET_PRIORITY_FASTEST + 1))
+  conftarget_halfhour=$(($CONFTARGET_PRIORITY_HALFHOUR + 1))
+  conftarget_hour=$(($CONFTARGET_PRIORITY_HOUR + 1))
+  conftarget_economy=$(($CONFTARGET_PRIORITY_ECONOMY + 1))
+
+  local priority
+  if [ "$conf_target" -lt $conftarget_fastest ]; then
+    priority="fastest"
+  elif [ "$conf_target" -lt $conftarget_halfhour ]; then
+    priority="halfHour"
+  elif [ "$conf_target" -lt $conftarget_hour ]; then
+    priority="hour"
+  elif [ "$conf_target" -lt $conftarget_economy ]; then
+    priority="economy"
+  else
+    priority="hour"
+  fi
+
+  echo $priority
+}
+
+getfeerate() {
+  trace "Entering getfeerate()..."
+
+  local conf_target=${1}
+  trace "[getfeerate] conf_target=${conf_target}"
+  local priority=$(getpriorityfromconftarget "${conf_target}")
+  trace "[getfeerate] priority=${priority}"
+  local feerate
+
+  if [ "${BITCOIN_NETWORK}" = "mainnet" ]; then
+    feerate=$(getfeeratefromurl "https://mempool.bullbitcoin.com/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
+
+    feerate=$(getfeeratefromurl "https://mempool.space/api/v1/fees/recommended" "${priority}")
+    if [ -n "$feerate" ]; then
+      echo "{\"feerate\":\"${feerate}\"}"
+      return 0
+    fi
+  elif [ "${BITCOIN_NETWORK}" = "testnet" ]; then
+   feerate=$(getfeeratefromurl "https://mempool.space/testnet/api/v1/fees/recommended" "${priority}")
+   if [ -n "$feerate" ]; then
+     echo "{\"feerate\":\"${feerate}\"}"
+     return 0
+   fi
+  fi
+
+  local response
+  local returncode
+  local data='{"method":"estimatesmartfee","params":['${conf_target}']}'
+  response=$(send_to_spender_node "${data}")
+  returncode=$?
+  trace_rc ${returncode}
+  trace "[getfeerate] response=${response}"
+
+  # If we couldn't get the feerate from a mempool.space instance or our node, let's set it to 1.
+
+  if [ "${returncode}" -eq 0 ]; then
+    feerate=$(echo ${response} | jq ".result.feerate")
+
+    if [ "${feerate}" = "null" ]; then
+      feerate="1"
+    else
+      feerate=$(awk "BEGIN { printf \"%d\", $feerate * 100000000 / 1000 }")
+    fi
+  else
+    trace "[getfeerate] Faild to get feerate!"
+    feerate="1"
+  fi
+  trace "[getfeerate] feerate=${feerate}"
+
+  data="{\"feerate\":\"${feerate}\"}"
+
+  trace "[getfeerate] responding=${data}"
+  echo "${data}"
+
+  return ${returncode}
+}
+
 # xpub = P2PKH / P2SH = 1addr or 3addr = pkh()
 # ypub = Segwit P2WPKH in P2SH = 3addr = sh(wpkh())
 # Ypub = Segwit Multisig P2WSH in P2SH = 3addr
