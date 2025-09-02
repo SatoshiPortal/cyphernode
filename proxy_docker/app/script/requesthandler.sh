@@ -28,6 +28,8 @@
 . ./elements_manage_missed_conf.sh
 . ./elements_walletoperations.sh
 . ./elements_getactivewatches.sh
+. ./elements_pegin.sh
+. ./elements_pegout.sh
 . ./paymentalist.sh
 
 main() {
@@ -1062,6 +1064,12 @@ main() {
           response=$(elements_newblock "${line}")
           returncode=$?
           ;;
+        elements_getbalance)
+          # curl (GET) http://192.168.111.152:8080/elements_getbalance
+
+          response=$(elements_getbalance)
+          returncode=$?
+          ;;
         elements_gettransaction)
           # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
 
@@ -1122,6 +1130,26 @@ main() {
           # curl GET http://192.168.111.152:8080/elements_getmempoolinfo
 
           response=$(elements_get_mempool_info)
+          returncode=$?
+          ;;
+        elements_getpeginaddress)
+          # curl GET http://192.168.111.152:8080/elements_getpeginaddress
+
+          response=$(elements_getpeginaddress)
+          returncode=$?
+          ;;
+        elements_claimpegin)
+          # curl POST http://192.168.111.152:8080/elements_claimpegin
+          # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71"}
+
+          response=$(elements_claimpegin "${line}")
+          returncode=$?
+          ;;
+        elements_sendtomainchain)
+          # curl POST http://192.168.111.152:8080/elements_sendtomainchain
+          # BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true,"wallet":"04"}
+
+          response=$(elements_sendtomainchain "${line}")
           returncode=$?
           ;;
         elements_watchtxid)
