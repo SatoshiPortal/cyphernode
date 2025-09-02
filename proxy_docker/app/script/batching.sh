@@ -599,7 +599,7 @@ batchspend() {
         trace "[batchspend] message: ${message}"
       fi
 
-      if [ "${errorcode}" -eq "-6" ]; then
+      if [ "${message}" = "\"Insufficient funds\"" ]; then
         trace "[batchspend] mosquitto_pub -h broker -t insufficientfunds -m \"{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}\""
         mosquitto_pub -h broker -t insufficientfunds -m "{\"method\":\"batchspend\",\"error\":\"${errorstring}\"}"
 
