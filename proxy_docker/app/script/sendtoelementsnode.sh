@@ -42,7 +42,14 @@ send_to_elements_watcher_node_wallet() {
 send_to_elements_spender_node()
 {
   trace "Entering send_to_elements_spender_node()..."
-  send_to_elements_node "${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}" "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "$@"
+
+  local walletname=${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}
+  if [ -n "$2" ]; then
+    walletname="spending${2}.dat"
+  fi
+  trace "[send_to_elements_spender_node] wallet: ${walletname}"
+
+  send_to_elements_node "${SPENDER_ELEMENTS_NODE_RPC_URL}/${walletname}" "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "$1"
   local returncode=$?
   trace_rc ${returncode}
   return ${returncode}
