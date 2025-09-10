@@ -57,11 +57,15 @@ elements_get_transaction() {
   trace "[elements_get_transaction] txid=${txid}"
   local to_elements_spender_node=${2}
   trace "[elements_get_transaction] to_elements_spender_node=${to_elements_spender_node}"
+  local wallet=${3}
+  trace "[get_transaction] wallet=${wallet}"
 
   local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
   trace "[elements_get_transaction] data=${data}"
   if [ -z "${to_elements_spender_node}" ]; then
     send_to_elements_watcher_node "${data}"
+  elif [ -n "${wallet}" ]; then
+    send_to_elements_spender_node "${data}" "${wallet}"
   else
     send_to_elements_spender_node "${data}"
   fi
@@ -163,11 +167,17 @@ elements_getaddressinfo() {
   trace "[elements_get_addressinfo] address=${address}"
   local to_elements_spender_node=${2}
   trace "[elements_get_addressinfo] to_elements_spender_node=${to_elements_spender_node}"
+  local wallet=${3}
+  if [ -n "${wallet}" ]; then
+    trace "[elements_get_addressinfo] wallet=${wallet}"
+  fi
 
   local data="{\"method\":\"getaddressinfo\",\"params\":[\"${address}\"]}"
   trace "[elements_get_addressinfo] data=${data}"
   if [ -z "${to_elements_spender_node}" ]; then
     send_to_elements_watcher_node "${data}"
+  elif [ -n "${wallet}" ]; then
+    send_to_elements_spender_node "${data}" "${wallet}"
   else
     send_to_elements_spender_node "${data}"
   fi
