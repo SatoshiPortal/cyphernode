@@ -38,10 +38,14 @@ ln_create_invoice() {
   fi
   local label=$(echo "${request}" | jq -r ".label")
   trace "[ln_create_invoice] label=${label}"
+  label=$(echo -n "${label}" | sed "s/'/''/g")
+  trace "[ln_create_invoice] label after escaping single quotes=${label}"
   local esclabel=$(echo "${request}" | jq ".label")
   trace "[ln_create_invoice] esclabel=${esclabel}"
   local description=$(echo "${request}" | jq -r ".description")
   trace "[ln_create_invoice] description=${description}"
+  description=$(echo -n "${description}" | sed "s/'/''/g")
+  trace "[ln_create_invoice] description after escaping single quotes=${description}"
   local escdescription=$(echo "${request}" | jq ".description")
   trace "[ln_create_invoice] escdescription=${escdescription}"
   local expiry=$(echo "${request}" | jq -r ".expiry")
