@@ -210,10 +210,12 @@ confirmation() {
     local watching_id
 
     # Let's see if we need to insert tx in the join table
-    tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=${id_inserted}")
 
     for row in ${rows}
     do
+
+      watching_id=$(echo "${row}" | cut -d '|' -f1)
+      tx=$(sql "SELECT tx_id FROM watching_tx WHERE tx_id=${id_inserted} and watching_id=${watching_id}")
 
       address=$(echo "${row}" | cut -d '|' -f2)
       tx_vout_amount=$(echo "${tx_details}" | jq ".details | map(select(.address==\"${address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
@@ -228,7 +230,6 @@ confirmation() {
 
         # If the tx is batched and pays multiple watched addresses, we have to insert
         # those additional addresses in watching_tx!
-        watching_id=$(echo "${row}" | cut -d '|' -f1)
         sql "INSERT INTO watching_tx (watching_id, tx_id, vout, amount) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount})"\
 " ON CONFLICT DO NOTHING"
         trace_rc $?
