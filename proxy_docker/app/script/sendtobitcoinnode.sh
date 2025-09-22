@@ -96,10 +96,10 @@ send_batch_to_bitcoin_node() {
   local errorstring
   local node_url=${1}
   local config=${2}
-  local data=${3}
+  local body_file=${3}
 
-  trace "[send_batch_to_bitcoin_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
-  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d "${data}" "${node_url}")
+  trace "[send_batch_to_bitcoin_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d @${body_file} ${node_url}"
+  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d @${body_file} "${node_url}")
   returncode=$?
   trace_rc ${returncode}
   trace "[send_batch_to_bitcoin_node] result=${result}"
