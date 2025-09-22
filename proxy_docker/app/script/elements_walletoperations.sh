@@ -20,6 +20,10 @@ elements_spend() {
   trace "[elements_spend] replaceable=${replaceable}"
   local subtractfeefromamount=$(echo "${request}" | jq ".subtractfeefromamount")
   trace "[elements_spend] subtractfeefromamount=${subtractfeefromamount}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[spend] wallet=${wallet}"
+  fi
   local response
   local id_inserted
   local tx_details
@@ -27,9 +31,15 @@ elements_spend() {
   local returncode
 
   if [ "${assetid}" = "null" ]; then
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}")
+    data="{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}"
   else
-    response=$(send_to_elements_spender_node "{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",null,\"${assetid}\"]}")
+    data="{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",null,\"${assetid}\"]}"
+  fi
+
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
   fi
 
   returncode=$?
@@ -41,7 +51,7 @@ elements_spend() {
     trace "[elements_spend] txid=${txid}"
 
     # Let's get transaction details on the spending wallet so that we have fee information
-    tx_details=$(elements_get_transaction "${txid}" "spender")
+    tx_details=$(elements_get_transaction "${txid}" "spender" "${wallet}")
     tx_raw_details=$(elements_get_rawtransaction "${txid}" | tr -d '\n')
 
     # Amounts and fees are negative when spending so we absolute those fields
@@ -55,7 +65,7 @@ elements_spend() {
     local fees=$(echo "${tx_details}" | jq '.result.details[0].fee | fabs' | awk '{ printf "%.8f", $0 }')
 
     # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
-    local unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+    local unblinded_address=$(elements_getaddressinfo "${address}" true "${wallet}" | jq -r ".result.unconfidential")
     trace "[elements_spend] unblinded_address=${unblinded_address}"
 
     ########################################################################################################
@@ -172,9 +182,14 @@ elements_get_txns_spending() {
 elements_getbalance() {
   trace "Entering elements_getbalance()..."
 
+  local wallet=${1:-}
   local response
   local data='{"method":"getbalance"}'
-  response=$(send_to_elements_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[elements_getbalance] response=${response}"
@@ -281,6 +296,9 @@ elements_getnewaddress() {
   local label=${2}
   trace "[elements_getnewaddress] label=${label}"
 
+  local wallet=${3}
+  trace "[getnewaddress] wallet=${wallet}"
+
   local response
   local jqop
   local addedfieldstoresponse
@@ -302,7 +320,11 @@ elements_getnewaddress() {
   fi
   trace "[elements_getnewaddress] data=${data}"
 
-  response=$(send_to_elements_spender_node "${data}")
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[elements_getnewaddress] response=${response}"

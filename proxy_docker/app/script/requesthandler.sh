@@ -980,22 +980,25 @@ main() {
           # BODY {"addressType":"bech32","label":"myLabel"}
           # BODY {"label":"myLabel"}
           # BODY {"addressType":"p2sh-segwit"}
+          # BODY {"wallet": "02"}
           # BODY {}
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
             address_type=$(echo "${line}" | jq -er ".addressType // empty")
             label=$(echo "${line}" | jq -er ".label // empty")
+            wallet=$(echo "${line}" | jq -er ".wallet // empty")
           else
             address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           fi
 
-          response=$(elements_getnewaddress "${address_type}" "${label}")
+          response=$(elements_getnewaddress "${address_type}" "${label}" "${wallet}")
           returncode=$?
           ;;
         elements_spend)
           # POST http://192.168.111.152:8080/elements_spend
           # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","wallet":"01"}
 
           response=$(elements_spend "${line}")
           returncode=$?
@@ -1066,8 +1069,14 @@ main() {
           ;;
         elements_getbalance)
           # curl (GET) http://192.168.111.152:8080/elements_getbalance
+          # curl (GET) http://192.168.111.152:8080/elements_getbalance/01 (spending wallet number)
 
-          response=$(elements_getbalance)
+          wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${wallet}" = "getbalance" ]; then
+            wallet=""
+          fi
+
+          response=$(elements_getbalance "${wallet}")
           returncode=$?
           ;;
         elements_gettransaction)
@@ -1134,13 +1143,19 @@ main() {
           ;;
         elements_getpeginaddress)
           # curl GET http://192.168.111.152:8080/elements_getpeginaddress
+          # curl GET http://192.168.111.152:8080/elements_getpeginaddress/01
 
-          response=$(elements_getpeginaddress)
+          wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${wallet}" = "getbalance" ]; then
+            wallet=""
+          fi
+          response=$(elements_getpeginaddress "${wallet}")
           returncode=$?
           ;;
         elements_claimpegin)
           # curl POST http://192.168.111.152:8080/elements_claimpegin
           # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71"}
+          # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71", "wallet":"04"}
 
           response=$(elements_claimpegin "${line}")
           returncode=$?
