@@ -6,8 +6,15 @@
 elements_getpeginaddress() {
   trace "Entering elements_getpeginaddress()..."
 
+  local wallet=${1:-}
+
   local response
-  response=$(send_to_elements_spender_node "{\"method\":\"getpeginaddress\"}")
+  local data="{\"method\":\"getpeginaddress\"}"
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
 
   returncode=$?
   trace_rc ${returncode}
@@ -28,11 +35,19 @@ elements_claimpegin() {
   trace "[elements_claimpegin] proof=${proof}"
   local claim_script=$(echo "${request}" | jq -r ".claim_script")
   trace "[elements_claimpegin] claim_script=${claim_script}"
+  local wallet=$(echo "${request}" | jq -r ".wallet // empty")
+  if [ -n "${wallet}" ]; then
+    trace "[elements_claimpegin] wallet=${wallet}"
+  fi
 
   local response
   local returncode
-
-  response=$(send_to_elements_spender_node "{\"method\":\"claimpegin\",\"params\":[\"${rawtx}\",\"${proof}\",\"${claim_script}\"]}")
+  local data="{\"method\":\"claimpegin\",\"params\":[\"${rawtx}\",\"${proof}\",\"${claim_script}\"]}"
+  if [ -n "${wallet}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
   returncode=$?
 
   trace_rc ${returncode}
