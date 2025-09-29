@@ -40,6 +40,7 @@ elements_do_callbacks() {
 
     local address
     local url
+    local watching_id
     local IFS="
 "
     for row in ${callbacks}
@@ -48,8 +49,8 @@ elements_do_callbacks() {
       returncode=$?
       trace_rc ${returncode}
       if [ "${returncode}" -eq 0 ]; then
-        address=$(echo "${row}" | cut -d '|' -f2)
-        sql "UPDATE elements_watching SET calledback0conf=true WHERE address='${address}'"
+        watching_id=$(echo "${row}" | cut -d '|' -f14)
+        sql "UPDATE elements_watching SET calledback0conf=true WHERE id='${watching_id}'"
         trace_rc $?
       fi
     done
@@ -62,8 +63,8 @@ elements_do_callbacks() {
       elements_build_callback "${row}"
       returncode=$?
       if [ "${returncode}" -eq 0 ]; then
-        address=$(echo "${row}" | cut -d '|' -f2)
-        sql "UPDATE elements_watching SET calledback1conf=true, watching=false WHERE address='${address}'"
+        watching_id=$(echo "${row}" | cut -d '|' -f14)
+        sql "UPDATE elements_watching SET calledback1conf=true, watching=false WHERE id='${watching_id}'"
         trace_rc $?
       fi
     done

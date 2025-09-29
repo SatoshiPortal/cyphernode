@@ -225,8 +225,9 @@ elements_confirmation() {
       local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
       tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
-      # The fees are moving !!
-      local fees=$(echo "${tx_details}" | jq '.fee.bitcoin | fabs' | awk '{ printf "%.8f", $0 }')
+      # The fees in elements are unblinded
+      local fees=$(echo "${tx_details}" | jq '.decoded.fee."6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d" | fabs' | awk '{ printf "%.8f", $0 }')
+#      local fees=$(echo "${tx_details}" | jq '.fee.bitcoin | fabs' | awk '{ printf "%.8f", $0 }')
       trace "[elements_confirmation] fees=${fees}"
 
       # If we missed 0-conf...
@@ -274,10 +275,11 @@ elements_confirmation() {
     local unblinded_address
 
     # Let's see if we need to insert tx in the join table
-    tx=$(sql "SELECT elements_tx_id FROM elements_watching_tx WHERE elements_tx_id=${id_inserted}")
 
     for row in ${rows}
     do
+      watching_id=$(echo "${row}" | cut -d '|' -f1)
+      tx=$(sql "SELECT elements_tx_id FROM elements_watching_tx WHERE elements_tx_id=${id_inserted} and elements_watching_id=${watching_id}")
 
       address=$(echo "${row}" | cut -d '|' -f2)
       unblinded_address=$(echo "${row}" | cut -d '|' -f3)
@@ -294,7 +296,6 @@ elements_confirmation() {
 
         # If the tx is batched and pays multiple watched addresses, we have to insert
         # those additional addresses in watching_tx!
-        watching_id=$(echo "${row}" | cut -d '|' -f1)
         sql "INSERT INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, '${tx_vout_assetid}')"\
 " ON CONFLICT DO NOTHING"
         trace_rc $?

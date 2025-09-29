@@ -28,15 +28,19 @@ walletnotify(){
     echo "[walletnotify-$$] Found ["$txid"] in wallet ["$walletname"]"
     tx=$(echo "${tx}" | jq -Mc)
     txb64=$(echo ${tx} | base64 -w 0)
+    tmpfile=$(mktemp)
+    echo "${txb64}" > ${tmpfile}
 
     if [ "${walletname}" = "watching01.dat" ] || [ "${walletname}" = "xpubwatching01.dat" ]; then
       echo "[walletnotify-$$] It's a watching wallet ["${walletname}"] - Adding topic cyphernode/elements/walletnotify"
-      echo "[walletnotify-$$] mosquitto_pub -h broker -t cyphernode/elements/walletnotify -m \"${tx}\" "
-      mosquitto_pub -h broker -t cyphernode/elements/walletnotify -m "${txb64}"
+      echo "[walletnotify-$$] mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f \"${tmpfile}\""
+      mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f "${tmpfile}"
     fi
 
-    echo "[walletnotify-$$] mosquitto_pub -h broker -t elementsnode/walletnotify -m \"${tx}\" "
-    mosquitto_pub -h broker -t elementsnode/walletnotify -m "${txb64}"
+    echo "[walletnotify-$$] mosquitto_pub -h broker -t elementsnode/walletnotify -f \"${tmpfile}\""
+    mosquitto_pub -h broker -t elementsnode/walletnotify -f "${tmpfile}"
+
+    rm ${tmpfile}
   else
     echo "[walletnotify-$$] Did not find ["$txid"] in wallet ["${walletname}"] : ${error}"
   fi
