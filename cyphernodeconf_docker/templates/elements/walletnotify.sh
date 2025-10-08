@@ -31,11 +31,13 @@ walletnotify(){
     tmpfile=$(mktemp)
     echo -n "${txb64}" > ${tmpfile}
 
-    if [ "${walletname}" = "spending01.dat" ] || "${walletname}" = "watching01.dat" ] || [ "${walletname}" = "xpubwatching01.dat" ]; then
-      echo "[walletnotify-$$] It's a watching wallet ["${walletname}"] - Adding topic cyphernode/elements/walletnotify"
-      echo "[walletnotify-$$] mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f \"${tmpfile}\""
-      mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f "${tmpfile}"
-    fi
+    case "${walletname}" in
+      spending*.dat|watching*.dat|xpubwatching*.dat)
+        echo "[walletnotify-$$] It's a watching wallet ["${walletname}"] - Adding topic cyphernode/elements/walletnotify"
+        echo "[walletnotify-$$] mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f \"${tmpfile}\""
+        mosquitto_pub -h broker -t cyphernode/elements/walletnotify -f "${tmpfile}"
+        ;;
+    esac
 
     echo "[walletnotify-$$] mosquitto_pub -h broker -t elementsnode/walletnotify -f \"${tmpfile}\""
     mosquitto_pub -h broker -t elementsnode/walletnotify -f "${tmpfile}"
