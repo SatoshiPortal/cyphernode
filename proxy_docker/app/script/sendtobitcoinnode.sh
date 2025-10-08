@@ -89,6 +89,21 @@ send_to_bitcoin_node() {
   return ${returncode}
 }
 
+send_batch_to_spender_node() {
+  trace "Entering send_batch_to_spender_node()..."
+
+  local walletname=${SPENDER_BTC_NODE_DEFAULT_WALLET}
+  if [ -n "$2" ]; then
+    walletname="spending${2}.dat"
+  fi
+  trace "[send_batch_to_spender_node]wallet: ${walletname}"
+
+  send_batch_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${walletname}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
+  local returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_batch_to_bitcoin_node() {
   trace "Entering send_batch_to_bitcoin_node()..."
   local returncode
