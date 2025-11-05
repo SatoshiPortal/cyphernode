@@ -27,7 +27,7 @@ walletnotify(){
     tx=$(echo "${tx}" | jq -Mc)
     txb64=$(echo ${tx} | base64 -w 0)
     tmpfile=$(mktemp)
-    echo "${txb64}" > ${tmpfile}
+    echo -n "${txb64}" > ${tmpfile}
 
     if [ "${walletname}" = "watching01.dat" ] || [ "${walletname}" = "xpubwatching01.dat" ]; then
       echo "[walletnotify-$$] It's a watching wallet ["${walletname}"] - Adding topic cyphernode/bitcoin/walletnotify"

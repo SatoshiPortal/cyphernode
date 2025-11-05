@@ -60,7 +60,7 @@ manage_missed_conf() {
     data=${data}'{"id":"'${address}'","method":"listreceivedbyaddress","params":[0,false,true,"'${address}'"]}'
   done
   body_file=$(mktemp)
-  echo "[${data}]" > ${body_file}
+  echo -n "[${data}]" > ${body_file}
   received_watches=$(send_batch_to_bitcoin_node "${WATCHER_BTC_NODE_RPC_URL}/${WATCHER_BTC_NODE_DEFAULT_WALLET}" "${WATCHER_BTC_NODE_RPC_CFG}" "${body_file}")
   rm ${body_file}
   trace "[manage_missed_conf] received_watches=${received_watches}"
