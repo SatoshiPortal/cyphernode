@@ -225,9 +225,14 @@ elements_confirmation() {
       local tx_replaceable=$(echo "${tx_details}" | jq -r '."bip125-replaceable"')
       tx_replaceable=$([ ${tx_replaceable} = "yes" ] && echo "true" || echo "false")
 
-      # The fees in elements are unblinded
-      local fees=$(echo "${tx_details}" | jq '.decoded.fee."6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d" | fabs' | awk '{ printf "%.8f", $0 }')
-#      local fees=$(echo "${tx_details}" | jq '.fee.bitcoin | fabs' | awk '{ printf "%.8f", $0 }')
+      # The fees in elements are unblinded (for now, might change: https://github.com/ElementsProject/elements/issues/156)
+      # and in the asset of the assetPolicy (for now, might change: https://github.com/ElementsProject/elements/issues/1302).
+      # The key in decoded.fee is the asset id and the value is the fee
+      # For ref.:
+      # Asset for mainnet: 6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d
+      # Asset for testnet: 144c654344aa716d6f3abcc1ca90e5641e4e2a7f633bc09fe3baf64585819a49
+      # Asset for regtest: b2e15d0d7a0c94e4e2ce0fe6e8691b9e451377f6e46e8045a86f7c4b5d4f0f23
+      local fees=$(echo "${tx_details}" | jq '.decoded.fee | to_entries[0].value | fabs' | awk '{ printf "%.8f", $0 }')
       trace "[elements_confirmation] fees=${fees}"
 
       # If we missed 0-conf...
