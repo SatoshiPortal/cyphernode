@@ -60,7 +60,7 @@ elements_manage_missed_conf() {
     data=${data}'{"id":"'${address}'","method":"listreceivedbyaddress","params":[0,true,true,"'${address}'"]}'
   done
   body_file=$(mktemp)
-  echo "[${data}]" > ${body_file}
+  echo -n "[${data}]" > ${body_file}
   received_watches=$(send_batch_to_elements_node "${SPENDER_ELEMENTS_NODE_RPC_URL}/${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}" "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "${body_file}")
   rm ${body_file}
   trace "[elements_manage_missed_conf] received_watches=${received_watches}"
