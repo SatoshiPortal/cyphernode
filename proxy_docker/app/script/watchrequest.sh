@@ -110,14 +110,14 @@ watchrequest() {
     return 1
   fi
 
-  result=$(importaddress_rpc "${address}" "${label}")
-  returncode=$?
-  trace_rc ${returncode}
-  if [ "${returncode}" -eq 0 ]; then
+  # result=$(importaddress_rpc "${address}" "${label}")
+  # returncode=$?
+  # trace_rc ${returncode}
+  # if [ "${returncode}" -eq 0 ]; then
     imported=true
-  else
-    imported=false
-  fi
+  # else
+  #   imported=false
+  # fi
 
   id_inserted=$(sql "INSERT INTO watching (address, watching, callback0conf, callback1conf, imported, event_message, label)"\
 " VALUES (${address_pg}, true, ${cb0conf_url_pg}, ${cb1conf_url_pg}, ${imported}, ${event_message_pg}, ${label_pg})"\
