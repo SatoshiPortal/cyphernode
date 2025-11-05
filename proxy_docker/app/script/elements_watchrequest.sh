@@ -119,14 +119,14 @@ elements_watchrequest() {
     return 1
   fi
 
-  result=$(elements_importaddress_rpc "${address}" "${label}")
-  returncode=$?
-  trace_rc ${returncode}
-  if [ "${returncode}" -eq 0 ]; then
+  # result=$(elements_importaddress_rpc "${address}" "${label}")
+  # returncode=$?
+  # trace_rc ${returncode}
+  # if [ "${returncode}" -eq 0 ]; then
     imported=true
-  else
-    imported=false
-  fi
+  # else
+  #   imported=false
+  # fi
 
   # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
   unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
