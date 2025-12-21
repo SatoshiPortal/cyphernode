@@ -189,6 +189,17 @@ elements_getunblindedurl() {
 
   local txid=${1}
   trace "[elements_getunblindedurl] txid=${txid}"
+
+  # Validate txid format (64 hex characters)
+  if [ -z "${txid}" ]; then
+    echo "{\"error\":\"txid is required\"}"
+    return 1
+  fi
+  if ! echo "${txid}" | grep -qE '^[a-fA-F0-9]{64}$'; then
+    echo "{\"error\":\"Invalid txid format\"}"
+    return 1
+  fi
+
   local base_url=${2:-"https://liquid.network"}
   trace "[elements_getunblindedurl] base_url=${base_url}"
 
