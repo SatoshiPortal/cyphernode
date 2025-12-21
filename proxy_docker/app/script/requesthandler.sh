@@ -1097,6 +1097,20 @@ main() {
           response=$(elements_get_blockchain_info)
           returncode=$?
           ;;
+        elements_getunblindedurl)
+          # GET http://192.168.111.152:8080/elements_getunblindedurl/{txid}
+          # GET http://192.168.111.152:8080/elements_getunblindedurl/{txid}/{base_url}
+
+          txid=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          base_url=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4- | sed 's/%2F/\//g; s/%3A/:/g')
+
+          if [ -n "${base_url}" ]; then
+            response=$(elements_getunblindedurl "${txid}" "${base_url}")
+          else
+            response=$(elements_getunblindedurl "${txid}")
+          fi
+          returncode=$?
+          ;;
         elements_generatetoaddress)
           # GET with no parameters ==> http://192.168.111.152:8080/elements_generatetoaddress
           # POST http://192.168.111.152:8080/elements_generatetoaddress
