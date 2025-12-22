@@ -200,8 +200,13 @@ elements_getunblindedurl() {
     return 1
   fi
 
-  local base_url=${2:-"https://liquid.network"}
+  local base_url=${LIQUID_EXPLORER_URL}
   trace "[elements_getunblindedurl] base_url=${base_url}"
+
+  if [ -z "${base_url}" ]; then
+    echo "{\"error\":\"LIQUID_EXPLORER_URL not configured\"}"
+    return 1
+  fi
 
   # Get transaction details from spender node (has blinding data)
   local tx_response
