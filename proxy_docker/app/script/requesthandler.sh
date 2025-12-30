@@ -824,12 +824,10 @@ main() {
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
-            bolt11=$(echo "${line}" | jq -r ".bolt11 // empty")
+            response=$(ln_listpays "${line}")
           else
-            bolt11=
+            response=$(ln_listpays "{}")
           fi
-
-          response=$(ln_listpays "${bolt11}")
           returncode=$?
           ;;
         ln_paystatus)
