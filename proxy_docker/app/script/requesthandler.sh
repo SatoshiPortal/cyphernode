@@ -1015,6 +1015,16 @@ main() {
           response=$(elements_validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
+        elements_getaddressinfo)
+          # POST http://192.168.111.152:8080/elements_getaddressinfo
+          # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0"}
+          # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0", "wallet": "02"}
+
+          local address=$(echo "${line}" | jq -r ".address")
+          local wallet=$(echo "${line}" | jq -er ".wallet // empty")
+          response=$(elements_getaddressinfo "${address}" true "${wallet}")
+          returncode=$?
+          ;;
         elements_watch)
           # POST http://192.168.111.152:8080/elements_watch
           # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
