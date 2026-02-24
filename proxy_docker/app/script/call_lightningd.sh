@@ -459,10 +459,21 @@ ln_listpays() {
   trace "Entering ln_listpays()..."
 
   local result
-  local bolt11=${1}
-  trace "[ln_listpays] bolt11=${bolt11}"
-
-  result=$(ln_call_lightningd listpays "${bolt11}")
+  local request=${1}
+  local bolt11=$(echo "${request}" | jq -r '.bolt11 // ""')
+  local status=$(echo "${request}" | jq -r '.status // ""')
+  local start=$(echo "${request}" | jq -r '.start // ""')
+  local limit=$(echo "${request}" | jq -r '.limit // ""')
+  local cln_args=""
+  [ -n "${bolt11}" ] && cln_args="${cln_args} bolt11=${bolt11}"
+  [ -n "${status}" ] && cln_args="${cln_args} status=${status}"
+  [ -n "${start}" ] && cln_args="${cln_args} start=${start}"
+  [ -n "${limit}" ] && cln_args="${cln_args} limit=${limit}"
+  if [ -n "${start}" ] || [ -n "${limit}" ]; then
+    cln_args="${cln_args} index=created"
+  fi
+  trace "[ln_listpays] cln_args=${cln_args}"
+  result=$(ln_call_lightningd -k listpays ${cln_args})
   returncode=$?
 
   echo "${result}"
