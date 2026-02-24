@@ -183,3 +183,77 @@ elements_getaddressinfo() {
   fi
   return $?
 }
+
+elements_getunblindedurl() {
+  trace "Entering elements_getunblindedurl()..."
+
+  local txid=${1}
+  trace "[elements_getunblindedurl] txid=${txid}"
+
+  # Validate txid format (64 hex characters)
+  if [ -z "${txid}" ]; then
+    echo "{\"error\":\"txid is required\"}"
+    return 1
+  fi
+  if ! echo "${txid}" | grep -qE '^[a-fA-F0-9]{64}$'; then
+    echo "{\"error\":\"Invalid txid format\"}"
+    return 1
+  fi
+
+  local base_url=${LIQUID_EXPLORER_URL}
+  trace "[elements_getunblindedurl] base_url=${base_url}"
+
+  if [ -z "${base_url}" ]; then
+    echo "{\"error\":\"LIQUID_EXPLORER_URL not configured\"}"
+    return 1
+  fi
+
+  # Get transaction details from spender node (has blinding data)
+  local tx_response
+  tx_response=$(elements_get_transaction "${txid}" "spender")
+  local returncode=$?
+  trace_rc ${returncode}
+
+  if [ "${returncode}" -ne 0 ]; then
+    echo "{\"error\":\"Failed to get transaction\"}"
+    return ${returncode}
+  fi
+
+  local tx_result
+  tx_result=$(echo "${tx_response}" | jq -r '.result')
+
+  if [ "${tx_result}" = "null" ] || [ -z "${tx_result}" ]; then
+    echo "{\"error\":\"Transaction not found\"}"
+    return 1
+  fi
+
+  # Extract blinding data from details array
+  # Filter for entries with valid blinding data (non-zero blinders)
+  local blinded_fragment
+  blinded_fragment=$(echo "${tx_response}" | jq -r '
+    .result.details
+    | map(select(.amountblinder != null and .assetblinder != null and .asset != null))
+    | map(select(.amountblinder != "0000000000000000000000000000000000000000000000000000000000000000"))
+    | map(
+        (if .amount < 0 then (-.amount) else .amount end) * 100000000 | floor | tostring
+        + "," + .asset
+        + "," + .amountblinder
+        + "," + .assetblinder
+      )
+    | join(",")
+  ')
+
+  trace "[elements_getunblindedurl] blinded_fragment=${blinded_fragment}"
+
+  local url
+  if [ -n "${blinded_fragment}" ] && [ "${blinded_fragment}" != "null" ]; then
+    url="${base_url}/tx/${txid}#blinded=${blinded_fragment}"
+  else
+    url="${base_url}/tx/${txid}"
+  fi
+
+  trace "[elements_getunblindedurl] url=${url}"
+
+  echo "{\"url\":\"${url}\",\"txid\":\"${txid}\"}"
+  return 0
+}

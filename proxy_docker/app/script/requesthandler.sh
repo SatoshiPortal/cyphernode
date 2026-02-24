@@ -1098,6 +1098,13 @@ main() {
           response=$(elements_get_blockchain_info)
           returncode=$?
           ;;
+        elements_getunblindedurl)
+          # GET http://192.168.111.152:8080/elements_getunblindedurl/{txid}
+
+          txid=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          response=$(elements_getunblindedurl "${txid}")
+          returncode=$?
+          ;;
         elements_generatetoaddress)
           # GET with no parameters ==> http://192.168.111.152:8080/elements_generatetoaddress
           # POST http://192.168.111.152:8080/elements_generatetoaddress
