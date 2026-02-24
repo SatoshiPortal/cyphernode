@@ -865,9 +865,10 @@ lockunspent() {
   local request=${1}
   local unlock=$(echo "${request}" | jq -r ".unlock // false")
   local utxos=$(echo "${request}" | jq -r ".utxos")
+  local persistent=$(echo "${request}" | jq -r ".persistent // false")
   local wallet=$(echo "${request}" | jq -r ".wallet // empty")
   local response
-  local data='{"method":"lockunspent","params":['${unlock}','${utxos}']}'
+  local data='{"method":"lockunspent","params":['${unlock}','${utxos}','${persistent}']}'
 
   if [ -n "${wallet}" ]; then
     response=$(send_to_spender_node "${data}" "${wallet}")
