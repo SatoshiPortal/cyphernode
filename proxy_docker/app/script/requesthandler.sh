@@ -479,6 +479,7 @@ main() {
           # POST http://192.168.111.152:8080/lockunspent
           # BODY {"unlock":true,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
           # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}]}
+          # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}],"persistent":true}
           # BODY {"unlock":false,"utxos":[{"txid":"af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648","vout":0}],"wallet":"01"}
 
           response=$(lockunspent "${line}")
