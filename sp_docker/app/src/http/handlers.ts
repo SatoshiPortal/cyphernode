@@ -3,8 +3,9 @@ import { decodeSpAddress } from '../sp/sp-address.ts';
 import { sendSilentPayment } from '../sp/send-sp.ts';
 import { RpcClient, rpcConfigFromEnv } from '../sp/rpc.ts';
 import * as watchDb from '../watch/watch-db.ts';
-import { parseBody, reply } from './http.ts';
+import { parseBody, reply, replyError } from './http.ts';
 import { processWatchCallbacks } from '../watch/watch-callbacks.ts';
+import { reconcileWatch } from '../watch/watch-sweep.ts';
 import type { SpWatch, TxInfo } from '../types/watch.ts';
 import { log } from '../log.ts';
 
@@ -20,25 +21,10 @@ function toHex(b: Uint8Array): string {
 async function checkAndFireFromRpc(watch: SpWatch): Promise<void> {
   if (!RPC_CFG || !watch.txid || !watch.derived_address) return;
   try {
-    const rpc = new RpcClient(RPC_CFG);
-    const raw = await rpc.call<Record<string, unknown>>('gettransaction', [watch.txid, true]);
-    const decoded = raw['decoded'] as Record<string, unknown> | undefined;
-    const tx: TxInfo = {
-      txid: watch.txid,
-      hash: raw['hash'] as string | undefined,
-      confirmations: (raw['confirmations'] as number | undefined) ?? 0,
-      timereceived: raw['timereceived'] as number | undefined,
-      fee: raw['fee'] as number | undefined,
-      replaceable: raw['bip125-replaceable'] as string | undefined,
-      blockhash: raw['blockhash'] as string | undefined,
-      blockheight: raw['blockheight'] as number | undefined,
-      blocktime: raw['blocktime'] as number | undefined,
-      size: decoded?.['size'] as number | undefined,
-      vsize: decoded?.['vsize'] as number | undefined,
-    };
-    await processWatchCallbacks(watch.derived_address, tx);
+    await reconcileWatch(new RpcClient(RPC_CFG), watch);
   } catch (e) {
-    // tx not yet known to wallet or RPC unavailable — notify_tx will handle it
+    // tx not yet known to wallet or RPC unavailable — notify_tx (or the periodic
+    // sweep) will handle it later.
     log(`[sp_watch] RPC check for ${watch.txid} skipped: ${(e as Error).message}`);
   }
 }
@@ -80,18 +66,23 @@ export async function handleSend(req: IncomingMessage, res: ServerResponse): Pro
   const amountBtc = body['amount'];
   const feeRate   = body['fee_rate'];
 
-  if (typeof spAddress !== 'string') return reply(res, 400, { error: 'address required', code: 'MISSING_SP_ADDRESS' });
-  if (typeof amountBtc !== 'string') return reply(res, 400, { error: 'amount required (string)', code: 'MISSING_AMOUNT' });
-  if (typeof feeRate !== 'number')   return reply(res, 400, { error: 'fee_rate required (number, sat/vB)', code: 'MISSING_FEE_RATE' });
-  if (!RPC_CFG)                      return reply(res, 500, { error: 'BITCOIN_RPC_URL not configured' });
+  if (typeof spAddress !== 'string') return replyError(res, 400, 'MISSING_SP_ADDRESS', 'address required');
+  if (typeof amountBtc !== 'string') return replyError(res, 400, 'MISSING_AMOUNT', 'amount required (string)');
+  if (typeof feeRate !== 'number')   return replyError(res, 400, 'MISSING_FEE_RATE', 'fee_rate required (number, sat/vB)');
+  if (!RPC_CFG)                      return replyError(res, 500, 'RPC_NOT_CONFIGURED', 'BITCOIN_RPC_URL not configured');
 
   const network = typeof body['network'] === 'string' ? body['network'] : NETWORK;
   const wallet  = typeof body['wallet']  === 'string' ? body['wallet']  : RPC_CFG.wallet;
 
   log(`[send_sp] send initiated sp_address=${spAddress} amount=${amountBtc} feeRate=${feeRate} network=${network}`);
 
+  // Tracks the derived address activated pre-broadcast so we can roll it back if
+  // the send fails before the tx is broadcast (see revertPendingActivation).
+  let activatedDerivedAddress: string | undefined;
+
+  let result;
   try {
-    const result = await sendSilentPayment({
+    result = await sendSilentPayment({
       address: spAddress,
       amount: amountBtc,
       feeRate,
@@ -99,20 +90,36 @@ export async function handleSend(req: IncomingMessage, res: ServerResponse): Pro
       network,
       rpcUrl: RPC_CFG.url,
       onDerived: async (derivedAddress) => {
+        activatedDerivedAddress = derivedAddress;
         const n = watchDb.activatePendingWatches(spAddress, derivedAddress);
         if (n > 0) log(`[send_sp] activated ${n} pending watch(es) sp_address=${spAddress} derived_address=${derivedAddress}`);
       },
     });
+  } catch (e) {
+    // sendSilentPayment only throws for pre-broadcast failures (it never throws
+    // once a txid exists), so the payment did not happen — safe to report as a
+    // failure and roll back any pending-watch activation.
+    if (activatedDerivedAddress) {
+      const reverted = watchDb.revertPendingActivation(spAddress, activatedDerivedAddress);
+      if (reverted > 0) log(`[send_sp] reverted ${reverted} pending watch activation(s) after pre-broadcast failure sp_address=${spAddress}`);
+    }
+    log(`[send_sp] failed (pre-broadcast): ${(e as Error).message}`);
+    return replyError(res, 400, 'SEND_FAILED', (e as Error).message);
+  }
 
+  // Past this point the tx is broadcast (txid is valid). Bookkeeping failures
+  // must NOT be reported as a send failure — the caller would have no way to
+  // tell the payment already happened. Persist what we can, warn on failure,
+  // and always return the txid so the caller can reconcile.
+  try {
     watchDb.logSend(result.txid, result.sp_address, result.derived_address, result.vout, result.amount);
     watchDb.updateWatchSendInfo(result.derived_address, result.txid, result.vout, result.amount);
-
-    log(`[send_sp] complete txid=${result.txid} vout=${result.vout} amount=${result.amount} derived_address=${result.derived_address} vsize=${result.vsize}`);
-    reply(res, 200, result);
   } catch (e) {
-    log(`[send_sp] failed: ${(e as Error).message}`);
-    reply(res, 400, { error: (e as Error).message, code: 'SEND_FAILED' });
+    log(`[send_sp] WARNING: post-broadcast bookkeeping failed txid=${result.txid}: ${(e as Error).message}`);
   }
+
+  log(`[send_sp] complete txid=${result.txid} vout=${result.vout} amount=${result.amount} derived_address=${result.derived_address} vsize=${result.vsize}`);
+  reply(res, 200, result);
 }
 
 export async function handleSpWatch(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -120,10 +127,10 @@ export async function handleSpWatch(req: IncomingMessage, res: ServerResponse): 
   if (!body) return;
 
   const spAddress = body['address'];
-  if (typeof spAddress !== 'string') return reply(res, 400, { error: 'address required' });
+  if (typeof spAddress !== 'string') return replyError(res, 400, 'MISSING_SP_ADDRESS', 'address required');
 
   try { decodeSpAddress(spAddress); } catch (e) {
-    return reply(res, 400, { error: `invalid address: ${(e as Error).message}` });
+    return replyError(res, 400, 'INVALID_SP_ADDRESS', `invalid address: ${(e as Error).message}`);
   }
 
   const callback0conf = typeof body['callback0conf'] === 'string' ? body['callback0conf'] : undefined;
@@ -132,7 +139,7 @@ export async function handleSpWatch(req: IncomingMessage, res: ServerResponse): 
 
   if (txid) {
     const send = watchDb.getSendByTxid(txid);
-    if (!send) return reply(res, 404, { error: `txid ${txid} not found in sends log` });
+    if (!send) return replyError(res, 404, 'TXID_NOT_FOUND', `txid ${txid} not found in sends log`);
 
     const id = watchDb.createActiveWatch(
       spAddress, send.derived_address, txid, send.vout, send.sent_amount,
@@ -157,11 +164,11 @@ export async function handleSpUnwatch(req: IncomingMessage, res: ServerResponse)
   const callback0conf = typeof body['callback0conf'] === 'string' ? body['callback0conf'] : undefined;
   const callback1conf = typeof body['callback1conf'] === 'string' ? body['callback1conf'] : undefined;
 
-  if (typeof address !== 'string') return reply(res, 400, { error: 'address required' });
-  if (!callback0conf && !callback1conf) return reply(res, 400, { error: 'at least one of callback0conf or callback1conf is required' });
+  if (typeof address !== 'string') return replyError(res, 400, 'MISSING_SP_ADDRESS', 'address required');
+  if (!callback0conf && !callback1conf) return replyError(res, 400, 'MISSING_CALLBACK', 'at least one of callback0conf or callback1conf is required');
 
   const n = watchDb.deactivateWatchesBySpAddress(address, callback0conf, callback1conf);
-  if (n === 0) return reply(res, 404, { error: `no active watches found for address ${address} with the provided callback URL(s)` });
+  if (n === 0) return replyError(res, 404, 'WATCH_NOT_FOUND', `no active watches found for address ${address} with the provided callback URL(s)`);
   log(`[sp_watch] deactivated ${n} watch(es) sp_address=${address}`);
   reply(res, 200, { ok: true, address, deactivated: n });
 }
@@ -175,14 +182,14 @@ export async function handleNotifyTx(req: IncomingMessage, res: ServerResponse):
   if (!body) return;
 
   if (typeof body['data'] !== 'string') {
-    return reply(res, 400, { error: 'data (base64 walletnotify message) required' });
+    return replyError(res, 400, 'MISSING_DATA', 'data (base64 walletnotify message) required');
   }
 
   let msg: Record<string, unknown>;
   try {
     msg = JSON.parse(Buffer.from(body['data'] as string, 'base64').toString('utf8'));
   } catch {
-    return reply(res, 400, { error: 'could not decode/parse data' });
+    return replyError(res, 400, 'INVALID_DATA', 'could not decode/parse data');
   }
 
   const txid = msg['txid'] as string | undefined;

@@ -28,7 +28,11 @@ export function buildCallbackPayload(watch: SpWatch, tx: TxInfo): Record<string,
   return p;
 }
 
-export async function fireCallback(url: string, payload: Record<string, unknown>): Promise<void> {
+// Returns true only if the callback was delivered (HTTP 2xx). A false return
+// means the callback was NOT delivered and must not be marked as called, so a
+// later notification (e.g. the 1-conf event) can retry it. SP has no separate
+// callback-retry cron, so this is the only retry mechanism.
+export async function fireCallback(url: string, payload: Record<string, unknown>): Promise<boolean> {
   log(`[sp_watch] callback POST ${url} sp_address=${payload['sp_address']} derived_address=${payload['address']} confirmations=${payload['confirmations']}`);
   try {
     const res = await fetch(url, {
@@ -37,24 +41,33 @@ export async function fireCallback(url: string, payload: Record<string, unknown>
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(10_000),
     });
-    if (!res.ok) log(`[sp_watch] callback POST ${url} => ${res.status} (error)`);
+    if (!res.ok) {
+      log(`[sp_watch] callback POST ${url} => ${res.status} (error, will retry)`);
+      return false;
+    }
+    return true;
   } catch (e) {
-    log(`[sp_watch] callback POST ${url} failed: ${(e as Error).message}`);
+    log(`[sp_watch] callback POST ${url} failed (will retry): ${(e as Error).message}`);
+    return false;
   }
 }
 
 // Fire any due callbacks for watches matched on derivedAddress, then deactivate
-// watches that have had all registered callbacks fired.
+// watches that have had all registered callbacks delivered. Callbacks that fail
+// to deliver are left unmarked so the watch stays active and retries on the
+// next notification.
 export async function processWatchCallbacks(derivedAddress: string, tx: TxInfo): Promise<void> {
   const watches = watchDb.getWatchesByDerivedAddress(derivedAddress);
   for (const w of watches) {
     if (tx.confirmations === 0 && !w.called0conf && w.callback0conf) {
-      await fireCallback(w.callback0conf, buildCallbackPayload(w, tx));
-      watchDb.markCalled0conf(w.id);
+      if (await fireCallback(w.callback0conf, buildCallbackPayload(w, tx))) {
+        watchDb.markCalled0conf(w.id);
+      }
     }
     if (tx.confirmations >= 1 && !w.called1conf && w.callback1conf) {
-      await fireCallback(w.callback1conf, buildCallbackPayload(w, tx));
-      watchDb.markCalled1conf(w.id);
+      if (await fireCallback(w.callback1conf, buildCallbackPayload(w, tx))) {
+        watchDb.markCalled1conf(w.id);
+      }
     }
     const updated = watchDb.getWatch(w.id);
     if (updated) {

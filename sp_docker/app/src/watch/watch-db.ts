@@ -81,6 +81,20 @@ export function activatePendingWatches(spAddress: string, derivedAddress: string
   return result.changes as number;
 }
 
+// Undo activatePendingWatches when a send fails before broadcast: clear the
+// derived_address back to NULL on watches that were just activated for this
+// sp_address/derived_address and have not yet been tied to a txid. This keeps
+// the watch pending (re-usable by a retried send) instead of leaving it
+// pointing at a derived address that will never be paid.
+// Returns the number of rows reverted.
+export function revertPendingActivation(spAddress: string, derivedAddress: string): number {
+  const result = db.prepare(
+    `UPDATE sp_watches SET derived_address = NULL
+     WHERE sp_address = ? AND derived_address = ? AND txid IS NULL AND active = 1`,
+  ).run(spAddress, derivedAddress);
+  return result.changes as number;
+}
+
 // Fill in txid / vout / sent_amount on watches that have a derived_address but no txid yet.
 export function updateWatchSendInfo(
   derivedAddress: string,
@@ -107,6 +121,17 @@ export function getWatchesByDerivedAddress(derivedAddress: string): SpWatch[] {
 export function listActiveWatches(): SpWatch[] {
   return db.prepare(
     'SELECT * FROM sp_watches WHERE active = 1 ORDER BY inserted_ts DESC',
+  ).all() as unknown as SpWatch[];
+}
+
+// Active watches that have been tied to a broadcast tx (txid + derived_address).
+// These are the only watches the periodic sweep can reconcile against the chain;
+// pending watches (no derived_address/txid yet) have nothing to check.
+export function listActiveWatchesWithTxid(): SpWatch[] {
+  return db.prepare(
+    `SELECT * FROM sp_watches
+     WHERE active = 1 AND txid IS NOT NULL AND derived_address IS NOT NULL
+     ORDER BY inserted_ts ASC`,
   ).all() as unknown as SpWatch[];
 }
 

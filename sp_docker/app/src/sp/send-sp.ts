@@ -174,13 +174,19 @@ export async function sendSilentPayment(params: SendSpParams): Promise<SendSpRes
     throw new Error(`signing incomplete: ${JSON.stringify(signed.errors)}`);
   }
 
-  // 8. Broadcast + self-verify
-  const txid = await rpc.call<string>('sendrawtransaction', [signed.hex]);
-  const check = await rpc.call<RawTxVerbose>('getrawtransaction', [txid, 2]);
-  const match = check.vout.find((o) => o.scriptPubKey.hex === outputScriptPubKeyHex);
+  // 8. Verify before broadcast. Decoding the signed tx is a local parse (nothing
+  //    is on-chain yet), so we can confirm the broadcast-bound tx actually pays
+  //    the BIP-352-derived output and abort safely if it doesn't
+  const decodedTx = await rpc.call<RawTxVerbose>('decoderawtransaction', [signed.hex]);
+  const match = decodedTx.vout.find((o) => o.scriptPubKey.hex === outputScriptPubKeyHex);
   if (!match) {
-    throw new Error(`self-verify failed: expected output ${outputScriptPubKeyHex} not found in tx`);
+    throw new Error(
+      `pre-broadcast verify failed: expected SP output ${outputScriptPubKeyHex} not found in signed tx — aborting before broadcast`
+    );
   }
+
+  // 9. Broadcast — point of no return.
+  const txid = await rpc.call<string>('sendrawtransaction', [signed.hex]);
 
   return {
     txid,
@@ -189,9 +195,9 @@ export async function sendSilentPayment(params: SendSpParams): Promise<SendSpRes
     vout: match.n,
     amount: satsToBtc(amountSats),
     script_pubkey: match.scriptPubKey.hex,
-    hash: check.hash,
-    size: check.size,
-    vsize: check.vsize,
+    hash: decodedTx.hash,
+    size: decodedTx.size,
+    vsize: decodedTx.vsize,
     fees: satsToBtc(feeSats),
     raw_tx: signed.hex,
   };

@@ -45,6 +45,9 @@ function makeWatch(overrides: Partial<SpWatch> = {}): SpWatch {
 
 type FetchCall = { url: string; body: Record<string, unknown> };
 let fetchCalls: FetchCall[] = [];
+// Status the mock fetch returns; set to a 4xx/5xx (or 0 to throw) to simulate
+// callback delivery failures. Reset to 200 before each test.
+let nextFetchStatus = 200;
 const originalFetch = globalThis.fetch;
 
 before(() => {
@@ -56,7 +59,8 @@ before(() => {
       url: typeof input === 'string' ? input : String(input),
       body: JSON.parse((init?.body as string) ?? '{}') as Record<string, unknown>,
     });
-    return new Response('{}', { status: 200 });
+    if (nextFetchStatus === 0) throw new Error('network error');
+    return new Response('{}', { status: nextFetchStatus });
   };
 });
 
@@ -66,6 +70,7 @@ after(() => {
 
 beforeEach(() => {
   fetchCalls = [];
+  nextFetchStatus = 200;
 });
 
 // ---------- buildCallbackPayload ----------
@@ -263,5 +268,51 @@ describe('processWatchCallbacks', () => {
   it('ignores a derived address with no watches', async () => {
     await processWatchCallbacks(nextAddr(), makeTx({ confirmations: 0 }));
     assert.equal(fetchCalls.length, 0);
+  });
+
+  it('does not mark called or deactivate when the callback POST returns non-2xx', async () => {
+    const sp  = nextSp();
+    const der = nextAddr();
+    const tx  = nextTxid();
+    const id  = watchDb.createActiveWatch(sp, der, tx, 0, '0.01', 'http://test/fail0');
+
+    nextFetchStatus = 500;
+    await processWatchCallbacks(der, makeTx({ txid: tx, confirmations: 0 }));
+
+    const w = watchDb.getWatch(id)!;
+    assert.equal(w.called0conf, 0); // not marked → eligible for retry
+    assert.equal(w.active, 1);      // still active → not lost
+  });
+
+  it('retries a previously failed callback on a later notification', async () => {
+    const sp  = nextSp();
+    const der = nextAddr();
+    const tx  = nextTxid();
+    const id  = watchDb.createActiveWatch(sp, der, tx, 0, '0.01', 'http://test/retry0');
+
+    nextFetchStatus = 503;
+    await processWatchCallbacks(der, makeTx({ txid: tx, confirmations: 0 }));
+    assert.equal(watchDb.getWatch(id)!.called0conf, 0);
+
+    // Next notification (delivery now succeeds) should re-attempt and complete.
+    nextFetchStatus = 200;
+    await processWatchCallbacks(der, makeTx({ txid: tx, confirmations: 0 }));
+    const w = watchDb.getWatch(id)!;
+    assert.equal(w.called0conf, 1);
+    assert.equal(w.active, 0);
+  });
+
+  it('does not mark called when the callback POST throws (network error)', async () => {
+    const sp  = nextSp();
+    const der = nextAddr();
+    const tx  = nextTxid();
+    const id  = watchDb.createActiveWatch(sp, der, tx, 0, '0.01', undefined, 'http://test/throw1');
+
+    nextFetchStatus = 0; // mock throws
+    await processWatchCallbacks(der, makeTx({ txid: tx, confirmations: 1 }));
+
+    const w = watchDb.getWatch(id)!;
+    assert.equal(w.called1conf, 0);
+    assert.equal(w.active, 1);
   });
 });

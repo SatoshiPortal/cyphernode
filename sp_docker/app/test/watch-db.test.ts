@@ -8,6 +8,7 @@ const {
   createWatch,
   createActiveWatch,
   activatePendingWatches,
+  revertPendingActivation,
   updateWatchSendInfo,
   getWatch,
   getWatchesByDerivedAddress,
@@ -132,6 +133,31 @@ describe('activatePendingWatches', () => {
   it('returns 0 when no pending watches exist', () => {
     const n = activatePendingWatches(spAddr('ghost'), addr('ghost'));
     assert.equal(n, 0);
+  });
+
+  it('revertPendingActivation clears derived_address back to NULL for un-broadcast watches', () => {
+    const sp = spAddr('revert');
+    const id1 = createWatch(sp, 'http://cb0a');
+    const id2 = createWatch(sp, 'http://cb0b');
+    const derived = addr('revert');
+
+    assert.equal(activatePendingWatches(sp, derived), 2);
+    const reverted = revertPendingActivation(sp, derived);
+    assert.equal(reverted, 2);
+    assert.equal(getWatch(id1)!.derived_address, null);
+    assert.equal(getWatch(id2)!.derived_address, null);
+  });
+
+  it('revertPendingActivation leaves watches that already have a txid untouched', () => {
+    const sp = spAddr('revert-sent');
+    const derived = addr('revert-sent');
+    const id = createWatch(sp, 'http://cb0');
+    activatePendingWatches(sp, derived);
+    updateWatchSendInfo(derived, 'a'.repeat(64), 0, '0.01'); // tx now broadcast
+
+    const reverted = revertPendingActivation(sp, derived);
+    assert.equal(reverted, 0);
+    assert.equal(getWatch(id)!.derived_address, derived);
   });
 });
 

@@ -14,6 +14,13 @@ export function reply(res: ServerResponse, status: number, body: unknown): void 
   res.end(JSON.stringify(body));
 }
 
+// Emits a Cyphernode/JSON-RPC-style error body `{error:{code,message}}`. This
+// matches the proxy's own error convention (e.g. "Method not found") so callers
+// can extract code/message uniformly.
+export function replyError(res: ServerResponse, status: number, code: string, message: string): void {
+  reply(res, status, { error: { code, message } });
+}
+
 // Reads and JSON-parses the request body. Sends an error reply and returns
 // null on failure so handlers can early-return cleanly.
 export async function parseBody(
@@ -22,11 +29,11 @@ export async function parseBody(
 ): Promise<Record<string, unknown> | null> {
   let raw: string;
   try { raw = await readBody(req); } catch {
-    reply(res, 400, { error: 'bad request' });
+    replyError(res, 400, 'BAD_REQUEST', 'bad request');
     return null;
   }
   try { return JSON.parse(raw) as Record<string, unknown>; } catch {
-    reply(res, 400, { error: 'invalid JSON' });
+    replyError(res, 400, 'INVALID_JSON', 'invalid JSON');
     return null;
   }
 }

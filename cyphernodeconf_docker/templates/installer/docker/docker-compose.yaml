@@ -471,8 +471,10 @@ services:
       - "<%= sp_datapath %>:/sp/data"
     networks:
       - cyphernodenet
+    <% if ( bitcoin_mode === 'internal' ) { %>
     depends_on:
       - bitcoin
+    <% } %>
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
       replicas: 1

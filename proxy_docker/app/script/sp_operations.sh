@@ -6,6 +6,38 @@
 # Do NOT set a fallback default here: an empty SP_HOST is the signal used by
 # the proxy handlers to detect that SP is not installed.
 
+# Performs a request to the SP service and maps a non-2xx HTTP status to a
+# nonzero return code. This is required because curl -sS returns 0 on HTTP
+# 4xx/5xx, and response_to_client uses the return code (not the body) to decide
+# the HTTP status it sends back to the caller. Without this mapping, an SP send
+# failure would surface to callers as HTTP 200 with an error body.
+# Usage: sp_request <timeout-secs> <path> [json-payload]
+#   - payload present -> POST, absent -> GET
+sp_request() {
+  local timeout=${1}
+  local path=${2}
+  local payload=${3}
+
+  local response rc http_code
+  if [ -n "${payload}" ]; then
+    response=$(curl -sS -m "${timeout}" -w '\n%{http_code}' -H 'content-type: application/json' \
+      --data-binary "${payload}" "${SP_HOST}${path}")
+  else
+    response=$(curl -sS -m "${timeout}" -w '\n%{http_code}' "${SP_HOST}${path}")
+  fi
+  rc=$?
+
+  # The HTTP status is the last line (appended via -w); strip it back off the body.
+  http_code=$(printf '%s' "${response}" | tail -n1)
+  response=$(printf '%s' "${response}" | sed '$d')
+  if [ "${rc}" -eq 0 ] && [ -n "${http_code}" ] && [ "${http_code}" -ge 400 ]; then
+    rc=1
+  fi
+  trace_rc ${rc}
+  echo "${response}"
+  return ${rc}
+}
+
 sp_spend() {
   trace "Entering sp_spend()..."
   local request=${1}
@@ -26,22 +58,24 @@ sp_spend() {
     trace "[sp_spend] resolved fee_rate=${fee_rate} from conf_target=${conf_target}"
   fi
 
+  # Map the Cyphernode wallet selector to a Bitcoin Core wallet name, mirroring
+  # send_to_spender_node (e.g. "01" -> "spending01.dat"). An empty wallet lets
+  # the SP service fall back to SPENDER_BTC_NODE_DEFAULT_WALLET.
+  local wallet_name=""
+  if [ -n "${wallet}" ]; then
+    wallet_name="spending${wallet}.dat"
+  fi
+
   local payload
   payload=$(jq -cn \
     --arg a  "${address}" \
     --arg m  "${amount}" \
     --argjson fr "${fee_rate}" \
-    --arg w  "${wallet}" \
+    --arg w  "${wallet_name}" \
     '{address: $a, amount: $m, fee_rate: $fr}
      + (if $w != "" then {wallet: $w} else {} end)')
 
-  local response
-  response=$(curl -sS -m 60 -H 'content-type: application/json' \
-    --data-binary "${payload}" "${SP_HOST}/send")
-  local rc=$?
-  trace_rc ${rc}
-  echo "${response}"
-  return ${rc}
+  sp_request 60 "/send" "${payload}"
 }
 
 validatespaddress() {
@@ -53,13 +87,7 @@ validatespaddress() {
   local payload
   payload=$(jq -cn --arg a "${address}" '{address: $a}')
 
-  local response
-  response=$(curl -sS -m 10 -H 'content-type: application/json' \
-    --data-binary "${payload}" "${SP_HOST}/validatespaddress")
-  local rc=$?
-  trace_rc ${rc}
-  echo "${response}"
-  return ${rc}
+  sp_request 10 "/validatespaddress" "${payload}"
 }
 
 sp_watch() {
@@ -88,13 +116,7 @@ sp_watch() {
      + (if $c1 != "" then {callback1conf: $c1} else {} end)
      + (if $t  != "" then {txid: $t}          else {} end)')
 
-  local response
-  response=$(curl -sS -m 10 -H 'content-type: application/json' \
-    --data-binary "${payload}" "${SP_HOST}/sp_watch")
-  local rc=$?
-  trace_rc ${rc}
-  echo "${response}"
-  return ${rc}
+  sp_request 10 "/sp_watch" "${payload}"
 }
 
 sp_unwatch() {
@@ -119,22 +141,11 @@ sp_unwatch() {
      + (if $c0 != "" then {callback0conf: $c0} else {} end)
      + (if $c1 != "" then {callback1conf: $c1} else {} end)')
 
-  local response
-  response=$(curl -sS -m 10 -H 'content-type: application/json' \
-    --data-binary "${payload}" "${SP_HOST}/sp_unwatch")
-  local rc=$?
-  trace_rc ${rc}
-  echo "${response}"
-  return ${rc}
+  sp_request 10 "/sp_unwatch" "${payload}"
 }
 
 getactivespwatches() {
   trace "Entering getactivespwatches()..."
 
-  local response
-  response=$(curl -sS -m 10 "${SP_HOST}/sp_watches")
-  local rc=$?
-  trace_rc ${rc}
-  echo "${response}"
-  return ${rc}
+  sp_request 10 "/sp_watches"
 }
