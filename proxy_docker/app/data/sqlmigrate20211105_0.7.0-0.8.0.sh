@@ -68,7 +68,7 @@ if [ "$?" -eq "1" ]; then
   echo "Checking for elements support in SQLite3 DB..."
   sqlite3 $DB_FILE ".tables" | grep "elements_tx" > /dev/null
   if [ "$?" -eq "0" ]; then
-  	# elements_tx there, elements tables are there!
+    # elements_tx there, elements tables are there!
     trace "[sqlmigrate20211105_0.7.0-0.8.0.sh] Extracting and converting sqlite3 elements data..."
     cat sqlmigrate20211105_0.7.0-0.8.0_sqlite3-extract_elements.sql | sqlite3 $DB_FILE
     returncode=$?

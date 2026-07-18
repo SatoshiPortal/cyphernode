@@ -31,10 +31,24 @@ elements_spend() {
   local returncode
   local event_returncode
 
-  if [ "${assetid}" = "null" ]; then
-    data="{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}"
-  else
-    data="{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target},\"UNSET\",null,\"${assetid}\"]}"
+  data=$(jq -nc \
+    --arg dest_address "${address}" \
+    --argjson spend_amount "${amount}" \
+    --argjson subtract_fee "${subtractfeefromamount}" \
+    --argjson rbf "${replaceable}" \
+    --argjson conf_target "${conf_target}" \
+    --arg asset_id "${assetid}" '
+    {method: "sendtoaddress"}
+    | if $asset_id == "null" then
+        .params = [$dest_address, $spend_amount, "", "", $subtract_fee, $rbf, $conf_target]
+      else
+        .params = [$dest_address, $spend_amount, "", "", $subtract_fee, $rbf, $conf_target, "UNSET", null, $asset_id]
+      end
+  ')
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo '{"message":"invalid spend request"}'
+    return "${returncode}"
   fi
 
   if [ -n "${wallet}" ]; then
@@ -126,6 +140,7 @@ elements_bumpfee() {
   trace "[elements_bumpfee] txid=${txid}"
 
   local confTarget
+  local data
   local response
   local returncode
 
@@ -134,13 +149,16 @@ elements_bumpfee() {
   if [ "$?" -ne "0" ]; then
     # confTarget tag null, so there's no confTarget
     trace "[elements_bumpfee] confTarget="
-    response=$(send_to_elements_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\"]}")
+    data=$(jq -nc --arg txid "${txid}" '{method:"bumpfee",params:[$txid]}')
     returncode=$?
   else
     trace "[elements_bumpfee] confTarget=${confTarget}"
-    response=$(send_to_elements_spender_node "{\"method\":\"bumpfee\",\"params\":[\"${txid}\",{\"confTarget\":${confTarget}}]}")
+    data=$(jq -nc --arg txid "${txid}" --argjson conf_target "${confTarget}" '{method:"bumpfee",params:[$txid,{confTarget:$conf_target}]}')
     returncode=$?
   fi
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
+  response=$(send_to_elements_spender_node "${data}")
+  returncode=$?
 
   trace_rc ${returncode}
   trace "[elements_bumpfee] response=${response}"
@@ -274,7 +292,9 @@ elements_getbalancebyxpub() {
   local returncode
 
   # addresses=$(./elements-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
-  data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
+  data=$(jq -nc --arg xpub "${xpub}" '{method:"getaddressesbylabel",params:[$xpub]}')
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_getbalancebyxpub] data=${data}"
   response=$(send_to_xpub_elements_watcher_wallet "${data}")
   returncode=$?
@@ -328,10 +348,10 @@ elements_getnewaddress() {
 
   # label and address_type come from the request. Pass them to jq as data so
   # their contents can never change the JSON-RPC method or structure.
-  data=$(jq -nc --arg label "${label}" --arg address_type "${address_type}" '
+  data=$(jq -nc --arg addr_label "${label}" --arg address_type "${address_type}" '
     {method: "getnewaddress"}
-    | if ($label != "" or $address_type != "") then .params = {} else . end
-    | if $label != "" then .params.label = $label else . end
+    | if ($addr_label != "" or $address_type != "") then .params = {} else . end
+    | if $addr_label != "" then .params.label = $addr_label else . end
     | if $address_type != "" then .params.address_type = $address_type else . end
   ')
   returncode=$?
@@ -363,9 +383,9 @@ elements_getnewaddress() {
   fi
   trace "[elements_getnewaddress] address=${address}"
 
-  data=$(jq -nc --arg address "${address}" --arg label "${label}" --arg address_type "${address_type}" '
+  data=$(jq -nc --arg address "${address}" --arg addr_label "${label}" --arg address_type "${address_type}" '
     {address: $address}
-    | if $label != "" then .label = $label else . end
+    | if $addr_label != "" then .label = $addr_label else . end
     | if $address_type != "" then .address_type = $address_type else . end
   ')
   returncode=$?
@@ -382,12 +402,15 @@ elements_create_wallet() {
 
   local walletname=${1}
 
-  local rpcstring="{\"method\":\"createwallet\",\"params\":[\"${walletname}\",true]}"
+  local rpcstring
+  rpcstring=$(jq -nc --arg walletname "${walletname}" '{method:"createwallet",params:[$walletname,true]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_create_wallet] rpcstring=${rpcstring}"
 
   local result
   result=$(send_to_elements_watcher_node "${rpcstring}")
-  local returncode=$?
+  returncode=$?
 
   echo "${result}"
 

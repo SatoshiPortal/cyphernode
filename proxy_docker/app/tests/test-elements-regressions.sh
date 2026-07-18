@@ -68,6 +68,23 @@ elements_getaddressinfo 'invalid"address' true 01 >/dev/null || fail "getaddress
 jq -e '.method == "getaddressinfo" and .params == ["invalid\"address"]' "${RPC_DATA_FILE}" >/dev/null || fail "getaddressinfo did not encode the address as JSON data"
 pass "getaddressinfo encodes user input without altering JSON-RPC structure"
 
+WATCHER_RPC_DATA_FILE=${TEST_TMPDIR}/watcher-rpc-data
+send_to_elements_watcher_node() {
+  printf '%s\n' "${1}" > "${WATCHER_RPC_DATA_FILE}"
+  echo '{"result":{"isvalid":false},"error":null}'
+  return 0
+}
+malicious_rpc_string='ert1q"}],"method":"dumpprivkey","params":["target'
+elements_validateaddress "${malicious_rpc_string}" >/dev/null || fail "validateaddress wrapper rejected a valid RPC envelope"
+jq -e --arg value "${malicious_rpc_string}" '.method == "validateaddress" and .params == [$value]' "${WATCHER_RPC_DATA_FILE}" >/dev/null || fail "validateaddress input altered the JSON-RPC structure"
+elements_gettxoutproof '["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]' "${malicious_rpc_string}" >/dev/null || fail "gettxoutproof wrapper rejected a valid RPC envelope"
+jq -e --arg value "${malicious_rpc_string}" '
+  .method == "gettxoutproof"
+  and .params[0] == ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+  and .params[1] == $value
+' "${WATCHER_RPC_DATA_FILE}" >/dev/null || fail "gettxoutproof input altered the JSON-RPC structure"
+pass "blockchain RPC wrappers keep user strings inside params"
+
 send_to_elements_watcher_node() { return 7; }
 if elements_get_blockchain_info >/dev/null; then
   fail "getblockchaininfo hid an Elements RPC failure"
@@ -102,17 +119,30 @@ send_to_elements_spender_node() {
 malicious_label='x"} | .method="dumpprivkey" | .params=["ert1qtarget"] | . += {"ignored":"y'
 malicious_address_type='bech32"} | .method="dumpprivkey" | .params=["ert1qtarget"] | . += {"ignored":"y'
 getnewaddress_response=$(elements_getnewaddress "${malicious_address_type}" "${malicious_label}" 02) || fail "getnewaddress rejected string inputs"
-jq -e --arg label "${malicious_label}" --arg address_type "${malicious_address_type}" '
+jq -e --arg addr_label "${malicious_label}" --arg address_type "${malicious_address_type}" '
   .method == "getnewaddress"
-  and .params.label == $label
+  and .params.label == $addr_label
   and .params.address_type == $address_type
 ' "${GETNEWADDRESS_RPC_FILE}" >/dev/null || fail "getnewaddress input altered the JSON-RPC structure"
-echo "${getnewaddress_response}" | jq -e --arg label "${malicious_label}" --arg address_type "${malicious_address_type}" '
+echo "${getnewaddress_response}" | jq -e --arg addr_label "${malicious_label}" --arg address_type "${malicious_address_type}" '
   .address == "ert1qexample"
-  and .label == $label
+  and .label == $addr_label
   and .address_type == $address_type
 ' >/dev/null || fail "getnewaddress response did not preserve inputs as data"
 pass "getnewaddress keeps request fields out of the jq program"
+
+BUMPFEE_RPC_FILE=${TEST_TMPDIR}/bumpfee-rpc
+send_to_elements_spender_node() {
+  printf '%s\n' "${1}" > "${BUMPFEE_RPC_FILE}"
+  echo '{"result":null,"error":{"code":-5,"message":"invalid txid"}}'
+  return 1
+}
+malicious_txid='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],"method":"dumpwallet","params":["x'
+if elements_bumpfee "$(jq -nc --arg txid "${malicious_txid}" '{txid:$txid}')" >/dev/null; then
+  fail "malicious bumpfee unexpectedly succeeded"
+fi
+jq -e --arg txid "${malicious_txid}" '.method == "bumpfee" and .params == [$txid]' "${BUMPFEE_RPC_FILE}" >/dev/null || fail "bumpfee input altered the JSON-RPC structure"
+pass "bumpfee keeps txid inside RPC params"
 
 send_to_elements_spender_node() {
   echo '{"result":null,"error":{"code":-1,"message":"failure"}}'
@@ -129,6 +159,26 @@ if elements_getbalancebyxpub tpub-test >/dev/null; then
   fail "xpub balance lookup hid an Elements RPC failure"
 fi
 pass "filtered wallet RPC endpoints preserve node failures"
+
+ELEMENTS_SPEND_RPC_FILE=${TEST_TMPDIR}/elements-spend-rpc
+send_to_elements_spender_node() {
+  printf '%s\n' "${1}" > "${ELEMENTS_SPEND_RPC_FILE}"
+  echo '{"result":null,"error":{"code":-5,"message":"invalid address"}}'
+  return 1
+}
+malicious_destination='el1qqdest"}],"method":"dumpprivkey","params":["ert1qtarget'
+malicious_asset='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],"method":"dumpassetlabels","params":["x'
+spend_attack_request=$(jq -nc --arg address "${malicious_destination}" --arg asset "${malicious_asset}" \
+  '{address:$address, amount:0.1, assetId:$asset, confTarget:1, replaceable:false, subtractfeefromamount:false}')
+if elements_spend "${spend_attack_request}" >/dev/null; then
+  fail "malicious spend unexpectedly succeeded"
+fi
+jq -e --arg address "${malicious_destination}" --arg asset "${malicious_asset}" '
+  .method == "sendtoaddress"
+  and .params[0] == $address
+  and .params[9] == $asset
+' "${ELEMENTS_SPEND_RPC_FILE}" >/dev/null || fail "spend input altered the JSON-RPC structure"
+pass "elements_spend keeps destination and asset inside RPC params"
 
 send_to_elements_spender_node() {
   echo '{"result":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","error":null}'
@@ -156,6 +206,25 @@ spend_rc=$?
 echo "${spend_response}" | jq -e '.status == "accepted"' >/dev/null || fail "successful spend response was not accepted"
 pass "optional event failure does not report a broadcast failure"
 
+. ./elements_pegin.sh
+. ./elements_pegout.sh
+PEGIN_RPC_FILE=${TEST_TMPDIR}/pegin-rpc
+send_to_elements_spender_node() {
+  printf '%s\n' "${1}" > "${PEGIN_RPC_FILE}"
+  echo '{"result":null,"error":{"code":-5,"message":"invalid peg data"}}'
+  return 1
+}
+malicious_claim='00ff"],"method":"dumpwallet","params":["x'
+if elements_claimpegin "$(jq -nc --arg rawtx "${malicious_claim}" --arg proof "${malicious_claim}" --arg claim_script "${malicious_claim}" '{rawtx:$rawtx,proof:$proof,claim_script:$claim_script}')" >/dev/null; then
+  fail "malicious claimpegin unexpectedly succeeded"
+fi
+jq -e --arg value "${malicious_claim}" '.method == "claimpegin" and .params == [$value,$value,$value]' "${PEGIN_RPC_FILE}" >/dev/null || fail "claimpegin input altered the JSON-RPC structure"
+if elements_sendtomainchain "$(jq -nc --arg address "${malicious_claim}" '{address:$address,amount:0.1,subtractfeefromamount:false}')" >/dev/null; then
+  fail "malicious sendtomainchain unexpectedly succeeded"
+fi
+jq -e --arg value "${malicious_claim}" '.method == "sendtomainchain" and .params == [$value,0.1,false]' "${PEGIN_RPC_FILE}" >/dev/null || fail "sendtomainchain input altered the JSON-RPC structure"
+pass "peg RPC wrappers keep user strings inside params"
+
 . ./elements_confirmation.sh
 asset_a=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 asset_b=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -169,11 +238,27 @@ outgoing_details='{"details":[{"address":"ert1qxpub","category":"send","amount":
 echo "$(elements_matching_detail "${outgoing_details}" ert1qxpub "${asset_a}")" | jq -e '.amount == -3 and .vout == 2' >/dev/null || fail "xpub-watched send detail was rejected"
 pass "watch matching preserves wallet perspective and exact asset identity"
 
+ELEMENTS_CONF_ARG_FILE=${TEST_TMPDIR}/elements-conf-arg
+elements_confirmation() {
+  printf '%s\n' "${1}" > "${ELEMENTS_CONF_ARG_FILE}"
+  echo '{"result":"confirmed"}'
+}
+conf_payload='abc/def+ghi='
+conf_response=$(elements_confirmation_request "GET /elements_conf/${conf_payload} HTTP/1.1") || fail "elements_conf wrapper rejected a path-safe confirmation request"
+echo "${conf_response}" | jq -e '.result == "confirmed"' >/dev/null || fail "elements_conf wrapper did not return confirmation response"
+[ "$(cat "${ELEMENTS_CONF_ARG_FILE}")" = "${conf_payload}" ] || fail "elements_conf wrapper corrupted base64 transaction details"
+pass "elements_conf request wrapper preserves base64 transaction details"
+
 WALLETNOTIFY_SCRIPT=${SCRIPT_DIR}/../../../cyphernodeconf_docker/templates/elements/walletnotify.sh
 grep -F 'spending0[1-4].dat)' "${WALLETNOTIFY_SCRIPT}" >/dev/null || fail "spending-wallet notifications are not routed through their own wallet"
 grep -F 'watching01.dat|xpubwatching01.dat)' "${WALLETNOTIFY_SCRIPT}" >/dev/null || fail "watch-only wallets were excluded from Cyphernode notifications"
 grep -F 'rpc_wallet=spending01.dat' "${WALLETNOTIFY_SCRIPT}" >/dev/null || fail "watch-only notifications lost the complete spending-wallet view"
 pass "wallet notifications preserve spender and watch-only wallet semantics"
+
+GATEKEEPER_API_TEMPLATE=${SCRIPT_DIR}/../../../cyphernodeconf_docker/templates/gatekeeper/api.properties
+grep -Fx 'action_elements_conf=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null || fail "elements_conf is not marked internal in generated gatekeeper api.properties"
+grep -Fx 'action_elements_newblock=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null || fail "elements_newblock is not marked internal in generated gatekeeper api.properties"
+pass "generated gatekeeper config allows internal Elements callbacks"
 
 elements_validateaddress() {
   echo '{"result":{"isvalid":true},"error":null}'

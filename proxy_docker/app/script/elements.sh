@@ -87,7 +87,9 @@ elements_derive_addresses() {
   trace "[elements_derive_addresses] descriptor=${descriptor}"
 
   # Get the descriptor with checksum
-  data='{"method":"getdescriptorinfo","params":["'${descriptor}'"]}'
+  data=$(jq -nc --arg descriptor "${descriptor}" '{method:"getdescriptorinfo",params:[$descriptor]}')
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_derive_addresses] data=${data}"
   response=$(send_to_elements_watcher_node "${data}")
   returncode=$?
@@ -104,10 +106,12 @@ elements_derive_addresses() {
 
   # Derive the addresses
   if [ -z "${range}" ]; then
-    data='{"method":"deriveaddresses","params":["'${descriptor}'"]}'
+    data=$(jq -nc --arg descriptor "${descriptor}" '{method:"deriveaddresses",params:[$descriptor]}')
   else
-    data='{"method":"deriveaddresses","params":{"descriptor":"'${descriptor}'","range":'${range}'}}'
+    data=$(jq -nc --arg descriptor "${descriptor}" --argjson range "${range}" '{method:"deriveaddresses",params:{descriptor:$descriptor,range:$range}}')
   fi
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_derive_addresses] data=${data}"
   response=$(send_to_elements_watcher_node "${data}")
   returncode=$?
