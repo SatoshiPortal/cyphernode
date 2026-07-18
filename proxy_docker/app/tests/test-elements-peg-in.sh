@@ -105,7 +105,7 @@ test_elements_peg_in() {
   trace 2 "[test_elements_peg_in] Check initial balance..."
   response=$(exec_in_test_container curl proxy:8888/elements_getbalance)
   trace 3 "[test_elements_peg_in] response=${response}"
-  
+
   local startbalance=$(echo "${response}" | jq -r ".balance.bitcoin")
   trace 3 "[test_elements_peg_in] startbalance=${startbalance}"
 
@@ -151,7 +151,7 @@ test_elements_peg_in() {
   start_callback_server $port1 "102"
 
   trace 3 "[test_elements_peg_in] Waiting for 102-conf callbacks on txid..."
-  
+
   # 5. (elements) Claim peg in
   local txoutproof=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat gettxoutproof '["'${txid}'"]' | tr -d "\r\n")
   trace 3 "[test_elements_peg_in] txoutproof=${txoutproof}"
@@ -173,7 +173,7 @@ test_elements_peg_in() {
   trace 2 "[test_elements_peg_in] Check balance..."
   response=$(exec_in_test_container curl proxy:8888/elements_getbalance)
   trace 3 "[test_elements_peg_in] response=${response}"
-  
+
   local balance=$(echo "${response}" | jq -r ".balance.bitcoin")
   if [ $(echo "${balance} > ${startbalance}" | bc -l) -eq 1 ]; then
     trace 1 "\n\n[test_elements_peg_in] ${On_IGreen}${BBlack} 1. elements_getbalance success!                                           ${Color_Off}\n"

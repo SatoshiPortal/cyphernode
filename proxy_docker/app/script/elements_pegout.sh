@@ -17,7 +17,12 @@ elements_sendtomainchain() {
   trace "[elements_sendtomainchain] subtractfeefromamount=${subtractfeefromamount}"
 
   local response
-  local data="{\"method\":\"sendtomainchain\",\"params\":[\"${address}\",${amount},${subtractfeefromamount}]}"
+  local returncode
+  local data
+  data=$(jq -nc --arg address "${address}" --argjson amount "${amount}" --argjson subtract_fee "${subtractfeefromamount}" \
+    '{method:"sendtomainchain",params:[$address,$amount,$subtract_fee]}')
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
 
   if [ -n "${wallet}" ]; then
     response=$(send_to_elements_spender_node "${data}" "${wallet}")

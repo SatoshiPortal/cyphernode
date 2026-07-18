@@ -172,6 +172,25 @@ elements_matching_detail() {
   '
 }
 
+elements_confirmation_request() {
+  trace "[elements_confirmation_request] Entering elements_confirmation_request()..."
+
+  local request_line=${1}
+  local path
+  local tx_details_b64
+
+  path=$(echo "${request_line}" | cut -d ' ' -f2)
+  tx_details_b64=${path#/elements_conf/}
+
+  if [ -z "${tx_details_b64}" ] || [ "${tx_details_b64}" = "${path}" ]; then
+    echo '{"result":null,"error":{"code":-5,"message":"base64 transaction details required"}}'
+    return 1
+  fi
+
+  elements_confirmation "${tx_details_b64}"
+  return $?
+}
+
 elements_confirmation() {
   trace "[elements_confirmation] Entering elements_confirmation()..."
 

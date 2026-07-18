@@ -17,7 +17,10 @@ elements_get_block_info() {
 
   local block_hash=${1}
   trace "[elements_get_block_info] block_hash=${block_hash}"
-  local data="{\"method\":\"getblock\",\"params\":[\"${block_hash}\"]}"
+  local data
+  data=$(jq -nc --arg block_hash "${block_hash}" '{method:"getblock",params:[$block_hash]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_get_block_info] data=${data}"
   send_to_elements_watcher_node "${data}"
   return $?
@@ -40,7 +43,10 @@ elements_get_rawtransaction() {
   local to_elements_spender_node=${2}
   trace "[elements_get_transaction] to_elements_spender_node=${to_elements_spender_node}"
 
-  local data="{\"method\":\"getrawtransaction\",\"params\":[\"${txid}\",true]}"
+  local data
+  data=$(jq -nc --arg txid "${txid}" '{method:"getrawtransaction",params:[$txid,true]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_get_rawtransaction] data=${data}"
   if [ -z "${to_elements_spender_node}" ]; then
     send_to_elements_watcher_node "${data}"
@@ -60,7 +66,10 @@ elements_get_transaction() {
   local wallet=${3}
   trace "[get_transaction] wallet=${wallet}"
 
-  local data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true]}"
+  local data
+  data=$(jq -nc --arg txid "${txid}" '{method:"gettransaction",params:[$txid,true]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_get_transaction] data=${data}"
   if [ -z "${to_elements_spender_node}" ]; then
     send_to_elements_watcher_node "${data}"
@@ -107,9 +116,11 @@ elements_get_mempool_info() {
 elements_get_blockhash() {
   trace "Entering elements_get_blockhash()..."
   local blockheight=${1}
-  local data="{\"method\":\"getblockhash\",\"params\":[${blockheight}]}"
+  local data
+  data=$(jq -nc --argjson block_height "${blockheight}" '{method:"getblockhash",params:[$block_height]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   local response
-  local returncode
   response=$(send_to_elements_watcher_node "${data}")
   returncode=$?
   if [ "${returncode}" -ne 0 ]; then
@@ -125,7 +136,10 @@ elements_validateaddress() {
 
   local address=${1}
   trace "[elements_validateaddress] address=${address}"
-  local data="{\"method\":\"validateaddress\",\"params\":[\"${address}\"]}"
+  local data
+  data=$(jq -nc --arg address "${address}" '{method:"validateaddress",params:[$address]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_validateaddress] data=${data}"
   send_to_elements_watcher_node "${data}"
   return $?
@@ -134,18 +148,21 @@ elements_validateaddress() {
 elements_generatetoaddress() {
   trace "Entering elements_generatetoaddress()..."
 
-  local nbblocks=$(echo ${1} | jq '.nbblocks // 1') # Optional - Default 1
-  local address=$(echo ${1} | jq '.address // empty') # Optional - getnewadress from spender wallet
-  local maxtries=$(echo ${1} | jq '.maxtries // 1000000')  # Optional - use Core default
+  local nbblocks=$(echo "${1}" | jq '.nbblocks // 1') # Optional - Default 1
+  local address=$(echo "${1}" | jq -r '.address // empty') # Optional - getnewadress from spender wallet
+  local maxtries=$(echo "${1}" | jq '.maxtries // 1000000')  # Optional - use Core default
 
   if [ -z "${address}" ]; then
-    address=$(elements_getnewaddress | jq '.address')
+    address=$(elements_getnewaddress | jq -r '.address')
   fi
 
   trace "[elements_generatetoaddress] nbblocks=[${nbblocks}] address=[${address}] maxtries=[${maxtries}]"
 
   local data
-  data="{\"method\":\"generatetoaddress\",\"params\":[${nbblocks},${address},${maxtries}]}"
+  data=$(jq -nc --argjson nbblocks "${nbblocks}" --arg address "${address}" --argjson maxtries "${maxtries}" \
+    '{method:"generatetoaddress",params:[$nbblocks,$address,$maxtries]}')
+  local returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
 
   trace "[elements_generatetoaddress] data=${data}"
 
@@ -162,21 +179,26 @@ elements_gettxoutproof() {
 
   local txids=${1}
   local blockhash=${2}
-  local params
+  local txids_json
+  local data
+  local returncode
+
+  txids_json=$(echo "${txids}" | jq -Mc 'select(type == "array")')
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
 
   # The blockhash is optional
   if [ -z "${2}" ]; then
-    params=${1}
+    data=$(jq -nc --argjson txids "${txids_json}" '{method:"gettxoutproof",params:[$txids]}')
   else
-    params="${1},\"${2}\""
+    data=$(jq -nc --argjson txids "${txids_json}" --arg blockhash "${blockhash}" '{method:"gettxoutproof",params:[$txids,$blockhash]}')
   fi
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
 
   trace "[elements_gettxoutproof] txids=${txids}"
   trace "[elements_gettxoutproof] blockhash=${blockhash}"
 
-  trace "[elements_gettxoutproof] params=${params}"
-
-  local data="{\"method\":\"gettxoutproof\",\"params\":[${params}]}"
   trace "[elements_gettxoutproof] data=${data}"
 
   send_to_elements_watcher_node "${data}"

@@ -42,7 +42,11 @@ elements_claimpegin() {
 
   local response
   local returncode
-  local data="{\"method\":\"claimpegin\",\"params\":[\"${rawtx}\",\"${proof}\",\"${claim_script}\"]}"
+  local data
+  data=$(jq -nc --arg rawtx "${rawtx}" --arg proof "${proof}" --arg claim_script "${claim_script}" \
+    '{method:"claimpegin",params:[$rawtx,$proof,$claim_script]}')
+  returncode=$?
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   if [ -n "${wallet}" ]; then
     response=$(send_to_elements_spender_node "${data}" "${wallet}")
   else

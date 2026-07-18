@@ -330,7 +330,7 @@ elements_watchpub32() {
     local subspath=$(echo "$path" | sed -En "s/n/${nstart}-${last_n}/p")
     trace "[elements_watchpub32] subspath=${subspath}"
     local addresses
-    addresses=$(elements_derivepubpath '{"pub32":"'${pub32}'","path":"'${subspath}'"}')
+    addresses=$(elements_derivepubpath "$(jq -nc --arg pub32 "${pub32}" --arg path "${subspath}" '{pub32:$pub32,path:$path}')")
     returncode=$?
     trace_rc ${returncode}
   #  trace "[elements_watchpub32] addresses=${addresses}"

@@ -5,7 +5,7 @@
 
 elements_processnewtip() {
   trace "[elements_processnewtip] Entering elements_processnewtip()..."
-  
+
   elements_do_callbacks_txid
 }
 
