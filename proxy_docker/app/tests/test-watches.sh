@@ -38,7 +38,7 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-watches "$@"
+  docker exec tests-watches "$@"
 }
 
 test_watches() {
@@ -181,7 +181,7 @@ test_watches() {
   trace 2 "\n\n[test_watches] ${BCyan}10. Send coins to address1...${Color_Off}\n"
   start_callback_server $port_callbackurl0conf1
   # Let's use the bitcoin node directly to better simulate an external spend
-  txid=$(docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
+  txid=$(docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address1} 0.0001 | tr -d "\r\n")
 #  txid=$(exec_in_test_container curl -d '{"address":"'${address1}'","amount":0.001}' proxy:8888/spend | jq -r ".txid")
   trace 3 "[test_watches] txid=${txid}"
   trace 3 "[test_watches] Waiting for 0-conf callback on address1..."
@@ -250,7 +250,7 @@ start_callback_server() {
 
   local port=${1:-1111}
 
-  docker exec -t tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/tty | cat ; echo -e \"\033[0m\" >&2'" &
+  docker exec tests-watches sh -c "nc -vlp${port} -e sh -c 'echo -en \"HTTP/1.1 200 OK\\\\r\\\\n\\\\r\\\\n\" ; echo -en \"\\033[40m\\033[0;37m\" >&2 ; date >&2 ; timeout 1 tee /dev/stderr | cat ; echo -e \"\033[0m\" >&2'" &
 }
 
 TRACING=3
