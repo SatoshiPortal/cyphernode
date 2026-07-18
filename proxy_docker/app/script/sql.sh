@@ -2,6 +2,16 @@
 
 . ./trace.sh
 
+sql_string_literal() {
+  local escaped
+  escaped=$(printf '%s' "${1}" | sed "s/'/''/g")
+  printf "'%s'" "${escaped}"
+}
+
+json_string_literal() {
+  jq -nc --arg value "${1}" '$value'
+}
+
 sql() {
   trace "Entering sql()..."
 

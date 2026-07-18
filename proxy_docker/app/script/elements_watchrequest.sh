@@ -5,12 +5,28 @@
 . ./sql.sh
 . ./sendtoelementsnode.sh
 
+elements_is_non_negative_integer() {
+  case "${1}" in
+    ''|*[!0-9]*|0[0-9]*)
+      return 1
+      ;;
+  esac
+
+  return 0
+}
+
+elements_xpub_derivation_gap() {
+  local gap=${XPUB_ELEMENTS_DERIVATION_GAP:-${XPUB_DERIVATION_GAP:-100}}
+  elements_is_non_negative_integer "${gap}" || return 1
+  printf '%s' "${gap}"
+}
+
 elements_watchrequest() {
   trace "Entering elements_watchrequest()..."
 
   local returncode
   local request=${1}
-  local address address_pg
+  local address address_pg address_json
   address=$(echo "${request}" | jq -re ".address")
   if [ "$?" -ne "0" ]; then
     # address not found or null
@@ -25,10 +41,11 @@ elements_watchrequest() {
 
     return 1
   else
-    address_pg="'${address}'"
+    address_pg=$(sql_string_literal "${address}")
+    address_json=$(json_string_literal "${address}")
   fi
 
-  local unblinded_address unblinded_address_pg
+  local unblinded_address unblinded_address_pg unblinded_address_json
 
   local assetid assetid_pg assetid_pg_where assetid_json
   assetid=$(echo "${request}" | jq -re ".assetId")
@@ -49,8 +66,8 @@ elements_watchrequest() {
         ;;
     esac
     assetid=$(echo "${assetid}" | tr 'A-F' 'a-f')
-    assetid_json="\"${assetid}\""
-    assetid_pg="'${assetid}'"
+    assetid_json=$(json_string_literal "${assetid}")
+    assetid_pg=$(sql_string_literal "${assetid}")
     assetid_pg_where="=${assetid_pg}"
   fi
 
@@ -62,8 +79,8 @@ elements_watchrequest() {
     cb0conf_url_pg="null"
     cb0conf_url_pg_where=" IS NULL"
   else
-    cb0conf_url_json="\"${cb0conf_url}\""
-    cb0conf_url_pg="'${cb0conf_url}'"
+    cb0conf_url_json=$(json_string_literal "${cb0conf_url}")
+    cb0conf_url_pg=$(sql_string_literal "${cb0conf_url}")
     cb0conf_url_pg_where="=${cb0conf_url_pg}"
   fi
 
@@ -75,8 +92,8 @@ elements_watchrequest() {
     cb1conf_url_pg="null"
     cb1conf_url_pg_where=" IS NULL"
   else
-    cb1conf_url_json="\"${cb1conf_url}\""
-    cb1conf_url_pg="'${cb1conf_url}'"
+    cb1conf_url_json=$(json_string_literal "${cb1conf_url}")
+    cb1conf_url_pg=$(sql_string_literal "${cb1conf_url}")
     cb1conf_url_pg_where="=${cb1conf_url_pg}"
   fi
 
@@ -87,8 +104,8 @@ elements_watchrequest() {
     event_message_json="null"
     event_message_pg="null"
   else
-    event_message_json="\"${event_message}\""
-    event_message_pg="'${event_message}'"
+    event_message_json=$(json_string_literal "${event_message}")
+    event_message_pg=$(sql_string_literal "${event_message}")
   fi
 
   local label label_pg label_json
@@ -98,8 +115,8 @@ elements_watchrequest() {
     label_json="null"
     label_pg="null"
   else
-    label_json="\"${label}\""
-    label_pg="'${label}'"
+    label_json=$(json_string_literal "${label}")
+    label_pg=$(sql_string_literal "${label}")
   fi
 
   local imported
@@ -118,7 +135,7 @@ elements_watchrequest() {
 '"message":"Invalid address",'\
 '"data":{'\
 '"event":"elements_watch",'\
-'"address":"'${address}'",'\
+'"address":'${address_json}','\
 '"assetId":'${assetid_json}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}','\
@@ -151,7 +168,8 @@ elements_watchrequest() {
   imported=true
 
   # Store the unconfidential form because gettransaction reports that form.
-  unblinded_address_pg="'${unblinded_address}'"
+  unblinded_address_pg=$(sql_string_literal "${unblinded_address}")
+  unblinded_address_json=$(json_string_literal "${unblinded_address}")
   trace "[elements_watchrequest] unblinded_address=${unblinded_address}"
 
   id_inserted=$(sql "INSERT INTO elements_watching (address, unblinded_address, watching, callback0conf, callback1conf, imported, event_message, watching_assetid, label)"\
@@ -169,14 +187,15 @@ elements_watchrequest() {
     trace "[elements_watchrequest] id_inserted: ${id_inserted}"
   else
     inserted=false
+    id_inserted=null
   fi
 
   result='{"id":'${id_inserted}','\
 '"event":"elements_watch",'\
 '"imported":'${imported}','\
 '"inserted":'${inserted}','\
-'"address":"'${address}'",'\
-'"unblindedAddress":"'${unblinded_address}'",'\
+'"address":'${address_json}','\
+'"unblindedAddress":'${unblinded_address_json}','\
 '"assetId":'${assetid_json}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}','\
@@ -237,6 +256,10 @@ elements_watchpub32request() {
 
     return 1
   fi
+  if ! elements_is_non_negative_integer "${nstart}"; then
+    echo '{"error":"nstart must be a non-negative integer","event":"elements_watchxpub"}'
+    return 1
+  fi
   trace "[elements_watchpub32request] nstart=${nstart}"
 
   local cb0conf_url=$(echo "${request}" | jq -r ".unconfirmedCallbackURL // empty")
@@ -260,17 +283,32 @@ elements_watchpub32() {
 
   local returncode
   local label=${1}
-  local label_pg="'${label}'"
+  local label_pg label_json
+  label_pg=$(sql_string_literal "${label}")
+  label_json=$(json_string_literal "${label}")
   trace "[elements_watchpub32] label=${label}, label_pg=${label_pg}"
   local pub32=${2}
-  local pub32_pg="'${pub32}'"
+  local pub32_pg pub32_json
+  pub32_pg=$(sql_string_literal "${pub32}")
+  pub32_json=$(json_string_literal "${pub32}")
   trace "[elements_watchpub32] pub32=${pub32}, pub32_pg=${pub32_pg}"
   local path=${3}
-  local path_pg="'${path}'"
+  local path_pg path_json
+  path_pg=$(sql_string_literal "${path}")
+  path_json=$(json_string_literal "${path}")
   trace "[elements_watchpub32] path=${path}, path_pg=${path_pg}"
   local nstart=${4}
+  if ! elements_is_non_negative_integer "${nstart}"; then
+    echo '{"error":"nstart must be a non-negative integer","event":"elements_watchxpub"}'
+    return 1
+  fi
   trace "[elements_watchpub32] nstart=${nstart}"
-  local last_n=$((${nstart}+${XPUB_ELEMENTS_DERIVATION_GAP}))
+  local derivation_gap
+  derivation_gap=$(elements_xpub_derivation_gap) || {
+    echo '{"error":"XPUB_ELEMENTS_DERIVATION_GAP must be a non-negative integer","event":"elements_watchxpub"}'
+    return 1
+  }
+  local last_n=$((${nstart}+${derivation_gap}))
   trace "[elements_watchpub32] last_n=${last_n}"
   local cb0conf_url=${5}
   local cb0conf_url_pg cb0conf_url_json
@@ -279,8 +317,8 @@ elements_watchpub32() {
     cb0conf_url_json="null"
     cb0conf_url_pg="null"
   else
-    cb0conf_url_json="\"${cb0conf_url}\""
-    cb0conf_url_pg="'${cb0conf_url}'"
+    cb0conf_url_json=$(json_string_literal "${cb0conf_url}")
+    cb0conf_url_pg=$(sql_string_literal "${cb0conf_url}")
   fi
   trace "[elements_watchpub32] cb0conf_url=${cb0conf_url}, cb0conf_url_pg=${cb0conf_url_pg}"
   local cb1conf_url=${6}
@@ -290,20 +328,26 @@ elements_watchpub32() {
     cb1conf_url_json="null"
     cb1conf_url_pg="null"
   else
-    cb1conf_url_json="\"${cb1conf_url}\""
-    cb1conf_url_pg="'${cb1conf_url}'"
+    cb1conf_url_json=$(json_string_literal "${cb1conf_url}")
+    cb1conf_url_pg=$(sql_string_literal "${cb1conf_url}")
   fi
   trace "[elements_watchpub32] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}"
 
   # upto_n is used when extending the watching window
   # If this is supplied, it means we will not INSERT into elements_watching_by_pub32, just add
   # corresponding rows into elements_watching
-  local upto_n=${7}
+  local upto_n=${7:-}
+  if [ -n "${upto_n}" ]; then
+    if ! elements_is_non_negative_integer "${upto_n}"; then
+      echo '{"error":"upto_n must be a non-negative integer","event":"elements_watchxpub"}'
+      return 1
+    fi
+  fi
   trace "[elements_watchpub32] upto_n=${upto_n}"
 
   local id_inserted
   local result
-  local error_msg
+  local error_msg=
   local data
 
   # Derive with elementsd...
@@ -394,20 +438,22 @@ elements_watchpub32() {
   if [ -z "${error_msg}" ]; then
     data='{"id":'${id_inserted}','\
 '"event":"elements_watchxpub",'\
-'"pub32":"'${pub32}'",'\
-'"label":"'${label}'",'\
-'"path":"'${path}'",'\
+'"pub32":'${pub32_json}','\
+'"label":'${label_json}','\
+'"path":'${path_json}','\
 '"nstart":'${nstart}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}'}'
 
     returncode=0
   else
-    data='{"error":"'${error_msg}'",'\
+    local error_msg_json
+    error_msg_json=$(json_string_literal "${error_msg}")
+    data='{"error":'${error_msg_json}','\
 '"event":"elements_watchxpub",'\
-'"pub32":"'${pub32}'",'\
-'"label":"'${label}'",'\
-'"path":"'${path}'",'\
+'"pub32":'${pub32_json}','\
+'"label":'${label_json}','\
+'"path":'${path_json}','\
 '"nstart":'${nstart}','\
 '"unconfirmedCallbackURL":'${cb0conf_url_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}'}'
@@ -434,7 +480,7 @@ elements_insert_watches() {
     # Empty url
     label_pg="null"
   else
-    label_pg="'${label}'"
+    label_pg=$(sql_string_literal "${label}")
   fi
   local callback0conf=${3}
   local callback0conf_pg
@@ -442,7 +488,7 @@ elements_insert_watches() {
     # Empty url
     callback0conf_pg="null"
   else
-    callback0conf_pg="'${callback0conf}'"
+    callback0conf_pg=$(sql_string_literal "${callback0conf}")
   fi
   local callback1conf=${4}
   local callback1conf_pg
@@ -450,11 +496,11 @@ elements_insert_watches() {
     # Empty url
     callback1conf_pg="null"
   else
-    callback1conf_pg="'${callback1conf}'"
+    callback1conf_pg=$(sql_string_literal "${callback1conf}")
   fi
   local xpub_id=${5}
   local nstart=${6}
-  local inserted_values
+  local inserted_values=
   local address
   local unblinded_address unblinded_address_pg
 
@@ -463,15 +509,15 @@ elements_insert_watches() {
   for address in ${addresses}
   do
     # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
-    unblinded_address=$(elements_getaddressinfo ${address} true | jq -r ".result.unconfidential")
-    unblinded_address_pg="'${unblinded_address}'"
+    unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+    unblinded_address_pg=$(sql_string_literal "${unblinded_address}")
     trace "[elements_insert_watches] unblinded_address=${unblinded_address}"
 
     # (address, label, watching, callback0conf, callback1conf, imported, watching_by_pub32_id)
     if [ -n "${inserted_values}" ]; then
       inserted_values="${inserted_values},"
     fi
-    inserted_values="${inserted_values}('${address}', ${unblinded_address_pg}, ${label_pg}, true, ${callback0conf_pg}, ${callback1conf_pg}, true, ${xpub_id}, ${nstart})"
+    inserted_values="${inserted_values}($(sql_string_literal "${address}"), ${unblinded_address_pg}, ${label_pg}, true, ${callback0conf_pg}, ${callback1conf_pg}, true, ${xpub_id}, ${nstart})"
 
     nstart=$((${nstart} + 1))
   done
@@ -495,7 +541,9 @@ elements_extend_watchers() {
   trace "[elements_extend_watchers] watching_by_pub32_id=${watching_by_pub32_id}"
   local pub32_index=${2}
   trace "[elements_extend_watchers] pub32_index=${pub32_index}"
-  local upgrade_to_n=$((${pub32_index} + ${XPUB_ELEMENTS_DERIVATION_GAP}))
+  local derivation_gap
+  derivation_gap=$(elements_xpub_derivation_gap) || return 1
+  local upgrade_to_n=$((${pub32_index} + ${derivation_gap}))
   trace "[elements_extend_watchers] upgrade_to_n=${upgrade_to_n}"
 
   local last_imported_n
@@ -541,7 +589,7 @@ elements_watchtxidrequest() {
   local result
   local request=${1}
   trace "[elements_watchtxidrequest] request=${request}"
-  local txid txid_pg txid_pg_where
+  local txid txid_pg txid_json
   txid=$(echo "${request}" | jq -re '.txid | select(type == "string")')
   if [ "$?" -ne "0" ]; then
     # txid not found or null
@@ -567,7 +615,8 @@ elements_watchtxidrequest() {
         ;;
     esac
     txid=$(echo "${txid}" | tr 'A-F' 'a-f')
-    txid_pg="'${txid}'"
+    txid_pg=$(sql_string_literal "${txid}")
+    txid_json=$(json_string_literal "${txid}")
   fi
   trace "[elements_watchtxidrequest] txid=${txid}, txid_pg=${txid_pg}"
 
@@ -579,13 +628,13 @@ elements_watchtxidrequest() {
     cb1conf_url_pg="null"
     cb1conf_url_pg_where=" IS NULL"
   else
-    cb1conf_url_json="\"${cb1conf_url}\""
-    cb1conf_url_pg="'${cb1conf_url}'"
+    cb1conf_url_json=$(json_string_literal "${cb1conf_url}")
+    cb1conf_url_pg=$(sql_string_literal "${cb1conf_url}")
     cb1conf_url_pg_where="=${cb1conf_url_pg}"
   fi
   trace "[elements_watchtxidrequest] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}, cb1conf_url_pg_where=${cb1conf_url_pg_where}, cb1conf_url_json=${cb1conf_url_json}"
 
-  local cbxconf_url cbxconf_url_pg cbxconf_url_pg_where
+  local cbxconf_url cbxconf_url_pg cbxconf_url_pg_where cbxconf_url_json
   cbxconf_url=$(echo "${request}" | jq -re '.xconfCallbackURL | select(type == "string" and length > 0)')
   if [ "$?" -ne "0" ]; then
     # cbxconf_url not found or null
@@ -593,8 +642,8 @@ elements_watchtxidrequest() {
     cbxconf_url_pg="null"
     cbxconf_url_pg_where=" IS NULL"
   else
-    cbxconf_url_json="\"${cbxconf_url}\""
-    cbxconf_url_pg="'${cbxconf_url}'"
+    cbxconf_url_json=$(json_string_literal "${cbxconf_url}")
+    cbxconf_url_pg=$(sql_string_literal "${cbxconf_url}")
     cbxconf_url_pg_where="=${cbxconf_url_pg}"
   fi
   trace "[elements_watchtxidrequest] cbxconf_url=${cbxconf_url}, cbxconf_url_pg=${cbxconf_url_pg}, cbxconf_url_pg_where=${cbxconf_url_pg_where}, cbxconf_url_json=${cbxconf_url_json}"
@@ -639,7 +688,7 @@ elements_watchtxidrequest() {
   local data='{"id":'${id_inserted}','\
 '"event":"elements_watchtxid",'\
 '"inserted":'${inserted}','\
-'"txid":"'${txid}'",'\
+'"txid":'${txid_json}','\
 '"confirmedCallbackURL":'${cb1conf_url_json}','\
 '"xconfCallbackURL":'${cbxconf_url_json}','\
 '"nbxconf":'${nbxconf}'}'

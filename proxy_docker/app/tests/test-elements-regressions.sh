@@ -260,6 +260,8 @@ grep -Fx 'action_elements_conf=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null
 grep -Fx 'action_elements_newblock=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null || fail "elements_newblock is not marked internal in generated gatekeeper api.properties"
 pass "generated gatekeeper config allows internal Elements callbacks"
 
+. ./elements_unwatchrequest.sh
+
 elements_validateaddress() {
   echo '{"result":{"isvalid":true},"error":null}'
 }
@@ -276,8 +278,8 @@ sql() {
   printf '%s\n' "${1}" >> "${SQL_LOG}"
   if [ "$#" -gt 1 ]; then
     printf '%s\n' "${2}" >> "${SQL_LOG}"
+    echo 42
   fi
-  echo 42
 }
 
 if elements_watchrequest '{"address":"el1qqexternal"}' >/dev/null; then
@@ -293,6 +295,87 @@ grep -F "watching_assetid='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 pass "owned-address watch persists asset-specific identity"
 
 rm -f "${SQL_LOG}"
+malicious_callback="https://callback.invalid/a'b\"c"
+malicious_label="label'\"x"
+watch_escape_payload=$(jq -nc --arg address "el1qqowned" --arg callback "${malicious_callback}" --arg watch_label "${malicious_label}" \
+  '{address:$address,unconfirmedCallbackURL:$callback,confirmedCallbackURL:$callback,label:$watch_label}')
+watch_escape_response=$(elements_watchrequest "${watch_escape_payload}") || fail "watch request with quoted callback data was rejected"
+grep -F "callback0conf='https://callback.invalid/a''b\"c'" "${SQL_LOG}" >/dev/null || fail "watch callback URL was not escaped for SQL"
+grep -F "label='label''\"x'" "${SQL_LOG}" >/dev/null || fail "watch label was not escaped for SQL"
+echo "${watch_escape_response}" | jq -e --arg callback "${malicious_callback}" --arg watch_label "${malicious_label}" '
+  .unconfirmedCallbackURL == $callback
+  and .confirmedCallbackURL == $callback
+  and .label == $watch_label
+' >/dev/null || fail "watch response did not preserve quoted fields as JSON data"
+
+rm -f "${SQL_LOG}"
+unwatch_response=$(elements_unwatchrequest null "el1qqowned" "${malicious_callback}" "${malicious_callback}") || fail "unwatch request with quoted callback data was rejected"
+grep -F "callback0conf='https://callback.invalid/a''b\"c'" "${SQL_LOG}" >/dev/null || fail "unwatch callback URL was not escaped for SQL"
+echo "${unwatch_response}" | jq -e --arg callback "${malicious_callback}" '
+  .unconfirmedCallbackURL == $callback
+  and .confirmedCallbackURL == $callback
+' >/dev/null || fail "unwatch response did not preserve quoted fields as JSON data"
+pass "watch and unwatch escape request strings for SQL and JSON"
+
+rm -f "${SQL_LOG}"
+XPUB_DERIVATION_GAP=2
+unset XPUB_ELEMENTS_DERIVATION_GAP || true
+WATCHER_ELEMENTS_NODE_XPUB_WALLET=xpubwatching01.dat
+XPUB_DERIVE_LOG=${TEST_TMPDIR}/xpub-derive-log
+elements_derivepubpath() {
+  printf '%s\n' "${1}" > "${XPUB_DERIVE_LOG}"
+  echo '{"addresses":[{"address":"el1qqxpub0"},{"address":"el1qqxpub1"},{"address":"el1qqxpub2"}]}'
+}
+elements_importmulti_rpc() {
+  return 0
+}
+sql() {
+  printf '%s\n' "${1}" >> "${SQL_LOG}"
+  if [ "$#" -gt 1 ]; then
+    printf '%s\n' "${2}" >> "${SQL_LOG}"
+  fi
+  case "${1}" in
+    SELECT*"FROM elements_watching_by_pub32 WHERE label="*)
+      return 0
+      ;;
+    INSERT*"INTO elements_watching_by_pub32"*)
+      echo 77
+      ;;
+    INSERT*"INTO elements_watching (address"*)
+      return 0
+      ;;
+    *)
+      echo 42
+      ;;
+  esac
+}
+if elements_watchpub32 "label" "tpub-test" "0/n" "08" "" "" >/dev/null; then
+  fail "xpub watch accepted a shell-unsafe nstart"
+fi
+xpub_label="xpub label 'quoted'"
+xpub_cb0="https://callback.invalid/xpub0'o"
+xpub_cb1="https://callback.invalid/xpub1'o"
+xpub_response=$(elements_watchpub32 "${xpub_label}" "tpub-test" "0/n" 0 "${xpub_cb0}" "${xpub_cb1}") || fail "xpub watch with quoted fields was rejected"
+echo "${xpub_response}" | jq -e \
+  --arg label "${xpub_label}" \
+  --arg cb0 "${xpub_cb0}" \
+  --arg cb1 "${xpub_cb1}" \
+  '.id == 77 and .label == $label and .unconfirmedCallbackURL == $cb0 and .confirmedCallbackURL == $cb1 and .nstart == 0' >/dev/null || fail "xpub watch response did not preserve quoted fields as JSON data"
+jq -e '.path == "0/0-2"' "${XPUB_DERIVE_LOG}" >/dev/null || fail "xpub watch did not use the configured derivation gap"
+grep -F "xpub label ''quoted''" "${SQL_LOG}" >/dev/null || fail "xpub label was not escaped for SQL"
+grep -F "https://callback.invalid/xpub0''o" "${SQL_LOG}" >/dev/null || fail "xpub 0-conf callback URL was not escaped for SQL"
+pass "Elements xpub watches escape SQL literals and use the configured derivation gap"
+
+rm -f "${SQL_LOG}"
+sql() {
+  printf '%s\n' "${1}" >> "${SQL_LOG}"
+  if [ "$#" -gt 1 ]; then
+    printf '%s\n' "${2}" >> "${SQL_LOG}"
+    echo 42
+  fi
+}
+
+rm -f "${SQL_LOG}"
 valid_txid=dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 if elements_watchtxidrequest "{\"txid\":\"${valid_txid}\"}" >/dev/null; then
   fail "txid watch without a callback was accepted"
@@ -302,6 +385,20 @@ fi
 elements_watchtxidrequest "{\"txid\":\"${valid_txid}\",\"xconfCallbackURL\":\"https://callback.invalid/x\",\"nbxconf\":2}" >/dev/null || fail "x-conf-only txid watch was rejected"
 grep -F "COALESCE(callback1conf, '')" "${SQL_LOG}" >/dev/null || fail "txid watch did not use the fresh-schema conflict identity"
 pass "x-conf-only txid watch validates and upserts"
+
+rm -f "${SQL_LOG}"
+watchtxid_escape_payload=$(jq -nc --arg txid "${valid_txid}" --arg callback "${malicious_callback}" \
+  '{txid:$txid,confirmedCallbackURL:$callback,xconfCallbackURL:$callback,nbxconf:2}')
+elements_watchtxidrequest "${watchtxid_escape_payload}" >/dev/null || fail "txid watch with quoted callback data was rejected"
+grep -F "callback1conf='https://callback.invalid/a''b\"c'" "${SQL_LOG}" >/dev/null || fail "txid watch callback URL was not escaped for SQL"
+rm -f "${SQL_LOG}"
+unwatchtxid_response=$(elements_unwatchtxidrequest null "${valid_txid}" "${malicious_callback}" "${malicious_callback}") || fail "txid unwatch with quoted callback data was rejected"
+grep -F "callback1conf='https://callback.invalid/a''b\"c'" "${SQL_LOG}" >/dev/null || fail "txid unwatch callback URL was not escaped for SQL"
+echo "${unwatchtxid_response}" | jq -e --arg callback "${malicious_callback}" '.confirmedCallbackURL == $callback and .xconfCallbackURL == $callback' >/dev/null || fail "txid unwatch response did not preserve quoted fields as JSON data"
+if elements_unwatchtxidrequest null "not-a-txid' OR '1'='1" null "${malicious_callback}" >/dev/null; then
+  fail "invalid unwatch txid was accepted"
+fi
+pass "txid watch and unwatch escape callbacks and validate txids"
 
 . ./elements_callbacks_txid.sh
 CALLBACK_SQL_LOG=${TEST_TMPDIR}/callback-sql-log
