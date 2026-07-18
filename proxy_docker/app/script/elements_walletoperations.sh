@@ -29,6 +29,7 @@ elements_spend() {
   local tx_details
   local tx_raw_details
   local returncode
+  local event_returncode
 
   if [ "${assetid}" = "null" ]; then
     data="{\"method\":\"sendtoaddress\",\"params\":[\"${address}\",${amount},\"\",\"\",${subtractfeefromamount},${replaceable},${conf_target}]}"
@@ -86,8 +87,11 @@ elements_spend() {
         trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":\"${assetid}\",\"eventMessage\":\"${event_message}\"}\""
         response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":\"${assetid}\",\"eventMessage\":\"${event_message}\"}")
       fi
-      returncode=$?
-      trace_rc ${returncode}
+      event_returncode=$?
+      trace_rc ${event_returncode}
+      if [ "${event_returncode}" -ne 0 ]; then
+        trace "[elements_spend] Failed to publish the optional spend event after broadcasting ${txid}"
+      fi
     fi
     ########################################################################################################
 
@@ -266,16 +270,34 @@ elements_getbalancebyxpub() {
   local addresses
   local balance
   local data
+  local response
   local returncode
 
   # addresses=$(./elements-cli -rpcwallet=xpubwatching01.dat getaddressesbylabel upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb | jq "keys" | tr -d '\n ')
   data="{\"method\":\"getaddressesbylabel\",\"params\":[\"${xpub}\"]}"
   trace "[elements_getbalancebyxpub] data=${data}"
-  addresses=$(send_to_xpub_elements_watcher_wallet "${data}" | jq ".result | keys" | tr -d '\n ')
+  response=$(send_to_xpub_elements_watcher_wallet "${data}")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  addresses=$(echo "${response}" | jq -Mc '.result | keys')
+  returncode=$?
+  trace_rc ${returncode}
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   # ./elements-cli -rpcwallet=xpubwatching01.dat listunspent 0 9999999 "$addresses" | jq "[.[].amount] | add"
   data="{\"method\":\"listunspent\",\"params\":[0,9999999,${addresses}]}"
   trace "[elements_getbalancebyxpub] data=${data}"
-  balance=$(send_to_xpub_elements_watcher_wallet "${data}" | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
+  response=$(send_to_xpub_elements_watcher_wallet "${data}")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  balance=$(echo "${response}" | jq "[.result[].amount // 0 ] | add | . * 100000000 | trunc | . / 100000000")
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_getbalancebyxpub] balance=${balance}"
@@ -290,33 +312,31 @@ elements_getbalancebyxpub() {
 elements_getnewaddress() {
   trace "Entering elements_getnewaddress()..."
 
-  local address_type=${1}
+  local address_type=${1:-}
   trace "[elements_getnewaddress] address_type=${address_type}"
 
-  local label=${2}
+  local label=${2:-}
   trace "[elements_getnewaddress] label=${label}"
 
-  local wallet=${3}
+  local wallet=${3:-}
   trace "[getnewaddress] wallet=${wallet}"
 
   local response
-  local jqop
-  local addedfieldstoresponse
-  local data='{"method":"getnewaddress"}'
-  if [ -n "${address_type}" ] || [ -n "${label}" ]; then
-    jqop='. += {"params":{}}'
-    if [ -n "${label}" ]; then
-      jqop=${jqop}' | .params += {"label":"'${label}'"}'
-      addedfieldstoresponse=' | . += {"label":"'${label}'"}'
-    fi
-    if [ -n "${address_type}" ]; then
-      jqop=${jqop}' | .params += {"address_type":"'${address_type}'"}'
-      addedfieldstoresponse=' | . += {"address_type":"'${address_type}'"}'
-    fi
-    trace "[elements_getnewaddress] jqop=${jqop}"
-    trace "[elements_getnewaddress] addedfieldstoresponse=${addedfieldstoresponse}"
+  local returncode
+  local address
+  local data
 
-    data=$(echo "${data}" | jq -rc "${jqop}")
+  # label and address_type come from the request. Pass them to jq as data so
+  # their contents can never change the JSON-RPC method or structure.
+  data=$(jq -nc --arg label "${label}" --arg address_type "${address_type}" '
+    {method: "getnewaddress"}
+    | if ($label != "" or $address_type != "") then .params = {} else . end
+    | if $label != "" then .params.label = $label else . end
+    | if $address_type != "" then .params.address_type = $address_type else . end
+  ')
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    return "${returncode}"
   fi
   trace "[elements_getnewaddress] data=${data}"
 
@@ -325,28 +345,36 @@ elements_getnewaddress() {
   else
     response=$(send_to_elements_spender_node "${data}")
   fi
-  local returncode=$?
+  returncode=$?
   trace_rc ${returncode}
   trace "[elements_getnewaddress] response=${response}"
 
-  if [ "${returncode}" -eq 0 ]; then
-    local address=$(echo ${response} | jq ".result")
-    trace "[elements_getnewaddress] address=${address}"
-
-    data='{"address":'${address}'}'
-    if [ -n "${jqop}" ]; then
-      data=$(echo "${data}" | jq -rc ".${addedfieldstoresponse}")
-      trace "[elements_getnewaddress] data=${data}"
-    fi
-  else
+  if [ "${returncode}" -ne 0 ]; then
     trace "[elements_getnewaddress] Coudn't get a new address!"
-    data=""
+    echo "${response}"
+    return "${returncode}"
   fi
+
+  address=$(printf '%s\n' "${response}" | jq -er '.result | select(type == "string" and length > 0)')
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  trace "[elements_getnewaddress] address=${address}"
+
+  data=$(jq -nc --arg address "${address}" --arg label "${label}" --arg address_type "${address_type}" '
+    {address: $address}
+    | if $label != "" then .label = $label else . end
+    | if $address_type != "" then .address_type = $address_type else . end
+  ')
+  returncode=$?
+  trace "[elements_getnewaddress] data=${data}"
 
   trace "[elements_getnewaddress] responding=${data}"
   echo "${data}"
 
-  return ${returncode}
+  return "${returncode}"
 }
 
 elements_create_wallet() {
@@ -370,6 +398,14 @@ elements_getwalletinfo() {
   trace "Entering elements_getwalletinfo()..."
 
   local data='{"method":"getwalletinfo"}'
-  send_to_elements_spender_node "${data}" | jq ".result"
+  local response
+  local returncode
+  response=$(send_to_elements_spender_node "${data}")
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  echo "${response}" | jq ".result"
   return $?
 }

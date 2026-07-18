@@ -11,7 +11,7 @@ send_to_elements_watcher_node() {
   if [ "${returncode}" -ne 0 ]; then
     # Ok, since we now have multiple watching wallets, we need to try them all if it fails
     # We have 2 right now: watching and watching-for-xpubs
-    node_payload="$(send_to_elements_watcher_node_wallet "${WATCHER_BTC_NODE_XPUB_WALLET}" "$@")"
+    node_payload="$(send_to_elements_watcher_node_wallet "${WATCHER_ELEMENTS_NODE_XPUB_WALLET}" "$@")"
     returncode=$?
     trace_rc ${returncode}
   fi
@@ -45,6 +45,10 @@ send_to_elements_spender_node()
 
   local walletname=${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}
   if [ -n "$2" ]; then
+    if ! validate_elements_spender_wallet "$2"; then
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be one of 01, 02, 03, or 04"}}'
+      return 1
+    fi
     walletname="spending${2}.dat"
   fi
   trace "[send_to_elements_spender_node] wallet: ${walletname}"
@@ -65,18 +69,18 @@ send_to_elements_node()
   local config=${2}
   local data=${3}
 
-  trace "[send_to_elements_node] curl -m 60 -s --config ${config} -H \"Content-Type: application/json\" -d \"${data}\" ${node_url}"
-  result=$(curl -m 60 -s --config ${config} -H "Content-Type: application/json" -d "${data}" ${node_url})
+  trace "[send_to_elements_node] curl -m 60 -s --config ${config} -H \"Content-Type: application/json\" --data \"${data}\" --url \"${node_url}\""
+  result=$(curl -m 60 -s --config "${config}" -H "Content-Type: application/json" --data "${data}" --url "${node_url}")
   returncode=$?
   trace_rc ${returncode}
   # trace "[send_to_elements_node] result=${result}"
 
   if [ "${returncode}" -eq 0 ]; then
-    # Node responded, let's see if we got an error message from the node
-    # jq -e will have a return code of 1 if the supplied tag is null.
-    errorstring=$(echo "${result}" | jq -e ".error")
-    if [ "$?" -eq "0" ]; then
-      # Error tag not null, so there's an error
+    if ! echo "${result}" | jq -e 'type == "object" and has("result") and has("error")' >/dev/null 2>&1; then
+      trace "[send_to_elements_node] Node returned an invalid JSON-RPC response"
+      returncode=1
+    elif ! echo "${result}" | jq -e '.error == null' >/dev/null 2>&1; then
+      errorstring=$(echo "${result}" | jq -c '.error')
       trace "[send_to_elements_node] Node responded, error found in response: ${errorstring}"
       returncode=1
     else
@@ -96,6 +100,10 @@ send_batch_to_elements_spender_node() {
 
   local walletname=${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}
   if [ -n "$2" ]; then
+    if ! validate_elements_spender_wallet "$2"; then
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be one of 01, 02, 03, or 04"}}'
+      return 1
+    fi
     walletname="spending${2}.dat"
   fi
   trace "[send_batch_to_elements_spender_node] wallet: ${walletname}"
@@ -115,8 +123,8 @@ send_batch_to_elements_node() {
   local config=${2}
   local body_file=${3}
 
-  trace "[send_batch_to_elements_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" -d @${body_file} ${node_url}"
-  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" -d @${body_file} "${node_url}")
+  trace "[send_batch_to_elements_node] curl -m 20 -s --config ${config} -H \"Content-Type: application/json\" --data-binary @${body_file} --url \"${node_url}\""
+  result=$(curl -m 20 -s --config "${config}" -H "Content-Type: application/json" --data-binary "@${body_file}" --url "${node_url}")
   returncode=$?
   trace_rc ${returncode}
   trace "[send_batch_to_elements_node] result=${result}"
@@ -130,4 +138,11 @@ send_batch_to_elements_node() {
   return ${returncode}
 }
 
-case "${0}" in *sendtoelementsnode.sh) send_to_elements_node $@;; esac
+validate_elements_spender_wallet() {
+  case "${1}" in
+    01|02|03|04) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+case "${0}" in *sendtoelementsnode.sh) send_to_elements_node "$@";; esac

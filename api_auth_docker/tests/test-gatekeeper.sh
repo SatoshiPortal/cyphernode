@@ -587,9 +587,6 @@ test_elements_watcher_functions() {
 
   # action_elements_validateaddress=watcher
   test_authorization "elements_validateaddress" "${token}" ${has_access} || return 230
-
-  # action_elements_getaddressinfo
-  test_authorization "elements_getaddressinfo" "${token}" ${has_access} || return 235
 }
 
 test_elements_spender_functions() {
@@ -614,6 +611,9 @@ test_elements_spender_functions() {
 
   # action_elements_derivepubpath=spender
   test_authorization "elements_derivepubpath" "${token}" ${has_access} || return 65
+
+  # action_elements_getaddressinfo=spender
+  test_authorization "elements_getaddressinfo" "${token}" ${has_access} || return 70
 }
 
 test_admin_functions() {

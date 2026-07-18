@@ -474,11 +474,16 @@ callbackservername="tests-elements-manage-missed"
 
 wait_for_proxy
 
+returncode=0
 test_elements_manage_missed_0_conf && \
 test_elements_manage_missed_1_conf && \
 test_elements_manage_missed_1_conf_dead_broker && \
 test_elements_manage_missed_0_conf_multiple_txids && \
-test_elements_manage_missed_1_conf_multiple_txids && \
-trace 1 "\n\n[tests-elements-manage-missed] ${BCyan}All tests passed!${Color_Off}\n"
+test_elements_manage_missed_1_conf_multiple_txids || returncode=$?
+
+if [ "${returncode}" -eq 0 ]; then
+  trace 1 "\n\n[tests-elements-manage-missed] ${BCyan}All tests passed!${Color_Off}\n"
+fi
 
 stop_test_container
+exit ${returncode}

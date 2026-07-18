@@ -12,13 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /usr/src/paymentalist
 
 COPY Cargo.toml Cargo.lock ./
-RUN cargo fetch
+RUN cargo fetch --locked
 
 COPY ./src ./src
 COPY ./config ./config
 COPY ./test ./test
 
-RUN cargo build --release
+RUN cargo build --release --locked
 
 FROM debian:bookworm-slim AS runtime
 

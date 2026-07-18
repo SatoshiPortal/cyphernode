@@ -39,6 +39,7 @@ elements_derive_addresses() {
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_derive_addresses] xpub=${xpub}"
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
 
   # t='1/2/3-8' && echo ${t%/*} && echo ${t##*/}
   # 1/2
@@ -88,9 +89,17 @@ elements_derive_addresses() {
   # Get the descriptor with checksum
   data='{"method":"getdescriptorinfo","params":["'${descriptor}'"]}'
   trace "[elements_derive_addresses] data=${data}"
-  descriptor=$(send_to_elements_watcher_node "${data}" | jq -r ".result.descriptor")
+  response=$(send_to_elements_watcher_node "${data}")
   returncode=$?
   trace_rc ${returncode}
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  descriptor=$(echo "${response}" | jq -er '.result.descriptor')
+  returncode=$?
+  trace_rc ${returncode}
+  [ "${returncode}" -ne 0 ] && return "${returncode}"
   trace "[elements_derive_addresses] descriptor=${descriptor}"
 
   # Derive the addresses
@@ -100,7 +109,14 @@ elements_derive_addresses() {
     data='{"method":"deriveaddresses","params":{"descriptor":"'${descriptor}'","range":'${range}'}}'
   fi
   trace "[elements_derive_addresses] data=${data}"
-  addresses=$(send_to_elements_watcher_node "${data}" | jq -Mc ".result")
+  response=$(send_to_elements_watcher_node "${data}")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  addresses=$(echo "${response}" | jq -Mce '.result | select(type == "array")')
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_derive_addresses] addresses=${addresses}"

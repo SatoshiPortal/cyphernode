@@ -35,7 +35,7 @@ elements_do_callbacks_txid() {
       trace_rc ${returncode}
       if [ "${returncode}" -eq "0" ]; then
         id=$(echo "${row}" | cut -d '|' -f1)
-        sql "UPDATE elements_watching_by_txid SET calledback1conf=true WHERE id=${id}"
+        sql "UPDATE elements_watching_by_txid SET calledback1conf=true, watching=(callbackxconf IS NOT NULL) WHERE id=${id}"
         trace_rc $?
       else
         trace "[elements_do_callbacks_txid] callback returncode has error, we don't flag as calledback yet."
@@ -44,7 +44,7 @@ elements_do_callbacks_txid() {
 
     # For the n-conf, let's only check the watched txids that are already at least 1-conf...
 
-    local callbacks=$(sql "SELECT id, txid, callbackxconf, nbxconf FROM elements_watching_by_txid WHERE watching AND calledback1conf AND callbackxconf IS NOT NULL AND NOT calledbackxconf")
+    local callbacks=$(sql "SELECT id, txid, callbackxconf, nbxconf FROM elements_watching_by_txid WHERE watching AND (calledback1conf OR callback1conf IS NULL) AND callbackxconf IS NOT NULL AND NOT calledbackxconf")
     trace "[elements_do_callbacks_txid] callbacksxconf=${callbacks}"
 
     for row in ${callbacks}

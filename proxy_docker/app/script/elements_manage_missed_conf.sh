@@ -61,14 +61,14 @@ elements_manage_missed_conf() {
   done
 
   body_file=$(mktemp)
-  echo -n "[${data}]" > ${body_file}
+  echo -n "[${data}]" > "${body_file}"
 
-  for wallet in "01" "02" "03" "04"
-  do
-    received_watches=${received_watches}$(send_batch_to_elements_spender_node "${body_file}" "${wallet}" | jq -Mc '.[] | select(.result != [] and .result != null) | .result[0]')
-  done
+  # elements_watch only accepts addresses owned by the default spending
+  # wallet, so recovery must query that same wallet. Concatenating responses
+  # from unrelated wallets can also join adjacent JSON objects invalidly.
+  received_watches=$(send_batch_to_elements_spender_node "${body_file}" | jq -Mc '.[] | select(.result != [] and .result != null) | .result[0]')
   trace "[elements_manage_missed_conf] received_watches=${received_watches}"
-  rm ${body_file}
+  rm "${body_file}"
 
   local received_watch
   local confirmations
@@ -114,15 +114,13 @@ elements_manage_missed_conf() {
       data="{\"method\":\"gettransaction\",\"params\":[\"${txid}\",true,true]}"
       trace "[elements_manage_missed_conf] calling method=${data}"
 
-      for wallet in "01" "02" "03" "04"
-      do
-        tx=$(send_to_elements_spender_node "${data}" ${wallet})
-        returncode=$?
-        trace_rc ${returncode}
-        if [ "${returncode}" -eq 0 ]; then
-          break
-        fi
-      done
+      tx=$(send_to_elements_spender_node "${data}")
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -ne 0 ]; then
+        trace "[elements_manage_missed_conf] Could not fetch txid=${txid} from the default spending wallet"
+        continue
+      fi
 
       txtime=$(echo "${tx}" | jq '.result.time')
 
