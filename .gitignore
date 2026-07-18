@@ -1,5 +1,6 @@
 .idea
 .vscode
+paymentalist_docker/target/
 dist/**
 !dist/setup.sh
 !dist/sr.sh

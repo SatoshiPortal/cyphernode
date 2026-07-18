@@ -30,15 +30,28 @@ elements_watchrequest() {
 
   local unblinded_address unblinded_address_pg
 
-  local assetid assetid_pg assetid_json
+  local assetid assetid_pg assetid_pg_where assetid_json
   assetid=$(echo "${request}" | jq -re ".assetId")
   if [ "$?" -ne "0" ]; then
     # assetId not found or null
     assetid_json="null"
     assetid_pg="null"
+    assetid_pg_where=" IS NULL"
   else
+    if [ "${#assetid}" -ne 64 ]; then
+      echo '{"result":null,"error":{"code":-8,"message":"assetId must be a 64-character hexadecimal string"}}'
+      return 1
+    fi
+    case "${assetid}" in
+      *[!0-9a-fA-F]*)
+        echo '{"result":null,"error":{"code":-8,"message":"assetId must be a 64-character hexadecimal string"}}'
+        return 1
+        ;;
+    esac
+    assetid=$(echo "${assetid}" | tr 'A-F' 'a-f')
     assetid_json="\"${assetid}\""
     assetid_pg="'${assetid}'"
+    assetid_pg_where="=${assetid_pg}"
   fi
 
   local cb0conf_url cb0conf_url_pg cb0conf_url_pg_where cb0conf_url_json
@@ -119,26 +132,34 @@ elements_watchrequest() {
     return 1
   fi
 
-  # result=$(elements_importaddress_rpc "${address}" "${label}")
-  # returncode=$?
-  # trace_rc ${returncode}
-  # if [ "${returncode}" -eq 0 ]; then
-    imported=true
-  # else
-  #   imported=false
-  # fi
+  # Elements Core cannot import an arbitrary confidential address without its
+  # blinding key.  Only accept addresses already owned by the wallet whose
+  # walletnotify stream feeds this watcher.
+  local address_info
+  local ismine
+  address_info=$(elements_getaddressinfo "${address}" true)
+  returncode=$?
+  ismine=$(echo "${address_info}" | jq -r '.result.ismine // false' 2>/dev/null)
+  unblinded_address=$(echo "${address_info}" | jq -r '.result.unconfidential // .result.address // empty' 2>/dev/null)
+  if [ "${returncode}" -ne 0 ] || [ "${ismine}" != "true" ] || [ -z "${unblinded_address}" ] || [ "${unblinded_address}" = "null" ]; then
+    result=$(jq -nc --arg address "${address}" '{result:null,error:{code:-5,message:"Elements watches require an address owned by the default spending wallet",data:{event:"elements_watch",address:$address}}}')
+    trace "[elements_watchrequest] Address is not owned by the default spending wallet"
+    trace "[elements_watchrequest] responding=${result}"
+    echo "${result}"
+    return 1
+  fi
+  imported=true
 
-  # We need to get the corresponding unblinded address to work around the elements gettransaction bug with blinded addresses
-  unblinded_address=$(elements_getaddressinfo "${address}" true | jq -r ".result.unconfidential")
+  # Store the unconfidential form because gettransaction reports that form.
   unblinded_address_pg="'${unblinded_address}'"
   trace "[elements_watchrequest] unblinded_address=${unblinded_address}"
 
   id_inserted=$(sql "INSERT INTO elements_watching (address, unblinded_address, watching, callback0conf, callback1conf, imported, event_message, watching_assetid, label)"\
 " VALUES (${address_pg}, ${unblinded_address_pg}, true, ${cb0conf_url_pg}, ${cb1conf_url_pg}, ${imported}, ${event_message_pg}, ${assetid_pg}, ${label_pg})"\
-" ON CONFLICT (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, '')) DO"\
-" UPDATE SET watching=true, event_message=${event_message_pg}, calledback0conf=false, calledback1conf=false, watching_assetid=${assetid_pg}, label=${label_pg}"\
+" ON CONFLICT (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, ''), COALESCE(watching_assetid, '')) DO"\
+" UPDATE SET watching=true, event_message=${event_message_pg}, calledback0conf=false, calledback1conf=false, label=${label_pg}"\
 " RETURNING id" \
-  "SELECT id FROM elements_watching WHERE address=${address_pg} AND callback0conf${cb0conf_url_pg_where} AND callback1conf${cb1conf_url_pg_where}")
+  "SELECT id FROM elements_watching WHERE address=${address_pg} AND callback0conf${cb0conf_url_pg_where} AND callback1conf${cb1conf_url_pg_where} AND watching_assetid${assetid_pg_where}")
   returncode=$?
   trace_rc ${returncode}
   trace "[elements_watchrequest] id_inserted=${id_inserted}"
@@ -457,7 +478,7 @@ elements_insert_watches() {
 
   sql "INSERT INTO elements_watching (address, unblinded_address, label, watching, callback0conf, callback1conf, imported, elements_watching_by_pub32_id, pub32_index)"\
 " VALUES ${inserted_values}"\
-" ON CONFLICT (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, '')) DO"\
+" ON CONFLICT (address, COALESCE(callback0conf, ''), COALESCE(callback1conf, ''), COALESCE(watching_assetid, '')) DO"\
 " UPDATE SET watching=true, calledback0conf=false, calledback1conf=false, label=${label_pg}"
   returncode=$?
   trace_rc ${returncode}
@@ -521,7 +542,7 @@ elements_watchtxidrequest() {
   local request=${1}
   trace "[elements_watchtxidrequest] request=${request}"
   local txid txid_pg txid_pg_where
-  txid=$(echo "${request}" | jq -re ".txid")
+  txid=$(echo "${request}" | jq -re '.txid | select(type == "string")')
   if [ "$?" -ne "0" ]; then
     # txid not found or null
     result='{"result":null,'\
@@ -535,12 +556,23 @@ elements_watchtxidrequest() {
 
     return 1
   else
+    if [ "${#txid}" -ne 64 ]; then
+      echo '{"result":null,"error":{"code":-8,"message":"txid must be a 64-character hexadecimal string"}}'
+      return 1
+    fi
+    case "${txid}" in
+      *[!0-9a-fA-F]*)
+        echo '{"result":null,"error":{"code":-8,"message":"txid must be a 64-character hexadecimal string"}}'
+        return 1
+        ;;
+    esac
+    txid=$(echo "${txid}" | tr 'A-F' 'a-f')
     txid_pg="'${txid}'"
   fi
   trace "[elements_watchtxidrequest] txid=${txid}, txid_pg=${txid_pg}"
 
   local cb1conf_url cb1conf_url_pg cb1conf_url_pg_where cb1conf_url_json
-  cb1conf_url=$(echo "${request}" | jq -re ".confirmedCallbackURL")
+  cb1conf_url=$(echo "${request}" | jq -re '.confirmedCallbackURL | select(type == "string" and length > 0)')
   if [ "$?" -ne "0" ]; then
     # cb1conf_url not found or null
     cb1conf_url_json="null"
@@ -554,7 +586,7 @@ elements_watchtxidrequest() {
   trace "[elements_watchtxidrequest] cb1conf_url=${cb1conf_url}, cb1conf_url_pg=${cb1conf_url_pg}, cb1conf_url_pg_where=${cb1conf_url_pg_where}, cb1conf_url_json=${cb1conf_url_json}"
 
   local cbxconf_url cbxconf_url_pg cbxconf_url_pg_where
-  cbxconf_url=$(echo "${request}" | jq -re ".xconfCallbackURL")
+  cbxconf_url=$(echo "${request}" | jq -re '.xconfCallbackURL | select(type == "string" and length > 0)')
   if [ "$?" -ne "0" ]; then
     # cbxconf_url not found or null
     cbxconf_url_json="null"
@@ -567,10 +599,22 @@ elements_watchtxidrequest() {
   fi
   trace "[elements_watchtxidrequest] cbxconf_url=${cbxconf_url}, cbxconf_url_pg=${cbxconf_url_pg}, cbxconf_url_pg_where=${cbxconf_url_pg_where}, cbxconf_url_json=${cbxconf_url_json}"
 
-  local nbxconf=$(echo "${request}" | jq ".nbxconf")
+  if [ -z "${cb1conf_url}" ] && [ -z "${cbxconf_url}" ]; then
+    echo '{"result":null,"error":{"code":-8,"message":"confirmedCallbackURL or xconfCallbackURL is required"}}'
+    return 1
+  fi
+
+  local nbxconf=1
+  if [ -n "${cbxconf_url}" ]; then
+    nbxconf=$(echo "${request}" | jq -r '.nbxconf // empty')
+    case "${nbxconf}" in
+      ''|0|*[!0-9]*)
+        echo '{"result":null,"error":{"code":-8,"message":"nbxconf must be a positive integer when xconfCallbackURL is provided"}}'
+        return 1
+        ;;
+    esac
+  fi
   trace "[elements_watchtxidrequest] nbxconf=${nbxconf}"
-  local cb1cond
-  local cbxcond
   local inserted
   local id_inserted
   trace "[elements_watchtxidrequest] Watch request on txid (${txid}), cb 1-conf (${cb1conf_url}) and cb x-conf (${cbxconf_url}) on ${nbxconf} confirmations."

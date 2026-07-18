@@ -2,31 +2,33 @@
 
 . ./trace.sh
 
-# Let's drop uniqueness constraint on unblinded_address in elements_watching
-#
+# Replace the obsolete unblinded-address uniqueness constraint with a regular
+# lookup index.  Keep DROP and CREATE in one transaction.
 
-SCRIPT_NAME="sqlmigrate20250212_0.8.0-0.9.0.sh"
+SCRIPT_NAME="sqlmigrate20250212_0.8.0-0.9.0_elements.sh"
 
-trace "[$SCRIPT_NAME] Checking if unique constraint 'elements_watching_unblinded_address_key' is in the table ..."
-table_descr=$(psql -qAtX -h postgres -U cyphernode -c "\di")
-unique_idx=$(echo $table_descr | grep 'elements_watching_unblinded_address_key')
+constraint_exists=$(psql -qAtX -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'elements_watching_unblinded_address_key' AND conrelid = 'elements_watching'::regclass);")
 returncode=$?
-if [ -n "$unique_idx" ]; then
+trace_rc ${returncode}
+[ "${returncode}" -eq 0 ] || exit ${returncode}
 
-  SQL_ST="ALTER TABLE elements_watching DROP CONSTRAINT elements_watching_unblinded_address_key"
-  trace "[$SCRIPT_NAME] $SQL_ST"
-  psql -qAtX -h postgres -U cyphernode -c "$SQL_ST"
+index_def=$(psql -qAtX -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "SELECT indexdef FROM pg_indexes WHERE schemaname = current_schema() AND indexname = 'idx_elements_watching_unblinded_address';")
+returncode=$?
+trace_rc ${returncode}
+[ "${returncode}" -eq 0 ] || exit ${returncode}
+
+index_is_current=false
+case "${index_def}" in
+  "CREATE INDEX "*"(unblinded_address)"*) index_is_current=true ;;
+esac
+
+if [ "${constraint_exists}" = "t" ] || ! ${index_is_current}; then
+  trace "[$SCRIPT_NAME] Replacing the obsolete constraint transactionally"
+  SQL_ST="BEGIN; ALTER TABLE elements_watching DROP CONSTRAINT IF EXISTS elements_watching_unblinded_address_key; DROP INDEX IF EXISTS idx_elements_watching_unblinded_address; CREATE INDEX idx_elements_watching_unblinded_address ON elements_watching (unblinded_address); COMMIT;"
+  psql -qAtX -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "${SQL_ST}"
   returncode=$?
   trace_rc ${returncode}
-
-  SQL_ST="CREATE INDEX idx_elements_watching_unblinded_address ON elements_watching (unblinded_address)"
-  trace "[$SCRIPT_NAME] $SQL_ST"
-  psql -qAtX -h postgres -U cyphernode -c "$SQL_ST"
-  returncode=$?
-  trace_rc ${returncode}
-
-  [ "${returncode}" -eq "0" ] || exit ${returncode}
-
+  [ "${returncode}" -eq 0 ] || exit ${returncode}
 else
-  trace "[$SCRIPT_NAME] Unique index elements_watching_unblinded_address_key already dropped, skipping!"
+  trace "[$SCRIPT_NAME] Constraint already removed and lookup index present, skipping!"
 fi

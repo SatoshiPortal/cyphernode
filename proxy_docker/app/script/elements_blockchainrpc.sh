@@ -76,7 +76,15 @@ elements_get_blockchain_info() {
   trace "Entering elements_get_blockchain_info()..."
 
   local data='{"method":"getblockchaininfo"}'
-  send_to_elements_watcher_node "${data}" | jq ".result"
+  local response
+  local returncode
+  response=$(send_to_elements_watcher_node "${data}")
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  echo "${response}" | jq ".result"
   return $?
 }
 
@@ -84,7 +92,15 @@ elements_get_mempool_info() {
   trace "Entering elements_get_mempool_info()..."
 
   local data='{"method":"getmempoolinfo"}'
-  send_to_elements_watcher_node "${data}" | jq ".result"
+  local response
+  local returncode
+  response=$(send_to_elements_watcher_node "${data}")
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  echo "${response}" | jq ".result"
   return $?
 }
 
@@ -92,7 +108,15 @@ elements_get_blockhash() {
   trace "Entering elements_get_blockhash()..."
   local blockheight=${1}
   local data="{\"method\":\"getblockhash\",\"params\":[${blockheight}]}"
-  send_to_elements_watcher_node "${data}" | jq ".result"
+  local response
+  local returncode
+  response=$(send_to_elements_watcher_node "${data}")
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    echo "${response}"
+    return "${returncode}"
+  fi
+  echo "${response}" | jq ".result"
   return $?
 }
 
@@ -172,7 +196,8 @@ elements_getaddressinfo() {
     trace "[elements_get_addressinfo] wallet=${wallet}"
   fi
 
-  local data="{\"method\":\"getaddressinfo\",\"params\":[\"${address}\"]}"
+  local data
+  data=$(jq -nc --arg address "${address}" '{method:"getaddressinfo",params:[$address]}')
   trace "[elements_get_addressinfo] data=${data}"
   if [ -z "${to_elements_spender_node}" ]; then
     send_to_elements_watcher_node "${data}"

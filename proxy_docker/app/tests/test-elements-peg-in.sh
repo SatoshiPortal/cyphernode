@@ -205,5 +205,7 @@ create_cb_server
 callbackservername="tests-elements-peg-in"
 
 test_elements_peg_in
+returncode=$?
 
 stop_test_container
+exit ${returncode}

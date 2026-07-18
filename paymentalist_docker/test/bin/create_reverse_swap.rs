@@ -1,11 +1,13 @@
 use boltz_client::{
     network::{Chain, LiquidChain},
     swaps::{
-        boltz::{BoltzApiClientV2, CreateReverseRequest, BOLTZ_MAINNET_URL_V2, BOLTZ_TESTNET_URL_V2},
-        magic_routing::{check_for_mrh, sign_address},
+        boltz::{
+            BoltzApiClientV2, CreateReverseRequest, BOLTZ_MAINNET_URL_V2, BOLTZ_TESTNET_URL_V2,
+        },
+        magic_routing::sign_address,
     },
-    util::{secrets::{Preimage, SwapKey}},
-    PublicKey
+    util::secrets::{Preimage, SwapKey},
+    PublicKey,
 };
 
 use clap::Parser;
@@ -34,19 +36,21 @@ async fn main() {
 
 async fn create_reverse_swap(network: &str, claim_address: &str, invoice_amount: u64) {
     let (chain, boltz_api_v2) = match network {
-        "testnet" => {
-            (Chain::Liquid(LiquidChain::LiquidTestnet), BoltzApiClientV2::new(BOLTZ_TESTNET_URL_V2))
-        }
-        "mainnet" => {
-            (Chain::Liquid(LiquidChain::Liquid), BoltzApiClientV2::new(BOLTZ_MAINNET_URL_V2))
-        }
+        "testnet" => (
+            Chain::Liquid(LiquidChain::LiquidTestnet),
+            BoltzApiClientV2::new(BOLTZ_TESTNET_URL_V2),
+        ),
+        "mainnet" => (
+            Chain::Liquid(LiquidChain::Liquid),
+            BoltzApiClientV2::new(BOLTZ_MAINNET_URL_V2),
+        ),
         _ => {
             panic!("Invalid network specified. Use 'testnet' or 'mainnet'.");
         }
     };
 
     let mnemonic: &str = "bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon";
-    let swapkey = SwapKey::from_reverse_account(mnemonic, "", chain.clone(), 0).unwrap();
+    let swapkey = SwapKey::from_reverse_account(mnemonic, "", chain, 0).unwrap();
     let our_keys = swapkey.keypair;
     let claim_public_key = PublicKey {
         compressed: true,

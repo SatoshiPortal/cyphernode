@@ -986,15 +986,24 @@ main() {
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
-            address_type=$(echo "${line}" | jq -er ".addressType // empty")
-            label=$(echo "${line}" | jq -er ".label // empty")
-            wallet=$(echo "${line}" | jq -er ".wallet // empty")
+            if ! echo "${line}" | jq -e 'type == "object"
+              and ((has("addressType") | not) or .addressType == null or (.addressType | type == "string"))
+              and ((has("label") | not) or .label == null or (.label | type == "string"))
+              and ((has("wallet") | not) or .wallet == null or (.wallet | type == "string"))' >/dev/null 2>&1; then
+              response='{"result":null,"error":{"code":-5,"message":"addressType, label, and wallet must be strings when provided"}}'
+              returncode=1
+            else
+              address_type=$(echo "${line}" | jq -r ".addressType // empty")
+              label=$(echo "${line}" | jq -r ".label // empty")
+              wallet=$(echo "${line}" | jq -r ".wallet // empty")
+              response=$(elements_getnewaddress "${address_type}" "${label}" "${wallet}")
+              returncode=$?
+            fi
           else
             address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            response=$(elements_getnewaddress "${address_type}" "" "")
+            returncode=$?
           fi
-
-          response=$(elements_getnewaddress "${address_type}" "${label}" "${wallet}")
-          returncode=$?
           ;;
         elements_spend)
           # POST http://192.168.111.152:8080/elements_spend
@@ -1021,10 +1030,15 @@ main() {
           # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0"}
           # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0", "wallet": "02"}
 
-          local address=$(echo "${line}" | jq -r ".address")
-          local wallet=$(echo "${line}" | jq -er ".wallet // empty")
-          response=$(elements_getaddressinfo "${address}" true "${wallet}")
-          returncode=$?
+          if [ "${http_method}" != "POST" ] || ! echo "${line}" | jq -e 'type == "object" and (.address | type == "string" and length > 0) and ((has("wallet") | not) or .wallet == null or (.wallet | type == "string"))' >/dev/null 2>&1; then
+            response='{"result":null,"error":{"code":-5,"message":"a non-empty address string is required; wallet must be a string when provided"}}'
+            returncode=1
+          else
+            local address=$(echo "${line}" | jq -r ".address")
+            local wallet=$(echo "${line}" | jq -r ".wallet // empty")
+            response=$(elements_getaddressinfo "${address}" true "${wallet}")
+            returncode=$?
+          fi
           ;;
         elements_watch)
           # POST http://192.168.111.152:8080/elements_watch

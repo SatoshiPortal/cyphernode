@@ -155,6 +155,23 @@
 # 2: boolean bypass_callbacks (optional)
 #
 
+elements_matching_detail() {
+  local tx_details=${1}
+  local address=${2}
+  local assetid=${3}
+
+  echo "${tx_details}" | jq -c --arg address "${address}" --arg asset "${assetid}" '
+    [
+      .details[]?
+      | select(.address == $address)
+      | select((.amount // 0) != 0)
+      | select(($asset == "") or (.asset == $asset))
+    ]
+    | sort_by(.vout)
+    | .[0] // empty
+  '
+}
+
 elements_confirmation() {
   trace "[elements_confirmation] Entering elements_confirmation()..."
 
@@ -278,36 +295,32 @@ elements_confirmation() {
     local event_message
     local watching_id
     local unblinded_address
+    local watching_assetid
+    local matching_address
+    local matching_detail
 
     # Let's see if we need to insert tx in the join table
 
     for row in ${rows}
     do
       watching_id=$(echo "${row}" | cut -d '|' -f1)
-      tx=$(sql "SELECT elements_tx_id FROM elements_watching_tx WHERE elements_tx_id=${id_inserted} and elements_watching_id=${watching_id}")
-
       address=$(echo "${row}" | cut -d '|' -f2)
       unblinded_address=$(echo "${row}" | cut -d '|' -f3)
-      tx_vout_amount=$(echo "${tx_details}" | jq ".details | map(select(.address==\"${unblinded_address}\"))[0] | .amount | fabs" | awk '{ printf "%.8f", $0 }')
-      # In the case of us spending to a watched address, the address appears twice in the details,
-      # once on the spend side (negative amount) and once on the receiving side (positive amount)
-      tx_vout_n=$(echo "${tx_details}" | jq ".details | map(select(.address==\"${unblinded_address}\"))[0] | .vout")
-      tx_vout_assetid=$(echo "${tx_details}" | jq -r ".details | map(select(.address==\"${unblinded_address}\"))[0] | .asset")
-
-      ########################################################################################################
-      # Let's now insert in the join table if not already done
-      if [ -z "${tx}" ]; then
-        trace "[elements_confirmation] For this tx, there's no watching_tx row, let's create it"
-
-        # If the tx is batched and pays multiple watched addresses, we have to insert
-        # those additional addresses in watching_tx!
-        sql "INSERT INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, '${tx_vout_assetid}')"\
-" ON CONFLICT DO NOTHING"
-        trace_rc $?
-      else
-        trace "[elements_confirmation] For this tx, there's already watching_tx rows"
+      watching_assetid=$(echo "${row}" | cut -d '|' -f7)
+      matching_address=${unblinded_address}
+      if [ -z "${matching_address}" ] || [ "${matching_address}" = "null" ]; then
+        matching_address=${address}
       fi
-      ########################################################################################################
+
+      # The spending-wallet view reports payments to xpub-watched addresses as
+      # negative send details, while a self-payment can also include a positive
+      # receive detail for the same vout.  The amount is normalized below; the
+      # address, asset, and deterministic vout identify the watched output.
+      matching_detail=$(elements_matching_detail "${tx_details}" "${matching_address}" "${watching_assetid}")
+      if [ -z "${matching_detail}" ]; then
+        trace "[elements_confirmation] No matching output for watch ${watching_id} and asset ${watching_assetid}"
+        continue
+      fi
 
       ########################################################################################################
       # Let's now grow the watch window in the case of a xpub watcher...
@@ -320,14 +333,29 @@ elements_confirmation() {
       fi
       ########################################################################################################
 
-      ########################################################################################################
-      # Let's publish the event if needed
       event_message=$(echo "${row}" | cut -d '|' -f6)
-      watching_assetid=$(echo "${row}" | cut -d '|' -f7)
-      if [ -n "${event_message}" ]; then
-        # There's an event message, let's publish it!
+      tx_vout_amount=$(echo "${matching_detail}" | jq '.amount | fabs' | awk '{ printf "%.8f", $0 }')
+      tx_vout_n=$(echo "${matching_detail}" | jq '.vout')
+      tx_vout_assetid=$(echo "${matching_detail}" | jq -r '.asset')
+      tx=$(sql "SELECT elements_tx_id FROM elements_watching_tx WHERE elements_tx_id=${id_inserted} AND elements_watching_id=${watching_id}")
 
-        trace "[elements_confirmation] mosquitto_pub -h broker -t elements_tx_confirmation -m \"{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":\"${tx_vout_assetid}\",\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}\""
+      ########################################################################################################
+      # The callback state is one-shot per watch, so persist one deterministic
+      # matching output for each watched transaction.
+      if [ -z "${tx}" ]; then
+        trace "[elements_confirmation] No watching_tx row for watch ${watching_id} and tx ${id_inserted}; creating it"
+        sql "INSERT INTO elements_watching_tx (elements_watching_id, elements_tx_id, vout, amount, assetid) VALUES (${watching_id}, ${id_inserted}, ${tx_vout_n}, ${tx_vout_amount}, '${tx_vout_assetid}')"\
+" ON CONFLICT DO NOTHING"
+        trace_rc $?
+      else
+        trace "[elements_confirmation] watching_tx row already exists for watch ${watching_id} and tx ${id_inserted}"
+      fi
+      ########################################################################################################
+
+      ########################################################################################################
+      # Publish the selected output if requested.
+      if [ -n "${event_message}" ]; then
+        trace "[elements_confirmation] Publishing elements_tx_confirmation for tx ${txid}, watch ${watching_id}, vout ${tx_vout_n}"
         response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":\"${tx_vout_assetid}\",\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
         returncode=$?
         trace_rc ${returncode}

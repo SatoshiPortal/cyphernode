@@ -2,8 +2,8 @@ use crate::api::lightning::check_bolt11_mrh;
 use crate::config::Config;
 use axum::{routing::post, Router};
 use http::server::start_server;
-use std::io;
 use std::fs;
+use std::io;
 use std::os::unix::fs::PermissionsExt;
 use tracing::{error, info};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -16,16 +16,12 @@ mod http;
 #[allow(dead_code)]
 async fn main() {
     // Set up stdout logging
-    let stdout_layer = fmt::layer()
-        .with_writer(io::stdout)
-        .with_ansi(false);
+    let stdout_layer = fmt::layer().with_writer(io::stdout).with_ansi(false);
 
     // Set up file logging
     let log_path = "/cnlogs/paymentalist.log";
     let file_appender = tracing_appender::rolling::never("/cnlogs", "paymentalist.log");
-    let file_layer = fmt::layer()
-        .with_writer(file_appender)
-        .with_ansi(false);
+    let file_layer = fmt::layer().with_writer(file_appender).with_ansi(false);
 
     // Set file permissions to 600 (rw for owner only)
     if let Ok(metadata) = fs::metadata(log_path) {

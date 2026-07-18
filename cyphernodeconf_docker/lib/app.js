@@ -497,13 +497,6 @@ module.exports = class App {
         docker: 'cyphernode/pycoin:'+this.config.docker_versions['cyphernode/pycoin']
       },
       {
-        name: 'Paymentalist',
-        label: 'paymentalist',
-        host: 'paymentalist',
-        networks: ['cyphernodenet'],
-        docker: 'cyphernode/paymentalist:'+this.config.docker_versions['cyphernode/paymentalist']
-      },
-      {
         name: 'Postgres',
         label: 'postgres',
         host: 'postgres',
@@ -536,6 +529,16 @@ module.exports = class App {
       }
 
     ];
+
+    if( this.isChecked('features', 'lightning') && this.isChecked('features', 'elements') ) {
+      features.push({
+        name: 'Paymentalist',
+        label: 'paymentalist',
+        host: 'paymentalist',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/paymentalist:'+this.config.docker_versions['cyphernode/paymentalist']
+      });
+    }
 
     const optional_features = [];
 
