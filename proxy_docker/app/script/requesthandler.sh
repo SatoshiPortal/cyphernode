@@ -1107,7 +1107,7 @@ main() {
         elements_gettransaction)
           # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
 
-          response=$(elements_get_rawtransaction $(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3))
+          response=$(elements_get_rawtransaction "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
         elements_getbestblockhash)
@@ -1141,7 +1141,7 @@ main() {
 	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
 	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
           # }
-          response=$(elements_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo ${line} | jq -r ".blockhash // empty")")
+          response=$(elements_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo "${line}" | jq -r ".blockhash // empty")")
           returncode=$?
           ;;
         elements_deriveindex)

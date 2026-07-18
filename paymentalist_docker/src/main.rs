@@ -30,9 +30,9 @@ async fn main() {
         fs::set_permissions(log_path, permissions).expect("Failed to set log file permissions");
     }
 
-    // Set up environment filter with a default that's very permissive
+    // Set up environment filter
     let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,paymentalist=debug,tower_http=debug"));
+        .unwrap_or_else(|_| EnvFilter::new("info,paymentalist=info,tower_http=info"));
 
     // Register all layers
     tracing_subscriber::registry()
