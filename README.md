@@ -6,7 +6,7 @@ Modular Bitcoin full-node microservices API server architecture and utilities to
 
 Cyphernode is a Free open-source alternative to hosted services and commercial Bitcoin APIs such as Blockchain.info, Bitpay, Coinbase, BlockCypher, Bitgo, etc. You can use it to build Bitcoin services and applications using your own Bitcoin and Lightning Network full nodes. It is a substitute for the Bitcore and Insight software projects.
 
-It implements a self-hosted API which allows you to spawn and call your encrypted overlay network of dockerized Bitcoin and crypto software projects (virtual machines). The Docker containers used in this project are hosted at www.bitcoindockers.com.
+It implements a self-hosted API which allows you to spawn and call your encrypted overlay network of dockerized Bitcoin and crypto software projects (virtual machines).
 
 It aims to offer all advanced features and utilities necessary to operate entreprise-grade Bitcoin services.  It includes a curated list of functions using multiple software, but you can build your own private ones or add yours as a default option in the project.
 
