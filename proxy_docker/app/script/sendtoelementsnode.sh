@@ -138,6 +138,10 @@ send_batch_to_elements_node() {
   return ${returncode}
 }
 
+# Whitelist of spending wallet name suffixes accepted in requests.
+# Only spending01.dat is created by createWallets.sh; 02-04 are reserved
+# for operator-created wallets (same convention as the Bitcoin spender)
+# and return "wallet does not exist" from elementsd until created.
 validate_elements_spender_wallet() {
   case "${1}" in
     01|02|03|04) return 0 ;;
