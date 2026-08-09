@@ -1086,12 +1086,6 @@ main() {
           response=$(elements_confirmation_request "${line}")
           returncode=$?
           ;;
-        elements_newblock)
-          # curl (GET) 192.168.111.152:8080/elements_newblock/c7168456b69248e166a0a39ed61dbb19623de0d65789a20d5b39bc6b4371dfbb
-
-          response=$(elements_newblock "${line}")
-          returncode=$?
-          ;;
         elements_getbalance)
           # curl (GET) http://192.168.111.152:8080/elements_getbalance
           # curl (GET) http://192.168.111.152:8080/elements_getbalance/01 (spending wallet number)

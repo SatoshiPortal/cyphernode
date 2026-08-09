@@ -257,7 +257,9 @@ pass "wallet notifications preserve spender and watch-only wallet semantics"
 
 GATEKEEPER_API_TEMPLATE=${SCRIPT_DIR}/../../../cyphernodeconf_docker/templates/gatekeeper/api.properties
 grep -Fx 'action_elements_conf=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null || fail "elements_conf is not marked internal in generated gatekeeper api.properties"
-grep -Fx 'action_elements_newblock=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null || fail "elements_newblock is not marked internal in generated gatekeeper api.properties"
+if grep -Fx 'action_elements_newblock=internal' "${GATEKEEPER_API_TEMPLATE}" >/dev/null; then
+  fail "stale elements_newblock endpoint registration resurfaced in gatekeeper api.properties (new blocks flow through MQTT newtip, not HTTP)"
+fi
 pass "generated gatekeeper config allows internal Elements callbacks"
 
 . ./elements_unwatchrequest.sh
