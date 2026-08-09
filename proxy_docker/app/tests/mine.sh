@@ -2,7 +2,11 @@
 
 # This needs to be run in regtest
 
-# This will mine n blocks.  If n is not supplied, will mine 1 block.
+# Direct invocation mines n blocks (1 if n is not supplied):
+#   ./mine.sh [nbblocks]            mine bitcoin blocks
+#   ./mine.sh bitcoin [nbblocks]    mine bitcoin blocks
+#   ./mine.sh elements [nbblocks]   mine elements blocks
+# Sourcing this file only defines helpers, with no side effects.
 
 # Mine
 container_by_service() {
@@ -99,7 +103,12 @@ elements_mine() {
   docker exec "${container_id}" elements-cli -rpcwallet=spending01.dat -generate ${nbblocks}
 }
 
-case "${1}" in
-  elements) shift; elements_mine $@;;
-  bitcoin) shift; mine $@;;
+case "${0}" in
+  *mine.sh)
+    case "${1}" in
+      elements) shift; elements_mine "$@";;
+      bitcoin) shift; mine "$@";;
+      *) mine "$@";;
+    esac
+    ;;
 esac
