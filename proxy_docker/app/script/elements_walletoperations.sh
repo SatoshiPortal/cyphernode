@@ -94,13 +94,17 @@ elements_spend() {
     else
       # There's an event message, let's publish it!
 
-      if [ "${assetid}" = "null" ]; then
-        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}\""
-        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"eventMessage\":\"${event_message}\"}")
-      else
-        trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m \"{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":\"${assetid}\",\"eventMessage\":\"${event_message}\"}\""
-        response=$(mosquitto_pub -h broker -t elements_spend -m "{\"txid\":\"${txid}\",\"address\":\"${address}\",\"unblinded_address\":\"${unblinded_address}\",\"amount\":${tx_amount},\"assetId\":\"${assetid}\",\"eventMessage\":\"${event_message}\"}")
-      fi
+      local event_payload
+      event_payload=$(jq -nc \
+        --arg txid "${txid}" \
+        --arg address "${address}" \
+        --arg unblinded_address "${unblinded_address}" \
+        --argjson amount "${tx_amount}" \
+        --arg assetid "${assetid}" \
+        --arg eventMessage "${event_message}" \
+        '{txid: $txid, address: $address, unblinded_address: $unblinded_address, amount: $amount} + (if $assetid == "null" then {} else {assetId: $assetid} end) + {eventMessage: $eventMessage}')
+      trace "[elements_spend] mosquitto_pub -h broker -t elements_spend -m ${event_payload}"
+      response=$(mosquitto_pub -h broker -t elements_spend -m "${event_payload}")
       event_returncode=$?
       trace_rc ${event_returncode}
       if [ "${event_returncode}" -ne 0 ]; then

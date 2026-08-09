@@ -49,7 +49,7 @@ check_bolt11_mrh() {
   trace "[check_bolt11_mrh] network=${network}"
   local result
 
-  local data="{\"invoice\": \"${bolt11}\", \"network\": \"${network}\"}"
+  local data=$(jq -nc --arg invoice "${bolt11}" --arg network "${network}" '{invoice: $invoice, network: $network}')
   trace "[check_bolt11_mrh] data=${data}"
 
   result=$(send_to_paymentalist "/check_bolt11_mrh" "${data}")

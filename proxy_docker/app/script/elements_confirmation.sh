@@ -375,7 +375,20 @@ elements_confirmation() {
       # Publish the selected output if requested.
       if [ -n "${event_message}" ]; then
         trace "[elements_confirmation] Publishing elements_tx_confirmation for tx ${txid}, watch ${watching_id}, vout ${tx_vout_n}"
-        response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "{\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"vout_n\":${tx_vout_n},\"amount\":${tx_vout_amount},\"watchingAssetId\":\"${watching_assetid}\",\"assetId\":\"${tx_vout_assetid}\",\"confirmations\":${tx_nb_conf},\"eventMessage\":\"${event_message}\"}")
+        local event_payload
+        event_payload=$(jq -nc \
+          --arg txid "${txid}" \
+          --arg hash "${tx_hash}" \
+          --arg address "${address}" \
+          --arg unblindedAddress "${unblinded_address}" \
+          --argjson vout_n "${tx_vout_n}" \
+          --argjson amount "${tx_vout_amount}" \
+          --arg watchingAssetId "${watching_assetid}" \
+          --arg assetId "${tx_vout_assetid}" \
+          --argjson confirmations "${tx_nb_conf}" \
+          --arg eventMessage "${event_message}" \
+          '{txid: $txid, hash: $hash, address: $address, unblindedAddress: $unblindedAddress, vout_n: $vout_n, amount: $amount, watchingAssetId: $watchingAssetId, assetId: $assetId, confirmations: $confirmations, eventMessage: $eventMessage}')
+        response=$(mosquitto_pub -h broker -t elements_tx_confirmation -m "${event_payload}")
         returncode=$?
         trace_rc ${returncode}
       fi
