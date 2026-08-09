@@ -265,9 +265,11 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
-          response=$(elements_manage_not_imported)
-          response=$(elements_manage_missed_conf)
-          response=$(elements_do_callbacks)
+          if [ "${FEATURE_ELEMENTS}" = "true" ]; then
+            response=$(elements_manage_not_imported)
+            response=$(elements_manage_missed_conf)
+            response=$(elements_do_callbacks)
+          fi
           response=$(manage_not_imported)
           response=$(manage_missed_conf)
           response=$(do_callbacks)
