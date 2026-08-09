@@ -119,12 +119,20 @@ elements_spend() {
 " RETURNING id" \
     "SELECT id FROM elements_tx WHERE txid='${txid}'")
     trace_rc $?
-    sql "INSERT INTO elements_recipient (address, unblinded_address, amount, elements_tx_id, assetid) VALUES ('${address}', '${unblinded_address}', ${amount}, ${id_inserted}, '${assetid}')"\
+    # jq -r turns an omitted assetId into the string "null"; don't persist
+    # or report that sentinel as if it were an asset id
+    local assetid_sql="'${assetid}'"
+    local assetid_json="\"${assetid}\""
+    if [ "${assetid}" = "null" ]; then
+      assetid_sql="NULL"
+      assetid_json="null"
+    fi
+    sql "INSERT INTO elements_recipient (address, unblinded_address, amount, elements_tx_id, assetid) VALUES ('${address}', '${unblinded_address}', ${amount}, ${id_inserted}, ${assetid_sql})"\
 " ON CONFLICT DO NOTHING"
     trace_rc $?
 
     data="{\"status\":\"accepted\""
-    data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"amount\":${amount},\"assetId\":\"${assetid}\",\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
+    data="${data},\"txid\":\"${txid}\",\"hash\":\"${tx_hash}\",\"details\":{\"address\":\"${address}\",\"unblindedAddress\":\"${unblinded_address}\",\"amount\":${amount},\"assetId\":${assetid_json},\"firstseen\":${tx_ts_firstseen},\"size\":${tx_size},\"vsize\":${tx_vsize},\"replaceable\":${tx_replaceable},\"fee\":${fees},\"subtractfeefromamount\":${subtractfeefromamount}}}"
   else
     local message=$(echo "${response}" | jq -e ".error.message")
     data="{\"message\":${message}}"
