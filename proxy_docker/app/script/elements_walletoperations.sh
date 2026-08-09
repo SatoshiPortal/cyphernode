@@ -176,9 +176,9 @@ elements_bumpfee() {
   trace "[elements_bumpfee] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    trace "[elements_bumpfee] error!"
-  else
     trace "[elements_bumpfee] success!"
+  else
+    trace "[elements_bumpfee] error!"
   fi
 
   echo "${response}"
