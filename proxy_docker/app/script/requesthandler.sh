@@ -27,7 +27,6 @@
 . ./elements_blockchainrpc.sh
 . ./elements_manage_missed_conf.sh
 . ./elements_walletoperations.sh
-. ./elements_getactivewatches.sh
 . ./elements_pegin.sh
 . ./elements_pegout.sh
 . ./paymentalist.sh
