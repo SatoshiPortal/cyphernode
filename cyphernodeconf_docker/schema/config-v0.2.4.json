@@ -544,7 +544,7 @@
       "$id": "#/properties/lightning_expose",
       "type": "boolean",
       "title": "Expose lightning node",
-      "default": false,
+      "default": true,
       "examples": [
         false
       ]
