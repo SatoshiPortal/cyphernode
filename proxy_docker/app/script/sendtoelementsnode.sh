@@ -78,6 +78,12 @@ send_getbalances_to_elements_spender_wallet_name()
   encoded_walletname=$(printf '%s' "${walletname}" | jq -sRr '@uri')
   returncode=$?
   trace_rc ${returncode}
+  # curl normalizes literal dot path segments, which would rewrite the
+  # /wallet/<name> RPC target; encode dot-only names so they survive.
+  case "${walletname}" in
+    .) encoded_walletname='%2E' ;;
+    ..) encoded_walletname='%2E%2E' ;;
+  esac
   if [ "${returncode}" -ne 0 ] || [ -z "${encoded_walletname}" ]; then
     trace "[send_getbalances_to_elements_spender_wallet_name] Could not encode wallet name"
     return 1
