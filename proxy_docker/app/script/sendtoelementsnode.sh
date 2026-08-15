@@ -99,6 +99,36 @@ send_getbalances_to_elements_spender_wallet_name()
   return ${returncode}
 }
 
+# Deliberately omits curl --fail so elementsd's JSON-RPC error bodies survive
+# to the caller instead of collapsing into one opaque upstream error (matters
+# for method-not-found, PAK freeze, insufficient funds...).
+send_to_elements_spender_wallet_name()
+{
+  trace "Entering send_to_elements_spender_wallet_name()..."
+  local walletname=${1:-}
+  local data=${2:-}
+  local encoded_walletname returncode result
+  [ -n "${walletname}" ] && [ -n "${data}" ] || return 1
+  encoded_walletname=$(printf '%s' "${walletname}" | jq -sRr '@uri') || return 1
+  [ -n "${encoded_walletname}" ] || return 1
+  result=$(curl -m 60 --show-error --silent --path-as-is --config "${SPENDER_ELEMENTS_NODE_RPC_CFG}" -H "Content-Type: application/json" --data "${data}" --url "${SPENDER_ELEMENTS_NODE_RPC_URL}/${encoded_walletname}")
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -eq 0 ]; then
+    if ! printf '%s' "${result}" | jq -e 'type == "object" and has("result") and has("error")' >/dev/null 2>&1; then
+      trace "[send_to_elements_spender_wallet_name] Node returned an invalid JSON-RPC response"
+      result=""
+      returncode=1
+    elif ! printf '%s' "${result}" | jq -e '.error == null' >/dev/null 2>&1; then
+      trace "[send_to_elements_spender_wallet_name] Node responded, error found in response"
+      returncode=1
+    fi
+  fi
+  echo "${result}"
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_to_elements_node()
 {
   trace "Entering send_to_elements_node()..."
