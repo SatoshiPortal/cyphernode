@@ -718,11 +718,14 @@ getbalance() {
 getbalances() {
   trace "Entering getbalances()..."
 
-  local wallet=${1:-}
+  local wallet_selector=${1:-}
+  local wallet_name=${2:-}
   local response
   local data='{"method":"getbalances"}'
-  if [ -n "${wallet}" ]; then
-    response=$(send_to_spender_node "${data}" "${wallet}")
+  if [ -n "${wallet_name}" ]; then
+    response=$(send_getbalances_to_spender_wallet_name "${wallet_name}")
+  elif [ -n "${wallet_selector}" ]; then
+    response=$(send_to_spender_node "${data}" "${wallet_selector}")
   else
     response=$(send_to_spender_node "${data}")
   fi
@@ -731,10 +734,21 @@ getbalances() {
   trace "[getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local balances=$(echo "${response}" | jq ".result")
-    trace "[getbalances] balances=${balances}"
-
-    data="{\"balances\":${balances}}"
+    local balances
+    balances=$(printf '%s' "${response}" | jq -ce '.result | select(type == "object")')
+    if [ "$?" -ne 0 ]; then
+      trace "[getbalances] Node returned invalid balance data"
+      returncode=1
+      data=""
+    else
+      trace "[getbalances] balances=${balances}"
+      data=$(jq -cn --argjson balances "${balances}" '{balances: $balances}')
+      if [ "$?" -ne 0 ]; then
+        trace "[getbalances] Could not encode balance response"
+        returncode=1
+        data=""
+      fi
+    fi
   else
     trace "[getbalances] Couldn't get balances!"
     data=""
