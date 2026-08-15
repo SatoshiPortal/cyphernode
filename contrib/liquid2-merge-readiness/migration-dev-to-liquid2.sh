@@ -107,6 +107,35 @@ pass "candidate migrations completed from origin/dev schema"
 run_migrations
 pass "candidate migrations are idempotent on second run"
 
+# The origin/dev seed has no Elements tables, so the first run creates them
+# fresh with the final 4-column index and the asset-index migration takes its
+# skip branch — its DROP/CREATE is never exercised. Simulate a real
+# pre-liquid2 install by downgrading the index to the old 3-column form (with
+# a live watch row present), then re-run: this forces the migration's
+# transactional DROP/CREATE to execute against existing data.
+docker run --rm --network "$network_name" "$PROXY_IMAGE" sh -c '
+  set -e
+  psql -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "
+    DROP INDEX IF EXISTS idx_elements_watching_01;
+    CREATE UNIQUE INDEX idx_elements_watching_01 ON elements_watching (address, COALESCE(callback0conf, '\'''\''), COALESCE(callback1conf, '\'''\''));
+    INSERT INTO elements_watching (address, unblinded_address, watching, callback0conf, callback1conf, watching_assetid, imported)
+    VALUES ('\''ert1qliquid2migrationelementswatch00000000000000'\'', '\''ert1qliquid2migrationelementswatch00000000000000'\'', true, '\''http://127.0.0.1:1/0conf'\'', '\''http://127.0.0.1:1/1conf'\'', '\''6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d'\'', true);
+  " >/dev/null
+'
+pass "downgraded Elements watch index to the pre-liquid2 3-column form with a live watch row"
+
+run_migrations
+pass "candidate migrations upgraded the pre-liquid2 3-column index"
+
+docker run --rm --network "$network_name" "$PROXY_IMAGE" sh -c '
+  set -e
+  psql -qAtX -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "
+    SELECT COALESCE((SELECT indexdef LIKE '\''%COALESCE(watching_assetid%'\'' FROM pg_indexes WHERE indexname = '\''idx_elements_watching_01'\''), false);
+    SELECT COUNT(*) = 1 FROM elements_watching WHERE watching_assetid = '\''6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d'\'';
+  " | grep -qxF f && exit 1 || exit 0
+'
+pass "asset-index migration executed its DROP/CREATE and preserved the pre-existing watch row"
+
 docker run --rm --network "$network_name" "$PROXY_IMAGE" sh -c '
   set -e
   psql -qAtX -v ON_ERROR_STOP=1 -h postgres -U cyphernode -c "
@@ -115,7 +144,7 @@ docker run --rm --network "$network_name" "$PROXY_IMAGE" sh -c '
     SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '\''elements_watching'\'');
     SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = '\''elements_watching_by_txid'\'');
     SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '\''elements_watching'\'' AND column_name = '\''watching_assetid'\'');
-    SELECT indexdef LIKE '\''%COALESCE(watching_assetid%'\'' FROM pg_indexes WHERE indexname = '\''idx_elements_watching_01'\'';
+    SELECT COALESCE((SELECT indexdef LIKE '\''%COALESCE(watching_assetid%'\'' FROM pg_indexes WHERE indexname = '\''idx_elements_watching_01'\''), false);
   " | grep -qxF f && exit 1 || exit 0
 '
 pass "Bitcoin data survived and Liquid tables/indexes exist after migration"
