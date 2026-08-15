@@ -54,6 +54,39 @@ send_to_spender_node() {
   return ${returncode}
 }
 
+# Read balances from one exact, operator-configured wallet name. This is kept
+# separate from send_to_spender_node(), whose optional argument is a legacy
+# numeric selector used by all spender operations.
+send_getbalances_to_spender_wallet_name() {
+  trace "Entering send_getbalances_to_spender_wallet_name()..."
+
+  local walletname=${1:-}
+  local encoded_walletname
+  local returncode
+
+  if [ -z "${walletname}" ]; then
+    trace "[send_getbalances_to_spender_wallet_name] Missing wallet name"
+    return 1
+  fi
+
+  encoded_walletname=$(printf '%s' "${walletname}" | jq -sRr '@uri')
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -ne 0 ] || [ -z "${encoded_walletname}" ]; then
+    trace "[send_getbalances_to_spender_wallet_name] Could not encode wallet name"
+    return 1
+  fi
+
+  trace "[send_getbalances_to_spender_wallet_name] wallet: ${walletname}"
+  send_to_bitcoin_node \
+    "${SPENDER_BTC_NODE_RPC_URL}/${encoded_walletname}" \
+    "${SPENDER_BTC_NODE_RPC_CFG}" \
+    '{"method":"getbalances"}'
+  returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_to_bitcoin_node() {
   trace "Entering send_to_bitcoin_node()..."
   local returncode

@@ -31,6 +31,19 @@
 . ./elements_pegout.sh
 . ./paymentalist.sh
 
+wallet_name_from_request() {
+  printf '%s' "${1:-}" | jq -er '
+    if type == "object"
+      and (.walletName | type) == "string"
+      and (.walletName | length) > 0
+      and (.walletName | length) <= 255
+      and ((.walletName | test("[[:cntrl:]]")) | not)
+    then .walletName
+    else error("invalid walletName")
+    end
+  '
+}
+
 main() {
   trace "Entering main()..."
 
@@ -295,14 +308,25 @@ main() {
         getbalances)
           # curl (GET) http://192.168.111.152:8080/getbalances
           # curl (GET) http://192.168.111.152:8080/getbalances/01 (spending wallet number)
+          # curl -H "Content-Type: application/json" -d '{"walletName":"treasury wallet.dat"}' http://192.168.111.152:8080/getbalances
 
-          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
-          if [ "${walletname}" = "getbalances" ]; then
-            walletname=""
+          if [ "${http_method}" = "POST" ]; then
+            if walletname=$(wallet_name_from_request "${line}"); then
+              response=$(getbalances "" "${walletname}")
+              returncode=$?
+            else
+              response='{"error":{"code":-32602,"message":"walletName must be a non-empty string of at most 255 characters without control characters"},"id":"1"}'
+              returncode=1
+            fi
+          else
+            walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            if [ "${walletname}" = "getbalances" ]; then
+              walletname=""
+            fi
+
+            response=$(getbalances "${walletname}")
+            returncode=$?
           fi
-
-          response=$(getbalances "${walletname}")
-          returncode=$?
           ;;
         getbalancebyxpub)
           # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
@@ -1098,6 +1122,29 @@ main() {
 
           response=$(elements_getbalance "${wallet}")
           returncode=$?
+          ;;
+        elements_getbalances)
+          # curl (GET) http://192.168.111.152:8080/elements_getbalances
+          # curl (GET) http://192.168.111.152:8080/elements_getbalances/01 (spending wallet number)
+          # curl -H "Content-Type: application/json" -d '{"walletName":"liquid/reserve.dat"}' http://192.168.111.152:8080/elements_getbalances
+
+          if [ "${http_method}" = "POST" ]; then
+            if walletname=$(wallet_name_from_request "${line}"); then
+              response=$(elements_getbalances "" "${walletname}")
+              returncode=$?
+            else
+              response='{"error":{"code":-32602,"message":"walletName must be a non-empty string of at most 255 characters without control characters"},"id":"1"}'
+              returncode=1
+            fi
+          else
+            wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            if [ "${wallet}" = "elements_getbalances" ]; then
+              wallet=""
+            fi
+
+            response=$(elements_getbalances "${wallet}")
+            returncode=$?
+          fi
           ;;
         elements_gettransaction)
           # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
