@@ -181,9 +181,11 @@ verify_group() {
   trace "[verify_group] needed_group=${needed_group}"
 
   # If needed_group is empty, the action was not found in api.propeties.
+  # Comma-anchored match: group names must match as whole tokens so a group
+  # can never be granted because its name is a substring of another group.
   if [ -n "${needed_group}" ]; then
-    case "${ugroups}" in
-      *${needed_group}*) trace "[verify_group] Access granted"; return 0 ;;
+    case ",${ugroups}," in
+      *",${needed_group},"*) trace "[verify_group] Access granted"; return 0 ;;
     esac
   fi
 
