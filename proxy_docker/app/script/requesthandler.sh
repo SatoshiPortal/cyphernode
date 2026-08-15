@@ -1143,7 +1143,7 @@ main() {
           # curl (GET) http://192.168.111.152:8080/elements_getbalance/01 (spending wallet number)
 
           wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
-          if [ "${wallet}" = "getbalance" ]; then
+          if [ "${wallet}" = "elements_getbalance" ]; then
             wallet=""
           fi
 
@@ -1240,7 +1240,7 @@ main() {
           # curl GET http://192.168.111.152:8080/elements_getpeginaddress/01
 
           wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
-          if [ "${wallet}" = "getbalance" ]; then
+          if [ "${wallet}" = "elements_getpeginaddress" ]; then
             wallet=""
           fi
           response=$(elements_getpeginaddress "${wallet}")

@@ -100,10 +100,14 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
+    <% if ( bitcoin_mode === 'internal' || features.indexOf('tor') !== -1 ) { %>
     depends_on:
+    <% if ( bitcoin_mode === 'internal' ) { %>
       - bitcoin
+    <% } %>
     <% if ( features.indexOf('tor') !== -1 ) { %>
       - tor
+    <% } %>
     <% } %>
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
@@ -237,10 +241,14 @@ services:
     stop_grace_period: 30s
     networks:
       - cyphernodenet
+    <% if ( bitcoin_mode === 'internal' || features.indexOf('tor') !== -1 ) { %>
     depends_on:
+    <% if ( bitcoin_mode === 'internal' ) { %>
       - bitcoin
+    <% } %>
     <% if ( features.indexOf('tor') !== -1 ) { %>
       - tor
+    <% } %>
     <% } %>
     <% if ( docker_mode === 'swarm' ) { %>
     deploy:
