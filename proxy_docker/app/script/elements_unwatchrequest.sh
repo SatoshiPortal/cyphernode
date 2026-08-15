@@ -10,9 +10,10 @@ elements_unwatchrequest() {
   local address=${2}
   local unconfirmedCallbackURL=${3}
   local confirmedCallbackURL=${4}
+  local assetId=${5}
   local returncode
 
-  trace "[elements_unwatchrequest] Unwatch request id ${watchid} on address \"${address}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\""
+  trace "[elements_unwatchrequest] Unwatch request id ${watchid} on address \"${address}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\" asset \"${assetId}\""
 
   if [ "${watchid}" != "null" ]; then
     case "${watchid}" in
@@ -29,7 +30,8 @@ elements_unwatchrequest() {
   else
     local cb0_where=
     local cb1_where=
-    local address_pg address_json cb0_json cb1_json
+    local asset_where=
+    local address_pg address_json cb0_json cb1_json asset_json
 
     if [ "${address}" = "null" ] || [ -z "${address}" ]; then
       echo '{"result":null,"error":{"code":-5,"message":"address or id required"}}'
@@ -37,6 +39,16 @@ elements_unwatchrequest() {
     fi
     address_pg=$(sql_string_literal "${address}")
     address_json=$(json_string_literal "${address}")
+
+    # An asset-scoped watch identity means one address can carry several
+    # watches. When the caller names an asset, target only that one; otherwise
+    # preserve the historical behavior of clearing every asset on the address.
+    if [ "${assetId}" != "null" ] && [ -n "${assetId}" ]; then
+      asset_where=" AND watching_assetid=$(sql_string_literal "${assetId}")"
+      asset_json=$(json_string_literal "${assetId}")
+    else
+      asset_json="null"
+    fi
 
     if [ "${unconfirmedCallbackURL}" != "null" ]; then
       cb0_where=" AND callback0conf=$(sql_string_literal "${unconfirmedCallbackURL}")"
@@ -51,11 +63,14 @@ elements_unwatchrequest() {
       cb1_json="null"
     fi
 
-    sql "UPDATE elements_watching SET watching=false WHERE address=${address_pg}${cb0_where}${cb1_where}"
+    # Match either the confidential or the unconfidential form: watches are
+    # found by (address OR unblinded_address) elsewhere, and the watch response
+    # returns both, so a caller may hold either one.
+    sql "UPDATE elements_watching SET watching=false WHERE (address=${address_pg} OR unblinded_address=${address_pg})${cb0_where}${cb1_where}${asset_where}"
     returncode=$?
     trace_rc ${returncode}
 
-    data="{\"event\":\"elements_unwatch\",\"address\":${address_json},\"unconfirmedCallbackURL\":${cb0_json},\"confirmedCallbackURL\":${cb1_json}}"
+    data="{\"event\":\"elements_unwatch\",\"address\":${address_json},\"unconfirmedCallbackURL\":${cb0_json},\"confirmedCallbackURL\":${cb1_json},\"assetId\":${asset_json}}"
   fi
 
   trace "[elements_unwatchrequest] responding=${data}"
