@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . ./trace.sh
+. ./sql.sh
 . ./sendtoelementsnode.sh
 
 elements_spend() {
@@ -296,7 +297,10 @@ elements_getbalancebyxpublabel() {
   trace "[elements_getbalancebyxpublabel] label=${label}"
   local xpub
 
-  xpub=$(sql "SELECT pub32 FROM elements_watching_by_pub32 WHERE label='${label}'")
+  # label is API-supplied: quote it as a SQL literal rather than splicing it
+  # into the statement. This path has no route today, but an unescaped literal
+  # must not be waiting here for whoever wires one.
+  xpub=$(sql "SELECT pub32 FROM elements_watching_by_pub32 WHERE label=$(sql_string_literal "${label}")")
   trace "[elements_getbalancebyxpublabel] xpub=${xpub}"
 
   elements_getbalancebyxpub "${xpub}" "elements_getbalancebyxpublabel"

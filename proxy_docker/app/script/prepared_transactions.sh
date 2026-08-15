@@ -266,29 +266,6 @@ prepared_pegin_claim() {
   prepared_save "${request}" "${result}"
 }
 
-prepared_pak_pegout() {
-  local request=$1 cached_status response wallet maximum_fee amount result
-  if ! prepared_validate_common "${request}" || ! printf '%s' "${request}" | jq -e '
-      .leg == "pegout" and (.amountSatoshis | type == "string" and test("^[1-9][0-9]*$"))
-    ' >/dev/null 2>&1; then
-    prepared_error "invalid prepared PAK peg-out request"; return 1
-  fi
-  response=$(prepared_cached_response "${request}"); cached_status=$?
-  if [ "${cached_status}" -eq 0 ]; then printf '%s\n' "${response}"; return 0; fi
-  if [ "${cached_status}" -ne 2 ]; then [ -n "${response}" ] && printf '%s\n' "${response}"; return 1; fi
-  wallet=$(printf '%s' "${request}" | jq -r '.wallet')
-  maximum_fee=$(printf '%s' "${request}" | jq -r '.maximumFeeSatoshis')
-  amount=$(prepared_btc_amount "$(printf '%s' "${request}" | jq -r '.amountSatoshis')") || return 1
-  # preparetomainchain is supplied by the companion Elements patch. It signs,
-  # reserves the PAK counter, and returns bytes without committing them.
-  response=$(prepared_rpc elements "${wallet}" "$(jq -cn --argjson amount "${amount}" --arg maxFee "${maximum_fee}" '{method:"preparetomainchain",params:[$amount,$maxFee]}')") || { printf '%s\n' "${response}"; return 1; }
-  result=$(printf '%s' "${response}" | jq -ec --arg maxFee "${maximum_fee}" '
-    .result | select((.feeSatoshis | test("^[0-9]+$")) and ((.feeSatoshis | tonumber) <= ($maxFee | tonumber))) |
-    {signedHex,expectedTxid,feeSatoshis,outputAmountSatoshis,outputAddress:.bitcoinAddress,bitcoinAddress,bitcoinDescriptor,bip32Counter}
-  ') || { prepared_error "preparetomainchain returned invalid or over-budget evidence"; return 1; }
-  prepared_save "${request}" "${result}"
-}
-
 prepared_broadcast() {
   local chain=$1 request=$2 response txid wallet payload
   if ! printf '%s' "${request}" | jq -e '

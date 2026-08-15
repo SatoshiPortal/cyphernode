@@ -110,10 +110,6 @@ main() {
           response=$(prepared_pegin_claim "${line}")
           returncode=$?
           ;;
-        elements_prepare_pak_pegout)
-          response=$(prepared_pak_pegout "${line}")
-          returncode=$?
-          ;;
         sendrawtransaction_exact)
           response=$(prepared_broadcast bitcoin "${line}")
           returncode=$?

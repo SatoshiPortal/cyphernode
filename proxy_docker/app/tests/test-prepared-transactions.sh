@@ -66,9 +66,6 @@ send_to_elements_spender_wallet_name() {
       fi
       ;;
     lockunspent) printf '%s\n' '{"result":true,"error":null,"id":"1"}' ;;
-    preparetomainchain)
-      printf '%s\n' '{"result":{"signedHex":"06","expectedTxid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","feeSatoshis":"500","outputAmountSatoshis":"101000","bitcoinAddress":"bc1qpak","bitcoinDescriptor":"wpkh(xpub/0/*)#sum","bip32Counter":7},"error":null,"id":"1"}'
-      ;;
     *) return 1 ;;
   esac
 }
@@ -80,15 +77,6 @@ printf '%s' "${response}" | jq -e '
   and .result.expectedTxid == "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
   and .result.outputAmountSatoshis == "100000"
   and .result.outputAddress == "el1qdestination"
-' >/dev/null
-
-pak_request='{"operationId":"00000000-0000-4000-8000-000000000002","leg":"pegout","wallet":"elements-pegout.dat","amountSatoshis":"101000","maximumFeeSatoshis":"1000"}'
-response=$(prepared_pak_pegout "${pak_request}")
-printf '%s' "${response}" | jq -e '
-  .error == null
-  and .result.bitcoinAddress == "bc1qpak"
-  and .result.outputAddress == "bc1qpak"
-  and .result.bip32Counter == 7
 ' >/dev/null
 
 # A rejected prepare must release the inputs fundrawtransaction locked: the
