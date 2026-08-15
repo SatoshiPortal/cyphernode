@@ -1091,6 +1091,7 @@ main() {
           local unconfirmedCallbackURL="null"
           local confirmedCallbackURL="null"
           local watchid="null"
+          local assetId="null"
 
           # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
           if [ "$http_method" = "POST" ]; then
@@ -1098,11 +1099,12 @@ main() {
             unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
             confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
             watchid=$(echo "${line}" | jq ".id")
+            assetId=$(echo "${line}" | jq -r ".assetId")
           else
             address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           fi
 
-          response=$(elements_unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+          response=$(elements_unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}" "${assetId}")
           returncode=$?
           ;;
         elements_conf)
