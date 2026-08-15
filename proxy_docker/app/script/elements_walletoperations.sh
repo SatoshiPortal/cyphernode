@@ -247,18 +247,37 @@ elements_getbalance() {
 elements_getbalances() {
   trace "Entering elements_getbalances()..."
 
+  local wallet_selector=${1:-}
+  local wallet_name=${2:-}
   local response
   local data='{"method":"getbalances"}'
-  response=$(send_to_elements_spender_node "${data}")
+  if [ -n "${wallet_name}" ]; then
+    response=$(send_getbalances_to_elements_spender_wallet_name "${wallet_name}")
+  elif [ -n "${wallet_selector}" ]; then
+    response=$(send_to_elements_spender_node "${data}" "${wallet_selector}")
+  else
+    response=$(send_to_elements_spender_node "${data}")
+  fi
   local returncode=$?
   trace_rc ${returncode}
   trace "[elements_getbalances] response=${response}"
 
   if [ "${returncode}" -eq 0 ]; then
-    local balances=$(echo "${response}" | jq ".result")
-    trace "[elements_getbalances] balances=${balances}"
-
-    data="{\"balances\":${balances}}"
+    local balances
+    balances=$(printf '%s' "${response}" | jq -ce '.result | select(type == "object")')
+    if [ "$?" -ne 0 ]; then
+      trace "[elements_getbalances] Node returned invalid balance data"
+      returncode=1
+      data=""
+    else
+      trace "[elements_getbalances] balances=${balances}"
+      data=$(jq -cn --argjson balances "${balances}" '{balances: $balances}')
+      if [ "$?" -ne 0 ]; then
+        trace "[elements_getbalances] Could not encode balance response"
+        returncode=1
+        data=""
+      fi
+    fi
   else
     trace "[elements_getbalances] Couldn't get balances!"
     data=""
