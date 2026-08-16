@@ -1950,3 +1950,211 @@ Proxy response:
   }
 }
 ```
+
+## Elements/Liquid API
+
+These actions are available when the `elements` optional feature is enabled. They mirror the Bitcoin actions above against the Elements node, with Liquid's additions: confidential addresses, per-asset amounts and watches, and the peg-in/peg-out rails.
+
+Wherever a `wallet` argument appears it is a **two-digit spending wallet selector**, naming `spendingNN.dat` — not a wallet filename. Only `spending01.dat` is created by the installer; any other selector is operator-created and the node reports it as missing until it exists.
+
+Amounts are in L-BTC unless an `assetId` is supplied, in which case they are in units of that asset.
+
+### Watch a Liquid address
+
+Watch either a confidential or an unconfidential address. A watch is identified by address *and* asset, so the same address may carry several watches for different assets.
+
+```http
+POST http://cyphernode:8888/elements_watch
+BODY {"address":"Azpmav...XitKEMm62mjFk7B9","assetId":"bc5ac6...fec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+BODY {"address":"Azpmav...XitKEMm62mjFk7B9","assetId":"bc5ac6...fec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","label":"myLabel"}
+```
+
+The response returns both the confidential and the unconfidential form of the address; either may be used to un-watch it later.
+
+### Un-watch a previously watched Liquid address
+
+```http
+GET  http://cyphernode:8888/elements_unwatch/Azpmav...XitKEMm62mjFk7B9
+POST http://cyphernode:8888/elements_unwatch
+BODY {"address":"Azpmav...XitKEMm62mjFk7B9","unconfirmedCallbackURL":"...","confirmedCallbackURL":"..."}
+BODY {"id":3124}
+```
+
+Arguments: `address` (required unless `id` is given), `unconfirmedCallbackURL` (optional), `confirmedCallbackURL` (optional), `assetId` (optional — when supplied only that asset's watch is removed, otherwise every asset on the address is un-watched), or `id` as returned by the watch.
+
+### Watch a Liquid TXID
+
+```http
+POST http://cyphernode:8888/elements_watchtxid
+BODY {"txid":"b081ca...ffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackXconf","nbxconf":6}
+```
+
+### Un-watch a Liquid TXID
+
+```http
+POST http://cyphernode:8888/elements_unwatchtxid
+BODY {"txid":"b081ca...ffd3387","confirmedCallbackURL":"...","xconfCallbackURL":"..."}
+BODY {"id":3124}
+```
+
+Arguments: `txid` (required unless `id` is given), `confirmedCallbackURL` (optional), `xconfCallbackURL` (optional), or `id` as returned by the watch.
+
+### Get the confirmations of a Liquid transaction
+
+```http
+GET http://cyphernode:8888/elements_conf/59e23a15fad777453819702ca432e7c01096c18314ccba90cf3436541f7f1f1a
+```
+
+### Spend from the Elements spending wallet
+
+```http
+POST http://cyphernode:8888/elements_spend
+BODY {"address":"Azpmav...XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac6...fec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+BODY {"address":"Azpmav...XitKEMm62mjFk7B9","amount":0.00233,"wallet":"01"}
+```
+
+Optional `subtractfeefromamount` takes the fee out of `amount` rather than adding it — required when spending a wallet's whole balance, which would otherwise have nothing left to pay the fee from.
+
+### Get a new address from the Elements spending wallet
+
+```http
+GET  http://cyphernode:8888/elements_getnewaddress
+GET  http://cyphernode:8888/elements_getnewaddress/bech32
+POST http://cyphernode:8888/elements_getnewaddress
+BODY {"addressType":"bech32","label":"myLabel"}
+BODY {"wallet":"02"}
+BODY {}
+```
+
+### Get the Elements spending wallet's balance
+
+```http
+GET http://cyphernode:8888/elements_getbalance
+GET http://cyphernode:8888/elements_getbalance/01
+```
+
+The path segment is the spending wallet selector. The response is keyed by asset, with L-BTC under `bitcoin`.
+
+### Get the Elements spending wallet's extended balances
+
+```http
+GET  http://cyphernode:8888/elements_getbalances
+GET  http://cyphernode:8888/elements_getbalances/01
+POST http://cyphernode:8888/elements_getbalances
+BODY {"walletName":"liquid/reserve.dat"}
+```
+
+The `walletName` form reads one exact, operator-configured wallet by name rather than by selector, for wallets outside the `spendingNN.dat` scheme.
+
+### Get Elements wallet information
+
+```http
+GET http://cyphernode:8888/elements_getwalletinfo
+```
+
+### Get a Liquid transaction's details
+
+```http
+GET http://cyphernode:8888/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
+```
+
+### Get transactions from the Elements spending wallet
+
+```http
+GET http://cyphernode:8888/elements_get_txns_spending/20/10
+```
+
+Path segments are the count and the number to skip.
+
+### Validate a Liquid address
+
+```http
+GET http://cyphernode:8888/elements_validateaddress/Azpmav...XitKEMm62mjFk7B9
+```
+
+### Get information about a Liquid address
+
+```http
+POST http://cyphernode:8888/elements_getaddressinfo
+BODY {"address":"ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0"}
+BODY {"address":"ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0","wallet":"02"}
+```
+
+Used to confirm that an address belongs to a particular wallet before spending to or from it.
+
+### Get a peg-in address
+
+Returns the Bitcoin mainchain address to send to, and the claim script needed to claim the peg-in on Liquid afterwards.
+
+```http
+GET http://cyphernode:8888/elements_getpeginaddress
+GET http://cyphernode:8888/elements_getpeginaddress/01
+```
+
+### Claim a peg-in
+
+Called once the mainchain funding transaction has 102 confirmations, with the raw transaction and its `gettxoutproof`.
+
+```http
+POST http://cyphernode:8888/elements_claimpegin
+BODY {"rawtx":"020000000...","proof":"0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71"}
+BODY {"rawtx":"020000000...","proof":"0080da266ad8...","claim_script":"0014...","wallet":"04"}
+```
+
+### Peg out to the mainchain
+
+```http
+POST http://cyphernode:8888/elements_sendtomainchain
+BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true,"wallet":"04"}
+```
+
+On a PAK network (Liquid mainnet) `address` must be the **empty string**: the node derives the mainchain destination from the peg-out wallet's own registered peg-out key, and supplying an address is rejected. The response carries the `bitcoin_address` the funds will land at, which should be checked against the wallet you expect to receive them.
+
+### Get a transaction out proof
+
+```http
+POST http://cyphernode:8888/elements_gettxoutproof
+BODY {"txids":"[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\"]","blockhash":"0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"}
+```
+
+`blockhash` is optional. The proof is the second argument to `elements_claimpegin`.
+
+### Derive addresses from an extended public key by index
+
+```http
+GET http://cyphernode:8888/elements_deriveindex/25-30
+GET http://cyphernode:8888/elements_deriveindex/34
+```
+
+### Derive addresses from an extended public key by path
+
+```http
+POST http://cyphernode:8888/elements_derivepubpath
+BODY {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+```
+
+### Get the Elements blockchain information
+
+```http
+GET http://cyphernode:8888/elements_getblockchaininfo
+```
+
+### Get the Elements best block hash
+
+```http
+GET http://cyphernode:8888/elements_getbestblockhash
+```
+
+### Get Elements mempool information
+
+```http
+GET http://cyphernode:8888/elements_getmempoolinfo
+```
+
+### Generate blocks to an address (regtest only)
+
+```http
+GET  http://cyphernode:8888/elements_generatetoaddress
+POST http://cyphernode:8888/elements_generatetoaddress
+BODY {"nbblocks":1,"address":"hex","maxtries":123}
+```
