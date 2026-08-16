@@ -10,7 +10,7 @@ elements_unwatchrequest() {
   local address=${2}
   local unconfirmedCallbackURL=${3}
   local confirmedCallbackURL=${4}
-  local assetId=${5}
+  local assetId=${5:-}
   local returncode
 
   trace "[elements_unwatchrequest] Unwatch request id ${watchid} on address \"${address}\" with url0conf \"${unconfirmedCallbackURL}\" and url1conf \"${confirmedCallbackURL}\" asset \"${assetId}\""

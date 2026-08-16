@@ -116,7 +116,7 @@ prepared_unlock_funded_inputs() {
 
 prepared_transfer() {
   local chain=$1 request=$2 cached_status wallet address amount_satoshis maximum_fee amount
-  local response raw funded fee_satoshis blinded signed decoded result output_matches cache_response
+  local response raw funded fee_satoshis blinded signed decoded result output_matches cache_response outputs
   local compare_address
   if ! prepared_validate_transfer "${request}"; then
     prepared_error "invalid prepared transfer request"
@@ -151,7 +151,16 @@ prepared_transfer() {
   else
     compare_address=${address}
   fi
-  response=$(prepared_rpc "${chain}" "${wallet}" "$(jq -cn --arg address "${address}" --argjson amount "${amount}" '{method:"createrawtransaction",params:[[],{($address):$amount},0,true]}')") || { printf '%s\n' "${response}"; return 1; }
+  # Elements requires the outputs parameter to be an ARRAY of single-key
+  # objects (src/rpc/rawtransaction.cpp type-checks it as VARR), while Bitcoin
+  # Core accepts the object form. Passing an object to elementsd fails with
+  # "Expected type array, got object" before anything is built.
+  if [ "${chain}" = elements ]; then
+    outputs=$(jq -cn --arg address "${address}" --argjson amount "${amount}" '[{($address):$amount}]') || return 1
+  else
+    outputs=$(jq -cn --arg address "${address}" --argjson amount "${amount}" '{($address):$amount}') || return 1
+  fi
+  response=$(prepared_rpc "${chain}" "${wallet}" "$(jq -cn --argjson outputs "${outputs}" '{method:"createrawtransaction",params:[[],$outputs,0,true]}')") || { printf '%s\n' "${response}"; return 1; }
   raw=$(printf '%s' "${response}" | jq -er '.result') || return 1
   if [ "${chain}" = elements ]; then
     response=$(prepared_rpc elements "${wallet}" "$(jq -cn --arg raw "${raw}" '{method:"fundrawtransaction",params:[$raw,{lock_unspents:true,replaceable:true}]}')") || { printf '%s\n' "${response}"; return 1; }

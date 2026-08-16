@@ -50,7 +50,17 @@ fi
 
 send_to_elements_spender_wallet_name() {
   case $(printf '%s' "$2" | jq -r '.method') in
-    createrawtransaction) printf '%s\n' '{"result":"10","error":null,"id":"1"}' ;;
+    createrawtransaction)
+      # elementsd type-checks the outputs parameter as an ARRAY (VARR); the
+      # object form Bitcoin accepts fails with "Expected type array, got
+      # object". Enforce that here so the mock cannot silently disagree with
+      # the real node.
+      if ! printf '%s' "$2" | jq -e '.params[1] | type == "array"' >/dev/null; then
+        printf '%s\n' '{"result":null,"error":{"code":-3,"message":"Expected type array, got object"},"id":"1"}'
+      else
+        printf '%s\n' '{"result":"10","error":null,"id":"1"}'
+      fi
+      ;;
     validateaddress) printf '%s\n' '{"result":{"isvalid":true,"address":"el1qdestination","confidential_key":"03aa","unconfidential":"ert1qdestination"},"error":null,"id":"1"}' ;;
     fundrawtransaction) printf '%s\n' '{"result":{"hex":"12","fee":0.00001},"error":null,"id":"1"}' ;;
     blindrawtransaction) printf '%s\n' '{"result":"13","error":null,"id":"1"}' ;;
