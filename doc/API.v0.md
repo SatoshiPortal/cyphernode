@@ -1929,7 +1929,7 @@ Proxy response:
 
 #### Validate a bolt11 invoice and check if it has a magic route hint
 
-If the bolt11 includes a boltz route hint a liquid network address will be included in the response.  If the bolt11 does not include a boltz route hint, only the original invoice will be returned.
+If the bolt11 includes a magic route hint a liquid network address will be included in the response.  If the bolt11 does not include a magic route hint, only the original invoice will be returned.
 
 ```http
 POST http://cyphernode:8888/check_bolt11_mrh
