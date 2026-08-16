@@ -453,6 +453,44 @@ services:
     <% } %>
   <% } %>
 
+  <% if ( features.indexOf('sp') !== -1 ) { %>
+  ##########################
+  # SP                     #
+  ##########################
+
+  sp:
+    image: cyphernode/sp:<%= sp_version %>
+    user: $USER
+    stop_grace_period: 30s
+    env_file:
+      - .env/proxy.env
+    environment:
+      SP_NETWORK: "<%= net %>"
+    volumes:
+      - "<%= logs_datapath %>:/cnlogs"
+      - "<%= sp_datapath %>:/sp/data"
+    networks:
+      - cyphernodenet
+    <% if ( bitcoin_mode === 'internal' ) { %>
+    depends_on:
+      - bitcoin
+    <% } %>
+    <% if ( docker_mode === 'swarm' ) { %>
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.io.cyphernode == true
+      restart_policy:
+        condition: "any"
+        delay: 1s
+      update_config:
+        parallelism: 1
+    <% } else { %>
+    restart: always
+    <% } %>
+  <% } %>
+
   <% if ( features.indexOf('otsclient') !== -1 ) { %>
   ##########################
   # OTSCLIENT              #

@@ -12,6 +12,7 @@ PROXYCRON_VERSION="v0.9.0-dev-local"
 OTSCLIENT_VERSION="v0.9.0-dev-local"
 PYCOIN_VERSION="v0.9.0-dev-local"
 PAYMENTALIST_VERSION="v0.9.0-dev-local"
+SP_VERSION="v0.9.0-dev-local"
 
 trace()
 {
@@ -41,7 +42,8 @@ build_docker_images() {
   && docker build cron_docker/ -t cyphernode/proxycron:$PROXYCRON_VERSION \
   && docker build pycoin_docker/ -t cyphernode/pycoin:$PYCOIN_VERSION \
   && docker build otsclient_docker/ -t cyphernode/otsclient:$OTSCLIENT_VERSION \
-  && docker build paymentalist_docker/ -t cyphernode/paymentalist:$PAYMENTALIST_VERSION
+  && docker build paymentalist_docker/ -t cyphernode/paymentalist:$PAYMENTALIST_VERSION \
+  && docker build sp_docker/ -t cyphernode/sp:$SP_VERSION
 }
 
 build_docker_images

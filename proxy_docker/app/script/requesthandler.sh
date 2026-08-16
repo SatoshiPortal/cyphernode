@@ -31,6 +31,7 @@
 . ./elements_pegin.sh
 . ./elements_pegout.sh
 . ./paymentalist.sh
+. ./sp_operations.sh
 
 main() {
   trace "Entering main()..."
@@ -106,9 +107,22 @@ main() {
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K"}
           # BODY {"address":"2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VfYWRkcmVzcyI6IjJNdkEzeHIzOHIxNXRRZWhGblBKMVhBdXJDUFR2ZTZOamNGIiwibmJfY29uZiI6MH0K","label":"myLabel"}
+          # SP addresses (sp1.../tsp1...) are routed automatically to sp_watch.
 
-          response=$(watchrequest "${line}")
-          returncode=$?
+          local watch_address
+          watch_address=$(echo "${line}" | jq -r ".address // empty")
+          if echo "${watch_address}" | grep -qE "^(sp1|tsp1)"; then
+            if [ -n "${SP_HOST}" ]; then
+              response=$(sp_watch "${line}")
+              returncode=$?
+            else
+              response='{"error":"SP feature is not installed"}'
+              returncode=1
+            fi
+          else
+            response=$(watchrequest "${line}")
+            returncode=$?
+          fi
           ;;
         unwatch)
           # curl (GET) 192.168.111.152:8080/unwatch/2N8DcqzfkYi8CkYzvNNS5amoq3SbAcQNXKp
@@ -140,8 +154,18 @@ main() {
             address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
           fi
 
-          response=$(unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
-          returncode=$?
+          if echo "${address}" | grep -qE "^(sp1|tsp1)"; then
+            if [ -n "${SP_HOST}" ]; then
+              response=$(sp_unwatch "${line}")
+              returncode=$?
+            else
+              response='{"error":"SP feature is not installed"}'
+              returncode=1
+            fi
+          else
+            response=$(unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}")
+            returncode=$?
+          fi
           ;;
         watchxpub)
           # POST http://192.168.111.152:8080/watchxpub
@@ -361,9 +385,22 @@ main() {
           ;;
         validateaddress)
           # GET http://192.168.111.152:8080/validateaddress/tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv
+          # SP addresses (sp1.../tsp1...) are routed automatically to validatespaddress.
 
-          response=$(validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
-          returncode=$?
+          local val_address
+          val_address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if echo "${val_address}" | grep -qE "^(sp1|tsp1)"; then
+            if [ -n "${SP_HOST}" ]; then
+              response=$(validatespaddress "{\"address\":\"${val_address}\"}")
+              returncode=$?
+            else
+              response='{"error":"SP feature is not installed"}'
+              returncode=1
+            fi
+          else
+            response=$(validateaddress "${val_address}")
+            returncode=$?
+          fi
           ;;
         spend)
           # POST http://192.168.111.152:8080/spend
@@ -372,6 +409,72 @@ main() {
 
           response=$(spend "${line}")
           returncode=$?
+          ;;
+        sp_spend)
+          # POST /sp_spend
+          # BODY {"address":"tsp1...","amount":"0.00100","wallet":"spending01"}
+          # BODY {"address":"tsp1...","amount":"0.00100","wallet":"spending01","fee_rate":5}
+          # BODY {"address":"tsp1...","amount":"0.00100","wallet":"spending01","confTarget":6}
+
+          if [ -n "${SP_HOST}" ]; then
+            response=$(sp_spend "${line}")
+            returncode=$?
+          else
+            response='{"error":"SP feature is not installed"}'
+            returncode=1
+          fi
+          ;;
+        validatespaddress)
+          # POST /validatespaddress  BODY {"address":"tsp1..."}
+          # GET  /validatespaddress/tsp1...
+
+          if [ -n "${SP_HOST}" ]; then
+            if [ "${http_method}" = "GET" ]; then
+              sp_address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+              line="{\"address\":\"${sp_address}\"}"
+            fi
+            response=$(validatespaddress "${line}")
+            returncode=$?
+          else
+            response='{"error":"SP feature is not installed"}'
+            returncode=1
+          fi
+          ;;
+        sp_watch)
+          # POST /sp_watch
+          # BODY {"address":"tsp1...","unconfirmedCallbackURL":"https://...","confirmedCallbackURL":"https://..."}
+          # BODY {"address":"tsp1...","unconfirmedCallbackURL":"https://...","confirmedCallbackURL":"https://...","txid":"abc..."}
+
+          if [ -n "${SP_HOST}" ]; then
+            response=$(sp_watch "${line}")
+            returncode=$?
+          else
+            response='{"error":"SP feature is not installed"}'
+            returncode=1
+          fi
+          ;;
+        sp_unwatch)
+          # POST /sp_unwatch
+          # BODY {"address":"tsp1...","unconfirmedCallbackURL":"https://...","confirmedCallbackURL":"https://..."}
+
+          if [ -n "${SP_HOST}" ]; then
+            response=$(sp_unwatch "${line}")
+            returncode=$?
+          else
+            response='{"error":"SP feature is not installed"}'
+            returncode=1
+          fi
+          ;;
+        getactivespwatches)
+          # GET /getactivespwatches
+
+          if [ -n "${SP_HOST}" ]; then
+            response=$(getactivespwatches)
+            returncode=$?
+          else
+            response='{"error":"SP feature is not installed"}'
+            returncode=1
+          fi
           ;;
         sendmany)
           # POST http://192.168.111.152:8080/sendmany
