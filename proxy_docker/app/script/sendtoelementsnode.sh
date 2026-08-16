@@ -46,7 +46,7 @@ send_to_elements_spender_node()
   local walletname=${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}
   if [ -n "$2" ]; then
     if ! validate_elements_spender_wallet "$2"; then
-      echo '{"result":null,"error":{"code":-8,"message":"wallet must be one of 01, 02, 03, or 04"}}'
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be a two-digit spending wallet selector"}}'
       return 1
     fi
     walletname="spending${2}.dat"
@@ -141,7 +141,7 @@ send_batch_to_elements_spender_node() {
   local walletname=${SPENDER_ELEMENTS_NODE_DEFAULT_WALLET}
   if [ -n "$2" ]; then
     if ! validate_elements_spender_wallet "$2"; then
-      echo '{"result":null,"error":{"code":-8,"message":"wallet must be one of 01, 02, 03, or 04"}}'
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be a two-digit spending wallet selector"}}'
       return 1
     fi
     walletname="spending${2}.dat"
@@ -178,13 +178,15 @@ send_batch_to_elements_node() {
   return ${returncode}
 }
 
-# Whitelist of spending wallet name suffixes accepted in requests.
-# Only spending01.dat is created by createWallets.sh; 02-04 are reserved
-# for operator-created wallets (same convention as the Bitcoin spender)
-# and return "wallet does not exist" from elementsd until created.
+# Spending wallet selectors are the two-digit suffix of spendingNN.dat. The
+# value is interpolated into the node's RPC URL path, so it is validated by
+# shape: two digits can neither traverse the path nor rewrite the target.
+# Only spending01.dat is created by createWallets.sh; any other selector is
+# operator-created and returns "wallet does not exist" from elementsd until
+# it is.
 validate_elements_spender_wallet() {
   case "${1}" in
-    01|02|03|04) return 0 ;;
+    [0-9][0-9]) return 0 ;;
     *) return 1 ;;
   esac
 }
