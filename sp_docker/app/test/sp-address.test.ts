@@ -35,6 +35,28 @@ describe('encodeSpAddress / decodeSpAddress', () => {
     assert.deepEqual(d.spendPubKey, spend);
   });
 
+  it('round-trips a regtest (sprt) address', () => {
+    const scan  = fakeKey(0x02, 0xcc);
+    const spend = fakeKey(0x03, 0xdd);
+    const addr = encodeSpAddress('sprt', scan, spend);
+    assert.ok(addr.startsWith('sprt1'), `expected sprt1 prefix, got ${addr.slice(0, 6)}`);
+    const d = decodeSpAddress(addr);
+    assert.equal(d.hrp, 'sprt');
+    assert.equal(d.version, 0);
+    assert.deepEqual(d.scanPubKey, scan);
+    assert.deepEqual(d.spendPubKey, spend);
+  });
+
+  it('decodes the reference regtest address', () => {
+    const d = decodeSpAddress(
+      'sprt1qqvjt4p70tjlamgzuasvq4xukp5m2tf0y4v2vwyk5uxmwnu7aqrs7wqu68zs80zy6x94mtfqmas944ufgjjumpzga9w3qel9gr095lyp8fu65u2ys'
+    );
+    assert.equal(d.hrp, 'sprt');
+    assert.equal(d.version, 0);
+    assert.equal(d.scanPubKey.length, 33);
+    assert.equal(d.spendPubKey.length, 33);
+  });
+
   it('different keys produce different addresses', () => {
     const a = encodeSpAddress('tsp', fakeKey(0x02, 0x01), fakeKey(0x03, 0x02));
     const b = encodeSpAddress('tsp', fakeKey(0x02, 0x03), fakeKey(0x03, 0x04));

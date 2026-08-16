@@ -1,8 +1,8 @@
 /**
  * BIP-352 silent payment address encoding/decoding.
  *
- * An SP address is bech32m-encoded with HRP "sp" (mainnet) or "tsp"
- * (testnet / signet / regtest). The witness version nibble is 0 (encoded
+ * An SP address is bech32m-encoded with HRP "sp" (mainnet), "tsp"
+ * (testnet / signet) or "sprt" (regtest). The witness version nibble is 0 (encoded
  * as a 5-bit value 0 prepended), and the payload is 66 bytes:
  *   B_scan (33 bytes, compressed) || B_spend (33 bytes, compressed)
  *
@@ -11,8 +11,10 @@
  */
 
 import { bech32m } from 'bech32';
-import type { SpDecoded } from '../types/bip352.ts';
+import type { SpDecoded, SpHrp } from '../types/bip352.ts';
 export type { SpDecoded };
+
+const SP_HRPS: readonly SpHrp[] = ['sp', 'tsp', 'sprt'];
 
 // Hex helpers (keep this module dependency-light)
 function hexToBytes(h: string): Uint8Array {
@@ -54,9 +56,10 @@ export function decodeSpAddress(addr: string): SpDecoded {
   } catch {
     throw new Error(`invalid BIP-352 silent payment address`);
   }
-  if (decoded.prefix !== 'sp' && decoded.prefix !== 'tsp') {
+  if (!SP_HRPS.includes(decoded.prefix as SpHrp)) {
     throw new Error(`unexpected HRP: ${decoded.prefix}`);
   }
+  const hrp = decoded.prefix as SpHrp;
   if (decoded.words.length < 1) throw new Error('empty SP data');
   const version = decoded.words[0]!;
   if (version !== 0) throw new Error(`unsupported SP version: ${version}`);
@@ -67,7 +70,7 @@ export function decodeSpAddress(addr: string): SpDecoded {
     throw new Error(`SP payload must be 66 bytes, got ${payload.length}`);
   }
   return {
-    hrp: decoded.prefix,
+    hrp,
     version,
     scanPubKey: payload.slice(0, 33),
     spendPubKey: payload.slice(33, 66),
@@ -75,7 +78,7 @@ export function decodeSpAddress(addr: string): SpDecoded {
 }
 
 export function encodeSpAddress(
-  hrp: 'sp' | 'tsp',
+  hrp: SpHrp,
   scanPubKey: Uint8Array,
   spendPubKey: Uint8Array,
   version = 0

@@ -16,8 +16,13 @@ eval "$(node --experimental-strip-types scripts/gen-sp-address.ts)"
 echo "SP address: $SP_ADDRESS"
 ```
 
-Pass `sp` as an argument for a mainnet address:
+With no argument the script generates a **regtest** address (`sprt1...`). Pass a different HRP for other networks:
+
 ```bash
+# testnet / signet (tsp1...)
+eval "$(node --experimental-strip-types scripts/gen-sp-address.ts tsp)"
+
+# mainnet (sp1...)
 eval "$(node --experimental-strip-types scripts/gen-sp-address.ts sp)"
 ```
 
@@ -137,7 +142,7 @@ docker logs $(docker ps -q --filter "name=sp.1") 2>&1 | grep callback
 
 You should see lines like:
 ```
-[sp_watch] callback POST http://... sp_address=tsp1q... derived_address=bcrt1p... confirmations=0
+[sp_watch] callback POST http://... sp_address=sprt1q... derived_address=bcrt1p... confirmations=0
 ```
 
 If the callback URL returns an error (e.g. nothing is listening on port 9000), that is also logged. To use a real listener during testing, `nc -lk 9000` in another shell will accept connections and print the POST body.

@@ -6,7 +6,8 @@
  *
  * Usage:
  *   node --experimental-strip-types scripts/gen-sp-address.ts [hrp]
- * hrp defaults to "tsp" (testnet/signet/regtest).
+ * hrp is "sp" (mainnet), "tsp" (testnet/signet) or "sprt" (regtest);
+ * defaults to "sprt".
  *
  * Outputs KEY=VALUE pairs so callers can eval the result:
  *   eval "$(node --experimental-strip-types scripts/gen-sp-address.ts)"
@@ -15,6 +16,7 @@
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { randomBytes } from 'node:crypto';
 import { encodeSpAddress } from '../src/sp/sp-address.ts';
+import type { SpHrp } from '../src/types/bip352.ts';
 
 const Point = secp256k1.Point;
 const N: bigint = secp256k1.Point.Fn.ORDER;
@@ -31,12 +33,12 @@ function bytesToHex(b: Uint8Array): string {
   return Array.from(b).map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-const hrpArg = process.argv[2] ?? 'tsp';
-if (hrpArg !== 'sp' && hrpArg !== 'tsp') {
-  console.error(`HRP must be "sp" or "tsp", got "${hrpArg}"`);
+const hrpArg = process.argv[2] ?? 'sprt';
+if (hrpArg !== 'sp' && hrpArg !== 'tsp' && hrpArg !== 'sprt') {
+  console.error(`HRP must be "sp", "tsp" or "sprt", got "${hrpArg}"`);
   process.exit(1);
 }
-const hrp: 'sp' | 'tsp' = hrpArg;
+const hrp: SpHrp = hrpArg;
 
 const scanPriv  = randScalar();
 const spendPriv = randScalar();

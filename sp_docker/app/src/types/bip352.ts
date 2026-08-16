@@ -26,12 +26,15 @@ export interface SenderOutputs {
   inputHash: bigint;
 }
 
+/** BIP-352 silent payment address HRPs: mainnet / testnet+signet / regtest. */
+export type SpHrp = 'sp' | 'tsp' | 'sprt';
+
 /**
  * Decoded BIP-352 silent payment address.
- * HRP is 'sp' (mainnet) or 'tsp' (testnet / signet / regtest).
+ * HRP is 'sp' (mainnet), 'tsp' (testnet / signet), or 'sprt' (regtest).
  */
 export interface SpDecoded {
-  hrp: 'sp' | 'tsp';
+  hrp: SpHrp;
   version: number; // 0 for BIP-352 v0
   scanPubKey: Uint8Array; // 33 bytes
   spendPubKey: Uint8Array; // 33 bytes

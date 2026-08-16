@@ -10,7 +10,7 @@ import { decodeSpAddress } from './sp-address.ts';
 import { RpcClient } from './rpc.ts';
 import { loadDescriptors, extractKeyForAddress } from './keys.ts';
 import { deriveSenderOutputs, makeOutpoint } from './bip352.ts';
-import type { SpInput, SpInputType } from '../types/bip352.ts';
+import type { SpInput, SpInputType, SpHrp } from '../types/bip352.ts';
 import type { ExtractedKey } from '../types/keys.ts';
 import type { ListUnspentRow, RawTxVerbose } from '../types/rpc.ts';
 import type { SendSpParams, SendSpResult } from '../types/send.ts';
@@ -30,8 +30,12 @@ function bech32PrefixForNetwork(network: string): string {
   }
 }
 
-function expectedSpHrp(network: string): 'sp' | 'tsp' {
-  return network === 'mainnet' ? 'sp' : 'tsp';
+function expectedSpHrp(network: string): SpHrp {
+  switch (network) {
+    case 'mainnet': return 'sp';
+    case 'regtest': return 'sprt';
+    default:        return 'tsp'; // testnet / signet
+  }
 }
 
 // ---------- fee estimation ----------
