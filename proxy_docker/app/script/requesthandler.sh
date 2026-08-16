@@ -30,7 +30,6 @@
 . ./elements_pegin.sh
 . ./elements_pegout.sh
 . ./paymentalist.sh
-. ./prepared_transactions.sh
 
 wallet_name_from_request() {
   printf '%s' "${1:-}" | jq -er '
@@ -98,26 +97,6 @@ main() {
         trace "[main] line=${line}"
       fi
       case "${cmd}" in
-        prepare_bitcoin_transfer)
-          response=$(prepared_transfer bitcoin "${line}")
-          returncode=$?
-          ;;
-        elements_prepare_transfer)
-          response=$(prepared_transfer elements "${line}")
-          returncode=$?
-          ;;
-        elements_prepare_pegin_claim)
-          response=$(prepared_pegin_claim "${line}")
-          returncode=$?
-          ;;
-        sendrawtransaction_exact)
-          response=$(prepared_broadcast bitcoin "${line}")
-          returncode=$?
-          ;;
-        elements_sendrawtransaction_exact)
-          response=$(prepared_broadcast elements "${line}")
-          returncode=$?
-          ;;
         helloworld)
           # GET http://192.168.111.152:8080/helloworld
           response='{"hello":"world"}'

@@ -93,39 +93,6 @@ send_getbalances_to_spender_wallet_name() {
   return ${returncode}
 }
 
-# Execute an explicitly scoped RPC against an operator-named wallet. Prepared
-# flows never use the legacy numeric selector because every wallet role must
-# remain independently auditable.
-# Unlike the legacy sender this path deliberately omits curl --fail: bitcoind
-# returns JSON-RPC errors with non-2xx statuses, and --fail would discard the
-# body, collapsing every distinct failure (insufficient funds, wallet not
-# loaded, unknown method) into one opaque upstream error.
-send_to_spender_wallet_name() {
-  trace "Entering send_to_spender_wallet_name()..."
-  local walletname=${1:-}
-  local data=${2:-}
-  local encoded_walletname returncode result
-  [ -n "${walletname}" ] && [ -n "${data}" ] || return 1
-  encoded_walletname=$(printf '%s' "${walletname}" | jq -sRr '@uri') || return 1
-  [ -n "${encoded_walletname}" ] || return 1
-  result=$(curl -m 20 --show-error --silent --path-as-is --config "${SPENDER_BTC_NODE_RPC_CFG}" -H "Content-Type: application/json" -d "${data}" "${SPENDER_BTC_NODE_RPC_URL}/${encoded_walletname}")
-  returncode=$?
-  trace_rc ${returncode}
-  if [ "${returncode}" -eq 0 ]; then
-    if ! printf '%s' "${result}" | jq -e 'type == "object" and has("result") and has("error")' >/dev/null 2>&1; then
-      trace "[send_to_spender_wallet_name] Node returned an invalid JSON-RPC response"
-      result=""
-      returncode=1
-    elif ! printf '%s' "${result}" | jq -e '.error == null' >/dev/null 2>&1; then
-      trace "[send_to_spender_wallet_name] Node responded, error found in response"
-      returncode=1
-    fi
-  fi
-  echo "${result}"
-  trace_rc ${returncode}
-  return ${returncode}
-}
-
 send_to_bitcoin_node() {
   trace "Entering send_to_bitcoin_node()..."
   local returncode
