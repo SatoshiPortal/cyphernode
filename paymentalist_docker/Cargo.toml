@@ -17,7 +17,7 @@ elements = { version = "0.21.0", features = ["serde"] }
 #secp256k1-zkp = { version = "0.9.0", features = ["musig", "rand-std"] }
 bitcoin_hashes = "0.13.0"
 
-boltz-client = { git = "https://github.com/SatoshiPortal/boltz-rust", rev = "3a6d3f4b21ca2510fac7b9c59a2401ab2ea9c744" }
+boltz-client = { git = "https://github.com/SatoshiPortal/boltz-rust", rev = "f30dfe2f26a59cabfd6c512e107273a0eb6aaf5c" }
 
 # Command line argument parsing
 clap = { version = "4.4", features = ["derive"] }
@@ -42,6 +42,3 @@ tracing-appender = "0.2"
 # Error handling
 thiserror = "1.0"
 anyhow = "1.0"
-
-[patch.crates-io]
-secp256k1-zkp = { git = "https://github.com/danielgranhao/rust-secp256k1-zkp.git", rev = "eac2e479255a6e32b5588bc25ee53c642fdd8395" }

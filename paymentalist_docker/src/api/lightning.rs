@@ -43,7 +43,7 @@ pub async fn check_bolt11_mrh(
         boltz::BOLTZ_MAINNET_URL_V2
     };
 
-    let boltz_client = boltz::BoltzApiClientV2::new(boltz_api_url);
+    let boltz_client = boltz::BoltzApiClientV2::new(boltz_api_url.to_string(), None);
 
     // Check for magic routing hint
     let check_result = match check_for_mrh(&boltz_client, &payload.invoice, network).await {

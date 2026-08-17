@@ -1,12 +1,12 @@
 use boltz_client::{
-    network::{Chain, LiquidChain},
+    network::{Chain, LiquidChain, Network},
     swaps::{
         boltz::{
             BoltzApiClientV2, CreateReverseRequest, BOLTZ_MAINNET_URL_V2, BOLTZ_TESTNET_URL_V2,
         },
         magic_routing::sign_address,
     },
-    util::secrets::{Preimage, SwapKey},
+    util::secrets::{Preimage, SwapMasterKey},
     PublicKey,
 };
 
@@ -38,11 +38,11 @@ async fn create_reverse_swap(network: &str, claim_address: &str, invoice_amount:
     let (chain, boltz_api_v2) = match network {
         "testnet" => (
             Chain::Liquid(LiquidChain::LiquidTestnet),
-            BoltzApiClientV2::new(BOLTZ_TESTNET_URL_V2),
+            BoltzApiClientV2::new(BOLTZ_TESTNET_URL_V2.to_string(), None),
         ),
         "mainnet" => (
             Chain::Liquid(LiquidChain::Liquid),
-            BoltzApiClientV2::new(BOLTZ_MAINNET_URL_V2),
+            BoltzApiClientV2::new(BOLTZ_MAINNET_URL_V2.to_string(), None),
         ),
         _ => {
             panic!("Invalid network specified. Use 'testnet' or 'mainnet'.");
@@ -50,21 +50,26 @@ async fn create_reverse_swap(network: &str, claim_address: &str, invoice_amount:
     };
 
     let mnemonic: &str = "bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon bacon";
-    let swapkey = SwapKey::from_reverse_account(mnemonic, "", chain, 0).unwrap();
-    let our_keys = swapkey.keypair;
+    let network = match chain {
+        Chain::Liquid(LiquidChain::Liquid) | Chain::Bitcoin(_) => Network::Mainnet,
+        _ => Network::Testnet,
+    };
+    let swap_master_key = SwapMasterKey::from_mnemonic(mnemonic, None, network).unwrap();
+    let our_keys = swap_master_key.derive_swapkey(0).unwrap();
     let claim_public_key = PublicKey {
         compressed: true,
         inner: our_keys.public_key(),
     };
-    let preimage = Preimage::new();
+    let preimage = Preimage::random();
 
     let addrs_sig = sign_address(claim_address, &our_keys).unwrap();
 
     let create_reverse_req = CreateReverseRequest {
-        invoice_amount,
+        invoice: None,
+        invoice_amount: Some(invoice_amount),
         from: "BTC".to_string(),
         to: "L-BTC".to_string(),
-        preimage_hash: preimage.sha256,
+        preimage_hash: Some(preimage.sha256),
         description: None,
         description_hash: None,
         address_signature: Some(addrs_sig.to_string()),
@@ -83,5 +88,5 @@ async fn create_reverse_swap(network: &str, claim_address: &str, invoice_amount:
         .unwrap();
     println!("VALIDATED RESPONSE!");
     println!("REVERSE SWAP ID: {}", reverse_resp.id);
-    println!("INVOICE: {}", reverse_resp.invoice);
+    println!("INVOICE: {:?}", reverse_resp.invoice);
 }
