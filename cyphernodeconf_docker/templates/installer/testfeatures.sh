@@ -159,6 +159,18 @@ checkbitcoinnode() {
   return 0
 }
 
+checkelementsnode() {
+  echo -en "\r\n\e[1;36mTesting Elements... " > /dev/console
+  local rc
+
+  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/elements_getblockchaininfo)
+  [ "${rc}" -ne "200" ] && return 350
+
+  echo -e "\e[1;36mElements node rocks!" > /dev/console
+
+  return 0
+}
+
 checklnnode() {
   echo -en "\r\n\e[1;36mTesting Lightning... " > /dev/console
   local rc
@@ -184,12 +196,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') !== -1)?'otsclient ':'' %><%= (features.indexOf('tor') !== -1)?'tor ':'' %>bitcoin <%= (features.indexOf('elements') !== -1)?'elements ':'' %><%= (features.indexOf('lightning') !== -1)?'lightning ':'' %><%= (features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1)?'paymentalist ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') !== -1)?'otsclient ':'' %><%= (features.indexOf('tor') !== -1)?'tor ':'' %>bitcoin <%= (features.indexOf('elements') !== -1)?'elements ':'' %><%= (features.indexOf('lightning') !== -1)?'lightning ':'' %><%= (features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1)?'paymentalist ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -213,7 +225,7 @@ checkservice() {
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
   #  ]
-  for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') !== -1)?'otsclient ':'' %><%= (features.indexOf('tor') !== -1)?'tor ':'' %>bitcoin <%= (features.indexOf('elements') !== -1)?'elements ':'' %><%= (features.indexOf('lightning') !== -1)?'lightning ':'' %><%= (features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1)?'paymentalist ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -472,6 +484,24 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Bitcoin error!')}"
+
+<% if (features.indexOf('elements') !== -1) { %>
+#############################
+# ELEMENTS                  #
+#############################
+
+result="${result},{\"coreFeature\":false,\"name\":\"elements\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"elements\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  echo -e "\r\n\e[1;36mWaiting for Elements to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/elements_ready" ]' && timeout_feature checkelementsnode
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Elements error!')}"
+<% } %>
 
 <% if (features.indexOf('lightning') != -1) { %>
 #############################

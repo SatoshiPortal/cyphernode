@@ -18,5 +18,9 @@
   {
     "name": "Specter Cypherapp",
     "value": "specter"
+  },
+  {
+    "name": "Elements node",
+    "value": "elements"
   }
 ]

@@ -94,6 +94,8 @@ chmod 0600 $DB_FILE
 
 createCurlConfig "${WATCHER_BTC_NODE_RPC_CFG}" "${WATCHER_BTC_NODE_RPC_USER}"
 createCurlConfig "${SPENDER_BTC_NODE_RPC_CFG}" "${SPENDER_BTC_NODE_RPC_USER}"
+createCurlConfig "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "${SPENDER_ELEMENTS_NODE_RPC_USER}"
+createCurlConfig "${WATCHER_ELEMENTS_NODE_RPC_CFG}" "${WATCHER_ELEMENTS_NODE_RPC_USER}"
 
 . ${DB_PATH}/config.sh
 if [ "${FEATURE_LIGHTNING}" = "true" ]; then
@@ -102,6 +104,10 @@ fi
 
 ./bitcoin_node_walletnotify.sh &
 ./bitcoin_node_newtip.sh &
+if [ "${FEATURE_ELEMENTS}" = "true" ]; then
+  ./elements_node_walletnotify.sh &
+  ./elements_node_newtip.sh &
+fi
 
 # For some reason, ncat doesn't like being PID 1 (Ncat: assertion failed: count <= INT_MAX QUITTING.),
 # so I had to remove "exec" before "nc" and trap SIGTERM to manage "docker stop" correctly.

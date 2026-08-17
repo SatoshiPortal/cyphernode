@@ -44,12 +44,55 @@ send_to_spender_node() {
 
   local walletname=${SPENDER_BTC_NODE_DEFAULT_WALLET}
   if [ -n "$2" ]; then
+    if ! validate_spender_wallet "$2"; then
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be a two-digit spending wallet selector"}}'
+      return 1
+    fi
     walletname="spending${2}.dat"
   fi
   trace "[send_to_spender_node]wallet: ${walletname}"
 
   send_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${walletname}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
   local returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
+# Read balances from one exact, operator-configured wallet name. This is kept
+# separate from send_to_spender_node(), whose optional argument is a legacy
+# numeric selector used by all spender operations.
+send_getbalances_to_spender_wallet_name() {
+  trace "Entering send_getbalances_to_spender_wallet_name()..."
+
+  local walletname=${1:-}
+  local encoded_walletname
+  local returncode
+
+  if [ -z "${walletname}" ]; then
+    trace "[send_getbalances_to_spender_wallet_name] Missing wallet name"
+    return 1
+  fi
+
+  encoded_walletname=$(printf '%s' "${walletname}" | jq -sRr '@uri')
+  returncode=$?
+  trace_rc ${returncode}
+  # curl normalizes literal dot path segments, which would rewrite the
+  # /wallet/<name> RPC target; encode dot-only names so they survive.
+  case "${walletname}" in
+    .) encoded_walletname='%2E' ;;
+    ..) encoded_walletname='%2E%2E' ;;
+  esac
+  if [ "${returncode}" -ne 0 ] || [ -z "${encoded_walletname}" ]; then
+    trace "[send_getbalances_to_spender_wallet_name] Could not encode wallet name"
+    return 1
+  fi
+
+  trace "[send_getbalances_to_spender_wallet_name] wallet: ${walletname}"
+  send_to_bitcoin_node \
+    "${SPENDER_BTC_NODE_RPC_URL}/${encoded_walletname}" \
+    "${SPENDER_BTC_NODE_RPC_CFG}" \
+    '{"method":"getbalances"}'
+  returncode=$?
   trace_rc ${returncode}
   return ${returncode}
 }
@@ -89,6 +132,25 @@ send_to_bitcoin_node() {
   return ${returncode}
 }
 
+send_batch_to_spender_node() {
+  trace "Entering send_batch_to_spender_node()..."
+
+  local walletname=${SPENDER_BTC_NODE_DEFAULT_WALLET}
+  if [ -n "$2" ]; then
+    if ! validate_spender_wallet "$2"; then
+      echo '{"result":null,"error":{"code":-8,"message":"wallet must be a two-digit spending wallet selector"}}'
+      return 1
+    fi
+    walletname="spending${2}.dat"
+  fi
+  trace "[send_batch_to_spender_node]wallet: ${walletname}"
+
+  send_batch_to_bitcoin_node "${SPENDER_BTC_NODE_RPC_URL}/${walletname}" "${SPENDER_BTC_NODE_RPC_CFG}" "$1"
+  local returncode=$?
+  trace_rc ${returncode}
+  return ${returncode}
+}
+
 send_batch_to_bitcoin_node() {
   trace "Entering send_batch_to_bitcoin_node()..."
   local returncode
@@ -111,6 +173,19 @@ send_batch_to_bitcoin_node() {
 
   trace_rc ${returncode}
   return ${returncode}
+}
+
+# Spending wallet selectors are the two-digit suffix of spendingNN.dat. The
+# value is interpolated into the node's RPC URL path, so it is validated by
+# shape: two digits can neither traverse the path nor rewrite the target.
+# Only spending01.dat is created by createWallets.sh; any other selector is
+# operator-created and returns "wallet does not exist" from bitcoind until
+# it is.
+validate_spender_wallet() {
+  case "${1}" in
+    [0-9][0-9]) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 case "${0}" in *sendtobitcoinnode.sh) send_to_bitcoin_node "$@";; esac

@@ -502,7 +502,7 @@ batchspend() {
     id_inserted=$(sql "INSERT INTO tx (txid)"\
 " VALUES ('${txid}')"\
 " RETURNING id" \
-"SELECT id FROM tx WHERE txid='${txid}'")
+    "SELECT id FROM tx WHERE txid='${txid}'")
     returncode=$?
     trace_rc ${returncode}
 
@@ -978,7 +978,7 @@ getbatchdetails() {
     outputs=$(sql "SELECT '{\"outputId\":' || id || ',\"outputLabel\":\"' || COALESCE(label, '') || '\",\"address\":\"' || address || '\",\"amount\":' || amount || ',\"addedTimestamp\":\"' || inserted_ts || '\"}' FROM recipient r WHERE batcher_id=${batcher_id} ${outerclause}")
 
     local output
-  local IFS="
+    local IFS="
 "
     for output in ${outputs}
     do

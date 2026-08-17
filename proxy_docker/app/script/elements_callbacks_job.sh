@@ -1,0 +1,221 @@
+#!/bin/sh
+
+. ./trace.sh
+. ./sql.sh
+. ./notify.sh
+
+elements_do_callbacks() {
+  trace "Entering elements_do_callbacks()..."
+  (
+  local flock_flag
+  local txid=${1}
+
+  if [ -n "${txid}" ]; then
+    flock_flag="--timeout 60" # wait 60 seconds before before failing to grab lock
+  else
+    flock_flag="--nonblock"
+  fi
+
+  trace "[do_callbacks] flock_flag=[${flock_flag}]"
+
+  local returncode
+  local flock_output
+
+  flock_output=$(flock --verbose ${flock_flag} 8 2>&1)
+  returncode=$?
+  trace "[do_callbacks] flock_output=${flock_output}"
+  if [ "$returncode" -eq "0" ]; then
+
+    # If called because we received a confirmation for a specific txid, let's only
+    # process that txid-related callbacks...
+    local txid_where
+    if [ -n "${txid}" ]; then
+      trace "[elements_do_callbacks] txid=${txid}"
+      txid_where=" AND txid='${txid}'"
+    fi
+
+    # Let's fetch all the watching addresses still being watched but not called back
+    local callbacks=$(sql "SELECT DISTINCT w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w LEFT JOIN elements_watching_tx ON w.id = elements_watching_id LEFT JOIN elements_tx ON elements_tx.id = elements_tx_id LEFT JOIN elements_watching_by_pub32 w32 ON w.elements_watching_by_pub32_id = w32.id WHERE NOT calledback0conf AND elements_watching_id IS NOT NULL AND w.callback0conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[elements_do_callbacks] callbacks0conf=${callbacks}"
+
+    local address
+    local url
+    local watching_id
+    local IFS="
+"
+    for row in ${callbacks}
+    do
+      elements_build_callback "${row}"
+      returncode=$?
+      trace_rc ${returncode}
+      if [ "${returncode}" -eq 0 ]; then
+        watching_id=$(echo "${row}" | cut -d '|' -f14)
+        sql "UPDATE elements_watching SET calledback0conf=true WHERE id='${watching_id}'"
+        trace_rc $?
+      fi
+    done
+
+    callbacks=$(sql "SELECT DISTINCT w.callback1conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime, w.id, is_replaceable::text, pub32_index, pub32, w.label, derivation_path, event_message, unblinded_address, watching_assetid, assetid, hash FROM elements_watching w JOIN elements_watching_tx wt ON w.id = wt.elements_watching_id JOIN elements_tx t ON wt.elements_tx_id = t.id LEFT JOIN elements_watching_by_pub32 w32 ON elements_watching_by_pub32_id = w32.id WHERE NOT calledback1conf AND confirmations>0 AND w.callback1conf IS NOT NULL AND w.watching${txid_where}")
+    trace "[elements_do_callbacks] callbacks1conf=${callbacks}"
+
+    for row in ${callbacks}
+    do
+      elements_build_callback "${row}"
+      returncode=$?
+      if [ "${returncode}" -eq 0 ]; then
+        watching_id=$(echo "${row}" | cut -d '|' -f14)
+        sql "UPDATE elements_watching SET calledback1conf=true, watching=false WHERE id='${watching_id}'"
+        trace_rc $?
+      fi
+    done
+
+  else
+    trace "[do_callbacks]  Exiting flock"
+  fi
+  ) 8>./.elements_callbacks.lock
+}
+
+elements_build_callback() {
+  trace "Entering elements_build_callback()..."
+
+  local row="$@"
+  local id
+  local url
+  local data
+  local address
+  local unblinded_address
+  local watching_assetid
+  local assetid
+  local txid
+  local vout_n
+  local sent_amount
+  local confirmations
+  local ts_firstseen
+  local fee
+  local size
+  local vsize
+  local blockhash
+  local blocktime
+  local blockheight
+
+  local pub32_index
+  local pub32
+  local label
+  local derivation_path
+
+  local event_message
+  local hash
+
+  # w.callback0conf, address, txid, vout, amount, confirmations, timereceived, fee, size, vsize, blockhash, blockheight, blocktime,
+  # w.id, is_replaceable, pub32_index, pub32, label, derivation_path, event_message
+
+  url=$(echo "${row}" | cut -d '|' -f1)
+  trace "[elements_build_callback] url=${url}"
+  if [ -z "${url}" ]; then
+    # No callback url provided for that watch
+    trace "[elements_build_callback] No callback url provided for that watch, skipping webhook call"
+    return
+  fi
+
+  trace "[elements_build_callback] row=${row}"
+  id=$(echo "${row}" | cut -d '|' -f14)
+  trace "[elements_build_callback] id=${id}"
+  address=$(echo "${row}" | cut -d '|' -f2)
+  trace "[elements_build_callback] address=${address}"
+  unblinded_address=$(echo "${row}" | cut -d '|' -f21)
+  trace "[elements_build_callback] unblinded_address=${unblinded_address}"
+  txid=$(echo "${row}" | cut -d '|' -f3)
+  trace "[elements_build_callback] txid=${txid}"
+  hash=$(echo "${row}" | cut -d '|' -f24)
+  trace "[elements_build_callback] hash=${hash}"
+  vout_n=$(echo "${row}" | cut -d '|' -f4)
+  trace "[elements_build_callback] vout_n=${vout_n}"
+  sent_amount=$(echo "${row}" | cut -d '|' -f5 | awk '{ printf "%.8f", $0 }')
+  trace "[elements_build_callback] sent_amount=${sent_amount}"
+  confirmations=$(echo "${row}" | cut -d '|' -f6)
+  trace "[elements_build_callback] confirmations=${confirmations}"
+  ts_firstseen=$(echo "${row}" | cut -d '|' -f7)
+  trace "[elements_build_callback] ts_firstseen=${ts_firstseen}"
+  fee=$(echo "${row}" | cut -d '|' -f8)
+  trace "[elements_build_callback] fee=${fee}"
+  size=$(echo "${row}" | cut -d '|' -f9)
+  trace "[elements_build_callback] size=${size}"
+  vsize=$(echo "${row}" | cut -d '|' -f10)
+  trace "[elements_build_callback] vsize=${vsize}"
+  is_replaceable=$(echo "${row}" | cut -d '|' -f15)
+  trace "[elements_build_callback] is_replaceable=${is_replaceable}"
+  blockhash=$(echo "${row}" | cut -d '|' -f11)
+  trace "[elements_build_callback] blockhash=${blockhash}"
+  blockheight=$(echo "${row}" | cut -d '|' -f12)
+  trace "[elements_build_callback] blockheight=${blockheight}"
+  blocktime=$(echo "${row}" | cut -d '|' -f13)
+  trace "[elements_build_callback] blocktime=${blocktime}"
+
+  pub32_index=$(echo "${row}" | cut -d '|' -f16)
+  trace "[elements_build_callback] pub32_index=${pub32_index}"
+  if [ -n "${pub32_index}" ]; then
+    pub32=$(echo "${row}" | cut -d '|' -f17)
+    trace "[elements_build_callback] pub32=${pub32}"
+    label=$(echo "${row}" | cut -d '|' -f18)
+    trace "[elements_build_callback] label=${label}"
+    derivation_path=$(echo "${row}" | cut -d '|' -f19)
+    trace "[elements_build_callback] derivation_path=${derivation_path}"
+  fi
+  event_message=$(echo "${row}" | cut -d '|' -f20)
+  trace "[elements_build_callback] event_message=${event_message}"
+  unblinded_address=$(echo "${row}" | cut -d '|' -f21)
+  trace "[elements_build_callback] unblinded_address=${unblinded_address}"
+  watching_assetid=$(echo "${row}" | cut -d '|' -f22)
+  trace "[elements_build_callback] watching_assetid=${watching_assetid}"
+  assetid=$(echo "${row}" | cut -d '|' -f23)
+  trace "[elements_build_callback] assetid=${assetid}"
+
+  data="{\"id\":${id},"
+  data="${data}\"address\":\"${address}\","
+  data="${data}\"unblindedAddress\":\"${unblinded_address}\","
+  data="${data}\"watchingAssetId\":\"${watching_assetid}\","
+  data="${data}\"assetId\":\"${assetid}\","
+  data="${data}\"txid\":\"${txid}\","
+  data="${data}\"hash\":\"${hash}\","
+  data="${data}\"vout_n\":${vout_n},"
+  data="${data}\"sent_amount\":${sent_amount},"
+  data="${data}\"confirmations\":${confirmations},"
+  data="${data}\"received\":\"$(date -Is -d @${ts_firstseen})\","
+  data="${data}\"size\":${size},"
+  data="${data}\"vsize\":${vsize},"
+  if [ -n "${fee}" ]; then
+    data="${data}\"fees\":${fee},"
+  fi
+  data="${data}\"replaceable\":${is_replaceable},"
+  if [ -n "${blocktime}" ]; then
+    data="${data}\"blockhash\":\"${blockhash}\","
+    data="${data}\"blocktime\":\"$(date -Is -d @${blocktime})\","
+    data="${data}\"blockheight\":${blockheight},"
+  fi
+  if [ -n "${pub32_index}" ]; then
+    data="${data}\"pub32\":\"${pub32}\","
+    data="${data}\"pub32_label\":\"${label}\","
+    derivation_path=$(echo "$derivation_path" | sed -En "s/n/${pub32_index}/p")
+    data="${data}\"pub32_derivation_path\":\"${derivation_path}\","
+  fi
+  data="${data}\"eventMessage\":\"${event_message}\"}"
+  trace "[elements_build_callback] data=${data}"
+
+  elements_curl_callback "${url}" "${data}"
+  return $?
+}
+
+elements_curl_callback() {
+  trace "Entering elements_curl_callback()..."
+
+  local returncode
+  local response
+
+  response=$(notify_web "${1}" "${2}" "${TOR_ADDR_WATCH_WEBHOOKS}")
+  returncode=$?
+  trace_rc ${returncode}
+
+  return ${returncode}
+}
+
+case "${0}" in *elements_callbacks_job.sh) elements_do_callbacks "$@";; esac

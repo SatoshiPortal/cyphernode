@@ -78,28 +78,28 @@ stop_test_container() {
 }
 
 exec_in_test_container() {
-  docker exec -it tests-manage-missed "$@"
+  docker exec tests-manage-missed "$@"
 }
 
 exec_in_test_container_nonint() {
-  docker exec -t tests-manage-missed "$@"
+  docker exec tests-manage-missed "$@"
 }
 
 wait_for_proxy() {
   trace 1 "\n\n[wait_for_proxy] ${BCyan}Waiting for the proxy to be ready...${Color_Off}\n"
 
   # First ping the containers to make sure they're up...
-  docker exec -t tests-manage-missed sh -c 'while true ; do ping -c 1 proxy ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+  docker exec tests-manage-missed sh -c 'while true ; do ping -c 1 proxy ; [ "$?" -eq "0" ] && break ; sleep 5; done'
 
   # Now check if it's ready to accecpt requests
-  docker exec -t tests-manage-missed sh -c 'while true ; do curl proxy:8888/helloworld > /dev/null; [ "$?" -eq "0" ] && break ; sleep 5; done'
+  docker exec tests-manage-missed sh -c 'while true ; do curl proxy:8888/helloworld > /dev/null; [ "$?" -eq "0" ] && break ; sleep 5; done'
 }
 
 wait_for_broker() {
   trace 1 "\n\n[wait_for_broker] ${BCyan}Waiting for the broker to be ready...${Color_Off}\n"
 
   # First ping the containers to make sure they're up...
-  docker exec -t tests-manage-missed sh -c 'while true ; do ping -c 1 broker ; [ "$?" -eq "0" ] && break ; sleep 5; done'
+  docker exec tests-manage-missed sh -c 'while true ; do ping -c 1 broker ; [ "$?" -eq "0" ] && break ; sleep 5; done'
 }
 
 test_manage_missed_0_conf() {
@@ -143,11 +143,12 @@ test_manage_missed_0_conf() {
   trace 3 "[test_manage_missed_0_conf] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
-  docker stop $(docker ps -q -f "name=proxy[^c]")
+  stop_proxy_for_test
 
   trace 3 "[test_manage_missed_0_conf] Sending coins to watched address while proxy is down..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
 
+  start_proxy_for_test
   wait_for_proxy
 
   trace 3 "[test_manage_missed_0_conf] Calling executecallbacks..."
@@ -202,7 +203,7 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] response=${response}"
 
   trace 3 "[test_manage_missed_1_conf] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
 
   trace 3 "[test_manage_missed_1_conf] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
   sleep 20
@@ -210,11 +211,12 @@ test_manage_missed_1_conf() {
   trace 3 "[test_manage_missed_1_conf] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
-  docker stop $(docker ps -q -f "name=proxy[^c]")
+  stop_proxy_for_test
 
   trace 3 "[test_manage_missed_1_conf] Mine a new block..."
   mine
 
+  start_proxy_for_test
   wait_for_proxy
 
   trace 3 "[test_manage_missed_1_conf] Calling executecallbacks..."
@@ -266,27 +268,28 @@ test_manage_missed_1_conf_dead_broker() {
   trace 3 "[test_manage_missed_1_conf_dead_broker] response=${response}"
 
   trace 3 "[test_manage_missed_1_conf_dead_broker] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
 
   trace 3 "[test_manage_missed_1_conf_dead_broker] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
   sleep 20
 
   trace 3 "[test_manage_missed_1_conf_dead_broker] Shutting down the broker..."
-  docker stop $(docker ps -q -f "name=broker")
+  stop_broker_for_test
 
   trace 3 "[test_manage_missed_1_conf_dead_broker] Mine a new block..."
   mine
 
+  start_broker_for_test
   wait_for_broker
 
   trace 3 "[test_manage_missed_1_conf_dead_broker] Calling executecallbacks..."
   exec_in_test_container curl -s -H "Content-Type: application/json" proxy:8888/executecallbacks
 
   # wait for callback servers
-  trace 3 "[test_manage_missed_1_conf] Waiting for callbacks..."
+  trace 3 "[test_manage_missed_1_conf_dead_broker] Waiting for callbacks..."
 
   wait
-  trace 3 "[test_manage_missed_1_conf] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
+  trace 3 "[test_manage_missed_1_conf_dead_broker] ${On_IGreen}${BBlack} Done waiting for callbacks...${Color_Off}"
 }
 
 test_manage_missed_0_conf_multiple_txids() {
@@ -346,14 +349,15 @@ test_manage_missed_0_conf_multiple_txids() {
   trace 3 "[test_manage_missed_0_conf_multiple_txids] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
-  docker stop $(docker ps -q -f "name=proxy[^c]")
+  stop_proxy_for_test
 
   trace 3 "[test_manage_missed_0_conf_multiple_txids] Sending coins to watched address while proxy is down..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
 
   trace 3 "[test_manage_missed_0_conf_multiple_txids] Sending coins again to watched address while proxy is down..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
 
+  start_proxy_for_test
   wait_for_proxy
 
   trace 3 "[test_manage_missed_0_conf_multiple_txids] Calling executecallbacks..."
@@ -424,10 +428,10 @@ test_manage_missed_1_conf_multiple_txids() {
   trace 3 "[test_manage_missed_1_conf_multiple_txids] response=${response}"
 
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Sending coins to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0001
 
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Sending coins again to watched address while proxy is up..."
-  docker exec -it $(docker ps -q -f "name=cyphernode.bitcoin") bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
+  docker exec "$(bitcoin_container)" bitcoin-cli -rpcwallet=spending01.dat sendtoaddress ${address} 0.0002
 
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Sleeping for 20 seconds to let the 0-conf callbacks to happen..."
   sleep 20
@@ -435,11 +439,12 @@ test_manage_missed_1_conf_multiple_txids() {
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Shutting down the proxy..."
   # There are two container names containing "proxy": proxy and proxycron
   # Let's exclude proxycron
-  docker stop $(docker ps -q -f "name=proxy[^c]")
+  stop_proxy_for_test
 
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Mine a new block..."
   mine
 
+  start_proxy_for_test
   wait_for_proxy
 
   trace 3 "[test_manage_missed_1_conf_multiple_txids] Calling executecallbacks..."

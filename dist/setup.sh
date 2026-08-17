@@ -138,7 +138,7 @@ sudo_mkdir_if_required() {
 }
 
 modify_permissions() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "elements" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -150,7 +150,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -221,7 +221,9 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e POSTGRES_VERSION=$POSTGRES_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
+             -e ELEMENTS_VERSION=$ELEMENTS_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
+             -e PAYMENTALIST_VERSION=$PAYMENTALIST_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
@@ -475,6 +477,14 @@ install_docker() {
         next
       fi
     fi
+    if [[ $TOR_ELEMENTS == true ]]; then
+      if [ ! -d $TOR_DATAPATH/elements ]; then
+        step "   [32mcreate[0m $TOR_DATAPATH/elements"
+        sudo_if_required mkdir -p $TOR_DATAPATH/elements/hidden_service
+        sudo_if_required chmod 700 $TOR_DATAPATH/elements/hidden_service
+        next
+      fi
+    fi
 
     copy_file $cyphernodeconf_filepath/tor/torrc $TOR_DATAPATH/torrc 1
     copy_file $cyphernodeconf_filepath/tor/traefik/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/traefik/hidden_service/hs_ed25519_secret_key 1
@@ -490,6 +500,11 @@ install_docker() {
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_secret_key 1
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/bitcoin/hidden_service/hs_ed25519_public_key 1
       copy_file $cyphernodeconf_filepath/tor/bitcoin/hidden_service/hostname $TOR_DATAPATH/bitcoin/hidden_service/hostname 1
+    fi
+    if [[ $TOR_ELEMENTS == true ]]; then
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_secret_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_secret_key 1
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hs_ed25519_public_key $TOR_DATAPATH/elements/hidden_service/hs_ed25519_public_key 1
+      copy_file $cyphernodeconf_filepath/tor/elements/hidden_service/hostname $TOR_DATAPATH/elements/hidden_service/hostname 1
     fi
   fi
 
@@ -576,6 +591,70 @@ install_docker() {
     if ${sudo} [ ! -x $BITCOIN_DATAPATH/blocknotify.sh ]; then
       step "     [32mmake[0m blocknotify.sh executable"
       sudo_if_required chmod +x $BITCOIN_DATAPATH/blocknotify.sh
+      next
+    fi
+  fi
+
+  if [[ $FEATURE_ELEMENTS == true ]]; then
+    if ${sudo} [ ! -d $ELEMENTS_DATAPATH ]; then
+      step "   [32mcreate[0m $ELEMENTS_DATAPATH"
+      sudo_if_required mkdir -p $ELEMENTS_DATAPATH
+      next
+    fi
+
+    if [ -d $ELEMENTS_DATAPATH ]; then
+
+      local cmpStatus=$(compare_bitcoinconf $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf)
+
+      if [[ $cmpStatus == 'dataloss' ]]; then
+        if [[ $ALWAYSYES == 1 ]]; then
+          copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
+        else
+          while true; do
+            echo "          [31mReally copy elements.conf with pruning option?[0m"
+            read -p "          [31mThis will discard some blockchain data. (yn)[0m " yn
+            case $yn in
+              [Yy]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
+                      break;;
+              [Nn]* ) copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf.cyphernode 0
+                      echo "          [31mYour cyphernode installation is most likely broken.[0m"
+                      echo "          [31mPlease check elements.conf.cyphernode on how to repair it manually.[0m";
+                      break;;
+              * ) echo "Please answer yes or no.";;
+            esac
+          done
+        fi
+      else
+        if [[ $cmpStatus == 'reindex' ]]; then
+          echo "  [33mWarning[0m Reindexing will take some time."
+        fi
+        copy_file $cyphernodeconf_filepath/elements/elements.conf $ELEMENTS_DATAPATH/elements.conf 1
+      fi
+    fi
+
+    copy_file $cyphernodeconf_filepath/elements/entrypoint.sh $ELEMENTS_DATAPATH/entrypoint.sh 1
+    copy_file $cyphernodeconf_filepath/elements/createWallets.sh $ELEMENTS_DATAPATH/createWallets.sh 1
+    copy_file $cyphernodeconf_filepath/elements/walletnotify.sh $ELEMENTS_DATAPATH/walletnotify.sh 1
+    copy_file $cyphernodeconf_filepath/elements/blocknotify.sh $ELEMENTS_DATAPATH/blocknotify.sh 1
+
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/entrypoint.sh ]; then
+      step "     [32mmake[0m entrypoint.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/entrypoint.sh
+      next
+    fi
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/createWallets.sh ]; then
+      step "     [32mmake[0m createWallets.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/createWallets.sh
+      next
+    fi
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/walletnotify.sh ]; then
+      step "     [32mmake[0m walletnotify.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/walletnotify.sh
+      next
+    fi
+    if ${sudo} [ ! -x $ELEMENTS_DATAPATH/blocknotify.sh ]; then
+      step "     [32mmake[0m blocknotify.sh executable"
+      sudo_if_required chmod +x $ELEMENTS_DATAPATH/blocknotify.sh
       next
     fi
   fi
@@ -726,7 +805,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -830,7 +909,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -926,8 +1005,10 @@ NOTIFIER_VERSION="v0.9.0-dev"
 PROXYCRON_VERSION="v0.9.0-dev"
 OTSCLIENT_VERSION="v0.9.0-dev"
 PYCOIN_VERSION="v0.9.0-dev"
+PAYMENTALIST_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v24.0.1-mosquitto-debian"
+ELEMENTS_VERSION="v23.2.5"
 LIGHTNING_VERSION="v23.11.2-pg"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
@@ -990,6 +1071,7 @@ if [[ $nbbuiltimgs -gt 1 ]]; then
     PROXYCRON_VERSION="$PROXYCRON_VERSION-local"
     OTSCLIENT_VERSION="$OTSCLIENT_VERSION-local"
     PYCOIN_VERSION="$PYCOIN_VERSION-local"
+    PAYMENTALIST_VERSION="$PAYMENTALIST_VERSION-local"
   fi
 fi
 

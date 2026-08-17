@@ -19,6 +19,30 @@
 . ./call_lightningd.sh
 . ./ots.sh
 . ./batching.sh
+. ./elements.sh
+. ./elements_callbacks_job.sh
+. ./elements_watchrequest.sh
+. ./elements_unwatchrequest.sh
+. ./elements_confirmation.sh
+. ./elements_blockchainrpc.sh
+. ./elements_manage_missed_conf.sh
+. ./elements_walletoperations.sh
+. ./elements_pegin.sh
+. ./elements_pegout.sh
+. ./paymentalist.sh
+
+wallet_name_from_request() {
+  printf '%s' "${1:-}" | jq -er '
+    if type == "object"
+      and (.walletName | type) == "string"
+      and (.walletName | length) > 0
+      and (.walletName | length) <= 255
+      and ((.walletName | test("[[:cntrl:]]")) | not)
+    then .walletName
+    else error("invalid walletName")
+    end
+  '
+}
 
 main() {
   trace "Entering main()..."
@@ -253,6 +277,11 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
+          if [ "${FEATURE_ELEMENTS}" = "true" ]; then
+            response=$(elements_manage_not_imported)
+            response=$(elements_manage_missed_conf)
+            response=$(elements_do_callbacks)
+          fi
           response=$(manage_not_imported)
           response=$(manage_missed_conf)
           response=$(do_callbacks)
@@ -279,14 +308,25 @@ main() {
         getbalances)
           # curl (GET) http://192.168.111.152:8080/getbalances
           # curl (GET) http://192.168.111.152:8080/getbalances/01 (spending wallet number)
+          # curl -H "Content-Type: application/json" -d '{"walletName":"treasury wallet.dat"}' http://192.168.111.152:8080/getbalances
 
-          walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
-          if [ "${walletname}" = "getbalances" ]; then
-            walletname=""
+          if [ "${http_method}" = "POST" ]; then
+            if walletname=$(wallet_name_from_request "${line}"); then
+              response=$(getbalances "" "${walletname}")
+              returncode=$?
+            else
+              response='{"error":{"code":-32602,"message":"walletName must be a non-empty string of at most 255 characters without control characters"},"id":"1"}'
+              returncode=1
+            fi
+          else
+            walletname=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            if [ "${walletname}" = "getbalances" ]; then
+              walletname=""
+            fi
+
+            response=$(getbalances "${walletname}")
+            returncode=$?
           fi
-
-          response=$(getbalances "${walletname}")
-          returncode=$?
           ;;
         getbalancebyxpub)
           # curl (GET) http://192.168.111.152:8080/getbalancebyxpub/upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb
@@ -949,6 +989,296 @@ main() {
           # curl -v -d "{\"hash\":\"a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8\",\"base64otsfile\":\"$(cat a6ea81a46fec3d02d40815b8667b388351edecedc1cc9f97aab55b566db7aac8.ots | base64 | tr -d '\n')\"}" localhost:8888/ots_info
 
           response=$(serve_ots_info "${line}")
+          returncode=$?
+          ;;
+        elements_get_txns_spending)
+          # curl (GET) http://192.168.111.152:8080/elements_get_txns_spending/20/10
+
+          response=$(elements_get_txns_spending "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f4)")
+          returncode=$?
+          ;;
+        elements_getnewaddress)
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress
+          # curl (GET) http://192.168.111.152:8080/elements_getnewaddress/bech32
+          #
+          # or...
+          # POST http://192.168.111.152:8080/elements_getnewaddress
+          # BODY {"addressType":"bech32","label":"myLabel"}
+          # BODY {"label":"myLabel"}
+          # BODY {"addressType":"p2sh-segwit"}
+          # BODY {"wallet": "02"}
+          # BODY {}
+
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            if ! echo "${line}" | jq -e 'type == "object"
+              and ((has("addressType") | not) or .addressType == null or (.addressType | type == "string"))
+              and ((has("label") | not) or .label == null or (.label | type == "string"))
+              and ((has("wallet") | not) or .wallet == null or (.wallet | type == "string"))' >/dev/null 2>&1; then
+              response='{"result":null,"error":{"code":-5,"message":"addressType, label, and wallet must be strings when provided"}}'
+              returncode=1
+            else
+              address_type=$(echo "${line}" | jq -r ".addressType // empty")
+              label=$(echo "${line}" | jq -r ".label // empty")
+              wallet=$(echo "${line}" | jq -r ".wallet // empty")
+              response=$(elements_getnewaddress "${address_type}" "${label}" "${wallet}")
+              returncode=$?
+            fi
+          else
+            address_type=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            response=$(elements_getnewaddress "${address_type}" "" "")
+            returncode=$?
+          fi
+          ;;
+        elements_spend)
+          # POST http://192.168.111.152:8080/elements_spend
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","amount":0.00233,"assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo=","wallet":"01"}
+
+          response=$(elements_spend "${line}")
+          returncode=$?
+          ;;
+        elements_getwalletinfo)
+          # curl (GET) 192.168.111.152:8080/elements_getwalletinfo
+
+          response=$(elements_getwalletinfo)
+          returncode=$?
+          ;;
+        elements_validateaddress)
+          # GET http://192.168.111.152:8080/elements_validateaddress/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+
+          response=$(elements_validateaddress "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        elements_getaddressinfo)
+          # POST http://192.168.111.152:8080/elements_getaddressinfo
+          # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0"}
+          # BODY {"address": "ert1q4fk43wm80ndgal03lwaha2s9l3n6ft6fk5h4m0", "wallet": "02"}
+
+          if [ "${http_method}" != "POST" ] || ! echo "${line}" | jq -e 'type == "object" and (.address | type == "string" and length > 0) and ((has("wallet") | not) or .wallet == null or (.wallet | type == "string"))' >/dev/null 2>&1; then
+            response='{"result":null,"error":{"code":-5,"message":"a non-empty address string is required; wallet must be a string when provided"}}'
+            returncode=1
+          else
+            local address=$(echo "${line}" | jq -r ".address")
+            local wallet=$(echo "${line}" | jq -r ".wallet // empty")
+            response=$(elements_getaddressinfo "${address}" true "${wallet}")
+            returncode=$?
+          fi
+          ;;
+        elements_watch)
+          # POST http://192.168.111.152:8080/elements_watch
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg=="}
+          # eventMessage={"bounceAddress":"Azpr3WH7nX2p3Q6vGk34wuCpyFifpxvTCxTRPgZPYfBnjW5NJ6DP2odKbaeHBdRCCyYMW3XtveciLSpe","nbConf":0}
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","assetId":"bc5ac68d102a16069c68de127773473eee0a6bc760689ce76024a3cfbfec31cf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf","eventMessage":"eyJib3VuY2VBZGRyZXNzIjoiQXpwcjNXSDduWDJwM1E2dkdrMzR3dUNweUZpZnB4dlRDeFRSUGdaUFlmQm5qVzVOSjZEUDJvZEtiYWVIQmRSQ0N5WU1XM1h0dmVjaUxTcGUiLCJuYkNvbmYiOjB9Cg==","label":"myLabel"}
+          response=$(elements_watchrequest "${line}")
+          returncode=$?
+          ;;
+        elements_unwatch)
+          # curl (GET) 192.168.111.152:8080/elements_unwatch/AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9
+          # or
+          # POST http://192.168.111.152:8080/elements_unwatch
+          # BODY {"address":"AzpmavTHCTfJhUqoS28kg3aTmCzu9uqCdfkqmpCALetAoa3ERpZnHvhNzjMP3wo4XitKEMm62mjFk7B9","unconfirmedCallbackURL":"192.168.111.233:1111/callback0conf","confirmedCallbackURL":"192.168.111.233:1111/callback1conf"}
+          # or
+          # BODY {"id":3124}
+          # args:
+          # - address: string, required
+          # - unconfirmedCallbackURL: string, optional
+          # - confirmedCallbackURL: string, optional
+          # or
+          # - id: the id returned by the watch
+          local address="null"
+          local unconfirmedCallbackURL="null"
+          local confirmedCallbackURL="null"
+          local watchid="null"
+          local assetId="null"
+
+          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
+          if [ "$http_method" = "POST" ]; then
+            address=$(echo "${line}" | jq -r ".address")
+            unconfirmedCallbackURL=$(echo "${line}" | jq -r ".unconfirmedCallbackURL")
+            confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+            watchid=$(echo "${line}" | jq ".id")
+            assetId=$(echo "${line}" | jq -r ".assetId")
+          else
+            address=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          fi
+
+          response=$(elements_unwatchrequest "${watchid}" "${address}" "${unconfirmedCallbackURL}" "${confirmedCallbackURL}" "${assetId}")
+          returncode=$?
+          ;;
+        elements_conf)
+          # curl (GET) 192.168.111.152:8080/elements_conf/59e23a15fad777453819702ca432e7c01096c18314ccba90cf3436541f7f1f1a
+
+          response=$(elements_confirmation_request "${line}")
+          returncode=$?
+          ;;
+        elements_getbalance)
+          # curl (GET) http://192.168.111.152:8080/elements_getbalance
+          # curl (GET) http://192.168.111.152:8080/elements_getbalance/01 (spending wallet number)
+
+          wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${wallet}" = "elements_getbalance" ]; then
+            wallet=""
+          fi
+
+          response=$(elements_getbalance "${wallet}")
+          returncode=$?
+          ;;
+        elements_getbalances)
+          # curl (GET) http://192.168.111.152:8080/elements_getbalances
+          # curl (GET) http://192.168.111.152:8080/elements_getbalances/01 (spending wallet number)
+          # curl -H "Content-Type: application/json" -d '{"walletName":"liquid/reserve.dat"}' http://192.168.111.152:8080/elements_getbalances
+
+          if [ "${http_method}" = "POST" ]; then
+            if walletname=$(wallet_name_from_request "${line}"); then
+              response=$(elements_getbalances "" "${walletname}")
+              returncode=$?
+            else
+              response='{"error":{"code":-32602,"message":"walletName must be a non-empty string of at most 255 characters without control characters"},"id":"1"}'
+              returncode=1
+            fi
+          else
+            wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+            if [ "${wallet}" = "elements_getbalances" ]; then
+              wallet=""
+            fi
+
+            response=$(elements_getbalances "${wallet}")
+            returncode=$?
+          fi
+          ;;
+        elements_gettransaction)
+          # curl (GET) http://192.168.111.152:8080/elements_gettransaction/7a45ba9de1f6fbd17e123762cd5b27f18a02a72d581d019abf1030e6a5677178
+
+          response=$(elements_get_rawtransaction "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        elements_getbestblockhash)
+          # curl (GET) http://192.168.111.152:8080/elements_getbestblockhash
+
+          response=$(elements_get_best_block_hash)
+          returncode=$?
+          ;;
+        elements_getblockchaininfo)
+          # http://192.168.111.152:8080/elements_getblockchaininfo
+
+          response=$(elements_get_blockchain_info)
+          returncode=$?
+          ;;
+        elements_generatetoaddress)
+          # GET with no parameters ==> http://192.168.111.152:8080/elements_generatetoaddress
+          # POST http://192.168.111.152:8080/elements_generatetoaddress
+          # BODY {"nbblocks":1, "address":"hex", "maxtries":123}
+
+          if [ "$http_method" = "POST" ]; then
+            response=$(elements_generatetoaddress "${line}")
+          else
+            response=$(elements_generatetoaddress "{}")
+          fi
+          returncode=$?
+          ;;
+        elements_gettxoutproof)
+          # POST http://192.168.111.152:8080/elements_gettxoutproof
+          # BODY
+          # {
+	        #   "txids": "[\"3bdb32c04e10b6c399bd3657ef8b0300649189e90d7cb79c4f997dea8fb532cb\",\"....\"]",
+	        #   "blockhash": "0000000000000000007962066dcd6675830883516bcf40047d42740a85eb2919"
+          # }
+          response=$(elements_gettxoutproof "$(echo "${line}" | jq -r ".txids")" "$(echo "${line}" | jq -r ".blockhash // empty")")
+          returncode=$?
+          ;;
+        elements_deriveindex)
+          # curl GET http://192.168.111.152:8080/elements_deriveindex/25-30
+          # curl GET http://192.168.111.152:8080/elements_deriveindex/34
+
+          response=$(elements_deriveindex "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        elements_derivepubpath)
+          # POST http://192.168.111.152:8080/elements_derivepubpath
+          # BODY {"pub32":"tpubD6NzVbkrYhZ4YR3QK2tyfMMvBghAvqtNaNK1LTyDWcRHLcMUm3ZN2cGm5BS3MhCRCeCkXQkTXXjiJgqxpqXK7PeUSp86DTTgkLpcjMtpKWk","path":"0/25-30"}
+          # BODY {"pub32":"upub5GtUcgGed1aGH4HKQ3vMYrsmLXwmHhS1AeX33ZvDgZiyvkGhNTvGd2TA5Lr4v239Fzjj4ZY48t6wTtXUy2yRgapf37QHgt6KWEZ6bgsCLpb","path":"0/25-30"}
+          # BODY {"pub32":"vpub5SLqN2bLY4WeZF3kL4VqiWF1itbf3A6oRrq9aPf16AZMVWYCuN9TxpAZwCzVgW94TNzZPNc9XAHD4As6pdnExBtCDGYRmNJrcJ4eV9hNqcv","path":"0/25-30"}
+
+          response=$(elements_derivepubpath "${line}")
+          returncode=$?
+          ;;
+        elements_getmempoolinfo)
+          # curl GET http://192.168.111.152:8080/elements_getmempoolinfo
+
+          response=$(elements_get_mempool_info)
+          returncode=$?
+          ;;
+        elements_getpeginaddress)
+          # curl GET http://192.168.111.152:8080/elements_getpeginaddress
+          # curl GET http://192.168.111.152:8080/elements_getpeginaddress/01
+
+          wallet=$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)
+          if [ "${wallet}" = "elements_getpeginaddress" ]; then
+            wallet=""
+          fi
+          response=$(elements_getpeginaddress "${wallet}")
+          returncode=$?
+          ;;
+        elements_claimpegin)
+          # curl POST http://192.168.111.152:8080/elements_claimpegin
+          # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71"}
+          # BODY {"rawtx": "020000000...", "proof": "0080da266ad8...","claim_script":"0014857769bab984f1070e038930f8a6e2142d809f71", "wallet":"04"}
+
+          response=$(elements_claimpegin "${line}")
+          returncode=$?
+          ;;
+        elements_sendtomainchain)
+          # curl POST http://192.168.111.152:8080/elements_sendtomainchain
+          # BODY {"address":"bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq","amount":0.001,"subtractfeefromamount":true,"wallet":"04"}
+
+          response=$(elements_sendtomainchain "${line}")
+          returncode=$?
+          ;;
+        elements_watchtxid)
+          # POST http://192.168.111.152:8080/elements_watchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackXconf","nbxconf":6}
+          # curl -H "Content-Type: application/json" -d '{"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackXconf","nbxconf":6}' proxy:8888/elements_watchtxid
+
+          response=$(elements_watchtxidrequest "${line}")
+          returncode=$?
+          ;;
+        elements_unwatchtxid)
+          # POST http://192.168.111.152:8080/elements_unwatchtxid
+          # BODY {"txid":"b081ca7724386f549cf0c16f71db6affeb52ff7a0d9b606fb2e5c43faffd3387","confirmedCallbackURL":"http://192.168.111.233:1111/callback1conf","xconfCallbackURL":"http://192.168.111.233:1111/callbackxconf"}
+          # or
+          # BODY {"id":3124}
+
+          # args:
+          # - txid: string, required
+          # - confirmedCallbackURL: string, optional
+          # - xconfCallbackURL: string, optional
+          # or
+          # - id: the id returned by watchtxid
+
+          local txid=$(echo "${line}" | jq -r ".txid")
+          local confirmedCallbackURL=$(echo "${line}" | jq -r ".confirmedCallbackURL")
+          local xconfCallbackURL=$(echo "${line}" | jq -r ".xconfCallbackURL")
+          local watchid=$(echo "${line}" | jq ".id")
+
+          response=$(elements_unwatchtxidrequest "${watchid}" "${txid}" "${confirmedCallbackURL}" "${xconfCallbackURL}")
+          returncode=$?
+          ;;
+        check_bolt11_mrh)
+          # POST http://192.168.111.152:8080/check_bolt11_mrh
+          # BODY {"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3"}
+          # BODY {"bolt11":"lntb1pdca82tpp5g...", "network":"testnet"}
+          # BODY {"bolt11":"lntb1pdca82tpp5g...", "network":"bitcoin"}
+
+          local j=$(echo "${line}" | jq -r)
+          trace "[check_bolt11_mrh] jq: ${j}"
+          local bolt11=$(echo "${line}" | jq -r ".bolt11")
+          trace "[check_bolt11_mrh] bolt11: ${bolt11}"
+          local network=$(echo "${line}" | jq -r ".network // \"bitcoin\"")
+          trace "[check_bolt11_mrh] network: ${network}"
+
+          response=$(check_bolt11_mrh "${bolt11}" "${network}")
           returncode=$?
           ;;
         *)
