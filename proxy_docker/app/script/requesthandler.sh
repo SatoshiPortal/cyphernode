@@ -836,17 +836,24 @@ main() {
           # GET http://192.168.111.152:8080/ln_listpays
           # POST http://192.168.111.152:8080/ln_listpays
           # BODY {"bolt11":"lntb1pdca82tpp5gv8mn5jqlj6xztpnt4r472zcyrwf3y2c3cvm4uzg2gqcnj90f83qdp2gf5hgcm0d9hzqnm4w3kx2apqdaexgetjyq3nwvpcxgcqp2g3d86wwdfvyxcz7kce7d3n26d2rw3wf5tzpm2m5fl2z3mm8msa3xk8nv2y32gmzlhwjved980mcmkgq83u9wafq9n4w28amnmwzujgqpmapcr3"}
-          # BODY {}
-
-          # Let's make it work even for a GET request (equivalent to a POST with empty json object body)
-          if [ "$http_method" = "POST" ]; then
-            bolt11=$(echo "${line}" | jq -r ".bolt11 // empty")
+          # BODY {"index":"updated","start":12345,"limit":100}
+          # Unfiltered requests require index and limit (1-100); start defaults to 0.
+          if [ "$http_method" = "POST" ] && ! printf '%s' "${line}" | jq -e 'all(.index, .start, .limit; . != "")' >/dev/null 2>&1; then
+            response='{"code":-32602,"message":"Empty pagination parameter"}'
+            returncode=1
+          elif [ "$http_method" = "POST" ]; then
+            response=$(ln_listpays \
+              "$(printf '%s' "${line}" | jq -r '.bolt11 // empty')" \
+              "$(printf '%s' "${line}" | jq -r '.payment_hash // empty')" \
+              "$(printf '%s' "${line}" | jq -r '.status // empty')" \
+              "$(printf '%s' "${line}" | jq -r '.index | select(. != null)')" \
+              "$(printf '%s' "${line}" | jq -r '.start | select(. != null)')" \
+              "$(printf '%s' "${line}" | jq -r '.limit | select(. != null)')")
+            returncode=$?
           else
-            bolt11=
+            response=$(ln_listpays)
+            returncode=$?
           fi
-
-          response=$(ln_listpays "${bolt11}")
-          returncode=$?
           ;;
         ln_paystatus)
           # GET http://192.168.111.152:8080/ln_paystatus
