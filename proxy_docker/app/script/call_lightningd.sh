@@ -8,8 +8,8 @@ ln_call_lightningd() {
   local response
   local returncode
 
-  trace "[ln_call_lightningd] ./lightning-cli $(printf " \"%s\"" "$@")"
-  response=$(./lightning-cli "$@")
+  trace "[ln_call_lightningd] ./lightning-cli --json --notifications=none $(printf " \"%s\"" "$@")"
+  response=$(./lightning-cli --json --notifications=none "$@")
   returncode=$?
   trace_rc ${returncode}
 
