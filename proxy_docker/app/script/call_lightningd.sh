@@ -204,7 +204,7 @@ ln_decodebolt11() {
   local bolt11=${1}
   local result
 
-  result=$(ln_call_lightningd decodepay "${bolt11}")
+  result=$(ln_call_lightningd decode "${bolt11}")
   returncode=$?
 
   echo "${result}"
@@ -334,7 +334,7 @@ ln_pay() {
   fi
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
-  result=$(ln_call_lightningd decodepay "${bolt11}")
+  result=$(ln_call_lightningd decode "${bolt11}")
   returncode=$?
 
   if [ "${returncode}" -eq "0" ]; then
