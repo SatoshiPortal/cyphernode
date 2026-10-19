@@ -8,8 +8,8 @@ ln_call_lightningd() {
   local response
   local returncode
 
-  trace "[ln_call_lightningd] ./lightning-cli $(printf " \"%s\"" "$@")"
-  response=$(./lightning-cli "$@")
+  trace "[ln_call_lightningd] ./lightning-cli --json --notifications=none $(printf " \"%s\"" "$@")"
+  response=$(./lightning-cli --json --notifications=none "$@")
   returncode=$?
   trace_rc ${returncode}
 
@@ -204,7 +204,7 @@ ln_decodebolt11() {
   local bolt11=${1}
   local result
 
-  result=$(ln_call_lightningd decodepay "${bolt11}")
+  result=$(ln_call_lightningd decode "${bolt11}")
   returncode=$?
 
   echo "${result}"
@@ -334,7 +334,7 @@ ln_pay() {
   fi
 
   # Let's first decode the bolt11 string to make sure we are paying the good invoice
-  result=$(ln_call_lightningd decodepay "${bolt11}")
+  result=$(ln_call_lightningd decode "${bolt11}")
   returncode=$?
 
   if [ "${returncode}" -eq "0" ]; then
@@ -459,11 +459,49 @@ ln_listpays() {
   trace "Entering ln_listpays()..."
 
   local result
-  local bolt11=${1}
+  local returncode
+  local bolt11=${1:-}
   trace "[ln_listpays] bolt11=${bolt11}"
 
-  result=$(ln_call_lightningd listpays "${bolt11}")
+  local index=${4:-}
+  local start=${5:-}
+  local limit=${6:-}
+  if [ -z "${bolt11}${2}${index}" ]; then
+    echo '{"code":-32602,"message":"bolt11, payment_hash or pagination required"}'
+    return 1
+  fi
+
+  if [ -n "${index}${start}${limit}" ] && [ "${index}" != "created" ] && [ "${index}" != "updated" ]; then
+    echo '{"code":-32602,"message":"Invalid pagination index"}'
+    return 1
+  fi
+
+  if [ -n "${index}" ] && { ! [ "${limit}" -ge 1 ] 2>/dev/null || ! [ "${limit}" -le 100 ] 2>/dev/null; }; then
+    echo '{"code":-32602,"message":"Limit must be 1-100"}'
+    return 1
+  fi
+
+  [ -n "${index}" ] && start=${start:-0}
+
+  # Omit empty arguments; keep each supplied value quoted as one named argument.
+  result=$(ln_call_lightningd -k listpays \
+    ${bolt11:+"bolt11=${bolt11}"} \
+    ${2:+"payment_hash=${2}"} \
+    ${3:+"status=${3}"} \
+    ${index:+"index=${index}"} \
+    ${start:+"start=${start}"} \
+    ${limit:+"limit=${limit}"})
   returncode=$?
+
+  if [ "${returncode}" -ne 0 ]; then
+    trace "[ln_listpays] result=${result}"
+    local error
+    error=$(printf '%s' "${result}" | jq '
+      if .code == -32602 then
+        .message |= (sub("^(?<parameter>start|status|payment_hash):.*$"; "Invalid \(.parameter)")
+          | sub("^Invalid invstring:.*$"; "Invalid bolt11"))
+      else . end' 2>/dev/null) && result=${error}
+  fi
 
   echo "${result}"
 

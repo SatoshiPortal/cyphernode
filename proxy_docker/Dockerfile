@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ENV HOME /proxy
 WORKDIR ${HOME}
@@ -14,13 +14,14 @@ RUN apt update && apt -y install \
     ncat \
     procps \
     postgresql \
+    libsodium23 \
  && apt -y remove gpg \
  && apt -y autoremove
 
  COPY app/data/* ./
  COPY app/script/* ./
  COPY app/tests/* ./tests/
- COPY --from=cyphernode/clightning:v23.11.2-pg /usr/local/bin/lightning-cli ./
+ COPY --from=cyphernode/clightning:v26.06.9 /usr/local/bin/lightning-cli ./
 
  RUN chmod +x *.sh tests/* \
   && chmod o+w . \
