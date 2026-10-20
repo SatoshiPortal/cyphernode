@@ -147,7 +147,8 @@
       "then": {
         "required": [
           "elements_datapath",
-          "elements_expose"
+          "elements_expose",
+          "liquid_explorer_url"
         ]
       }
     },
@@ -670,6 +671,15 @@
       "default": false,
       "examples": [
         false
+      ]
+    },
+    "liquid_explorer_url": {
+      "$id": "#/properties/liquid_explorer_url",
+      "type": "string",
+      "title": "Liquid explorer URL",
+      "examples": [
+        "https://liquid.network",
+        "https://liquid.bullbitcoin.com"
       ]
     },
     "gatekeeper_expose": {
