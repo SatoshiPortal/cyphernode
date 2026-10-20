@@ -95,6 +95,7 @@ module.exports = class App {
       elements_version: process.env.ELEMENTS_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
       paymentalist_version: process.env.PAYMENTALIST_VERSION,
+      sp_version: process.env.SP_VERSION,
       notifier_version: process.env.NOTIFIER_VERSION,
       conf_version: process.env.CONF_VERSION,
       setup_version: process.env.SETUP_VERSION,
@@ -158,7 +159,8 @@ module.exports = class App {
         'cyphernode/clightning': this.sessionData.lightning_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
         'eclipse-mosquitto': this.sessionData.mosquitto_version,
-        'cyphernode/paymentalist': this.sessionData.paymentalist_version
+        'cyphernode/paymentalist': this.sessionData.paymentalist_version,
+        'cyphernode/sp': this.sessionData.sp_version
       }
     } );
 
@@ -376,13 +378,18 @@ module.exports = class App {
       'bitcoin_datapath',
       'elements_datapath',
       'lightning_datapath',
-      'otsclient_datapath'
+      'otsclient_datapath',
+      'sp_datapath'
     ];
 
     for( let pathProp of pathProps ) {
       if( this.config.data[pathProp] === '_custom' ) {
         this.config.data[pathProp] = this.config.data[pathProp+'_custom'] || '';
       }
+    }
+
+    if( !this.config.data.sp_datapath ) {
+      this.config.data.sp_datapath = path.join( this.sessionData.setupDir, 'cyphernode', 'sp' );
     }
 
     this.sessionData.installationInfo = this.installationInfo();
@@ -504,6 +511,13 @@ module.exports = class App {
         docker: 'cyphernode/paymentalist:'+this.config.docker_versions['cyphernode/paymentalist']
       },
       {
+        name: 'SP',
+        label: 'sp',
+        host: 'sp',
+        networks: ['cyphernodenet'],
+        docker: 'cyphernode/sp:'+this.config.docker_versions['cyphernode/sp']
+      },
+      {
         name: 'Postgres',
         label: 'postgres',
         host: 'postgres',
@@ -589,6 +603,10 @@ module.exports = class App {
           clearnet: !this.isChecked('features', 'tor') || this.isChecked('clearnet', 'clearnet_lightning'),
           tor_hostname: this.sessionData.tor_lightning_hostname
         }
+      },
+      sp: {
+        networks: ['cyphernodenet'],
+        docker: "cyphernode/sp:"+this.config.docker_versions['cyphernode/sp']
       },
     }
 

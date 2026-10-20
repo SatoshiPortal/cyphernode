@@ -411,6 +411,44 @@ module.exports = {
       message: prefix()+'Where is your otsclient data?'+utils.getHelp('otsclient_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('sp') !== -1 },
+      type: 'list',
+      name: 'sp_datapath',
+      default: utils.getDefault( 'sp_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/sp",
+          value: utils.setupDir()+"/cyphernode/sp"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/sp",
+          value: utils.defaultDataDirBase()+"/cyphernode/sp"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/sp",
+          value: utils.defaultDataDirBase()+"/.cyphernode/sp"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/sp",
+          value: utils.defaultDataDirBase()+"/sp"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your SP data?'+utils.getHelp('sp_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('sp') !== -1 && props.sp_datapath === '_custom' },
+      type: 'input',
+      name: 'sp_datapath_custom',
+      default: utils.getDefault( 'sp_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your SP data?'+utils.getHelp('sp_datapath_custom'),
+    },
+    {
       type: 'confirm',
       name: 'gatekeeper_expose',
       default: utils.getDefault( 'gatekeeper_expose' ),

@@ -185,6 +185,24 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "sp"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sp_datapath"
+        ]
+      }
     }
   ],
   "properties": {
@@ -227,7 +245,8 @@
           "elements",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "sp"
         ],
         "title": "The feature",
         "default": "",
@@ -237,7 +256,8 @@
           "elements",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "sp"
         ]
       }
     },
@@ -522,6 +542,22 @@
       "title": "OTS Client custom datapath",
       "examples": [
         "/tmp/cyphernode/otsclient"
+      ]
+    },
+    "sp_datapath": {
+      "$id": "#/properties/sp_datapath",
+      "type": "string",
+      "title": "SP datapath",
+      "examples": [
+        "/tmp/cyphernode/sp"
+      ]
+    },
+    "sp_datapath_custom": {
+      "$id": "#/properties/sp_datapath_custom",
+      "type": "string",
+      "title": "SP custom datapath",
+      "examples": [
+        "/tmp/cyphernode/sp"
       ]
     },
     "traefik_http_port": {

@@ -11,6 +11,14 @@ bitcoin_node_walletnotify() {
     do
       trace "[bitcoin_node_walletnotify] Processing cyphernode/bitcoin/walletnotify from bitcoin node"
       ./confirmation.sh "${message}"
+
+      # Forward to sp_docker for SP watch notifications.
+      if [ -n "${SP_HOST}" ]; then
+        local payload
+        payload=$(jq -cn --arg d "${message}" '{"data": $d}')
+        curl -sS -m 5 -H 'content-type: application/json' \
+          --data-binary "${payload}" "${SP_HOST}/notify_tx" > /dev/null 2>&1 || true
+      fi
     done
 
     trace "[bitcoin_node_walletnotify] reconnecting in 10 secs"

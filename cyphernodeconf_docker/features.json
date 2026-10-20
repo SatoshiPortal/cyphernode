@@ -22,5 +22,9 @@
   {
     "name": "Elements node",
     "value": "elements"
+  },
+  {
+    "name": "BIP-352 Silent Payments (send)",
+    "value": "sp"
   }
 ]

@@ -1,0 +1,28 @@
+{
+  "name": "sp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BIP-352 silent payment sender for Cyphernode",
+  "type": "module",
+  "scripts": {
+    "test": "node --test --experimental-strip-types 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "send": "node --experimental-strip-types src/send-sp.ts",
+    "verify": "node --experimental-strip-types src/verify-sp.ts",
+    "start": "node --experimental-strip-types server.ts"
+  },
+  "dependencies": {
+    "@noble/curves": "1.9.7",
+    "@noble/hashes": "1.8.0",
+    "@scure/bip32": "1.7.0",
+    "bech32": "2.0.0",
+    "bitcoinjs-lib": "6.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
