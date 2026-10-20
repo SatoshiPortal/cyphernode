@@ -587,6 +587,9 @@ test_elements_watcher_functions() {
 
   # action_elements_validateaddress=watcher
   test_authorization "elements_validateaddress" "${token}" ${has_access} || return 230
+
+  # action_elements_getaddressinfo
+  test_authorization "elements_getaddressinfo" "${token}" ${has_access} || return 235
 }
 
 test_elements_spender_functions() {
