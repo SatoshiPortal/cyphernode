@@ -82,6 +82,12 @@ ark_unwatchrequest() {
   local returncode
 
   if [ -n "${watchid}" ] && [ "${watchid}" != "null" ]; then
+    case "${watchid}" in
+      *[!0-9]*)
+        echo '{"error":{"code":-32602,"message":"id must be an integer"}}'
+        return 1
+        ;;
+    esac
     sql "UPDATE ark_watching SET watching=false WHERE id=${watchid}"
     returncode=$?
     jq -cn --argjson id "${watchid}" '{event: "ark_unwatch", id: $id}'
@@ -107,15 +113,11 @@ ark_getactivewatches() {
   trace "Entering ark_getactivewatches()..."
 
   local watches returncode
-  watches=$(sql "SELECT id, address, callback_url, label, event_message, expected_amount_sat, inserted_ts FROM ark_watching WHERE watching ORDER BY id")
+  watches=$(sql_json "SELECT id, address, callback_url, label, event_message, expected_amount_sat, inserted_ts FROM ark_watching WHERE watching ORDER BY id")
   returncode=$?
-  printf '%s' "${watches}" | jq -Rcs '
-    {watches: [ split("\n")[] | select(length > 0) | (. / "|") as $r |
-      {id: ($r[0] | tonumber), address: $r[1],
-       callbackURL: (if $r[2] == "" then null else $r[2] end),
-       "label": (if $r[3] == "" then null else $r[3] end),
-       eventMessage: (if $r[4] == "" then null else $r[4] end),
-       expectedAmount: (if $r[5] == "" then null else ($r[5] | tonumber) end),
-       inserted: $r[6]} ]}'
+  printf '%s' "${watches}" | jq -cs '
+    {watches: [ .[] |
+      {id: .id, address: .address, callbackURL: .callback_url, "label": .label,
+       eventMessage: .event_message, expectedAmount: .expected_amount_sat, inserted: .inserted_ts} ]}'
   return ${returncode}
 }

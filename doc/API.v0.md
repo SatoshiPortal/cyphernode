@@ -2067,7 +2067,9 @@ Proxy response:
 
 `status` is `successful`, `failed`, or `unknown` when barkd could not be
 reached after the request was recorded. Unknown sends are reconciled from the
-wallet history by the callbacks cron; check them with `ark_getsend/<label>`.
+wallet history by the callbacks cron, against movements made after the
+request; check them with `ark_getsend/<label>`. A send still `pending` ten
+minutes later is treated the same way.
 
 ### Board (on-chain to Ark)
 
@@ -2121,6 +2123,10 @@ Board and offboard callback body:
 GET http://cyphernode:8888/ark_getjob/topup-1
 GET http://cyphernode:8888/ark_getsend/payout-42
 ```
+
+A job refused by barkd is stored as `failed` with barkd's message in `error`
+and its label stays taken; the callback, when there is one, fires with that
+status.
 
 ### Refresh coins
 

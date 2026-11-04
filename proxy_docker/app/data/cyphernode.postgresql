@@ -307,6 +307,7 @@ CREATE TABLE IF NOT EXISTS ark_send (
   destination VARCHAR NOT NULL,
   amount_sat BIGINT NOT NULL,
   status VARCHAR NOT NULL,
+  movement_floor INTEGER NOT NULL DEFAULT 0,
   movement_id INTEGER,
   error VARCHAR,
   inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -322,6 +323,7 @@ CREATE TABLE IF NOT EXISTS ark_job (
   vtxos VARCHAR,
   movement_id INTEGER,
   status VARCHAR NOT NULL,
+  error VARCHAR,
   calledback BOOLEAN DEFAULT FALSE,
   calledback_ts TIMESTAMP,
   callback_failures INTEGER DEFAULT 0,
@@ -333,5 +335,8 @@ CREATE INDEX IF NOT EXISTS idx_ark_job_movement ON ark_job (movement_id);
 INSERT INTO cyphernode_props (property, value, category)
 SELECT 'ark_last_pushed_at', '', 'ark'
 WHERE NOT EXISTS (SELECT 1 FROM cyphernode_props WHERE property = 'ark_last_pushed_at');
+INSERT INTO cyphernode_props (property, value, category)
+SELECT 'ark_history_floor', '0', 'ark'
+WHERE NOT EXISTS (SELECT 1 FROM cyphernode_props WHERE property = 'ark_history_floor');
 
 COMMIT;

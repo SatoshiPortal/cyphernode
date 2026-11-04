@@ -10,6 +10,12 @@ sql_quote() {
   printf '%s' "${1}" | sed "s/'/''/g"
 }
 
+# Runs a SELECT and prints one JSON object per row, so values containing the
+# psql field separator survive.
+sql_json() {
+  sql "SELECT row_to_json(t) FROM (${1}) t"
+}
+
 ark_is_address() {
   printf '%s' "${1}" | grep -Eq '^(ark|tark)1[ac-hj-np-z02-9]{20,}$'
 }
@@ -111,13 +117,15 @@ ark_onchain_getbalance() {
 #
 # The label is mandatory and unique. A repeated label returns the stored
 # outcome instead of paying twice. A send whose outcome is unknown (barkd
-# unreachable after the request) is reconciled by ark_manage_missed.
+# unreachable after the request) is reconciled by ark_manage_missed. The
+# movement floor is the newest movement to the destination before the send,
+# so a movement is only matched to this send if it came after it.
 ark_send() {
   trace "Entering ark_send()..."
 
   local request=${1}
   local destination amount label
-  local existing id response returncode movement_id status message
+  local existing id floor history response returncode movement_id status message
 
   destination=$(printf '%s' "${request}" | jq -r '.destination // empty')
   amount=$(printf '%s' "${request}" | jq -r '.amount // empty')
@@ -138,21 +146,27 @@ ark_send() {
     return 1
   fi
 
-  existing=$(sql "SELECT id, status, movement_id, destination, amount_sat FROM ark_send WHERE label='$(sql_quote "${label}")'")
+  existing=$(sql_json "SELECT id, status, movement_id, destination, amount_sat FROM ark_send WHERE label='$(sql_quote "${label}")'")
   if [ -n "${existing}" ]; then
     trace "[ark_send] duplicate label ${label}: ${existing}"
-    printf '%s' "${existing}" | jq -Rc --arg lbl "${label}" '
-      (. / "|") as $r |
+    printf '%s' "${existing}" | jq -c --arg lbl "${label}" '
       {error: {code: -32000, message: "duplicate label"},
-       "label": $lbl, id: ($r[0] | tonumber), status: $r[1],
-       movementId: (if $r[2] == "" then null else ($r[2] | tonumber) end),
-       destination: $r[3], amount_sat: ($r[4] | tonumber)}'
+       "label": $lbl, id: .id, status: .status, movementId: .movement_id,
+       destination: .destination, amount_sat: .amount_sat}'
     return 1
   fi
 
-  id=$(sql "INSERT INTO ark_send (label, destination, amount_sat, status) VALUES ('$(sql_quote "${label}")', '${destination}', ${amount}, 'pending') RETURNING id")
+  history=$(barkd_call GET "/history?type=ark&value=${destination}")
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    barkd_error "${returncode}" "${history}"
+    return 1
+  fi
+  floor=$(printf '%s' "${history}" | jq '[.[].id] | max // 0')
+
+  id=$(sql "INSERT INTO ark_send (label, destination, amount_sat, status, movement_floor) VALUES ('$(sql_quote "${label}")', '${destination}', ${amount}, 'pending', ${floor}) ON CONFLICT (label) DO NOTHING RETURNING id")
   if [ -z "${id}" ]; then
-    echo '{"error":{"code":-32603,"message":"could not record the send"}}'
+    echo '{"error":{"code":-32000,"message":"duplicate label"}}'
     return 1
   fi
 
@@ -171,7 +185,8 @@ ark_send() {
     return 1
   fi
 
-  movement_id=$(ark_find_send_movement "${destination}" "${amount}")
+  history=$(barkd_call GET "/history?type=ark&value=${destination}") || history='[]'
+  movement_id=$(ark_match_send "${history}" "${destination}" "${amount}" "${floor}")
   status="successful"
   sql "UPDATE ark_send SET status='${status}', movement_id=${movement_id:-NULL} WHERE id=${id}"
   message=$(printf '%s' "${response}" | jq -r '.message // ""')
@@ -181,25 +196,24 @@ ark_send() {
     '{id: $id, event: "ark_send", "label": $lbl, destination: $d, amount_sat: $a, status: $status, movementId: $m, message: $message}'
 }
 
-# Most recent successful movement that paid amount to destination.
-ark_find_send_movement() {
-  local destination=${1}
-  local amount=${2}
-  local history
-
-  history=$(barkd_call GET "/history?type=ark&value=${destination}") || return 1
-  printf '%s' "${history}" | jq -r --arg d "${destination}" --argjson a "${amount}" '
-    [ .[] | select(.status == "successful")
+# ark_match_send <history json> <destination> <amount> <floor>
+# Oldest successful movement after the floor that paid amount to destination.
+ark_match_send() {
+  printf '%s' "${1}" | jq -r --arg d "${2}" --argjson a "${3}" --argjson f "${4:-0}" '
+    [ .[] | select(.status == "successful" and .id > $f)
       | select(any(.sent_to[]; .destination.type == "ark" and .destination.value == $d and .amount_sat == $a)) ]
-    | sort_by(.id) | last | .id // empty'
+    | sort_by(.id) | first | .id // empty'
 }
 
 # ark_board: {"amount":100000,"label":"topup-1","callbackURL":"..."} or {"all":true,...}
+#
+# The job is recorded before barkd is called so a repeated label cannot board
+# twice. A refusal leaves the job failed with barkd's message.
 ark_board() {
   trace "Entering ark_board()..."
 
   local request=${1}
-  local amount all label callback_url callback_pg
+  local amount all label callback_url
   local response returncode txid vtxos id
 
   amount=$(printf '%s' "${request}" | jq -r '.amount // empty')
@@ -207,41 +221,33 @@ ark_board() {
   label=$(printf '%s' "${request}" | jq -r '.label // empty')
   callback_url=$(printf '%s' "${request}" | jq -r '.callbackURL // empty')
 
-  if [ -z "${label}" ]; then
-    echo '{"error":{"code":-32602,"message":"label is required"}}'
-    return 1
-  fi
-  if ark_job_label_exists "${label}"; then
-    echo '{"error":{"code":-32000,"message":"duplicate label"}}'
-    return 1
-  fi
-
-  if [ "${all}" = "true" ]; then
-    response=$(barkd_call POST /boards/board-all)
-    returncode=$?
-  else
+  if [ "${all}" != "true" ]; then
     case "${amount}" in
       ''|*[!0-9]*)
         echo '{"error":{"code":-32602,"message":"amount must be an integer number of satoshis, or all must be true"}}'
         return 1
         ;;
     esac
+  fi
+  id=$(ark_job_insert board "${label}" "${callback_url}") || { printf '%s' "${id}"; return 1; }
+
+  if [ "${all}" = "true" ]; then
+    response=$(barkd_call POST /boards/board-all)
+    returncode=$?
+  else
     response=$(barkd_call POST /boards/board-amount "$(jq -cn --argjson a "${amount}" '{amount_sat: $a}')")
     returncode=$?
   fi
   if [ "${returncode}" -ne 0 ]; then
-    barkd_error "${returncode}" "${response}"
+    ark_job_fail "${id}" "${returncode}" "${response}"
     return 1
   fi
 
   txid=$(printf '%s' "${response}" | jq -r '.funding_tx.txid // empty')
   vtxos=$(printf '%s' "${response}" | jq -c '.vtxos // []')
-  callback_pg=NULL
-  [ -n "${callback_url}" ] && callback_pg="'$(sql_quote "${callback_url}")'"
+  sql "UPDATE ark_job SET txid='${txid}', vtxos='$(sql_quote "${vtxos}")' WHERE id=${id}" > /dev/null
 
-  id=$(sql "INSERT INTO ark_job (kind, label, callback_url, txid, vtxos, status) VALUES ('board', '$(sql_quote "${label}")', ${callback_pg}, '${txid}', '$(sql_quote "${vtxos}")', 'pending') RETURNING id")
-
-  jq -cn --argjson id "${id:-null}" --arg lbl "${label}" --arg txid "${txid}" --argjson vtxos "${vtxos}" \
+  jq -cn --argjson id "${id}" --arg lbl "${label}" --arg txid "${txid}" --argjson vtxos "${vtxos}" \
     --arg cb "${callback_url}" \
     '{id: $id, event: "ark_board", "label": $lbl, status: "pending", txid: $txid, vtxos: $vtxos, callbackURL: (if $cb == "" then null else $cb end)}'
 }
@@ -251,7 +257,7 @@ ark_offboard() {
   trace "Entering ark_offboard()..."
 
   local request=${1}
-  local vtxos all address label callback_url callback_pg body
+  local vtxos all address label callback_url body
   local response returncode txid movement_id id
 
   vtxos=$(printf '%s' "${request}" | jq -c '.vtxos // []')
@@ -260,49 +266,65 @@ ark_offboard() {
   label=$(printf '%s' "${request}" | jq -r '.label // empty')
   callback_url=$(printf '%s' "${request}" | jq -r '.callbackURL // empty')
 
-  if [ -z "${label}" ]; then
-    echo '{"error":{"code":-32602,"message":"label is required"}}'
+  if [ "${all}" != "true" ] && [ "$(printf '%s' "${vtxos}" | jq 'length')" -eq 0 ]; then
+    echo '{"error":{"code":-32602,"message":"vtxos must be a non-empty list, or all must be true"}}'
     return 1
   fi
-  if ark_job_label_exists "${label}"; then
-    echo '{"error":{"code":-32000,"message":"duplicate label"}}'
-    return 1
-  fi
+  id=$(ark_job_insert offboard "${label}" "${callback_url}" "${vtxos}") || { printf '%s' "${id}"; return 1; }
 
   if [ "${all}" = "true" ]; then
     body=$(jq -cn --arg a "${address}" '{address: (if $a == "" then null else $a end)}')
     response=$(barkd_call POST /wallet/offboard/all "${body}")
     returncode=$?
   else
-    if [ "$(printf '%s' "${vtxos}" | jq 'length')" -eq 0 ]; then
-      echo '{"error":{"code":-32602,"message":"vtxos must be a non-empty list, or all must be true"}}'
-      return 1
-    fi
     body=$(jq -cn --arg a "${address}" --argjson v "${vtxos}" '{address: (if $a == "" then null else $a end), vtxos: $v}')
     response=$(barkd_call POST /wallet/offboard/vtxos "${body}")
     returncode=$?
   fi
   if [ "${returncode}" -ne 0 ]; then
-    barkd_error "${returncode}" "${response}"
+    ark_job_fail "${id}" "${returncode}" "${response}"
     return 1
   fi
 
   txid=$(printf '%s' "${response}" | jq -r '.offboard_txid // empty')
   movement_id=$(printf '%s' "${response}" | jq -r '.movement_id // empty')
-  callback_pg=NULL
-  [ -n "${callback_url}" ] && callback_pg="'$(sql_quote "${callback_url}")'"
+  sql "UPDATE ark_job SET txid='${txid}', movement_id=${movement_id:-NULL} WHERE id=${id}" > /dev/null
 
-  id=$(sql "INSERT INTO ark_job (kind, label, callback_url, txid, vtxos, movement_id, status) VALUES ('offboard', '$(sql_quote "${label}")', ${callback_pg}, '${txid}', '$(sql_quote "${vtxos}")', ${movement_id:-NULL}, 'pending') RETURNING id")
-
-  jq -cn --argjson id "${id:-null}" --arg lbl "${label}" --arg txid "${txid}" --argjson m "${movement_id:-null}" \
+  jq -cn --argjson id "${id}" --arg lbl "${label}" --arg txid "${txid}" --argjson m "${movement_id:-null}" \
     --arg cb "${callback_url}" \
     '{id: $id, event: "ark_offboard", "label": $lbl, status: "pending", txid: $txid, movementId: $m, callbackURL: (if $cb == "" then null else $cb end)}'
 }
 
-ark_job_label_exists() {
-  local existing
-  existing=$(sql "SELECT id FROM ark_job WHERE label='$(sql_quote "${1}")'")
-  [ -n "${existing}" ]
+# ark_job_insert <kind> <label> <callback url> [vtxos json]
+# Prints the new job id, or an error document with a non-zero return.
+ark_job_insert() {
+  local kind=${1}
+  local label=${2}
+  local callback_url=${3}
+  local vtxos=${4:-[]}
+  local callback_pg=NULL
+  local id
+
+  if [ -z "${label}" ]; then
+    echo '{"error":{"code":-32602,"message":"label is required"}}'
+    return 1
+  fi
+  [ -n "${callback_url}" ] && callback_pg="'$(sql_quote "${callback_url}")'"
+  id=$(sql "INSERT INTO ark_job (kind, label, callback_url, vtxos, status) VALUES ('${kind}', '$(sql_quote "${label}")', ${callback_pg}, '$(sql_quote "${vtxos}")', 'pending') ON CONFLICT (label) DO NOTHING RETURNING id")
+  if [ -z "${id}" ]; then
+    echo '{"error":{"code":-32000,"message":"duplicate label"}}'
+    return 1
+  fi
+  printf '%s' "${id}"
+}
+
+# ark_job_fail <job id> <barkd_call rc> <barkd body>
+ark_job_fail() {
+  local message
+  message=$(printf '%s' "${3}" | jq -r '.message // .error // "request failed"' 2>/dev/null)
+  [ -z "${message}" ] && message="barkd unreachable"
+  sql "UPDATE ark_job SET status='failed', error='$(sql_quote "${message}")' WHERE id=${1}" > /dev/null
+  barkd_error "${2}" "${3}"
 }
 
 # ark_refresh: {"vtxos":["..."]} or {"all":true}
@@ -330,7 +352,7 @@ ark_getjob() {
   trace "Entering ark_getjob(${1})..."
 
   local row
-  row=$(sql "SELECT id, kind, label, status, txid, movement_id, vtxos, callback_url, calledback FROM ark_job WHERE label='$(sql_quote "${1}")'")
+  row=$(sql_json "SELECT id, kind, label, status, txid, movement_id, vtxos, callback_url, calledback, error FROM ark_job WHERE label='$(sql_quote "${1}")'")
   if [ -z "${row}" ]; then
     echo '{"error":{"code":-32602,"message":"job not found"}}'
     return 1
@@ -338,28 +360,24 @@ ark_getjob() {
   ark_job_row_json "${row}"
 }
 
+# ark_job_row_json <json row from sql_json>
 ark_job_row_json() {
-  printf '%s' "${1}" | jq -Rc '
-    (. / "|") as $r |
-    {id: ($r[0] | tonumber), kind: $r[1], "label": $r[2], status: $r[3], txid: $r[4],
-     movementId: (if $r[5] == "" then null else ($r[5] | tonumber) end),
-     vtxos: ($r[6] | fromjson? // []),
-     callbackURL: (if $r[7] == "" then null else $r[7] end),
-     calledback: ($r[8] == "t")}'
+  printf '%s' "${1}" | jq -c '
+    {id: .id, kind: .kind, "label": .label, status: .status, txid: .txid,
+     movementId: .movement_id, vtxos: (.vtxos | fromjson? // []),
+     callbackURL: .callback_url, calledback: .calledback, error: .error}'
 }
 
 ark_getsend() {
   trace "Entering ark_getsend(${1})..."
 
   local row
-  row=$(sql "SELECT id, label, destination, amount_sat, status, movement_id, error FROM ark_send WHERE label='$(sql_quote "${1}")'")
+  row=$(sql_json "SELECT id, label, destination, amount_sat, status, movement_id, error FROM ark_send WHERE label='$(sql_quote "${1}")'")
   if [ -z "${row}" ]; then
     echo '{"error":{"code":-32602,"message":"send not found"}}'
     return 1
   fi
-  printf '%s' "${row}" | jq -Rc '
-    (. / "|") as $r |
-    {id: ($r[0] | tonumber), event: "ark_send", "label": $r[1], destination: $r[2], amount_sat: ($r[3] | tonumber),
-     status: $r[4], movementId: (if $r[5] == "" then null else ($r[5] | tonumber) end),
-     error: (if $r[6] == "" then null else $r[6] end)}'
+  printf '%s' "${row}" | jq -c '
+    {id: .id, event: "ark_send", "label": .label, destination: .destination, amount_sat: .amount_sat,
+     status: .status, movementId: .movement_id, error: .error}'
 }

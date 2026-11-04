@@ -35,6 +35,8 @@ barkd_http_code() {
   cat "$(barkd_http_code_file)" 2>/dev/null
 }
 
+trap 'rm -f "$(barkd_http_code_file)"' EXIT
+
 barkd_call() {
   trace "Entering barkd_call()..."
 

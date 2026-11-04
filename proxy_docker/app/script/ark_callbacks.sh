@@ -63,22 +63,28 @@ ark_process_movement() {
   return 0
 }
 
-# Posts every callback not yet delivered.
+# Posts every callback not yet delivered. The lock keeps the notification
+# stream and proxycron from posting the same callback twice.
 ark_do_callbacks() {
   trace "Entering ark_do_callbacks()..."
-
+  (
   local rows row
   local IFS="
 "
 
-  rows=$(sql "SELECT r.id, w.callback_url, w.label, w.event_message, r.address, r.amount_sat, r.movement_id, r.vtxos, w.expected_amount_sat"\
+  if ! flock --timeout 60 8; then
+    trace "[ark_do_callbacks] could not get the lock"
+    exit 1
+  fi
+
+  rows=$(sql_json "SELECT r.id, w.callback_url, w.label, w.event_message, r.address, r.amount_sat, r.movement_id, r.vtxos, w.expected_amount_sat"\
 " FROM ark_receive r JOIN ark_watching w ON w.id = r.ark_watching_id"\
 " WHERE NOT r.calledback AND w.callback_url IS NOT NULL AND w.callback_url <> ''")
   for row in ${rows}; do
     ark_receive_callback "${row}"
   done
 
-  rows=$(sql "SELECT id, kind, label, callback_url, txid, movement_id, vtxos, status FROM ark_job"\
+  rows=$(sql_json "SELECT id, kind, label, callback_url, txid, movement_id, vtxos, status FROM ark_job"\
 " WHERE NOT calledback AND status <> 'pending' AND callback_url IS NOT NULL AND callback_url <> ''")
   for row in ${rows}; do
     ark_job_callback "${row}"
@@ -87,33 +93,24 @@ ark_do_callbacks() {
   # Receives and jobs without a callback URL are marked delivered immediately.
   sql "UPDATE ark_receive r SET calledback=true FROM ark_watching w WHERE w.id = r.ark_watching_id AND NOT r.calledback AND (w.callback_url IS NULL OR w.callback_url = '')" > /dev/null
   sql "UPDATE ark_job SET calledback=true WHERE NOT calledback AND status <> 'pending' AND (callback_url IS NULL OR callback_url = '')" > /dev/null
+  ) 8>./.ark_callbacks.lock
 
   return 0
 }
 
+# ark_receive_callback <json row>
 ark_receive_callback() {
   trace "Entering ark_receive_callback()..."
 
   local row=${1}
-  local id url label event_message address amount movement_id vtxos expected data returncode
+  local id url data returncode
 
-  id=$(printf '%s' "${row}" | cut -d '|' -f1)
-  url=$(printf '%s' "${row}" | cut -d '|' -f2)
-  label=$(printf '%s' "${row}" | cut -d '|' -f3)
-  event_message=$(printf '%s' "${row}" | cut -d '|' -f4)
-  address=$(printf '%s' "${row}" | cut -d '|' -f5)
-  amount=$(printf '%s' "${row}" | cut -d '|' -f6)
-  movement_id=$(printf '%s' "${row}" | cut -d '|' -f7)
-  vtxos=$(printf '%s' "${row}" | cut -d '|' -f8)
-  expected=$(printf '%s' "${row}" | cut -d '|' -f9)
-
-  data=$(jq -cn --argjson id "${id}" --arg lbl "${label}" --arg em "${event_message}" --arg a "${address}" \
-    --argjson amount "${amount}" --argjson m "${movement_id}" --argjson vtxos "${vtxos:-[]}" --arg expected "${expected}" \
-    '{id: $id, event: "ark_receive", address: $a,
-      "label": (if $lbl == "" then null else $lbl end),
-      eventMessage: (if $em == "" then null else $em end),
-      amount_sat: $amount, expectedAmount: (if $expected == "" then null else ($expected | tonumber) end),
-      movementId: $m, vtxos: $vtxos}')
+  id=$(printf '%s' "${row}" | jq -r '.id')
+  url=$(printf '%s' "${row}" | jq -r '.callback_url')
+  data=$(printf '%s' "${row}" | jq -c '
+    {id: .id, event: "ark_receive", address: .address, "label": .label, eventMessage: .event_message,
+     amount_sat: .amount_sat, expectedAmount: .expected_amount_sat, movementId: .movement_id,
+     vtxos: (.vtxos | fromjson? // [])}')
   trace "[ark_receive_callback] data=${data}"
 
   notify_web "${url}" "${data}" "${TOR_ADDR_WATCH_WEBHOOKS}" > /dev/null
@@ -128,24 +125,18 @@ ark_receive_callback() {
   return ${returncode}
 }
 
+# ark_job_callback <json row>
 ark_job_callback() {
   trace "Entering ark_job_callback()..."
 
   local row=${1}
-  local id kind label url txid movement_id vtxos status data returncode
+  local id url data returncode
 
-  id=$(printf '%s' "${row}" | cut -d '|' -f1)
-  kind=$(printf '%s' "${row}" | cut -d '|' -f2)
-  label=$(printf '%s' "${row}" | cut -d '|' -f3)
-  url=$(printf '%s' "${row}" | cut -d '|' -f4)
-  txid=$(printf '%s' "${row}" | cut -d '|' -f5)
-  movement_id=$(printf '%s' "${row}" | cut -d '|' -f6)
-  vtxos=$(printf '%s' "${row}" | cut -d '|' -f7)
-  status=$(printf '%s' "${row}" | cut -d '|' -f8)
-
-  data=$(jq -cn --argjson id "${id}" --arg kind "${kind}" --arg lbl "${label}" --arg txid "${txid}" \
-    --argjson m "${movement_id:-null}" --argjson vtxos "${vtxos:-[]}" --arg status "${status}" \
-    '{id: $id, event: ("ark_" + $kind), "label": $lbl, status: $status, txid: $txid, movementId: $m, vtxos: $vtxos}')
+  id=$(printf '%s' "${row}" | jq -r '.id')
+  url=$(printf '%s' "${row}" | jq -r '.callback_url')
+  data=$(printf '%s' "${row}" | jq -c '
+    {id: .id, event: ("ark_" + .kind), "label": .label, status: .status, txid: .txid,
+     movementId: .movement_id, vtxos: (.vtxos | fromjson? // [])}')
   trace "[ark_job_callback] data=${data}"
 
   notify_web "${url}" "${data}" "${TOR_TXID_WATCH_WEBHOOKS}" > /dev/null
