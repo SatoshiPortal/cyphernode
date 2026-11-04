@@ -14,6 +14,7 @@
 #   BARKD_WAIT_FOR_BITCOIN  wait for Cyphernode's bitcoin container, default true
 
 set -eu
+umask 077
 
 DATADIR="${BARKD_DATADIR:-/barkd/data}"
 TOKEN_DIR="${BARKD_TOKEN_DIR:-/barkd/token}"
@@ -73,8 +74,26 @@ until curl -s -f "http://127.0.0.1:${PORT}/ping" > /dev/null; do
 done
 log "barkd is up"
 
+# A wallet created while bitcoind is still syncing starts at that old height
+# and then fetches every later block before its on-chain calls answer.
+wait_for_sync() {
+  local info
+  while :; do
+    info=$(curl -s -u "${BITCOIND_RPC_USER}:${BITCOIND_RPC_PASS}" -H "Content-Type: application/json" \
+      --data '{"jsonrpc":"1.0","id":"barkd","method":"getblockchaininfo","params":[]}' "${BITCOIND_RPC_URL}" \
+      | jq -r '.result | select(. != null) | "\(.initialblockdownload) \(.blocks)/\(.headers)"')
+    case "${info}" in
+      false*) return 0 ;;
+      "") log "bitcoind not answering, waiting" ;;
+      *) log "bitcoind syncing (${info#* }), waiting before creating the wallet" ;;
+    esac
+    sleep 60
+  done
+}
+
 fingerprint=$(api GET /wallet | jq -r '.fingerprint // empty')
 if [ -z "${fingerprint}" ]; then
+  wait_for_sync
   log "no wallet found, creating one on ${ARK_NETWORK:-mainnet} against ${ARK_SERVER_URL}"
   request=$(jq -cn \
     --arg ark "${ARK_SERVER_URL}" \
