@@ -138,7 +138,7 @@ sudo_mkdir_if_required() {
 }
 
 modify_permissions() {
-  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "elements" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("installer" "gatekeeper" "lightning" "bitcoin" "elements" "docker-compose.yaml" "traefik" "tor" "$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$ARK_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   for d in "${directories[@]}"
   do
     if [[ -e $d ]]; then
@@ -150,7 +150,7 @@ modify_permissions() {
 }
 
 modify_owner() {
-  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$ARK_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$OTSCLIENT_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local user=$(id -u $RUN_AS_USER):$(id -g $RUN_AS_USER)
   for d in "${directories[@]}"
   do
@@ -224,6 +224,7 @@ configure() {
              -e ELEMENTS_VERSION=$ELEMENTS_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e PAYMENTALIST_VERSION=$PAYMENTALIST_VERSION \
+             -e BARKD_VERSION=$BARKD_VERSION \
              -e CONF_VERSION=$CONF_VERSION \
              -e SETUP_VERSION=$SETUP_VERSION \
              --log-driver=none$pw_env \
@@ -305,11 +306,13 @@ process_bitcoinconf() {
   local txindexEntry=$(sudo_if_required grep -e ^txindex $bitcoinconf | tr -d '[:space:]')
   local testnetEntry=$(sudo_if_required grep -e ^testnet $bitcoinconf | tr -d '[:space:]')
   local regtestEntry=$(sudo_if_required grep -e ^regtest $bitcoinconf | tr -d '[:space:]')
+  local signetEntry=$(sudo_if_required grep -e ^signet $bitcoinconf | tr -d '[:space:]')
 
   local prune=0
   local txindex=0
   local testnet=0
   local regtest=0
+  local signet=0
 
   if [[ $pruneEntry =~ ^prune && ! $pruneEntry == 'prune=0' ]]; then
     prune=1
@@ -326,11 +329,15 @@ process_bitcoinconf() {
   if [[ $regtestEntry =~ ^regtest && ! $regtestEntry == 'regtest=0' ]]; then
     regtest=1
   fi
+
+  if [[ $signetEntry =~ ^signet && ! $signetEntry == 'signet=0' ]]; then
+    signet=1
+  fi
   #  prune &  txindex: 3
   # !prune &  txindex: 2
   #  prune & !txindex: 1
   # !prune & !txindex: 0
-  echo $(($prune|$txindex<<1|$testnet<<2|$regtest<<3))
+  echo $(($prune|$txindex<<1|$testnet<<2|$regtest<<3|$signet<<4))
 }
 
 
@@ -689,6 +696,21 @@ install_docker() {
     fi
   fi
 
+  if [[ $FEATURE_ARK == true ]]; then
+    if ${sudo} [ ! -d $ARK_DATAPATH/data ]; then
+      step "   [32mcreate[0m $ARK_DATAPATH/data"
+      sudo_mkdir_if_required $ARK_DATAPATH/data
+      next
+    fi
+    if ${sudo} [ ! -d $ARK_DATAPATH/token ]; then
+      step "   [32mcreate[0m $ARK_DATAPATH/token"
+      sudo_mkdir_if_required $ARK_DATAPATH/token
+      next
+    fi
+
+    copy_file $cyphernodeconf_filepath/ark/barkd.env $current_path/.env/barkd.env 1
+  fi
+
   if [[ $FEATURE_OTSCLIENT == true ]]; then
     if ${sudo} [ ! -d $OTSCLIENT_DATAPATH ]; then
       step "   [32mcreate[0m $OTSCLIENT_DATAPATH"
@@ -805,7 +827,7 @@ install_docker() {
 
 check_directory_owner() {
   # if one directory does not have access rights for $RUN_AS_USER, we echo 1, else we echo 0
-  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+  local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$ARK_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
   local status=0
   for d in "${directories[@]}"
   do
@@ -909,7 +931,7 @@ sanity_checks_pre_install() {
       if [[ $sudo_reason == 'directories' ]]; then
         echo "          [31mor check your data volumes if they have the right owner.[0m"
         echo "          [31mThe owner of the following folders should be '$RUN_AS_USER':[0m"
-        local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
+        local directories=("$BITCOIN_DATAPATH" "$ELEMENTS_DATAPATH" "$LIGHTNING_DATAPATH" "$ARK_DATAPATH" "$PROXY_DATAPATH" "$GATEKEEPER_DATAPATH" "$POSTGRES_DATAPATH" "$LOGS_DATAPATH" "$TRAEFIK_DATAPATH" "$TOR_DATAPATH")
           local status=0
           for d in "${directories[@]}"
           do
@@ -1010,6 +1032,7 @@ CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v31.1"
 ELEMENTS_VERSION="v23.2.5"
 LIGHTNING_VERSION="v26.06.9"
+BARKD_VERSION="v0.9.0-dev"
 TRAEFIK_VERSION="v2.6.3"
 MOSQUITTO_VERSION="1.6-openssl"
 POSTGRES_VERSION="14.0-bullseye"

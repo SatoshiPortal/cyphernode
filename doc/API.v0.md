@@ -1950,3 +1950,199 @@ Proxy response:
   }
 }
 ```
+
+## Ark (barkd)
+
+Available when the `ark` feature is installed. The proxy drives a barkd wallet
+on your Ark server. Amounts are in satoshis. Each money-moving call takes a
+caller `label` that must be unique: a repeated label returns the stored outcome
+instead of paying twice.
+
+### Get Ark wallet info
+
+```http
+GET http://cyphernode:8888/ark_getinfo
+```
+
+Proxy response:
+
+```json
+{
+  "connected": true,
+  "ark_info": { "network": "signet", "server_pubkey": "02...", "round_interval": {"secs": 600, "nanos": 0}, "max_vtxo_amount_sat": null, "min_board_amount_sat": 1000 },
+  "fallback": { "registered": true, "payout_address": "tb1q..." },
+  "next_round": { "start_time": "2026-11-03T21:00:00-05:00" }
+}
+```
+
+`fallback.payout_address` is where this wallet's expired coins are paid out.
+It is the wallet's own on-chain address, registered once at creation.
+
+### Get Ark balance
+
+```http
+GET http://cyphernode:8888/ark_getbalance
+```
+
+Proxy response:
+
+```json
+{ "spendable_sat": 150000, "needs_refresh_sat": 0, "pending_in_round_sat": 0, "pending_board_sat": 0, "awaiting_settlement_sat": 0 }
+```
+
+Only `spendable_sat` can be sent right now.
+
+### Get a new Ark address
+
+```http
+GET http://cyphernode:8888/ark_getnewaddress
+```
+
+Proxy response:
+
+```json
+{ "address": "tark1..." }
+```
+
+### Watch an Ark address (called by your application)
+
+Registers a callback for payments received on the address. An Ark receive is
+final as soon as the wallet records it, so there is one callback per received
+payment. The same address can be watched with different callback URLs.
+`eventMessage` is echoed back as given; use base64.
+
+```http
+POST http://cyphernode:8888/ark_watch
+with body...
+{"address":"tark1...","callbackURL":"192.168.111.233:1111/callback","label":"order-42","eventMessage":"eyJ...","expectedAmount":12345}
+```
+
+Proxy response:
+
+```json
+{ "id": 7, "event": "ark_watch", "inserted": true, "address": "tark1...", "callbackURL": "192.168.111.233:1111/callback", "label": "order-42", "eventMessage": "eyJ...", "expectedAmount": 12345 }
+```
+
+Callback body:
+
+```json
+{ "id": 11, "event": "ark_receive", "address": "tark1...", "label": "order-42", "eventMessage": "eyJ...", "amount_sat": 12345, "expectedAmount": 12345, "movementId": 9, "vtxos": ["..."] }
+```
+
+### Un-watch an Ark address
+
+```http
+GET http://cyphernode:8888/ark_unwatch/tark1...
+```
+
+or
+
+```http
+POST http://cyphernode:8888/ark_unwatch
+with body...
+{"address":"tark1...","callbackURL":"192.168.111.233:1111/callback"}
+```
+
+or `{"id":7}`.
+
+### List active Ark watches
+
+```http
+GET http://cyphernode:8888/ark_getactivewatches
+```
+
+### Send an Ark payment
+
+```http
+POST http://cyphernode:8888/ark_send
+with body...
+{"destination":"tark1...","amount":12345,"label":"payout-42"}
+```
+
+Proxy response:
+
+```json
+{ "id": 2, "event": "ark_send", "label": "payout-42", "destination": "tark1...", "amount_sat": 12345, "status": "successful", "movementId": 5, "message": "Payment sent" }
+```
+
+`status` is `successful`, `failed`, or `unknown` when barkd could not be
+reached after the request was recorded. Unknown sends are reconciled from the
+wallet history by the callbacks cron; check them with `ark_getsend/<label>`.
+
+### Board (on-chain to Ark)
+
+Funds come from barkd's own on-chain wallet: send to `ark_onchain_getnewaddress`
+first, wait for confirmation, then board. The callback fires once the board is
+confirmed and the coins are spendable.
+
+```http
+POST http://cyphernode:8888/ark_board
+with body...
+{"amount":100000,"label":"topup-1","callbackURL":"192.168.111.233:1111/callback"}
+```
+
+or `{"all":true,"label":"topup-2","callbackURL":"..."}`.
+
+Proxy response:
+
+```json
+{ "id": 3, "event": "ark_board", "label": "topup-1", "status": "pending", "txid": "...", "vtxos": ["..."], "callbackURL": "192.168.111.233:1111/callback" }
+```
+
+### Offboard (cooperative exit to on-chain)
+
+Joins the next round. The callback fires once the round has produced the
+offboard transaction; use `watchtxid` on its `txid` for confirmations. Without
+`address`, funds go to barkd's on-chain wallet.
+
+```http
+POST http://cyphernode:8888/ark_offboard
+with body...
+{"vtxos":["..."],"address":"tb1q...","label":"exit-1","callbackURL":"192.168.111.233:1111/callback"}
+```
+
+or `{"all":true,"address":"tb1q...","label":"exit-2","callbackURL":"..."}`.
+
+Proxy response:
+
+```json
+{ "id": 4, "event": "ark_offboard", "label": "exit-1", "status": "pending", "txid": "...", "movementId": 12, "callbackURL": "192.168.111.233:1111/callback" }
+```
+
+Board and offboard callback body:
+
+```json
+{ "id": 3, "event": "ark_board", "label": "topup-1", "status": "successful", "txid": "...", "movementId": 9, "vtxos": ["..."] }
+```
+
+### Job and send status
+
+```http
+GET http://cyphernode:8888/ark_getjob/topup-1
+GET http://cyphernode:8888/ark_getsend/payout-42
+```
+
+### Refresh coins
+
+The wallet refreshes coins near expiry on its own. Force one with:
+
+```http
+POST http://cyphernode:8888/ark_refresh
+with body...
+{"vtxos":["..."]}
+```
+
+or `{"all":true}`.
+
+### VTXOs, movements and the on-chain wallet
+
+```http
+GET http://cyphernode:8888/ark_listvtxos
+GET http://cyphernode:8888/ark_listmovements
+GET http://cyphernode:8888/ark_getmovement/12
+GET http://cyphernode:8888/ark_onchain_getnewaddress
+GET http://cyphernode:8888/ark_onchain_getbalance
+```
+
+`ark_listvtxos` includes each coin's `expiry_height`; `ark_listmovements`
+includes `offchain_fee_sat` per movement.

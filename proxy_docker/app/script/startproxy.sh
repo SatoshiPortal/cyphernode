@@ -96,6 +96,8 @@ createCurlConfig "${WATCHER_BTC_NODE_RPC_CFG}" "${WATCHER_BTC_NODE_RPC_USER}"
 createCurlConfig "${SPENDER_BTC_NODE_RPC_CFG}" "${SPENDER_BTC_NODE_RPC_USER}"
 createCurlConfig "${SPENDER_ELEMENTS_NODE_RPC_CFG}" "${SPENDER_ELEMENTS_NODE_RPC_USER}"
 createCurlConfig "${WATCHER_ELEMENTS_NODE_RPC_CFG}" "${WATCHER_ELEMENTS_NODE_RPC_USER}"
+# The barkd curl config is written lazily by sendtobarkd.sh once the token exists
+rm -f "${BARKD_CURL_CFG}"
 
 . ${DB_PATH}/config.sh
 if [ "${FEATURE_LIGHTNING}" = "true" ]; then
@@ -107,6 +109,9 @@ fi
 if [ "${FEATURE_ELEMENTS}" = "true" ]; then
   ./elements_node_walletnotify.sh &
   ./elements_node_newtip.sh &
+fi
+if [ "${FEATURE_ARK}" = "true" ]; then
+  ./ark_notifications.sh &
 fi
 
 # For some reason, ncat doesn't like being PID 1 (Ncat: assertion failed: count <= INT_MAX QUITTING.),

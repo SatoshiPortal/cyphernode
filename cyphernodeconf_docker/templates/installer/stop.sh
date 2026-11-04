@@ -29,6 +29,7 @@ stop_apps() {
         export GATEKEEPER_PORT
         export TOR_DATAPATH
         export LIGHTNING_DATAPATH
+        export ARK_DATAPATH
         export BITCOIN_DATAPATH
         export APP_SCRIPT_PATH
         export APP_ID

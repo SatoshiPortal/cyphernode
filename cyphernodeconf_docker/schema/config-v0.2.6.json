@@ -148,6 +148,34 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "ark"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "ark_server_url",
+          "ark_datapath"
+        ],
+        "properties": {
+          "net": {
+            "enum": [
+              "mainnet",
+              "signet",
+              "regtest"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -189,7 +217,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "ark"
         ],
         "title": "The feature",
         "default": "",
@@ -198,7 +227,8 @@
           "lightning",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "ark"
         ]
       }
     },
@@ -258,6 +288,7 @@
       "enum": [
         "testnet",
         "mainnet",
+        "signet",
         "regtest"
       ],
       "title": "The net cyphernode is running on",
@@ -720,6 +751,30 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "ark_server_url": {
+      "$id": "#/properties/ark_server_url",
+      "type": "string",
+      "title": "Ark server (captaind) URL",
+      "examples": [
+        "https://ark.example.com"
+      ]
+    },
+    "ark_datapath": {
+      "$id": "#/properties/ark_datapath",
+      "type": "string",
+      "title": "Ark wallet (barkd) datapath",
+      "examples": [
+        "/tmp/cyphernode/ark"
+      ]
+    },
+    "ark_datapath_custom": {
+      "$id": "#/properties/ark_datapath_custom",
+      "type": "string",
+      "title": "Ark wallet custom datapath",
+      "examples": [
+        "/tmp/cyphernode/ark"
       ]
     }
   }

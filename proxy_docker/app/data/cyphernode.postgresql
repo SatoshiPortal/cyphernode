@@ -271,4 +271,67 @@ CREATE INDEX idx_elements_watching_by_txid_calledback1conf ON elements_watching_
 CREATE INDEX idx_elements_watching_by_txid_callbackxconf ON elements_watching_by_txid (callbackxconf);
 CREATE INDEX idx_elements_watching_by_txid_calledbackxconf ON elements_watching_by_txid (calledbackxconf);
 
+CREATE TABLE IF NOT EXISTS ark_watching (
+  id SERIAL PRIMARY KEY,
+  address VARCHAR NOT NULL,
+  label VARCHAR,
+  watching BOOLEAN DEFAULT FALSE,
+  callback_url VARCHAR,
+  event_message VARCHAR,
+  expected_amount_sat BIGINT,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ark_watching_address ON ark_watching (address);
+CREATE INDEX IF NOT EXISTS idx_ark_watching_label ON ark_watching (label);
+CREATE INDEX IF NOT EXISTS idx_ark_watching_watching ON ark_watching (watching);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ark_watching_address_cb ON ark_watching (address, COALESCE(callback_url, ''));
+
+CREATE TABLE IF NOT EXISTS ark_receive (
+  id SERIAL PRIMARY KEY,
+  movement_id INTEGER NOT NULL,
+  ark_watching_id INTEGER REFERENCES ark_watching,
+  address VARCHAR NOT NULL,
+  amount_sat BIGINT NOT NULL,
+  vtxos VARCHAR,
+  calledback BOOLEAN DEFAULT FALSE,
+  calledback_ts TIMESTAMP,
+  callback_failures INTEGER DEFAULT 0,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ark_receive_movement_watch ON ark_receive (movement_id, ark_watching_id);
+CREATE INDEX IF NOT EXISTS idx_ark_receive_calledback ON ark_receive (calledback);
+
+CREATE TABLE IF NOT EXISTS ark_send (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR NOT NULL UNIQUE,
+  destination VARCHAR NOT NULL,
+  amount_sat BIGINT NOT NULL,
+  status VARCHAR NOT NULL,
+  movement_id INTEGER,
+  error VARCHAR,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ark_send_status ON ark_send (status);
+
+CREATE TABLE IF NOT EXISTS ark_job (
+  id SERIAL PRIMARY KEY,
+  kind VARCHAR NOT NULL,
+  label VARCHAR NOT NULL UNIQUE,
+  callback_url VARCHAR,
+  txid VARCHAR,
+  vtxos VARCHAR,
+  movement_id INTEGER,
+  status VARCHAR NOT NULL,
+  calledback BOOLEAN DEFAULT FALSE,
+  calledback_ts TIMESTAMP,
+  callback_failures INTEGER DEFAULT 0,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ark_job_status ON ark_job (status);
+CREATE INDEX IF NOT EXISTS idx_ark_job_movement ON ark_job (movement_id);
+
+INSERT INTO cyphernode_props (property, value, category)
+SELECT 'ark_last_pushed_at', '', 'ark'
+WHERE NOT EXISTS (SELECT 1 FROM cyphernode_props WHERE property = 'ark_last_pushed_at');
+
 COMMIT;

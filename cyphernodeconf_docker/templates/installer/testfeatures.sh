@@ -171,6 +171,18 @@ checklnnode() {
   return 0
 }
 
+checkbarkd() {
+  echo -en "\r\n\e[1;36mTesting Ark wallet... " > /dev/console
+  local rc
+
+  rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/ark_getinfo)
+  [ "${rc}" -ne "200" ] && return 400
+
+  echo -e "\e[1;36mbarkd rocks!" > /dev/console
+
+  return 0
+}
+
 checkservice() {
   local interval=15
   local totaltime=180
@@ -184,12 +196,12 @@ checkservice() {
   while :
   do
     outcome=0
-    for container in gatekeeper proxy proxycron broker notifier pycoin postgres paymentalist <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres paymentalist <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %><%= (features.indexOf('ark') != -1)?'barkd ':'' %>; do
       echo -e "  \e[0;32mVerifying \e[0;33m${container}\e[0;32m..." > /dev/console
       (ping -c 10 ${container} 2> /dev/null | grep "0% packet loss" > /dev/null) &
       eval ${container}=$!
     done
-    for container in gatekeeper proxy proxycron broker notifier pycoin postgres paymentalist <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+    for container in gatekeeper proxy proxycron broker notifier pycoin postgres paymentalist <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %><%= (features.indexOf('ark') != -1)?'barkd ':'' %>; do
       eval wait '$'${container} ; returncode=$? ; outcome=$((${outcome} + ${returncode}))
       eval c_${container}=${returncode}
     done
@@ -213,7 +225,7 @@ checkservice() {
   #    { "name": "bitcoin", "active":true },
   #    { "name": "lightning", "active":true },
   #  ]
-  for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %>; do
+  for container in gatekeeper proxy proxycron broker notifier pycoin postgres <%= (features.indexOf('otsclient') != -1)?'otsclient ':'' %><%= (features.indexOf('tor') != -1)?'tor ':'' %>bitcoin  <%= (features.indexOf('lightning') != -1)?'lightning ':'' %><%= (features.indexOf('ark') != -1)?'barkd ':'' %>; do
     [ -n "${result}" ] && result="${result},"
     result="${result}{\"name\":\"${container}\",\"active\":"
     eval "returncode=\$c_${container}"
@@ -490,6 +502,26 @@ else
 fi
 finalreturncode=$((${returncode} | ${finalreturncode}))
 result="${result}$(feature_status ${returncode} 'Lightning error!')}"
+
+<% } %>
+
+<% if (features.indexOf('ark') != -1) { %>
+#############################
+# ARK                       #
+#############################
+
+result="${result},{\"coreFeature\":false,\"name\":\"ark\",\"working\":"
+status=$(echo "{${containers}}" | jq ".containers[] | select(.name == \"barkd\") | .active")
+if [[ "${workingproxy}" = "true" && "${status}" = "true" ]]; then
+  echo -e "\r\n\e[1;36mWaiting for barkd to be ready... " > /dev/console
+  timeout_feature '[ -f "/container_monitor/barkd_ready" ]' 600
+  timeout_feature checkbarkd
+  returncode=$?
+else
+  returncode=1
+fi
+finalreturncode=$((${returncode} | ${finalreturncode}))
+result="${result}$(feature_status ${returncode} 'Ark error!')}"
 
 <% } %>
 

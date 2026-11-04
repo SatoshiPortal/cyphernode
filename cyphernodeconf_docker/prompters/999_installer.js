@@ -373,6 +373,44 @@ module.exports = {
       message: prefix()+'Custom path for your lightning node data?'+utils.getHelp('lightning_datapath_custom'),
     },
     {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('ark') !== -1 },
+      type: 'list',
+      name: 'ark_datapath',
+      default: utils.getDefault( 'ark_datapath' ),
+      choices: [
+        {
+          name: utils.setupDir()+"/cyphernode/ark",
+          value: utils.setupDir()+"/cyphernode/ark"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/cyphernode/ark",
+          value: utils.defaultDataDirBase()+"/cyphernode/ark"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/.cyphernode/ark",
+          value: utils.defaultDataDirBase()+"/.cyphernode/ark"
+        },
+        {
+          name: utils.defaultDataDirBase()+"/ark",
+          value: utils.defaultDataDirBase()+"/ark"
+        },
+        {
+          name: "Custom path",
+          value: "_custom"
+        }
+      ],
+      message: prefix()+'Where do you want to store your Ark wallet (barkd) data?'+utils.getHelp('ark_datapath'),
+    },
+    {
+      when: function(props) { return installerDocker(props) && props.features.indexOf('ark') !== -1 && props.ark_datapath === '_custom'},
+      type: 'input',
+      name: 'ark_datapath_custom',
+      default: utils.getDefault( 'ark_datapath_custom' ),
+      filter: utils.trimFilter,
+      validate: utils.pathValidator,
+      message: prefix()+'Custom path for your Ark wallet data?'+utils.getHelp('ark_datapath_custom'),
+    },
+    {
       when: function(props) { return installerDocker(props) && props.features.indexOf('otsclient') !== -1 },
       type: 'list',
       name: 'otsclient_datapath',

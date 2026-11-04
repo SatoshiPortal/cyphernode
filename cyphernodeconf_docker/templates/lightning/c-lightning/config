@@ -4,6 +4,9 @@ network=regtest
 <% } else if (net === 'testnet') { %>
 # testnet
 network=testnet
+<% } else if (net === 'signet') { %>
+# signet
+network=signet
 <% } else if (net === 'mainnet') { %>
 network=bitcoin
 <% } %>

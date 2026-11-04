@@ -4,6 +4,7 @@ FEATURE_LIGHTNING=<%= (features.indexOf('lightning') != -1)?'true':'false' %>
 FEATURE_BATCHER=<%= (features.indexOf('batcher') != -1)?'true':'false' %>
 FEATURE_SPECTER=<%= (features.indexOf('specter') != -1)?'true':'false' %>
 FEATURE_ELEMENTS=<%= (features.indexOf('elements') != -1)?'true':'false' %>
+FEATURE_ARK=<%= (features.indexOf('ark') != -1)?'true':'false' %>
 FEATURE_OTSCLIENT=<%= (features.indexOf('otsclient') != -1)?'true':'false' %>
 LIGHTNING_IMPLEMENTATION=<%= lightning_implementation %>
 PROXY_DATAPATH=<%= proxy_datapath %>
@@ -39,4 +40,7 @@ BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 BITCOIN_NETWORK=<%= net %>
 <% if ( features.indexOf('elements') !== -1 ) { %>
 ELEMENTS_DATAPATH=<%= elements_datapath %>
+<% } %>
+<% if ( features.indexOf('ark') !== -1 ) { %>
+ARK_DATAPATH=<%= ark_datapath %>
 <% } %>

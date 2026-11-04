@@ -31,6 +31,10 @@
 . ./elements_pegin.sh
 . ./elements_pegout.sh
 . ./paymentalist.sh
+. ./ark.sh
+. ./ark_watchrequest.sh
+. ./ark_callbacks.sh
+. ./ark_manage_missed.sh
 
 main() {
   trace "Entering main()..."
@@ -271,6 +275,9 @@ main() {
           response=$(manage_not_imported)
           response=$(manage_missed_conf)
           response=$(do_callbacks)
+          if [ "${FEATURE_ARK}" = "true" ]; then
+            response=$(ark_manage_missed)
+          fi
           returncode=$?
           ;;
         get_txns_spending)
@@ -1218,6 +1225,125 @@ main() {
           trace "[check_bolt11_mrh] network: ${network}"
 
           response=$(check_bolt11_mrh "${bolt11}" "${network}")
+          returncode=$?
+          ;;
+        ark_getinfo)
+          # GET http://192.168.111.152:8080/ark_getinfo
+
+          response=$(ark_getinfo)
+          returncode=$?
+          ;;
+        ark_getbalance)
+          # GET http://192.168.111.152:8080/ark_getbalance
+
+          response=$(ark_getbalance)
+          returncode=$?
+          ;;
+        ark_listvtxos)
+          # GET http://192.168.111.152:8080/ark_listvtxos
+
+          response=$(ark_listvtxos)
+          returncode=$?
+          ;;
+        ark_listmovements)
+          # GET http://192.168.111.152:8080/ark_listmovements
+
+          response=$(ark_listmovements)
+          returncode=$?
+          ;;
+        ark_getmovement)
+          # GET http://192.168.111.152:8080/ark_getmovement/12
+
+          response=$(ark_getmovement "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        ark_getnewaddress)
+          # GET http://192.168.111.152:8080/ark_getnewaddress
+
+          response=$(ark_getnewaddress)
+          returncode=$?
+          ;;
+        ark_watch)
+          # POST http://192.168.111.152:8080/ark_watch
+          # BODY {"address":"ark1...","callbackURL":"192.168.111.233:1111/callback","label":"order-42","eventMessage":"eyJ...","expectedAmount":12345}
+
+          response=$(ark_watchrequest "${line}")
+          returncode=$?
+          ;;
+        ark_unwatch)
+          # GET http://192.168.111.152:8080/ark_unwatch/ark1...
+          # or
+          # POST http://192.168.111.152:8080/ark_unwatch
+          # BODY {"address":"ark1...","callbackURL":"192.168.111.233:1111/callback"}
+          # or
+          # BODY {"id":12}
+
+          if [ "${http_method}" = "POST" ]; then
+            response=$(ark_unwatchrequest "$(echo "${line}" | jq -r ".id // empty")" "$(echo "${line}" | jq -r ".address // empty")" "$(echo "${line}" | jq -r ".callbackURL // empty")")
+          else
+            response=$(ark_unwatchrequest "" "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)" "")
+          fi
+          returncode=$?
+          ;;
+        ark_getactivewatches)
+          # GET http://192.168.111.152:8080/ark_getactivewatches
+
+          response=$(ark_getactivewatches)
+          returncode=$?
+          ;;
+        ark_send)
+          # POST http://192.168.111.152:8080/ark_send
+          # BODY {"destination":"ark1...","amount":12345,"label":"order-42"}
+
+          response=$(ark_send "${line}")
+          returncode=$?
+          ;;
+        ark_getsend)
+          # GET http://192.168.111.152:8080/ark_getsend/order-42
+
+          response=$(ark_getsend "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        ark_board)
+          # POST http://192.168.111.152:8080/ark_board
+          # BODY {"amount":100000,"label":"topup-1","callbackURL":"192.168.111.233:1111/callback"}
+          # BODY {"all":true,"label":"topup-2","callbackURL":"192.168.111.233:1111/callback"}
+
+          response=$(ark_board "${line}")
+          returncode=$?
+          ;;
+        ark_offboard)
+          # POST http://192.168.111.152:8080/ark_offboard
+          # BODY {"vtxos":["..."],"address":"bc1...","label":"exit-1","callbackURL":"192.168.111.233:1111/callback"}
+          # BODY {"all":true,"label":"exit-2","callbackURL":"192.168.111.233:1111/callback"}
+
+          response=$(ark_offboard "${line}")
+          returncode=$?
+          ;;
+        ark_getjob)
+          # GET http://192.168.111.152:8080/ark_getjob/topup-1
+
+          response=$(ark_getjob "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
+          returncode=$?
+          ;;
+        ark_refresh)
+          # POST http://192.168.111.152:8080/ark_refresh
+          # BODY {"vtxos":["..."]}
+          # BODY {"all":true}
+
+          response=$(ark_refresh "${line}")
+          returncode=$?
+          ;;
+        ark_onchain_getnewaddress)
+          # GET http://192.168.111.152:8080/ark_onchain_getnewaddress
+
+          response=$(ark_onchain_getnewaddress)
+          returncode=$?
+          ;;
+        ark_onchain_getbalance)
+          # GET http://192.168.111.152:8080/ark_onchain_getbalance
+
+          response=$(ark_onchain_getbalance)
           returncode=$?
           ;;
         *)

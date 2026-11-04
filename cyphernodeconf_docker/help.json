@@ -1,6 +1,6 @@
 {
   "features": "What optional <font underline='true'>features</font> do you want me to activate?",
-  "net": "Which Bitcoin <font underline='true'>network</font> do you want Cyphernode to run on?",
+  "net": "Which Bitcoin <font underline='true'>network</font> do you want Cyphernode to run on? Signet is supported for Bitcoin, Lightning and Ark, but not for Elements.",
   "run_as_different_user": "I recommend running Cyphernode as a <font underline='true'>different user</font> when possible. Using your current user would give Cyphernode your current access rights, which could be a security issue especially if you are a sudoer. Please note that this feature is not supported on OSX at runtime, but you will be fine activating it in case you want to use the configuration file on another machine.",
   "username": "Run Cyphernode as <font underline='true'>what user</font>? I recommend user <font color='# 0000ff'>cyphernode</font>. If the user does not exist, I will create it for you.",
   "use_xpub": "Cyphernode can derive Bitcoin addresses from an xPub and the derivation path you want. If you want, you can provide your xPub and derivation path right now and call 'derive' with only the index instead of having to pass your xPub and derivation path on each call.",
@@ -54,5 +54,8 @@
   "installer_mode": "Only one <font underline='true'>installation mode</font> is supported, right now: <font color='#0000ff'>local docker (self-hosted)</font>. Choose wisely ;-)",
   "installer_cleanup": "Do you want to <font underline='true'>remove</font> this configurator Docker image after installation? This would free about 150MB of disk space.",
   "docker_mode": "Cyphernode Docker services can be run using <font underline='true'>Docker Swarm</font> (https://docs.docker.com/engine/swarm/) or <font underline='true'>docker-compose</font> (https://docs.docker.com/compose/overview/). Both will work, some users prefer one to another depending on deployment types, scalability, current framework, etc.",
-  "__default__": ""
+  "__default__": "",
+  "ark_server_url": "<font underline='true'>URL</font> of the Ark server (captaind) this wallet joins, for example https://ark.example.com. barkd reaches it over gRPC. Keep it on the same host or LAN when you run captaind yourself.",
+  "ark_datapath": "<font underline='true'>Path name</font> to where the barkd wallet data is stored. It holds the wallet seed: back it up. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
+  "ark_datapath_custom": " "
 }

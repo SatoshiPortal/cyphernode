@@ -374,6 +374,12 @@ getfeerate() {
      echo "{\"feerate\":\"${feerate}\"}"
      return 0
    fi
+  elif [ "${BITCOIN_NETWORK}" = "signet" ]; then
+   feerate=$(getfeeratefromurl "https://mempool.space/signet/api/v1/fees/recommended" "${priority}")
+   if [ -n "$feerate" ]; then
+     echo "{\"feerate\":\"${feerate}\"}"
+     return 0
+   fi
   fi
 
   local response
