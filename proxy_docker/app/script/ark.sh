@@ -136,8 +136,8 @@ ark_send() {
     return 1
   fi
   case "${amount}" in
-    ''|*[!0-9]*)
-      echo '{"error":{"code":-32602,"message":"amount must be an integer number of satoshis"}}'
+    ''|*[!0-9]*|0*)
+      echo '{"error":{"code":-32602,"message":"amount must be a positive integer number of satoshis"}}'
       return 1
       ;;
   esac
@@ -170,8 +170,24 @@ ark_send() {
     return 1
   fi
 
-  response=$(barkd_call POST /wallet/send "$(jq -cn --arg d "${destination}" --argjson a "${amount}" '{destination: $d, amount_sat: $a}')")
-  returncode=$?
+  # Sends are serialized: concurrent sends can pick the same coin in barkd,
+  # and a movement is claimed before the next send can create a look-alike.
+  result=$( {
+    flock --timeout 120 9 || { printf '3\n\n'; exit 0; }
+    response=$(barkd_call POST /wallet/send "$(jq -cn --arg d "${destination}" --argjson a "${amount}" '{destination: $d, amount_sat: $a}')")
+    returncode=$?
+    movement_id=
+    [ "${returncode}" -eq 0 ] && movement_id=$(ark_record_send_movement "${id}" "${destination}" "${amount}" "${floor}")
+    printf '%s\n%s\n%s' "${returncode}" "${movement_id}" "${response}"
+  } 9>./.ark_send.lock )
+  returncode=$(printf '%s\n' "${result}" | sed -n 1p)
+  movement_id=$(printf '%s\n' "${result}" | sed -n 2p)
+  response=$(printf '%s\n' "${result}" | sed -n '3,$p')
+  if [ "${returncode}" -eq 3 ]; then
+    sql "UPDATE ark_send SET status='failed', error='another send is in progress, retry' WHERE id=${id}"
+    echo '{"error":{"code":-32002,"message":"another send is in progress, retry under a new label"}}'
+    return 1
+  fi
   if [ "${returncode}" -eq 1 ]; then
     # Transport failure: barkd may or may not have paid.
     sql "UPDATE ark_send SET status='unknown' WHERE id=${id}"
@@ -185,10 +201,8 @@ ark_send() {
     return 1
   fi
 
-  history=$(barkd_call GET "/history?type=ark&value=${destination}") || history='[]'
-  movement_id=$(ark_match_send "${history}" "${destination}" "${amount}" "${floor}")
   status="successful"
-  sql "UPDATE ark_send SET status='${status}', movement_id=${movement_id:-NULL} WHERE id=${id}"
+  sql "UPDATE ark_send SET status='${status}' WHERE id=${id}"
   message=$(printf '%s' "${response}" | jq -r '.message // ""')
 
   jq -cn --argjson id "${id}" --arg lbl "${label}" --arg d "${destination}" --argjson a "${amount}" \
@@ -196,13 +210,35 @@ ark_send() {
     '{id: $id, event: "ark_send", "label": $lbl, destination: $d, amount_sat: $a, status: $status, movementId: $m, message: $message}'
 }
 
-# ark_match_send <history json> <destination> <amount> <floor>
-# Oldest successful movement after the floor that paid amount to destination.
+# ark_match_send <history json> <destination> <amount> <floor> [taken ids json]
+# Oldest successful movement after the floor that paid amount to destination
+# and is not already recorded for another send.
 ark_match_send() {
-  printf '%s' "${1}" | jq -r --arg d "${2}" --argjson a "${3}" --argjson f "${4:-0}" '
-    [ .[] | select(.status == "successful" and .id > $f)
+  printf '%s' "${1}" | jq -r --arg d "${2}" --argjson a "${3}" --argjson f "${4:-0}" --argjson t "${5:-[]}" '
+    [ .[] | select(.status == "successful" and .id > $f and ([.id] | inside($t) | not))
       | select(any(.sent_to[]; .destination.type == "ark" and .destination.value == $d and .amount_sat == $a)) ]
     | sort_by(.id) | first | .id // empty'
+}
+
+# ark_record_send_movement <send id> <destination> <amount> <floor>
+# Records the matching movement on the send and prints its id. A movement
+# already recorded for another send is skipped. Callers hold ./.ark_send.lock.
+ark_record_send_movement() {
+  local history taken movement_id
+  history=$(barkd_call GET "/history?type=ark&value=${2}") || return 1
+  taken=$(sql "SELECT COALESCE(json_agg(movement_id), '[]') FROM ark_send WHERE destination='${2}' AND movement_id IS NOT NULL AND id <> ${1}")
+  movement_id=$(ark_match_send "${history}" "${2}" "${3}" "${4}" "${taken:-[]}")
+  [ -n "${movement_id}" ] || return 0
+  sql "UPDATE ark_send SET movement_id=${movement_id} WHERE id=${1}" > /dev/null
+  printf '%s' "${movement_id}"
+}
+
+# ark_claim_send_movement: ark_record_send_movement under the send lock.
+ark_claim_send_movement() {
+  (
+  flock --timeout 60 9 || exit 1
+  ark_record_send_movement "$@"
+  ) 9>./.ark_send.lock
 }
 
 # ark_board: {"amount":100000,"label":"topup-1","callbackURL":"..."} or {"all":true,...}
@@ -223,8 +259,8 @@ ark_board() {
 
   if [ "${all}" != "true" ]; then
     case "${amount}" in
-      ''|*[!0-9]*)
-        echo '{"error":{"code":-32602,"message":"amount must be an integer number of satoshis, or all must be true"}}'
+      ''|*[!0-9]*|0*)
+        echo '{"error":{"code":-32602,"message":"amount must be a positive integer number of satoshis, or all must be true"}}'
         return 1
         ;;
     esac

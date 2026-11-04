@@ -50,10 +50,10 @@ ark_manage_missed() {
     amount=$(printf '%s' "${row}" | jq -r '.amount_sat')
     send_floor=$(printf '%s' "${row}" | jq -r '.movement_floor')
     status=$(printf '%s' "${row}" | jq -r '.status')
-    movement_id=$(ark_match_send "${history}" "${destination}" "${amount}" "${send_floor}")
+    movement_id=$(ark_claim_send_movement "${id}" "${destination}" "${amount}" "${send_floor}")
     if [ -n "${movement_id}" ]; then
       trace "[ark_manage_missed] send ${id} reconciled to movement ${movement_id}"
-      sql "UPDATE ark_send SET status='successful', movement_id=${movement_id} WHERE id=${id} AND status='${status}'" > /dev/null
+      sql "UPDATE ark_send SET status='successful' WHERE id=${id} AND status='${status}'" > /dev/null
     elif [ "${status}" = "pending" ]; then
       trace "[ark_manage_missed] send ${id} stale, now unknown"
       sql "UPDATE ark_send SET status='unknown' WHERE id=${id} AND status='pending'" > /dev/null

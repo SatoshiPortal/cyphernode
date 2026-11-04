@@ -6,6 +6,7 @@
 #   cd proxy_docker/app/script && sh ../tests/test-ark-send.sh
 
 set -u
+TAKEN=
 
 SQL_LOG=$(mktemp)
 BARKD_LOG=$(mktemp)
@@ -67,6 +68,7 @@ sql() {
     "SELECT row_to_json(t) FROM (SELECT id, status, movement_id, destination, amount_sat FROM ark_send WHERE label='dup') t")
       printf '{"id":1,"status":"successful","movement_id":4,"destination":"%s","amount_sat":500}' "${DEST}" ;;
     "INSERT INTO ark_send"*) printf '2' ;;
+    "SELECT COALESCE(json_agg(movement_id)"*) printf '%s' "${TAKEN:-[]}" ;;
     "INSERT INTO ark_job (kind, label, callback_url, vtxos, status) VALUES ('board', 'dupjob'"*) ;;
     "INSERT INTO ark_job"*) printf '9' ;;
     "INSERT INTO ark_watching"*) printf '7' ;;
@@ -87,13 +89,22 @@ check "non-Ark destination is refused" "jqcheck '${out}' '.error.code == -5'"
 out=$(ark_send '{"destination":"'${DEST}'","amount":"12.5","label":"fraction"}')
 check "non-integer amount is refused" "jqcheck '${out}' '.error.code == -32602'"
 
+out=$(ark_send '{"destination":"'${DEST}'","amount":0,"label":"zero"}')
+check "zero amount is refused before barkd is called" "jqcheck '${out}' '.error.code == -32602' && ! grep -q \"VALUES ('zero'\" '${SQL_LOG}'"
+
 out=$(ark_send '{"destination":"'${DEST}'","amount":500,"label":"order-1"}')
 check "send is recorded with the movement floor before barkd is called" \
   "grep -q \"INSERT INTO ark_send (label, destination, amount_sat, status, movement_floor) VALUES ('order-1', '${DEST}', 500, 'pending', 5)\" '${SQL_LOG}'"
 check "successful send matches the movement made after it, not an older one" \
   "jqcheck '${out}' '.status == \"successful\" and .movementId == 6 and .label == \"order-1\"'"
 check "successful send is persisted with its movement id" \
-  "grep -q \"UPDATE ark_send SET status='successful', movement_id=6 WHERE id=2\" '${SQL_LOG}'"
+  "grep -q \"UPDATE ark_send SET movement_id=6 WHERE id=2\" '${SQL_LOG}' && grep -q \"UPDATE ark_send SET status='successful' WHERE id=2\" '${SQL_LOG}'"
+
+TAKEN='[6]'
+out=$(ark_send '{"destination":"'${DEST}'","amount":500,"label":"order-1b"}')
+check "a movement already recorded for another send is not claimed twice" \
+  "jqcheck '${out}' '.status == \"successful\" and .movementId == null'"
+TAKEN=
 
 : > "${BARKD_LOG}"
 BARKD_MODE=down

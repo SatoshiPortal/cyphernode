@@ -84,7 +84,7 @@ ark_do_callbacks() {
     ark_receive_callback "${row}"
   done
 
-  rows=$(sql_json "SELECT id, kind, label, callback_url, txid, movement_id, vtxos, status FROM ark_job"\
+  rows=$(sql_json "SELECT id, kind, label, callback_url, txid, movement_id, vtxos, status, error FROM ark_job"\
 " WHERE NOT calledback AND status <> 'pending' AND callback_url IS NOT NULL AND callback_url <> ''")
   for row in ${rows}; do
     ark_job_callback "${row}"
@@ -136,7 +136,7 @@ ark_job_callback() {
   url=$(printf '%s' "${row}" | jq -r '.callback_url')
   data=$(printf '%s' "${row}" | jq -c '
     {id: .id, event: ("ark_" + .kind), "label": .label, status: .status, txid: .txid,
-     movementId: .movement_id, vtxos: (.vtxos | fromjson? // [])}')
+     movementId: .movement_id, vtxos: (.vtxos | fromjson? // []), error: .error}')
   trace "[ark_job_callback] data=${data}"
 
   notify_web "${url}" "${data}" "${TOR_TXID_WATCH_WEBHOOKS}" > /dev/null

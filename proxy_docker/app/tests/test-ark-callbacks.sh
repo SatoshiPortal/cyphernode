@@ -50,7 +50,7 @@ notify_web() {
 # Movements 5 and 8 both paid 500 sats to ark1payee; 6 is still pending.
 barkd_call() {
   case "${2}" in
-    /history)
+    /history*)
       echo '[{"id":4,"status":"successful","sent_to":[],"received_on":[],"output_vtxos":[]},
              {"id":5,"status":"successful","sent_to":[{"destination":{"type":"ark","value":"ark1payee"},"amount_sat":500}],"received_on":[],"output_vtxos":[]},
              {"id":6,"status":"pending","sent_to":[],"received_on":[],"output_vtxos":[]},
@@ -96,7 +96,7 @@ ark_do_callbacks
 check "receive callback keeps labels and URLs containing the field separator" \
   "grep -q '^http://app/cb?a=1|2 {\"id\":11,\"event\":\"ark_receive\",\"address\":\"ark1receiver\",\"label\":\"order|42\",\"eventMessage\":\"ZXZlbnQ=\",\"amount_sat\":12345,\"expectedAmount\":12345,\"movementId\":9,\"vtxos\":\\[\"v-recv\"\\]}$' '${NOTIFY_LOG}'"
 check "job callback names the kind, label, txid and movement id" \
-  "grep -q '^http://app/job {\"id\":3,\"event\":\"ark_board\",\"label\":\"topup-1\",\"status\":\"successful\",\"txid\":\"txid-b\",\"movementId\":9,\"vtxos\":\\[\"v-board\"\\]}$' '${NOTIFY_LOG}'"
+  "grep -q '^http://app/job {\"id\":3,\"event\":\"ark_board\",\"label\":\"topup-1\",\"status\":\"successful\",\"txid\":\"txid-b\",\"movementId\":9,\"vtxos\":\\[\"v-board\"\\],\"error\":null}$' '${NOTIFY_LOG}'"
 check "delivered callbacks are marked" \
   "grep -q 'UPDATE ark_receive SET calledback=true' '${SQL_LOG}' && grep -q 'UPDATE ark_job SET calledback=true' '${SQL_LOG}'"
 
@@ -107,7 +107,7 @@ ark_manage_missed
 check "catch-up stops below the oldest pending movement" \
   "grep -q \"UPDATE cyphernode_props SET value='5' WHERE property='ark_history_floor'\" '${SQL_LOG}'"
 check "unknown send matches only a movement made after it" \
-  "grep -q \"UPDATE ark_send SET status='successful', movement_id=8 WHERE id=20 AND status='unknown'\" '${SQL_LOG}'"
+  "grep -q \"UPDATE ark_send SET movement_id=8 WHERE id=20\" '${SQL_LOG}' && grep -q \"UPDATE ark_send SET status='successful' WHERE id=20 AND status='unknown'\" '${SQL_LOG}'"
 check "stale pending send with no later movement becomes unknown" \
   "grep -q \"UPDATE ark_send SET status='unknown' WHERE id=21 AND status='pending'\" '${SQL_LOG}'"
 

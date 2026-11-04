@@ -2114,7 +2114,7 @@ Proxy response:
 Board and offboard callback body:
 
 ```json
-{ "id": 3, "event": "ark_board", "label": "topup-1", "status": "successful", "txid": "...", "movementId": 9, "vtxos": ["..."] }
+{ "id": 3, "event": "ark_board", "label": "topup-1", "status": "successful", "txid": "...", "movementId": 9, "vtxos": ["..."], "error": null }
 ```
 
 ### Job and send status
@@ -2126,11 +2126,15 @@ GET http://cyphernode:8888/ark_getsend/payout-42
 
 A job refused by barkd is stored as `failed` with barkd's message in `error`
 and its label stays taken; the callback, when there is one, fires with that
-status.
+status and message. Retry under a new label.
 
 ### Refresh coins
 
-The wallet refreshes coins near expiry on its own. Force one with:
+Cyphernode refreshes coins on its own: barkd joins the next round once a coin
+is within 144 blocks (24 hours) of expiry, or has reached the server's exit
+depth limit, and refreshes other small or deep coins in the same round.
+Callers do not schedule refreshes. An operator can force one with the admin
+key:
 
 ```http
 POST http://cyphernode:8888/ark_refresh
