@@ -46,6 +46,7 @@ barkd_call() {
     ok)
       case "${2}" in
         /wallet/send) echo '{"message":"Payment sent"}'; return 0 ;;
+        /wallet/connected) echo "{\"connected\":${CONNECTED:-true}}"; return 0 ;;
         /history*)
           movements='{"id":4,"status":"successful","sent_to":[{"destination":{"type":"ark","value":"'${DEST}'"},"amount_sat":500}]},{"id":5,"status":"successful","sent_to":[{"destination":{"type":"ark","value":"'${DEST}'"},"amount_sat":500}]}'
           grep -q '^POST /wallet/send$' "${BARKD_LOG}" && movements="${movements}"',{"id":6,"status":"successful","sent_to":[{"destination":{"type":"ark","value":"'${DEST}'"},"amount_sat":500}]}'
@@ -56,6 +57,7 @@ barkd_call() {
     down_after)
       case "${2}" in
         /history*) echo '[]'; return 0 ;;
+        /wallet/connected) echo '{"connected":true}'; return 0 ;;
         *) rm -f "$(barkd_http_code_file)"; return 1 ;;
       esac ;;
     refused) printf 409 > "$(barkd_http_code_file)"; echo '{"message":"insufficient funds"}'; return 2 ;;
@@ -116,6 +118,12 @@ BARKD_MODE=down_after
 out=$(ark_send '{"destination":"'${DEST}'","amount":500,"label":"order-2b"}')
 check "transport failure after the send leaves it unknown" \
   "jqcheck '${out}' '.status == \"unknown\"' && grep -q \"UPDATE ark_send SET status='unknown' WHERE id=2\" '${SQL_LOG}'"
+
+BARKD_MODE=ok CONNECTED=false
+out=$(ark_send '{"destination":"'${DEST}'","amount":500,"label":"order-offline"}')
+check "server not connected is refused before anything is recorded" \
+  "jqcheck '${out}' '.error.code == -32003' && ! grep -q \"VALUES ('order-offline'\" '${SQL_LOG}'"
+CONNECTED=true
 
 BARKD_MODE=refused
 out=$(ark_send '{"destination":"'${DEST}'","amount":500,"label":"order-3"}')

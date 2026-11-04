@@ -125,7 +125,7 @@ ark_send() {
 
   local request=${1}
   local destination amount label
-  local existing id floor history response returncode movement_id status message
+  local existing id floor history response returncode movement_id status message connected result
 
   destination=$(printf '%s' "${request}" | jq -r '.destination // empty')
   amount=$(printf '%s' "${request}" | jq -r '.amount // empty')
@@ -153,6 +153,19 @@ ark_send() {
       {error: {code: -32000, message: "duplicate label"},
        "label": $lbl, id: .id, status: .status, movementId: .movement_id,
        destination: .destination, amount_sat: .amount_sat}'
+    return 1
+  fi
+
+  # barkd reports a lost server connection as an invalid address; refuse up
+  # front so the caller can retry under the same label.
+  connected=$(barkd_call GET /wallet/connected)
+  returncode=$?
+  if [ "${returncode}" -ne 0 ]; then
+    barkd_error "${returncode}" "${connected}"
+    return 1
+  fi
+  if [ "$(printf '%s' "${connected}" | jq -r '.connected')" != "true" ]; then
+    echo '{"error":{"code":-32003,"message":"Ark server not connected; nothing was sent, retry later"}}'
     return 1
   fi
 

@@ -13,8 +13,17 @@
 ark_manage_missed() {
   trace "Entering ark_manage_missed()..."
 
-  local history floor new_floor movements movement
+  local history floor new_floor movements movement unresolved
   local sends row id destination amount send_floor status movement_id
+
+  # barkd only re-drives sends interrupted by a lost server connection on
+  # a full sync, which its daemon runs at startup only.
+  unresolved=$(sql "SELECT count(*) FROM ark_send WHERE status='unknown'"\
+" OR (status='pending' AND inserted_ts < CURRENT_TIMESTAMP - INTERVAL '10 minutes')")
+  if [ "${unresolved:-0}" -gt 0 ]; then
+    trace "[ark_manage_missed] ${unresolved} unresolved sends, asking barkd to sync"
+    barkd_call POST /wallet/sync > /dev/null || trace "[ark_manage_missed] barkd sync failed"
+  fi
 
   history=$(barkd_call GET /history)
   if [ "$?" -ne 0 ]; then

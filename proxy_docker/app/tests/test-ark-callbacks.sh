@@ -35,6 +35,7 @@ sql() {
     "SELECT row_to_json(t) FROM (SELECT id, kind, label, callback_url"*)
       printf '{"id":3,"kind":"board","label":"topup-1","callback_url":"http://app/job","txid":"txid-b","movement_id":9,"vtxos":"[\\"v-board\\"]","status":"successful"}' ;;
     "SELECT value FROM cyphernode_props WHERE property='ark_history_floor'") printf '4' ;;
+    "SELECT count(*) FROM ark_send WHERE status='unknown'"*) printf '2' ;;
     "SELECT row_to_json(t) FROM (SELECT id, destination, amount_sat, movement_floor, status FROM ark_send"*)
       printf '{"id":20,"destination":"ark1payee","amount_sat":500,"movement_floor":5,"status":"unknown"}\n{"id":21,"destination":"ark1payee","amount_sat":500,"movement_floor":8,"status":"pending"}' ;;
     *) ;;
@@ -49,6 +50,7 @@ notify_web() {
 
 # Movements 5 and 8 both paid 500 sats to ark1payee; 6 is still pending.
 barkd_call() {
+  printf '%s %s\n' "${1}" "${2}" >> "${SQL_LOG}"
   case "${2}" in
     /history*)
       echo '[{"id":4,"status":"successful","sent_to":[],"received_on":[],"output_vtxos":[]},
@@ -108,6 +110,8 @@ check "catch-up stops below the oldest pending movement" \
   "grep -q \"UPDATE cyphernode_props SET value='5' WHERE property='ark_history_floor'\" '${SQL_LOG}'"
 check "unknown send matches only a movement made after it" \
   "grep -q \"UPDATE ark_send SET movement_id=8 WHERE id=20\" '${SQL_LOG}' && grep -q \"UPDATE ark_send SET status='successful' WHERE id=20 AND status='unknown'\" '${SQL_LOG}'"
+check "catch-up asks barkd to finish interrupted sends before reading history" \
+  "grep -n 'POST /wallet/sync\\|GET /history\$' '${SQL_LOG}' | head -1 | grep -q 'POST /wallet/sync'"
 check "stale pending send with no later movement becomes unknown" \
   "grep -q \"UPDATE ark_send SET status='unknown' WHERE id=21 AND status='pending'\" '${SQL_LOG}'"
 
