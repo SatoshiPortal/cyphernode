@@ -107,10 +107,10 @@ ark_receive_callback() {
   vtxos=$(printf '%s' "${row}" | cut -d '|' -f8)
   expected=$(printf '%s' "${row}" | cut -d '|' -f9)
 
-  data=$(jq -cn --argjson id "${id}" --arg label "${label}" --arg em "${event_message}" --arg a "${address}" \
+  data=$(jq -cn --argjson id "${id}" --arg lbl "${label}" --arg em "${event_message}" --arg a "${address}" \
     --argjson amount "${amount}" --argjson m "${movement_id}" --argjson vtxos "${vtxos:-[]}" --arg expected "${expected}" \
     '{id: $id, event: "ark_receive", address: $a,
-      label: (if $label == "" then null else $label end),
+      "label": (if $lbl == "" then null else $lbl end),
       eventMessage: (if $em == "" then null else $em end),
       amount_sat: $amount, expectedAmount: (if $expected == "" then null else ($expected | tonumber) end),
       movementId: $m, vtxos: $vtxos}')
@@ -143,9 +143,9 @@ ark_job_callback() {
   vtxos=$(printf '%s' "${row}" | cut -d '|' -f7)
   status=$(printf '%s' "${row}" | cut -d '|' -f8)
 
-  data=$(jq -cn --argjson id "${id}" --arg kind "${kind}" --arg label "${label}" --arg txid "${txid}" \
+  data=$(jq -cn --argjson id "${id}" --arg kind "${kind}" --arg lbl "${label}" --arg txid "${txid}" \
     --argjson m "${movement_id:-null}" --argjson vtxos "${vtxos:-[]}" --arg status "${status}" \
-    '{id: $id, event: ("ark_" + $kind), label: $label, status: $status, txid: $txid, movementId: $m, vtxos: $vtxos}')
+    '{id: $id, event: ("ark_" + $kind), "label": $lbl, status: $status, txid: $txid, movementId: $m, vtxos: $vtxos}')
   trace "[ark_job_callback] data=${data}"
 
   notify_web "${url}" "${data}" "${TOR_TXID_WATCH_WEBHOOKS}" > /dev/null

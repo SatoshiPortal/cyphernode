@@ -141,10 +141,10 @@ ark_send() {
   existing=$(sql "SELECT id, status, movement_id, destination, amount_sat FROM ark_send WHERE label='$(sql_quote "${label}")'")
   if [ -n "${existing}" ]; then
     trace "[ark_send] duplicate label ${label}: ${existing}"
-    printf '%s' "${existing}" | jq -Rc --arg label "${label}" '
+    printf '%s' "${existing}" | jq -Rc --arg lbl "${label}" '
       (. / "|") as $r |
       {error: {code: -32000, message: "duplicate label"},
-       label: $label, id: ($r[0] | tonumber), status: $r[1],
+       "label": $lbl, id: ($r[0] | tonumber), status: $r[1],
        movementId: (if $r[2] == "" then null else ($r[2] | tonumber) end),
        destination: $r[3], amount_sat: ($r[4] | tonumber)}'
     return 1
@@ -161,7 +161,7 @@ ark_send() {
   if [ "${returncode}" -eq 1 ]; then
     # Transport failure: barkd may or may not have paid.
     sql "UPDATE ark_send SET status='unknown' WHERE id=${id}"
-    jq -cn --argjson id "${id}" --arg label "${label}" '{error: {code: -32001, message: "barkd unreachable, outcome unknown; it will be reconciled"}, id: $id, label: $label, status: "unknown"}'
+    jq -cn --argjson id "${id}" --arg lbl "${label}" '{error: {code: -32001, message: "barkd unreachable, outcome unknown; it will be reconciled"}, id: $id, "label": $lbl, status: "unknown"}'
     return 1
   fi
   if [ "${returncode}" -ne 0 ]; then
@@ -176,9 +176,9 @@ ark_send() {
   sql "UPDATE ark_send SET status='${status}', movement_id=${movement_id:-NULL} WHERE id=${id}"
   message=$(printf '%s' "${response}" | jq -r '.message // ""')
 
-  jq -cn --argjson id "${id}" --arg label "${label}" --arg d "${destination}" --argjson a "${amount}" \
+  jq -cn --argjson id "${id}" --arg lbl "${label}" --arg d "${destination}" --argjson a "${amount}" \
     --arg status "${status}" --arg message "${message}" --argjson m "${movement_id:-null}" \
-    '{id: $id, event: "ark_send", label: $label, destination: $d, amount_sat: $a, status: $status, movementId: $m, message: $message}'
+    '{id: $id, event: "ark_send", "label": $lbl, destination: $d, amount_sat: $a, status: $status, movementId: $m, message: $message}'
 }
 
 # Most recent successful movement that paid amount to destination.
@@ -241,9 +241,9 @@ ark_board() {
 
   id=$(sql "INSERT INTO ark_job (kind, label, callback_url, txid, vtxos, status) VALUES ('board', '$(sql_quote "${label}")', ${callback_pg}, '${txid}', '$(sql_quote "${vtxos}")', 'pending') RETURNING id")
 
-  jq -cn --argjson id "${id:-null}" --arg label "${label}" --arg txid "${txid}" --argjson vtxos "${vtxos}" \
+  jq -cn --argjson id "${id:-null}" --arg lbl "${label}" --arg txid "${txid}" --argjson vtxos "${vtxos}" \
     --arg cb "${callback_url}" \
-    '{id: $id, event: "ark_board", label: $label, status: "pending", txid: $txid, vtxos: $vtxos, callbackURL: (if $cb == "" then null else $cb end)}'
+    '{id: $id, event: "ark_board", "label": $lbl, status: "pending", txid: $txid, vtxos: $vtxos, callbackURL: (if $cb == "" then null else $cb end)}'
 }
 
 # ark_offboard: {"vtxos":["..."],"address":"bc1...","label":"exit-1","callbackURL":"..."} or {"all":true,...}
@@ -294,9 +294,9 @@ ark_offboard() {
 
   id=$(sql "INSERT INTO ark_job (kind, label, callback_url, txid, vtxos, movement_id, status) VALUES ('offboard', '$(sql_quote "${label}")', ${callback_pg}, '${txid}', '$(sql_quote "${vtxos}")', ${movement_id:-NULL}, 'pending') RETURNING id")
 
-  jq -cn --argjson id "${id:-null}" --arg label "${label}" --arg txid "${txid}" --argjson m "${movement_id:-null}" \
+  jq -cn --argjson id "${id:-null}" --arg lbl "${label}" --arg txid "${txid}" --argjson m "${movement_id:-null}" \
     --arg cb "${callback_url}" \
-    '{id: $id, event: "ark_offboard", label: $label, status: "pending", txid: $txid, movementId: $m, callbackURL: (if $cb == "" then null else $cb end)}'
+    '{id: $id, event: "ark_offboard", "label": $lbl, status: "pending", txid: $txid, movementId: $m, callbackURL: (if $cb == "" then null else $cb end)}'
 }
 
 ark_job_label_exists() {
@@ -341,7 +341,7 @@ ark_getjob() {
 ark_job_row_json() {
   printf '%s' "${1}" | jq -Rc '
     (. / "|") as $r |
-    {id: ($r[0] | tonumber), kind: $r[1], label: $r[2], status: $r[3], txid: $r[4],
+    {id: ($r[0] | tonumber), kind: $r[1], "label": $r[2], status: $r[3], txid: $r[4],
      movementId: (if $r[5] == "" then null else ($r[5] | tonumber) end),
      vtxos: ($r[6] | fromjson? // []),
      callbackURL: (if $r[7] == "" then null else $r[7] end),
@@ -359,7 +359,7 @@ ark_getsend() {
   fi
   printf '%s' "${row}" | jq -Rc '
     (. / "|") as $r |
-    {id: ($r[0] | tonumber), event: "ark_send", label: $r[1], destination: $r[2], amount_sat: ($r[3] | tonumber),
+    {id: ($r[0] | tonumber), event: "ark_send", "label": $r[1], destination: $r[2], amount_sat: ($r[3] | tonumber),
      status: $r[4], movementId: (if $r[5] == "" then null else ($r[5] | tonumber) end),
      error: (if $r[6] == "" then null else $r[6] end)}'
 }

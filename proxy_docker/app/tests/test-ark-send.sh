@@ -18,6 +18,9 @@ BARKD_TOKEN_FILE=/dev/null
 . ./ark_watchrequest.sh
 
 fail=0
+jqcheck() {
+  [ "$(printf '%s' "${1}" | jq -r "${2}" 2>/dev/null)" = "true" ]
+}
 check() {
   if eval "${2}"; then
     echo "ok   - ${1}"
@@ -58,17 +61,17 @@ sql() {
 
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":500,"label":"dup"}')
 check "duplicate label is refused with the stored outcome" \
-  "printf '%s' '${out}' | jq -e '.error.message == \"duplicate label\" and .movementId == 4 and .status == \"successful\"' > /dev/null"
+  "jqcheck '${out}' '.error.message == \"duplicate label\" and .movementId == 4 and .status == \"successful\"'"
 
 out=$(ark_send '{"destination":"bc1qnotark","amount":500,"label":"bad"}')
-check "non-Ark destination is refused" "printf '%s' '${out}' | jq -e '.error.code == -5' > /dev/null"
+check "non-Ark destination is refused" "jqcheck '${out}' '.error.code == -5'"
 
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":"12.5","label":"fraction"}')
-check "non-integer amount is refused" "printf '%s' '${out}' | jq -e '.error.code == -32602' > /dev/null"
+check "non-integer amount is refused" "jqcheck '${out}' '.error.code == -32602'"
 
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":500,"label":"order-1"}')
 check "successful send reports the latest matching movement" \
-  "printf '%s' '${out}' | jq -e '.status == \"successful\" and .movementId == 5 and .label == \"order-1\"' > /dev/null"
+  "jqcheck '${out}' '.status == \"successful\" and .movementId == 5 and .label == \"order-1\"'"
 check "send is recorded before barkd is called" \
   "grep -q \"INSERT INTO ark_send (label, destination, amount_sat, status) VALUES ('order-1', 'ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l', 500, 'pending')\" '${SQL_LOG}'"
 check "successful send is persisted with its movement id" \
@@ -77,12 +80,12 @@ check "successful send is persisted with its movement id" \
 BARKD_MODE=down
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":500,"label":"order-2"}')
 check "transport failure leaves the send in unknown state" \
-  "printf '%s' '${out}' | jq -e '.status == \"unknown\"' > /dev/null && grep -q \"UPDATE ark_send SET status='unknown' WHERE id=2\" '${SQL_LOG}'"
+  "jqcheck '${out}' '.status == \"unknown\"' && grep -q \"UPDATE ark_send SET status='unknown' WHERE id=2\" '${SQL_LOG}'"
 
 BARKD_MODE=refused
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":500,"label":"order-3"}')
 check "barkd refusal is recorded as failed with its message" \
-  "printf '%s' '${out}' | jq -e '.error.code == 409 and .error.message == \"insufficient funds\"' > /dev/null && grep -q \"UPDATE ark_send SET status='failed', error='insufficient funds' WHERE id=2\" '${SQL_LOG}'"
+  "jqcheck '${out}' '.error.code == 409 and .error.message == \"insufficient funds\"' && grep -q \"UPDATE ark_send SET status='failed', error='insufficient funds' WHERE id=2\" '${SQL_LOG}'"
 
 out=$(ark_send '{"destination":"ark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","amount":500,"label":"it'"'"'s"}')
 check "labels with quotes are escaped for SQL" "grep -q \"VALUES ('it''s'\" '${SQL_LOG}'"
@@ -91,14 +94,14 @@ check "labels with quotes are escaped for SQL" "grep -q \"VALUES ('it''s'\" '${S
 
 out=$(ark_watchrequest '{"address":"tark1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7l","callbackURL":"http://app/cb","label":"o-1","eventMessage":"ZQ==","expectedAmount":100}')
 check "watch is inserted and echoed" \
-  "printf '%s' '${out}' | jq -e '.id == 7 and .inserted == true and .expectedAmount == 100 and .eventMessage == \"ZQ==\"' > /dev/null"
+  "jqcheck '${out}' '.id == 7 and .inserted == true and .expectedAmount == 100 and .eventMessage == \"ZQ==\"'"
 check "watch upserts on address and callback" \
   "grep -q \"ON CONFLICT (address, COALESCE(callback_url, '')) DO UPDATE SET watching=true\" '${SQL_LOG}'"
 
 out=$(ark_watchrequest '{"address":"1BitcoinAddress","callbackURL":"http://app/cb"}')
-check "watch refuses a non-Ark address" "printf '%s' '${out}' | jq -e '.error.code == -5' > /dev/null"
+check "watch refuses a non-Ark address" "jqcheck '${out}' '.error.code == -5'"
 
 out=$(ark_unwatchrequest "12" "" "")
-check "unwatch by id" "printf '%s' '${out}' | jq -e '.id == 12' > /dev/null && grep -q 'UPDATE ark_watching SET watching=false WHERE id=12' '${SQL_LOG}'"
+check "unwatch by id" "jqcheck '${out}' '.id == 12' && grep -q 'UPDATE ark_watching SET watching=false WHERE id=12' '${SQL_LOG}'"
 
 exit ${fail}

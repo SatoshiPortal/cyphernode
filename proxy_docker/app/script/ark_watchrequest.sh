@@ -61,10 +61,10 @@ ark_watchrequest() {
   fi
 
   jq -cn --argjson id "${id:-null}" --argjson inserted "${inserted}" --arg a "${address}" \
-    --arg cb "${callback_url}" --arg label "${label}" --arg em "${event_message}" --arg ea "${expected_amount}" \
+    --arg cb "${callback_url}" --arg lbl "${label}" --arg em "${event_message}" --arg ea "${expected_amount}" \
     '{id: $id, event: "ark_watch", inserted: $inserted, address: $a,
       callbackURL: (if $cb == "" then null else $cb end),
-      label: (if $label == "" then null else $label end),
+      "label": (if $lbl == "" then null else $lbl end),
       eventMessage: (if $em == "" then null else $em end),
       expectedAmount: (if $ea == "" then null else ($ea | tonumber) end)}'
 
@@ -113,7 +113,7 @@ ark_getactivewatches() {
     {watches: [ split("\n")[] | select(length > 0) | (. / "|") as $r |
       {id: ($r[0] | tonumber), address: $r[1],
        callbackURL: (if $r[2] == "" then null else $r[2] end),
-       label: (if $r[3] == "" then null else $r[3] end),
+       "label": (if $r[3] == "" then null else $r[3] end),
        eventMessage: (if $r[4] == "" then null else $r[4] end),
        expectedAmount: (if $r[5] == "" then null else ($r[5] | tonumber) end),
        inserted: $r[6]} ]}'
