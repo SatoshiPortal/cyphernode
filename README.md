@@ -70,6 +70,8 @@ The core component of cyphernode is a request handler which exposes HTTP endpoin
 
 ## Documentation
 
+* [Cyphernet Bitcoin Core and Core Lightning setup](cyphernet/README.md)
+
 * Read the API docs here: 
   * API v0 (Current): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v0.md
   * API v1 (RESTful): https://github.com/SatoshiPortal/cyphernode/blob/master/doc/API.v1.md 

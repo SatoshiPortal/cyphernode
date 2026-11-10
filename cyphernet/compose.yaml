@@ -1,0 +1,35 @@
+services:
+  bitcoin:
+    build: ./docker/bitcoin
+    image: cyphernet/bitcoin-core:32.1
+    user: "${CYPHERNET_UID:-1000}:${CYPHERNET_GID:-1000}"
+    command: ["bitcoind", "-datadir=/bitcoin", "-printtoconsole"]
+    volumes:
+      - "${CYPHERNET_DATA_DIR:-./data}/bitcoin:/bitcoin"
+    ports:
+      - "38333:38333"
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-datadir=/bitcoin", "getblockchaininfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  core-lightning:
+    image: cyphernode/clightning:v26.06.9
+    user: "${CYPHERNET_UID:-1000}:${CYPHERNET_GID:-1000}"
+    command: ["lightningd", "--lightning-dir=/.lightning"]
+    volumes:
+      - "${CYPHERNET_DATA_DIR:-./data}/core-lightning:/.lightning"
+      - "${CYPHERNET_DATA_DIR:-./data}/bitcoin-client.conf:/.bitcoin/bitcoin.conf:ro"
+    ports:
+      - "9735:9735"
+    depends_on:
+      bitcoin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "lightning-cli", "--lightning-dir=/.lightning", "--signet", "getinfo"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
