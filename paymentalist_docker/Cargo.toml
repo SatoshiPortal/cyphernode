@@ -19,6 +19,9 @@ bitcoin_hashes = "0.13.0"
 
 boltz-client = { git = "https://github.com/SatoshiPortal/boltz-rust", rev = "3a6d3f4b21ca2510fac7b9c59a2401ab2ea9c744" }
 
+# Ark address route hints in bolt11 invoices
+ark-lib = { git = "https://github.com/BullishNode/scuttle-labs", rev = "f2708aa88d97ddb95fb92c02ad10683f4e4f0a1c" }
+
 # Command line argument parsing
 clap = { version = "4.4", features = ["derive"] }
 
@@ -42,6 +45,9 @@ tracing-appender = "0.2"
 # Error handling
 thiserror = "1.0"
 anyhow = "1.0"
+
+[dev-dependencies]
+lightning-invoice = "0.34.0"
 
 [patch.crates-io]
 secp256k1-zkp = { git = "https://github.com/danielgranhao/rust-secp256k1-zkp.git", rev = "eac2e479255a6e32b5588bc25ee53c642fdd8395" }
