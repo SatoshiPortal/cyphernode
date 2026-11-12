@@ -386,15 +386,18 @@ ark_bolt11_amount_msat() {
   esac
 }
 
-# ark_ln_find_send_movement <payment hash> [bolt11]
-# The newest bark.lightning_send movement for the payment hash, or for the
-# invoice when the hash is not known. Prints nothing when there is none.
+# The newest send movement for the payment hash, or for the invoice when no
+# hash is known. An invoice paid on the Ark address in its route hints is not
+# a Lightning send: barkd records it as a bark.arkoor send to the invoice.
 ark_ln_find_send_movement() {
   local path=/history
   [ -n "${2:-}" ] && path="/history?type=invoice&value=${2}"
-  barkd_call GET "${path}" | jq -c --arg h "${1}" '
+  barkd_call GET "${path}" | jq -c --arg h "${1}" --arg i "${2:-}" '
     if type == "array" then
-      [ .[] | select(.subsystem.name == "bark.lightning_send" and ($h == "" or .metadata.payment_hash == $h)) ]
+      [ .[] | select(
+          (.subsystem.name == "bark.lightning_send" and ($h == "" or .metadata.payment_hash == $h))
+          or ($i != "" and .subsystem.name == "bark.arkoor" and .subsystem.kind == "send"
+              and any(.sent_to[]?; .destination.value == $i))) ]
       | max_by(.id) // empty
     else empty end'
 }
@@ -597,6 +600,11 @@ ark_lnpay() {
     movement=$(ark_ln_find_send_movement "${payment_hash}" "${bolt11}")
     if [ "$(printf '%s' "${movement}" | jq -r '.status // empty')" = "failed" ]; then
       status=failed
+      break
+    fi
+    # Paid on the invoice's Ark address: final as soon as barkd recorded it.
+    if [ "$(printf '%s' "${movement}" | jq -r 'select(.subsystem.name == "bark.arkoor") | .status')" = "successful" ]; then
+      status=complete
       break
     fi
     [ "$(date +%s)" -ge "${deadline}" ] && break

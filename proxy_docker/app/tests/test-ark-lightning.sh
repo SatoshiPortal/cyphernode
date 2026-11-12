@@ -347,6 +347,36 @@ check "catch-up processes the send movement" \
   "grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=14\" '${SQL_LOG}'"
 PREPAID=
 
+# --- an invoice paid on its Ark address ---------------------------------------
+
+# barkd pays it with an arkoor: no Lightning send exists, and the movement is
+# a bark.arkoor send to the invoice.
+arkoor_movement='{"id":21,"status":"successful","subsystem":{"name":"bark.arkoor","kind":"send"},"metadata":{},"offchain_fee_sat":0,"sent_to":[{"destination":{"type":"invoice","value":"'${INV}'"},"amount_sat":1000}]}'
+(
+  barkd_call() {
+    rm -f "$(barkd_http_code_file)"
+    printf '%s %s %s\n' "${1}" "${2}" "${3:-}" >> "${BARKD_LOG}"
+    case "${2}" in
+      /wallet/connected) echo '{"connected":true}'; return 0 ;;
+      /lightning/pay) echo "{\"message\":\"Payment sent\",\"payment_hash\":\"${HASH}\"}"; return 0 ;;
+      /lightning/sends/*) printf 404 > "$(barkd_http_code_file)"; echo '{"message":"not found"}'; return 2 ;;
+      /history*) if grep -q '^POST /lightning/pay' "${BARKD_LOG}" || [ -n "${PREPAID}" ]; then echo "[${arkoor_movement}]"; else echo '[]'; fi; return 0 ;;
+    esac
+  }
+  reset
+  out=$(ark_lnpay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+  check "an invoice paid on its Ark address is complete, without a preimage" \
+    "jqcheck '${out}' '.status == \"complete\" and .movementId == 21 and .payment_preimage == null and .amount_msat == 1000000 and .amount_sent_msat == 1000000'"
+  check "its send row is marked complete" "grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=21\" '${SQL_LOG}'"
+  reset
+  PREPAID=1
+  out=$(ark_lnpay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+  check "paying it again reports it already paid and pays nothing" \
+    "jqcheck '${out}' '.status == \"complete\" and .already_paid == true' && ! grep -q '^POST /lightning/pay' '${BARKD_LOG}'"
+  exit ${fail}
+) || fail=1
+PREPAID=
+
 # --- invoices with an Ark address route hint -----------------------------------
 
 # ln_pay itself, with the stubs put back over what its file defines.
