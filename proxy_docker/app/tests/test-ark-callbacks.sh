@@ -10,7 +10,7 @@ set -u
 
 SQL_LOG=$(mktemp)
 NOTIFY_LOG=$(mktemp)
-trap 'rm -f "${SQL_LOG}" "${NOTIFY_LOG}"' EXIT
+trap 'rm -f "${SQL_LOG}" "${NOTIFY_LOG}" ./.arkmanagemissed.lock' EXIT
 
 TRACING=
 BARKD_URL=stub
@@ -34,10 +34,9 @@ sql() {
       printf '{"id":11,"callback_url":"http://app/cb?a=1|2","label":"order|42","event_message":"ZXZlbnQ=","address":"ark1receiver","amount_sat":12345,"movement_id":9,"vtxos":"[\\"v-recv\\"]","expected_amount_sat":12345}' ;;
     "SELECT row_to_json(t) FROM (SELECT id, kind, label, callback_url"*)
       printf '{"id":3,"kind":"board","label":"topup-1","callback_url":"http://app/job","txid":"txid-b","movement_id":9,"vtxos":"[\\"v-board\\"]","status":"successful"}' ;;
-    "SELECT value FROM cyphernode_props WHERE property='ark_history_floor'") printf '4' ;;
-    "SELECT count(*) FROM ark_send WHERE status='unknown'"*) printf '2' ;;
-    "SELECT row_to_json(t) FROM (SELECT id, destination, amount_sat, movement_floor, status FROM ark_send"*)
-      printf '{"id":20,"destination":"ark1payee","amount_sat":500,"movement_floor":5,"status":"unknown"}\n{"id":21,"destination":"ark1payee","amount_sat":500,"movement_floor":8,"status":"pending"}' ;;
+    "SELECT value FROM cyphernode_props WHERE property='ark_history_floor'") printf '%s' "${FLOOR:-4}" ;;
+    "SELECT value FROM cyphernode_props WHERE property='ark_history_seen'") printf '%s' "${SEEN:-}" ;;
+    "SELECT value FROM cyphernode_props WHERE property='ark_history_pending'") printf '%s' "${PENDING:-}" ;;
     *) ;;
   esac
 }
@@ -48,7 +47,7 @@ notify_web() {
   return 0
 }
 
-# Movements 5 and 8 both paid 500 sats to ark1payee; 6 is still pending.
+# Movement 6 is still pending.
 barkd_call() {
   printf '%s %s\n' "${1}" "${2}" >> "${SQL_LOG}"
   case "${2}" in
@@ -108,11 +107,25 @@ check "delivered callbacks are marked" \
 ark_manage_missed
 check "catch-up stops below the oldest pending movement" \
   "grep -q \"UPDATE cyphernode_props SET value='5' WHERE property='ark_history_floor'\" '${SQL_LOG}'"
-check "unknown send matches only a movement made after it" \
-  "grep -q \"UPDATE ark_send SET movement_id=8 WHERE id=20\" '${SQL_LOG}' && grep -q \"UPDATE ark_send SET status='successful' WHERE id=20 AND status='unknown'\" '${SQL_LOG}'"
-check "catch-up asks barkd to finish interrupted sends before reading history" \
-  "grep -n 'POST /wallet/sync\\|GET /history\$' '${SQL_LOG}' | head -1 | grep -q 'POST /wallet/sync'"
-check "stale pending send with no later movement becomes unknown" \
-  "grep -q \"UPDATE ark_send SET status='unknown' WHERE id=21 AND status='pending'\" '${SQL_LOG}'"
+check "catch-up processes final movements above the floor" \
+  "grep -q 'movement_id=8' '${SQL_LOG}'"
+check "catch-up remembers the highest movement seen and the pending ones" \
+  "grep -q \"SET value='8' WHERE property='ark_history_seen'\" '${SQL_LOG}' && grep -q \"SET value='\\[6\\]' WHERE property='ark_history_pending'\" '${SQL_LOG}'"
+
+# A second catch-up with nothing new must not replay movement 8 (final, already
+# seen) while movement 6 is still pending.
+: > "${SQL_LOG}"
+FLOOR=5 SEEN=8 PENDING='[6]' ark_manage_missed
+check "catch-up does not replay movements it already processed" \
+  "! grep -q 'movement_id=8' '${SQL_LOG}'"
+
+# While another catch-up holds the lock, a new one returns without reading history.
+: > "${SQL_LOG}"
+( flock 7; sleep 2 ) 7>./.arkmanagemissed.lock &
+sleep 0.5
+ark_manage_missed
+wait
+check "a catch-up already in progress makes a new one skip" \
+  "! grep -q 'GET /history' '${SQL_LOG}'"
 
 exit ${fail}

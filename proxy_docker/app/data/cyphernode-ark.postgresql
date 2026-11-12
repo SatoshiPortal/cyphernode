@@ -31,19 +31,6 @@ CREATE TABLE IF NOT EXISTS ark_receive (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_ark_receive_movement_watch ON ark_receive (movement_id, ark_watching_id);
 CREATE INDEX IF NOT EXISTS idx_ark_receive_calledback ON ark_receive (calledback);
 
-CREATE TABLE IF NOT EXISTS ark_send (
-  id SERIAL PRIMARY KEY,
-  label VARCHAR NOT NULL UNIQUE,
-  destination VARCHAR NOT NULL,
-  amount_sat BIGINT NOT NULL,
-  status VARCHAR NOT NULL,
-  movement_floor INTEGER NOT NULL DEFAULT 0,
-  movement_id INTEGER,
-  error VARCHAR,
-  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_ark_send_status ON ark_send (status);
-
 CREATE TABLE IF NOT EXISTS ark_job (
   id SERIAL PRIMARY KEY,
   kind VARCHAR NOT NULL,
@@ -61,6 +48,39 @@ CREATE TABLE IF NOT EXISTS ark_job (
 );
 CREATE INDEX IF NOT EXISTS idx_ark_job_status ON ark_job (status);
 CREATE INDEX IF NOT EXISTS idx_ark_job_movement ON ark_job (movement_id);
+
+CREATE TABLE IF NOT EXISTS ark_ln_invoice (
+  id SERIAL PRIMARY KEY,
+  label VARCHAR NOT NULL UNIQUE,
+  bolt11 VARCHAR,
+  payment_hash VARCHAR,
+  amount_sat BIGINT NOT NULL,
+  description VARCHAR,
+  expires_at BIGINT,
+  callback_url VARCHAR,
+  event_message VARCHAR,
+  status VARCHAR NOT NULL,
+  movement_id INTEGER,
+  received_sat BIGINT,
+  fee_sat BIGINT,
+  calledback BOOLEAN DEFAULT FALSE,
+  calledback_ts TIMESTAMP,
+  callback_failures INTEGER DEFAULT 0,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ark_ln_invoice_payment_hash ON ark_ln_invoice (payment_hash);
+CREATE INDEX IF NOT EXISTS idx_ark_ln_invoice_status ON ark_ln_invoice (status);
+CREATE INDEX IF NOT EXISTS idx_ark_ln_invoice_calledback ON ark_ln_invoice (calledback);
+
+CREATE TABLE IF NOT EXISTS ark_ln_send (
+  id SERIAL PRIMARY KEY,
+  payment_hash VARCHAR NOT NULL UNIQUE,
+  event_message VARCHAR,
+  movement_id INTEGER,
+  status VARCHAR NOT NULL,
+  published BOOLEAN DEFAULT FALSE,
+  inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 INSERT INTO cyphernode_props (property, value, category)
 SELECT 'ark_last_pushed_at', '', 'ark'

@@ -24,6 +24,22 @@ ark_process_movement() {
   movement_id=$(printf '%s' "${movement}" | jq -r '.id')
   trace "[ark_process_movement] movement ${movement_id} status ${status}"
 
+  # Lightning movements carry their payment hash in the metadata; a failed
+  # send is an outcome too.
+  case "$(printf '%s' "${movement}" | jq -r '.subsystem.name // empty')" in
+    bark.lightning_send)
+      case "${status}" in
+        successful) ark_ln_send_finish "$(printf '%s' "${movement}" | jq -r '.metadata.payment_hash // empty')" complete "${movement_id}" ;;
+        failed) ark_ln_send_finish "$(printf '%s' "${movement}" | jq -r '.metadata.payment_hash // empty')" failed "${movement_id}" ;;
+      esac
+      return 0
+      ;;
+    bark.lightning_receive)
+      [ "${status}" = "successful" ] && ark_ln_receive_movement "${movement}"
+      return 0
+      ;;
+  esac
+
   [ "${status}" = "successful" ] || return 0
 
   vtxos=$(printf '%s' "${movement}" | jq -c '.output_vtxos // []')
@@ -63,6 +79,24 @@ ark_process_movement() {
   return 0
 }
 
+# ark_ln_receive_movement <movement json>
+# The invoice amount is in received_on; what the wallet keeps after the
+# server's fee is the effective balance.
+ark_ln_receive_movement() {
+  trace "Entering ark_ln_receive_movement()..."
+
+  local movement_id payment_hash received fee
+
+  movement_id=$(printf '%s' "${1}" | jq -r '.id')
+  payment_hash=$(printf '%s' "${1}" | jq -r '.metadata.payment_hash // empty')
+  received=$(printf '%s' "${1}" | jq -r '.effective_balance_sat // 0')
+  fee=$(printf '%s' "${1}" | jq -r '.offchain_fee_sat // 0')
+  [ -n "${payment_hash}" ] || return 0
+
+  sql "UPDATE ark_ln_invoice SET status='paid', movement_id=${movement_id}, received_sat=${received}, fee_sat=${fee}"\
+" WHERE payment_hash='$(sql_quote "${payment_hash}")' AND status <> 'paid'" > /dev/null
+}
+
 # Posts every callback not yet delivered. The lock keeps the notification
 # stream and proxycron from posting the same callback twice.
 ark_do_callbacks() {
@@ -90,9 +124,16 @@ ark_do_callbacks() {
     ark_job_callback "${row}"
   done
 
-  # Receives and jobs without a callback URL are marked delivered immediately.
+  rows=$(sql_json "SELECT id, label, bolt11, payment_hash, callback_url, event_message, amount_sat, received_sat, fee_sat, movement_id FROM ark_ln_invoice"\
+" WHERE NOT calledback AND status = 'paid' AND callback_url IS NOT NULL AND callback_url <> ''")
+  for row in ${rows}; do
+    ark_ln_invoice_callback "${row}"
+  done
+
+  # Receives, jobs and invoices without a callback URL are marked delivered immediately.
   sql "UPDATE ark_receive r SET calledback=true FROM ark_watching w WHERE w.id = r.ark_watching_id AND NOT r.calledback AND (w.callback_url IS NULL OR w.callback_url = '')" > /dev/null
   sql "UPDATE ark_job SET calledback=true WHERE NOT calledback AND status <> 'pending' AND (callback_url IS NULL OR callback_url = '')" > /dev/null
+  sql "UPDATE ark_ln_invoice SET calledback=true WHERE NOT calledback AND status = 'paid' AND (callback_url IS NULL OR callback_url = '')" > /dev/null
   ) 8>./.ark_callbacks.lock
 
   return 0
@@ -147,6 +188,34 @@ ark_job_callback() {
   else
     trace "[ark_job_callback] callback failed: ${url}"
     sql "UPDATE ark_job SET callback_failures=callback_failures+1 WHERE id=${id}" > /dev/null
+  fi
+  return ${returncode}
+}
+
+# ark_ln_invoice_callback <json row>
+ark_ln_invoice_callback() {
+  trace "Entering ark_ln_invoice_callback()..."
+
+  local row=${1}
+  local id url data returncode
+
+  id=$(printf '%s' "${row}" | jq -r '.id')
+  url=$(printf '%s' "${row}" | jq -r '.callback_url')
+  data=$(printf '%s' "${row}" | jq -c '
+    {id: .id, event: "ark_lnreceive", "label": .label, bolt11: .bolt11, payment_hash: .payment_hash,
+     eventMessage: .event_message, msatoshi: (.amount_sat * 1000),
+     amount_received_msat: (if .received_sat then .received_sat * 1000 else null end),
+     fee_sat: .fee_sat, movementId: .movement_id}')
+  trace "[ark_ln_invoice_callback] data=${data}"
+
+  notify_web "${url}" "${data}" "${TOR_ADDR_WATCH_WEBHOOKS}" > /dev/null
+  returncode=$?
+  trace_rc ${returncode}
+  if [ "${returncode}" -eq 0 ]; then
+    sql "UPDATE ark_ln_invoice SET calledback=true, calledback_ts=CURRENT_TIMESTAMP WHERE id=${id}" > /dev/null
+  else
+    trace "[ark_ln_invoice_callback] callback failed: ${url}"
+    sql "UPDATE ark_ln_invoice SET callback_failures=callback_failures+1 WHERE id=${id}" > /dev/null
   fi
   return ${returncode}
 }

@@ -1954,9 +1954,10 @@ Proxy response:
 ## Ark (barkd)
 
 Available when the `ark` feature is installed. The proxy drives a barkd wallet
-on your Ark server. Amounts are in satoshis. Each money-moving call takes a
-caller `label` that must be unique: a repeated label returns the stored outcome
-instead of paying twice.
+on your Ark server. Amounts are in satoshis. Board and offboard take a caller
+`label` that must be unique: a repeated label returns the stored outcome
+instead of running twice. `ark_send` works like `spend`: the outcome is in the
+reply and idempotency is the caller's.
 
 ### Get Ark wallet info
 
@@ -1970,13 +1971,24 @@ Proxy response:
 {
   "connected": true,
   "ark_info": { "network": "signet", "server_pubkey": "02...", "round_interval": {"secs": 600, "nanos": 0}, "max_vtxo_amount_sat": null, "min_board_amount_sat": 1000 },
-  "fallback": { "registered": true, "payout_address": "tb1q..." },
-  "next_round": { "start_time": "2026-11-03T21:00:00-05:00" }
+  "next_round": { "start_time": "2026-11-03T21:00:00-05:00" },
+  "balance": { "spendable_sat": 150000, "needs_refresh_sat": 0, "pending_in_round_sat": 0, "pending_board_sat": 0, "pending_arkoor_send_sat": 0 },
+  "vtxos": { "count": 12, "spendable": 11, "soonest_expiry_height": 334000 },
+  "last_refresh": { "movementId": 82, "completed_at": "2026-11-05T03:20:01-05:00" }
 }
 ```
 
-`fallback.payout_address` is where this wallet's expired coins are paid out.
-It is the wallet's own on-chain address, registered once at creation.
+A coin that expires before it is refreshed is paid out by the server to the
+wallet's own on-chain wallet; see `ark_onchain_getbalance`. Each coin in
+`ark_listvtxos` carries a `fallback_status` once the server has decided
+about it.
+
+The last three fields are the wallet's health. Money that is not spendable
+shows under `balance` (`pending_arkoor_send_sat` is money held by payments
+barkd is still trying to deliver). A growing `vtxos.spendable` means the
+coins are not being merged: barkd merges them in a refresh round, and
+`last_refresh` tells when that last worked. A wallet with many small coins
+cannot pay large amounts; see `ark_send`.
 
 ### Get Ark balance
 
@@ -1987,7 +1999,7 @@ GET http://cyphernode:8888/ark_getbalance
 Proxy response:
 
 ```json
-{ "spendable_sat": 150000, "needs_refresh_sat": 0, "pending_in_round_sat": 0, "pending_board_sat": 0, "awaiting_settlement_sat": 0 }
+{ "spendable_sat": 150000, "needs_refresh_sat": 0, "pending_in_round_sat": 0, "pending_board_sat": 0, "pending_arkoor_send_sat": 0 }
 ```
 
 Only `spendable_sat` can be sent right now.
@@ -2051,25 +2063,41 @@ or `{"id":7}`.
 GET http://cyphernode:8888/ark_getactivewatches
 ```
 
-### Send an Ark payment
+### Send an Ark payment (called by your application)
+
+Pays an Ark address out of round, the Ark equivalent of `spend`. The call
+returns once barkd has the payment accepted by the server. Can supply an
+eventMessage to be published on successful spending, base64 encoded.
 
 ```http
 POST http://cyphernode:8888/ark_send
 with body...
-{"destination":"tark1...","amount":12345,"label":"payout-42"}
+{"destination":"tark1...","amount":12345}
+or
+{"destination":"tark1...","amount":12345,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 ```
 
 Proxy response:
 
 ```json
-{ "id": 2, "event": "ark_send", "label": "payout-42", "destination": "tark1...", "amount_sat": 12345, "status": "successful", "movementId": 5, "message": "Payment sent" }
+{
+  "status": "accepted",
+  "movementId": 5,
+  "details":
+  {
+    "destination": "tark1...",
+    "amount_sat": 12345,
+    "message": "Payment sent successfully"
+  }
+}
 ```
 
-`status` is `successful`, `failed`, or `unknown` when barkd could not be
-reached after the request was recorded. Unknown sends are reconciled from the
-wallet history by the callbacks cron, against movements made after the
-request; check them with `ark_getsend/<label>`. A send still `pending` ten
-minutes later is treated the same way.
+`movementId` is the wallet movement that paid; it is `null` when it cannot be
+told apart from another payment of the same amount to the same address made
+at the same time. A refusal comes back as `{"error":{"code":...,"message":...}}`
+with barkd's message and nothing was sent. Code -32001 means barkd could not
+be reached after the request: the outcome is unknown, check
+`ark_listmovements`. Do not retry a send whose outcome you do not know.
 
 ### Board (on-chain to Ark)
 
@@ -2117,32 +2145,110 @@ Board and offboard callback body:
 { "id": 3, "event": "ark_board", "label": "topup-1", "status": "successful", "txid": "...", "movementId": 9, "vtxos": ["..."], "error": null }
 ```
 
-### Job and send status
+### Job status
 
 ```http
 GET http://cyphernode:8888/ark_getjob/topup-1
-GET http://cyphernode:8888/ark_getsend/payout-42
 ```
 
 A job refused by barkd is stored as `failed` with barkd's message in `error`
 and its label stays taken; the callback, when there is one, fires with that
 status and message. Retry under a new label.
 
-### Refresh coins
+### Pay a Lightning invoice from the Ark wallet (called by your application)
 
-Cyphernode refreshes coins on its own: barkd joins the next round once a coin
-is within 144 blocks (24 hours) of expiry, or has reached the server's exit
-depth limit, and refreshes other small or deep coins in the same round.
-Callers do not schedule refreshes. An operator can force one with the admin
-key:
+Pays a Lightning destination out of the Ark wallet, the Ark equivalent of
+`ln_pay`. The destination is a bolt11 invoice, a BOLT12 offer, a Lightning
+address or an LNURL. `expected_msatoshi` and `expected_description` are
+checked against a bolt11 invoice as `ln_pay` does; the description check
+needs the `lightning` feature. An invoice without amount, an offer, a
+Lightning address or an LNURL is paid for `expected_msatoshi`, which is then
+required. The call waits up to 85 seconds for the outcome. Can supply an
+eventMessage to be published once the payment is final, base64 encoded.
 
 ```http
-POST http://cyphernode:8888/ark_refresh
+POST http://cyphernode:8888/ark_lnpay
 with body...
-{"vtxos":["..."]}
+{"destination":"lntbs...","expected_msatoshi":40000000,"expected_description":"order #1"}
+or
+{"destination":"user@domain.com","expected_msatoshi":40000000,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 ```
 
-or `{"all":true}`.
+`bolt11` is accepted in place of `destination`.
+
+Proxy response:
+
+```json
+{
+  "status": "complete",
+  "payment_hash": "48ab1a5b...",
+  "payment_preimage": "6ef6b49d...",
+  "amount_msat": 40000000,
+  "amount_sent_msat": 40115000,
+  "movementId": 14,
+  "destination": "lntbs..."
+}
+```
+
+`status` is `complete`, `failed`, or `pending` when the outcome is still
+unknown after 85 seconds; follow a pending payment through `ark_getmovement`
+on `movementId` or through the broker message. `amount_sent_msat` includes
+the server's `lightning_send` fee, shown in `ark_getinfo` under
+`ark_info.fees`. An invoice already paid or being paid is reported with
+`already_paid: true` instead of being paid again. A refusal comes back as
+`{"error":{"code":...,"message":...}}` and nothing was sent. Code -32001
+means barkd could not be reached after the request: the outcome is unknown,
+check `ark_listmovements`. Do not retry a payment whose outcome you do not
+know.
+
+With an `eventMessage`, once the payment is final the broker topic `ark_lnpay`
+carries `{"payment_hash":"...","movementId":14,"status":"complete","eventMessage":"eyJ..."}`,
+whether or not the call was still waiting.
+
+### Create a Lightning invoice paid into the Ark wallet (called by your application)
+
+Like `ln_create_invoice`, with the Ark server's node as payee. `msatoshi` is
+required and must be a whole number of satoshis; `label` must be unique;
+`expiry` is in seconds, optional, and capped by the Ark server's invoice
+expiry. The invoice is issued for the amount requested; what the wallet
+receives is that amount minus the server's `lightning_receive` fee, shown in
+`ark_getinfo` under `ark_info.fees`, and the callback reports both.
+
+```http
+POST http://cyphernode:8888/ark_lncreateinvoice
+with body...
+{"msatoshi":30000000,"label":"order-123","description":"Bull order #123","expiry":900,"callbackUrl":"192.168.111.233:1111/callback","eventMessage":"eyJ..."}
+```
+
+Proxy response:
+
+```json
+{ "id": 5, "label": "order-123", "bolt11": "lntbs...", "payment_hash": "48ab1a5b...", "msatoshi": 30000000, "amount_msat": 30000000, "description": "Bull order #123", "status": "unpaid", "expires_at": 1762470000, "callbackUrl": "192.168.111.233:1111/callback" }
+```
+
+Callback body, posted once the wallet holds the funds:
+
+```json
+{ "id": 5, "event": "ark_lnreceive", "label": "order-123", "bolt11": "lntbs...", "payment_hash": "48ab1a5b...", "eventMessage": "eyJ...", "msatoshi": 30000000, "amount_received_msat": 29840000, "fee_sat": 160, "movementId": 15 }
+```
+
+An unpaid invoice past `expires_at` is marked `expired` without a callback.
+
+```http
+GET http://cyphernode:8888/ark_lngetinvoice/order-123
+```
+
+Returns the stored invoice with its `status` (`unpaid`, `paid`, `expired`),
+`movementId`, `amount_received_msat` and `fee_sat`, plus `receive_state`,
+barkd's own state of the receive while it is pending (`null` once settled).
+
+### Refresh coins
+
+barkd refreshes coins on its own: it joins the next round once a coin is
+within 144 blocks (24 hours) of expiry on mainnet, 12 blocks on other networks,
+or has reached the server's exit depth
+limit, and merges other small or deep coins in the same round. Callers do not
+schedule refreshes. `ark_getinfo` tells when the last refresh succeeded.
 
 ### VTXOs, movements and the on-chain wallet
 

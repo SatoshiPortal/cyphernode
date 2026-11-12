@@ -53,6 +53,25 @@ if [ "${BARKD_WAIT_FOR_BITCOIN:-true}" = "true" ]; then
   log "bitcoin ready"
 fi
 
+# Every round attempt locks and unlocks the coins it uses, and bark keeps
+# every one of those state rows and scans them all on each coin lookup. A
+# wallet that fails rounds for a while slows down until it cannot join one
+# at all. Only the latest row per coin is ever read, so the rest go at each
+# start, while barkd is not running.
+prune_vtxo_state() {
+  local db="${DATADIR}/db.sqlite" before after
+  [ -f "${db}" ] || return 0
+  before=$(sqlite3 "${db}" 'SELECT count(*) FROM bark_vtxo_state' 2>/dev/null) || return 0
+  if ! sqlite3 "${db}" 'DELETE FROM bark_vtxo_state WHERE id NOT IN (SELECT MAX(id) FROM bark_vtxo_state GROUP BY vtxo_id); VACUUM;'; then
+    log "coin state history not pruned"
+    return 0
+  fi
+  after=$(sqlite3 "${db}" 'SELECT count(*) FROM bark_vtxo_state')
+  log "coin state history: ${before} rows, ${after} kept"
+}
+
+prune_vtxo_state
+
 barkd --host 0.0.0.0 --port "${PORT}" &
 BARKD_PID=$!
 
@@ -115,8 +134,5 @@ if [ -z "${fingerprint}" ]; then
 else
   log "wallet ${fingerprint} loaded"
 fi
-
-payout=$(api GET /wallet/fallback | jq -r '.payout_address // empty' || true)
-[ -n "${payout}" ] && log "fallback payout address: ${payout}"
 
 wait ${BARKD_PID}

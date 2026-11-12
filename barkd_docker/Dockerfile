@@ -6,7 +6,7 @@
 FROM rust:1-bookworm AS builder
 
 ARG SCUTTLE_REPO=https://github.com/BullishNode/scuttle.git
-ARG SCUTTLE_COMMIT=274eaac7b454f05146d71aa5ece12a9cc4eed428
+ARG SCUTTLE_COMMIT=44032626581caac1a32ff18c537108747476cb2b
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git clang pkg-config libssl-dev protobuf-compiler \
@@ -22,7 +22,7 @@ RUN cargo build --release --locked -p bark-cli --bin barkd \
 FROM debian:bookworm-slim
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl jq \
+ && apt-get install -y --no-install-recommends ca-certificates curl jq sqlite3 \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/target/release/barkd /usr/local/bin/barkd

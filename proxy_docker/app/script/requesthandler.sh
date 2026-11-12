@@ -1293,15 +1293,10 @@ main() {
           ;;
         ark_send)
           # POST http://192.168.111.152:8080/ark_send
-          # BODY {"destination":"ark1...","amount":12345,"label":"order-42"}
+          # BODY {"destination":"ark1...","amount":12345}
+          # BODY {"destination":"ark1...","amount":12345,"eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
 
           response=$(ark_send "${line}")
-          returncode=$?
-          ;;
-        ark_getsend)
-          # GET http://192.168.111.152:8080/ark_getsend/order-42
-
-          response=$(ark_getsend "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
         ark_board)
@@ -1326,14 +1321,6 @@ main() {
           response=$(ark_getjob "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
-        ark_refresh)
-          # POST http://192.168.111.152:8080/ark_refresh
-          # BODY {"vtxos":["..."]}
-          # BODY {"all":true}
-
-          response=$(ark_refresh "${line}")
-          returncode=$?
-          ;;
         ark_onchain_getnewaddress)
           # GET http://192.168.111.152:8080/ark_onchain_getnewaddress
 
@@ -1344,6 +1331,27 @@ main() {
           # GET http://192.168.111.152:8080/ark_onchain_getbalance
 
           response=$(ark_onchain_getbalance)
+          returncode=$?
+          ;;
+        ark_lnpay)
+          # POST http://192.168.111.152:8080/ark_lnpay
+          # BODY {"destination":"lnbc...","expected_msatoshi":"40000000","expected_description":"order #1"}
+          # BODY {"destination":"user@domain.com","expected_msatoshi":"40000000","eventMessage":"eyJ3aGF0ZXZlciI6MTIzfQo="}
+
+          response=$(ark_lnpay "${line}")
+          returncode=$?
+          ;;
+        ark_lncreateinvoice)
+          # POST http://192.168.111.152:8080/ark_lncreateinvoice
+          # BODY {"msatoshi":"30000000","label":"order-123","description":"Bull order #123","expiry":"900","callbackUrl":"192.168.111.233:1111/callback","eventMessage":"eyJ..."}
+
+          response=$(ark_lncreateinvoice "${line}")
+          returncode=$?
+          ;;
+        ark_lngetinvoice)
+          # GET http://192.168.111.152:8080/ark_lngetinvoice/order-123
+
+          response=$(ark_lngetinvoice "$(echo "${line}" | cut -d ' ' -f2 | cut -d '/' -f3)")
           returncode=$?
           ;;
         *)
