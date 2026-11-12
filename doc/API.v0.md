@@ -1931,6 +1931,8 @@ Proxy response:
 
 If the bolt11 includes a boltz route hint a liquid network address will be included in the response.  If the bolt11 does not include a boltz route hint, only the original invoice will be returned.
 
+If the bolt11 instead carries an Ark address in its route hints, the response has that address in `ark_address` (and `liquid_address` is null). The address is read from the invoice itself; Boltz is not involved. When the `ark` feature is installed, only an address of the Ark server the wallet is on is reported, and `ln_pay` pays such an invoice from the Ark wallet, on that address, instead of over Lightning: the reply is the one of `ark_lnpay`, without a `payment_preimage`.
+
 ```http
 POST http://cyphernode:8888/check_bolt11_mrh
 with body...

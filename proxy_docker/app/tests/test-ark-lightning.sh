@@ -347,4 +347,74 @@ check "catch-up processes the send movement" \
   "grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=14\" '${SQL_LOG}'"
 PREPAID=
 
+# --- invoices with an Ark address route hint -----------------------------------
+
+# ln_pay itself, with the stubs put back over what its file defines.
+. ./call_lightningd.sh
+ln_call_lightningd() {
+  printf '%s\n' "$*" >> "${CLN_LOG}"
+  echo "{\"type\":\"bolt11 invoice\",\"valid\":true,\"payment_hash\":\"${HASH}\",\"amount_msat\":${CLN_AMOUNT},\"description\":\"shape\"}"
+}
+ln_listpays() {
+  echo '{"pays":[{"status":"complete","payment_hash":"cln"}]}'
+}
+
+# What the paymentalist answers, and with which Ark server it was asked.
+MRH_LOG=$(mktemp)
+MRH_MODE=ark
+check_bolt11_mrh() {
+  printf '%s|%s|%s\n' "${1}" "${2}" "${3}" >> "${MRH_LOG}"
+  case "${MRH_MODE}" in
+    ark) echo '{"result":{"liquid_address":null,"ark_address":"tark1hinted","amount_sats":1000,"original_invoice":"x"}}' ;;
+    none) echo '{"result":{"liquid_address":null,"ark_address":null,"amount_sats":null,"original_invoice":"x"}}' ;;
+    down) return 1 ;;
+  esac
+}
+ark_info_barkd() {
+  barkd_call() {
+    printf '%s %s %s\n' "${1}" "${2}" "${3:-}" >> "${BARKD_LOG}"
+    [ "${2}" = "/wallet/ark-info" ] && [ -n "${ARK_SERVER}" ] && { echo "{\"server_pubkey\":\"${ARK_SERVER}\"}"; return 0; }
+    return 1
+  }
+}
+
+reset; : > "${MRH_LOG}"
+ARK_SERVER=02aa
+( ark_info_barkd
+  MRH_MODE=ark
+  check "an Ark address of our Ark server is reported" "[ \"\$(ark_bolt11_address ${INV})\" = tark1hinted ]"
+  check "the check is asked about our Ark server only" "grep -q '^${INV}||02aa\$' '${MRH_LOG}'"
+  MRH_MODE=none
+  check "an invoice without an Ark address has none" "[ -z \"\$(ark_bolt11_address ${INV})\" ]"
+  MRH_MODE=down
+  check "an unreachable check reports no Ark address" "[ -z \"\$(ark_bolt11_address ${INV})\" ]"
+  ARK_SERVER=
+  MRH_MODE=ark
+  check "no Ark address without a known Ark server" "[ -z \"\$(ark_bolt11_address ${INV})\" ]"
+  exit ${fail}
+) || fail=1
+
+# ln_pay hands a hinted invoice to the Ark wallet and nothing else.
+ark_lnpay() { printf '%s' "${1}" > "${STATE}/ark_lnpay"; echo '{"status":"complete","via":"ark"}'; }
+ark_bolt11_address() { [ "${MRH_MODE}" = "ark" ] && echo tark1hinted; return 0; }
+
+reset
+FEATURE_ARK=true MRH_MODE=ark
+out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+check "ln_pay pays a hinted invoice from the Ark wallet" \
+  "jqcheck '${out}' '.via == \"ark\"' && grep -q '\"bolt11\":\"${INV}\"' '${STATE}/ark_lnpay' && [ ! -s '${CLN_LOG}' ]"
+
+reset
+FEATURE_ARK=true MRH_MODE=none
+out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+check "ln_pay pays an invoice without a hint over Lightning" \
+  "jqcheck '${out}' '.payment_hash == \"cln\"' && [ ! -f '${STATE}/ark_lnpay' ]"
+
+reset
+FEATURE_ARK=false MRH_MODE=ark
+out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+check "ln_pay ignores the hint without the Ark feature" \
+  "jqcheck '${out}' '.payment_hash == \"cln\"' && [ ! -f '${STATE}/ark_lnpay' ]"
+rm -f "${MRH_LOG}"
+
 exit ${fail}

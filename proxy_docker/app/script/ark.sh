@@ -439,6 +439,24 @@ ark_ln_send_finish() {
 # lightning feature, Cyphernode's own CLN also decodes the invoice for the
 # description check and the payment hash; without it, the description is
 # not checked and the payment hash comes from barkd's reply.
+# The public key of the Ark server the wallet is on; empty when unknown.
+ark_server_pubkey() {
+  barkd_call GET /wallet/ark-info | jq -r '.server_pubkey // empty' 2>/dev/null
+}
+
+# The Ark address a bolt11 invoice asks to be paid on in its route hints, if
+# it is an address of our Ark server. Empty otherwise, and when it cannot be
+# checked.
+ark_bolt11_address() {
+  local bolt11=${1}
+  local server result
+
+  server=$(ark_server_pubkey)
+  [ -n "${server}" ] || return 0
+  result=$(check_bolt11_mrh "${bolt11}" "" "${server}") || return 0
+  printf '%s' "${result}" | jq -r '.result.ark_address // empty' 2>/dev/null
+}
+
 ark_lnpay() {
   trace "Entering ark_lnpay()..."
 

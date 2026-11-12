@@ -47,9 +47,14 @@ check_bolt11_mrh() {
   trace "[check_bolt11_mrh] bolt11=${bolt11}"
   local network=${2}
   trace "[check_bolt11_mrh] network=${network}"
+  local ark_server_pubkey=${3}
+  trace "[check_bolt11_mrh] ark_server_pubkey=${ark_server_pubkey}"
   local result
 
   local data="{\"invoice\": \"${bolt11}\", \"network\": \"${network}\"}"
+  if [ -n "${ark_server_pubkey}" ]; then
+    data="{\"invoice\": \"${bolt11}\", \"network\": \"${network}\", \"ark_server_pubkey\": \"${ark_server_pubkey}\"}"
+  fi
   trace "[check_bolt11_mrh] data=${data}"
 
   result=$(send_to_paymentalist "/check_bolt11_mrh" "${data}")

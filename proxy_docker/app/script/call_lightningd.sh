@@ -320,6 +320,15 @@ ln_pay() {
   local request=${1}
   local bolt11=$(echo "${request}" | jq -r ".bolt11")
   trace "[ln_pay] bolt11=${bolt11}"
+
+  # An invoice that asks to be paid on an Ark address of our Ark server is
+  # paid there, from the Ark wallet, and never over Lightning.
+  if [ "${FEATURE_ARK}" = "true" ] && [ -n "$(ark_bolt11_address "${bolt11}")" ]; then
+    trace "[ln_pay] invoice has an Ark address route hint, paying from the Ark wallet"
+    ark_lnpay "${request}"
+    return $?
+  fi
+
   local expected_msatoshi=$(echo "${request}" | jq ".expected_msatoshi")
   trace "[ln_pay] expected_msatoshi=${expected_msatoshi}"
   if [ "${expected_msatoshi}" = "null" ]; then

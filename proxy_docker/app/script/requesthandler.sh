@@ -1224,7 +1224,10 @@ main() {
           local network=$(echo "${line}" | jq -r ".network // \"bitcoin\"")
           trace "[check_bolt11_mrh] network: ${network}"
 
-          response=$(check_bolt11_mrh "${bolt11}" "${network}")
+          ark_server=
+          [ "${FEATURE_ARK}" = "true" ] && ark_server=$(ark_server_pubkey)
+
+          response=$(check_bolt11_mrh "${bolt11}" "${network}" "${ark_server}")
           returncode=$?
           ;;
         ark_getinfo)
