@@ -388,6 +388,32 @@ module.exports = class App {
       }
     }
 
+    // The signet the Bitcoin node follows. Cyphernet is a preset of a custom
+    // signet; a block time other than Bitcoin Core's 600 seconds needs the
+    // image built from bitcoin_signet_docker.
+    const signetPresets = {
+      cyphernet: {
+        challenge: '0014dc9786c6b1c3ad2bcc45014b40384fba3419de17',
+        blocktime: 30,
+        seednodes: '170.75.174.86:38333,170.75.166.64:38333'
+      }
+    };
+    const signet = { custom: false, challenge: '', blocktime: 600, seednodes: [], patched: false };
+    if( this.config.data.net === 'signet' && this.config.data.signet_network && this.config.data.signet_network !== 'public' ) {
+      const preset = signetPresets[this.config.data.signet_network] || {
+        challenge: this.config.data.signet_challenge,
+        blocktime: this.config.data.signet_blocktime,
+        seednodes: this.config.data.signet_seednodes
+      };
+      signet.custom = true;
+      signet.challenge = preset.challenge || '';
+      signet.blocktime = parseInt( preset.blocktime, 10 ) || 600;
+      signet.seednodes = ( preset.seednodes || '' ).split( ',' ).map( s => s.trim() ).filter( s => s );
+      signet.patched = signet.blocktime !== 600;
+    }
+    this.sessionData.signet = signet;
+    this.sessionData.bitcoin_image_version = signet.patched ? 'v32.1-signetblocktime' : this.sessionData.bitcoin_version;
+
     this.sessionData.installationInfo = this.installationInfo();
 
     for( let m of prompters ) {

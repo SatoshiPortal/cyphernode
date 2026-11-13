@@ -185,6 +185,34 @@
           "otsclient_datapath"
         ]
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "features": {
+            "contains": {
+              "enum": [
+                "ark"
+              ]
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "ark_server_url",
+          "ark_datapath"
+        ],
+        "properties": {
+          "net": {
+            "enum": [
+              "mainnet",
+              "signet",
+              "regtest"
+            ]
+          }
+        }
+      }
     }
   ],
   "properties": {
@@ -217,7 +245,9 @@
       "$id": "#/properties/features",
       "type": "array",
       "title": "The optional features of this cyphernode",
-      "default": ["specter"],
+      "default": [
+        "specter"
+      ],
       "items": {
         "$id": "#/properties/features/items",
         "type": "string",
@@ -227,7 +257,8 @@
           "elements",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "ark"
         ],
         "title": "The feature",
         "default": "",
@@ -237,7 +268,8 @@
           "elements",
           "otsclient",
           "batcher",
-          "specter"
+          "specter",
+          "ark"
         ]
       }
     },
@@ -301,6 +333,7 @@
       "enum": [
         "testnet",
         "mainnet",
+        "signet",
         "regtest"
       ],
       "title": "The net cyphernode is running on",
@@ -800,7 +833,7 @@
       "type": "string",
       "title": "The lightning node name",
       "examples": [
-        "🚀 Mighty Moose 🚀"
+        "\ud83d\ude80 Mighty Moose \ud83d\ude80"
       ]
     },
     "lightning_nodecolor": {
@@ -812,6 +845,70 @@
         "ff0000",
         "00ff00",
         "00ffff"
+      ]
+    },
+    "ark_server_url": {
+      "$id": "#/properties/ark_server_url",
+      "type": "string",
+      "title": "Ark server (captaind) URL",
+      "examples": [
+        "https://ark.example.com"
+      ]
+    },
+    "ark_datapath": {
+      "$id": "#/properties/ark_datapath",
+      "type": "string",
+      "title": "Ark wallet (barkd) datapath",
+      "examples": [
+        "/tmp/cyphernode/ark"
+      ]
+    },
+    "ark_datapath_custom": {
+      "$id": "#/properties/ark_datapath_custom",
+      "type": "string",
+      "title": "Ark wallet custom datapath",
+      "examples": [
+        "/tmp/cyphernode/ark"
+      ]
+    },
+    "signet_network": {
+      "$id": "#/properties/signet_network",
+      "type": "string",
+      "enum": [
+        "public",
+        "cyphernet",
+        "custom"
+      ],
+      "default": "public",
+      "title": "Which signet",
+      "examples": [
+        "public"
+      ]
+    },
+    "signet_challenge": {
+      "$id": "#/properties/signet_challenge",
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]+$",
+      "title": "Custom signet challenge script (hex)",
+      "examples": [
+        "0014dc9786c6b1c3ad2bcc45014b40384fba3419de17"
+      ]
+    },
+    "signet_blocktime": {
+      "$id": "#/properties/signet_blocktime",
+      "type": "integer",
+      "minimum": 1,
+      "title": "Custom signet block time in seconds",
+      "examples": [
+        30
+      ]
+    },
+    "signet_seednodes": {
+      "$id": "#/properties/signet_seednodes",
+      "type": "string",
+      "title": "Custom signet seed nodes, comma separated host:port",
+      "examples": [
+        "170.75.174.86:38333,170.75.166.64:38333"
       ]
     }
   }

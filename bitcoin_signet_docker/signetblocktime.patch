@@ -1,0 +1,57 @@
+diff --git a/src/chainparams.cpp b/src/chainparams.cpp
+index bab4384..fb4bee6 100644
+--- a/src/chainparams.cpp
++++ b/src/chainparams.cpp
+@@ -112,6 +112,15 @@ void ReadSigNetArgs(const ArgsManager& args, CChainParams::SigNetOptions& option
+         }
+         options.challenge.emplace(*val);
+     }
++    if (const auto signetblocktime{args.GetIntArg("-signetblocktime")}) {
++        if (!args.IsArgSet("-signetchallenge")) {
++            throw std::runtime_error("-signetblocktime cannot be set without -signetchallenge");
++        }
++        if (*signetblocktime <= 0) {
++            throw std::runtime_error("-signetblocktime must be greater than 0");
++        }
++        options.pow_target_spacing = *signetblocktime;
++    }
+     HandleDeploymentArgs(args, options.dep_opts);
+ }
+ 
+diff --git a/src/chainparamsbase.cpp b/src/chainparamsbase.cpp
+index f62e455..3bc1a63 100644
+--- a/src/chainparamsbase.cpp
++++ b/src/chainparamsbase.cpp
+@@ -22,6 +22,7 @@ void SetupChainParamsBaseOptions(ArgsManager& argsman)
+     argsman.AddArg("-vbparams=deployment:start:end[:min_activation_height]", "Use given start/end times and min_activation_height for specified version bits deployment (test-only)", ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::CHAINPARAMS);
+     argsman.AddArg("-signet", "Use the signet chain. Equivalent to -chain=signet. Note that the network is defined by the -signetchallenge parameter", ArgsManager::ALLOW_ANY, OptionsCategory::CHAINPARAMS);
+     argsman.AddArg("-signetchallenge", "Blocks must satisfy the given script to be considered valid (only for signet networks; defaults to the global default signet test network challenge)", ArgsManager::ALLOW_ANY | ArgsManager::DISALLOW_NEGATION, OptionsCategory::CHAINPARAMS);
++    argsman.AddArg("-signetblocktime=<seconds>", "Difficulty adjustment will target this block time in seconds (only for a custom signet; default: 600)", ArgsManager::ALLOW_ANY | ArgsManager::DISALLOW_NEGATION, OptionsCategory::CHAINPARAMS);
+     argsman.AddArg("-signetseednode", "Specify a seed node for the signet network, in the hostname[:port] format, e.g. sig.net:1234 (may be used multiple times to specify multiple seed nodes; defaults to the global default signet test network seed node(s))", ArgsManager::ALLOW_ANY | ArgsManager::DISALLOW_NEGATION, OptionsCategory::CHAINPARAMS);
+ }
+ 
+diff --git a/src/kernel/chainparams.cpp b/src/kernel/chainparams.cpp
+index a071833..a53e04e 100644
+--- a/src/kernel/chainparams.cpp
++++ b/src/kernel/chainparams.cpp
+@@ -511,7 +511,7 @@ public:
+         consensus.CSVHeight = 1;
+         consensus.SegwitHeight = 1;
+         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+-        consensus.nPowTargetSpacing = 10 * 60;
++        consensus.nPowTargetSpacing = options.pow_target_spacing;
+         consensus.fPowAllowMinDifficultyBlocks = false;
+         consensus.enforce_BIP94 = false;
+         consensus.fPowNoRetargeting = false;
+diff --git a/src/kernel/chainparams.h b/src/kernel/chainparams.h
+index 2c85b8e..c24b623 100644
+--- a/src/kernel/chainparams.h
++++ b/src/kernel/chainparams.h
+@@ -148,6 +148,7 @@ public:
+         DeploymentOptions dep_opts{};
+         std::optional<std::vector<uint8_t>> challenge{};
+         std::optional<std::vector<std::string>> seeds{};
++        int64_t pow_target_spacing{10 * 60};
+     };
+ 
+     /**

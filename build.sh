@@ -13,6 +13,7 @@ OTSCLIENT_VERSION="v0.9.0-dev-local"
 PYCOIN_VERSION="v0.9.0-dev-local"
 PAYMENTALIST_VERSION="v0.9.0-dev-local"
 BARKD_VERSION="v0.9.0-dev-local"
+BITCOIN_SIGNET_VERSION="v32.1-signetblocktime"
 
 trace()
 {
@@ -47,3 +48,10 @@ build_docker_images() {
 }
 
 build_docker_images
+
+# Bitcoin Core for a custom signet whose block time is not 600 seconds, such
+# as Cyphernet. It compiles Bitcoin Core, so it is only built on request.
+if [ "${BUILD_BITCOIN_SIGNET}" = "true" ]; then
+  trace "Creating the custom signet Bitcoin Core image"
+  docker build bitcoin_signet_docker/ -t cyphernode/bitcoin:$BITCOIN_SIGNET_VERSION
+fi

@@ -43,6 +43,56 @@ module.exports = {
       }]
     },
     {
+      when: function(props) { return props.net === 'signet'; },
+      type: 'list',
+      name: 'signet_network',
+      default: utils.getDefault( 'signet_network' ) || 'public',
+      message: prefix()+'Which signet?'+utils.getHelp('signet_network'),
+      choices: [{
+        name: "Public signet",
+        value: "public"
+      },{
+        name: "Cyphernet (30 second blocks)",
+        value: "cyphernet"
+      },{
+        name: "Another custom signet",
+        value: "custom"
+      }]
+    },
+    {
+      when: function(props) { return props.net === 'signet' && props.signet_network === 'custom'; },
+      type: 'input',
+      name: 'signet_challenge',
+      default: utils.getDefault( 'signet_challenge' ),
+      filter: utils.trimFilter,
+      validate: function( input ) {
+        return /^[0-9a-fA-F]+$/.test( input ) && input.length % 2 === 0 || 'Enter the signet challenge script in hex';
+      },
+      message: prefix()+'What is the signet challenge (hex)?'+utils.getHelp('signet_challenge')
+    },
+    {
+      when: function(props) { return props.net === 'signet' && props.signet_network === 'custom'; },
+      type: 'input',
+      name: 'signet_blocktime',
+      default: utils.getDefault( 'signet_blocktime' ) || 600,
+      filter: function( input ) { return parseInt( input, 10 ); },
+      validate: function( input ) {
+        return Number.isInteger( input ) && input > 0 || 'Enter the block time in seconds';
+      },
+      message: prefix()+'What is the signet block time in seconds?'+utils.getHelp('signet_blocktime')
+    },
+    {
+      when: function(props) { return props.net === 'signet' && props.signet_network === 'custom'; },
+      type: 'input',
+      name: 'signet_seednodes',
+      default: utils.getDefault( 'signet_seednodes' ),
+      filter: utils.trimFilter,
+      validate: function( input ) {
+        return /^[A-Za-z0-9.\-]+:[0-9]+(,[A-Za-z0-9.\-]+:[0-9]+)*$/.test( input ) || 'Enter host:port, separated by commas';
+      },
+      message: prefix()+'What are the signet seed nodes (host:port, comma separated)?'+utils.getHelp('signet_seednodes')
+    },
+    {
       type: 'confirm',
       name: 'run_as_different_user',
       default: utils.getDefault( 'run_as_different_user' ),

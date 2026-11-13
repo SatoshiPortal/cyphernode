@@ -1,6 +1,6 @@
 {
   "features": "What optional <font underline='true'>features</font> do you want me to activate?",
-  "net": "Which Bitcoin <font underline='true'>network</font> do you want Cyphernode to run on? Signet is supported for Bitcoin, Lightning and Ark, but not for Elements.",
+  "net": "Which Bitcoin <font underline='true'>network</font> do you want Cyphernode to run on? Signet is supported for Bitcoin, Lightning and Ark, but not for Elements. Signet can be the public signet or a custom one such as Cyphernet.",
   "run_as_different_user": "I recommend running Cyphernode as a <font underline='true'>different user</font> when possible. Using your current user would give Cyphernode your current access rights, which could be a security issue especially if you are a sudoer. Please note that this feature is not supported on OSX at runtime, but you will be fine activating it in case you want to use the configuration file on another machine.",
   "username": "Run Cyphernode as <font underline='true'>what user</font>? I recommend user <font color='# 0000ff'>cyphernode</font>. If the user does not exist, I will create it for you.",
   "use_xpub": "Cyphernode can derive Bitcoin addresses from an xPub and the derivation path you want. If you want, you can provide your xPub and derivation path right now and call 'derive' with only the index instead of having to pass your xPub and derivation path on each call.",
@@ -57,5 +57,9 @@
   "__default__": "",
   "ark_server_url": "<font underline='true'>URL</font> of the Ark server (captaind) this wallet joins, for example https://ark.example.com. barkd reaches it over gRPC. Keep it on the same host or LAN when you run captaind yourself.",
   "ark_datapath": "<font underline='true'>Path name</font> to where the barkd wallet data is stored. It holds the wallet seed: back it up. <font color='#ff0000'>If running on OSX, check mountable directories in Docker's File Sharing configs.</font>",
-  "ark_datapath_custom": " "
+  "ark_datapath_custom": " ",
+  "signet_network": "Which <font underline='true'>signet</font> should the Bitcoin node follow? Every signet shares the same first block, so a node set up for the wrong one starts without any error and simply follows another chain. Cyphernet is a custom signet with 30 second blocks.",
+  "signet_challenge": "The <font underline='true'>challenge</font> script of the custom signet, in hex. Blocks are only valid when signed for this script.",
+  "signet_blocktime": "The <font underline='true'>block time</font> the custom signet's difficulty targets, in seconds. Anything other than 600 needs the Bitcoin Core image built from bitcoin_signet_docker.",
+  "signet_seednodes": "One or more <font underline='true'>seed nodes</font> of the custom signet, as host:port separated by commas."
 }

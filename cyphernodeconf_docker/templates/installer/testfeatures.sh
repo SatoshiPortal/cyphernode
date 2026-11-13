@@ -153,6 +153,16 @@ checkbitcoinnode() {
 
   rc=$(curl -s -o /dev/null -w "%{http_code}" http://proxy:8888/getbestblockhash)
   [ "${rc}" -ne "200" ] && return 300
+<% if ( signet && signet.custom ) { %>
+  # Every signet shares one genesis block: a node set up for the wrong signet
+  # starts without error and follows another chain. Check its challenge.
+  local challenge
+  challenge=$(curl -s http://proxy:8888/getblockchaininfo | jq -r '.result.signet_challenge // .signet_challenge // empty')
+  if [ "${challenge}" != "<%= signet.challenge %>" ]; then
+    echo -e "\e[1;31mBitcoin node follows signet challenge '${challenge}', not <%= signet.challenge %>" > /dev/console
+    return 310
+  fi
+<% } %>
 
   echo -e "\e[1;36mBitcoin node rocks!" > /dev/console
 

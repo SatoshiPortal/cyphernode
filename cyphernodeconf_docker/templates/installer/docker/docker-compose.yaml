@@ -203,7 +203,7 @@ services:
   ##########################
 
   bitcoin:
-    image: cyphernode/bitcoin:<%= bitcoin_version %>
+    image: cyphernode/bitcoin:<%= bitcoin_image_version %>
     user: $USER
     command: /.bitcoin/entrypoint.sh
     <% if( bitcoin_expose ) { %>
