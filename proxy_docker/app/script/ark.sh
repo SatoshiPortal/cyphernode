@@ -594,8 +594,11 @@ ark_lnpay() (
   # Store the callback before barkd can accept the payment and emit a movement.
   event_pg=NULL; [ -n "${event_message}" ] && event_pg="'$(sql_quote "${event_message}")'"
   if [ -n "${payment_hash}" ]; then
-    sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
-" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null
+    if ! sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
+" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null; then
+      echo '{"error":{"code":-32002,"message":"Could not record Ark payment; nothing was sent"}}'
+      return 1
+    fi
   fi
 
   body=$(jq -cn --arg d "${destination}" --arg a "${amount_sat}" '{destination: $d} + (if $a == "" then {} else {amount_sat: ($a | tonumber)} end)')
@@ -629,8 +632,11 @@ ark_lnpay() (
   # When CLN could not decode a hash (for an offer or Lightning address),
   # barkd's response supplies it and the row can only be keyed at this point.
   if [ -z "${bolt11}" ] || [ "${FEATURE_LIGHTNING}" != "true" ]; then
-    sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
-" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null
+    if ! sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
+" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null; then
+      echo '{"error":{"code":-32001,"message":"Payment was submitted but could not be recorded; outcome unknown; check ark_listmovements"}}'
+      return 1
+    fi
   fi
 
   # A failed send ends in state unknown once its HTLCs are revoked, so

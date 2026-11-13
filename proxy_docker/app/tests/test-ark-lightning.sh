@@ -125,6 +125,9 @@ barkd_call() {
 sql() {
   printf '%s\n' "${1}" >> "${SQL_LOG}"
   case "${1}" in
+    "INSERT INTO ark_ln_send "*) [ -n "${SQL_FAIL_SEND:-}" ] && return 1 ;;
+  esac
+  case "${1}" in
     "INSERT INTO ark_ln_invoice (label, amount_sat, description, callback_url, event_message, status) VALUES ('dup'"*) ;;
     "INSERT INTO ark_ln_invoice"*) printf '5' ;;
     "UPDATE ark_ln_send SET status="*" RETURNING COALESCE(event_message, '')")
@@ -289,6 +292,22 @@ FEATURE_LIGHTNING=true
 out=$(ark_lnpay '{"destination":"'${INV}'","expected_description":"order #2"}')
 check "description mismatch is refused with the CLN decode" \
   "jqcheck '${out}' '.error.code == -32602' && grep -q \"^decode ${INV}\" '${CLN_LOG}' && ! grep -q 'POST /lightning/pay' '${BARKD_LOG}'"
+
+reset
+SQL_FAIL_SEND=1
+out=$(ark_lnpay '{"destination":"'${INV}'","eventMessage":"ZXZlbnQ="}')
+rc=$?
+check "failed pre-submission SQL insert prevents the Ark payment" \
+  "[ ${rc} -eq 1 ] && jqcheck '${out}' '.error.code == -32002 and (.error.message | contains(\"nothing was sent\"))' && grep -q '^INSERT INTO ark_ln_send ' '${SQL_LOG}' && ! grep -q '^POST /lightning/pay' '${BARKD_LOG}'"
+SQL_FAIL_SEND=
+
+reset
+FEATURE_LIGHTNING=false SQL_FAIL_SEND=1
+out=$(ark_lnpay '{"destination":"'${INV}'","eventMessage":"ZXZlbnQ="}')
+rc=$?
+check "failed post-submission SQL insert reports an unknown outcome" \
+  "[ ${rc} -eq 1 ] && jqcheck '${out}' '.error.code == -32001 and (.error.message | contains(\"outcome unknown\"))' && grep -q '^POST /lightning/pay' '${BARKD_LOG}'"
+SQL_FAIL_SEND= FEATURE_LIGHTNING=true
 
 reset
 out=$(ark_lnpay '{"destination":"'${INV}'","expected_msatoshi":"1000000","expected_description":"order #1"}')
