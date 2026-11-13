@@ -408,7 +408,8 @@ module.exports = class App {
       cyphernet: {
         challenge: '0014dc9786c6b1c3ad2bcc45014b40384fba3419de17',
         blocktime: 30,
-        seednodes: '170.75.174.86:38333,170.75.166.64:38333'
+        // The bitcoin.conf template keeps the first seed as a persistent peer.
+        seednodes: '170.75.166.64:38333,170.75.174.86:38333'
       }
     };
     const signet = { custom: false, challenge: '', blocktime: 600, seednodes: [], patched: false };
