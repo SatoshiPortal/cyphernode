@@ -157,7 +157,7 @@ module.exports = class App {
         'cyphernode/postgres': this.sessionData.postgres_version,
         'cyphernode/otsclient': this.sessionData.otsclient_version,
         'traefik': this.sessionData.traefik_version,
-        'cyphernode/clightning': this.sessionData.lightning_version,
+        'elementsproject/lightningd': this.sessionData.lightning_version,
         'cyphernode/barkd': this.sessionData.barkd_version,
         'cyphernode/notifier': this.sessionData.notifier_version,
         'eclipse-mosquitto': this.sessionData.mosquitto_version,
@@ -631,7 +631,7 @@ module.exports = class App {
       },
       lightning: {
         networks: ['cyphernodenet'],
-        docker: "cyphernode/clightning:"+this.config.docker_versions['cyphernode/clightning'],
+        docker: "elementsproject/lightningd:"+this.sessionData.lightning_version,
         extra: {
           nodename: this.config.data.lightning_nodename,
           nodecolor: this.config.data.lightning_nodecolor,

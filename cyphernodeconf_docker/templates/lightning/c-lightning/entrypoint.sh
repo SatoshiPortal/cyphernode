@@ -14,7 +14,13 @@ export HOME=/.lightning/plibs
 
 if [ -d "/.lightning/plugins" ]; then
   for plugin in /.lightning/plugins/*; do
-    pip3 install --user -r $plugin/requirements.txt
+    if [ -f "$plugin/requirements.txt" ]; then
+      if ! command -v pip3 >/dev/null 2>&1; then
+        echo "Python plugin requirements need pip3; the official CLN image does not include it" >&2
+        exit 1
+      fi
+      pip3 install --user -r "$plugin/requirements.txt" || exit 1
+    fi
   done
 fi
 

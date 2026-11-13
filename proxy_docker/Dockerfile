@@ -21,7 +21,7 @@ RUN apt update && apt -y install \
  COPY app/data/* ./
  COPY app/script/* ./
  COPY app/tests/* ./tests/
- COPY --from=cyphernode/clightning:v26.06.9 /usr/local/bin/lightning-cli ./
+ COPY --from=elementsproject/lightningd:v26.06.9 /usr/local/bin/lightning-cli ./
 
  RUN chmod +x *.sh tests/* \
   && chmod o+w . \
