@@ -13,7 +13,7 @@ OTSCLIENT_VERSION="v0.9.0-dev-local"
 PYCOIN_VERSION="v0.9.0-dev-local"
 PAYMENTALIST_VERSION="v0.9.0-dev-local"
 BARKD_VERSION="v0.9.0-dev-local"
-BITCOIN_SIGNET_VERSION="v32.1-signetblocktime"
+. "$(dirname "$(realpath "$0")")/dist/bitcoin-signet-version.sh"
 
 trace()
 {

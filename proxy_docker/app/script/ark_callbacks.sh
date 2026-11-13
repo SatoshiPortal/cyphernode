@@ -17,7 +17,7 @@ ark_process_movement() {
   trace "Entering ark_process_movement()..."
 
   local movement=${1}
-  local status movement_id received jobs
+  local status movement_id received jobs job_status job_error
   local address amount watches watch_id vtxos
 
   status=$(printf '%s' "${movement}" | jq -r '.status')
@@ -38,30 +38,50 @@ ark_process_movement() {
       [ "${status}" = "successful" ] && ark_ln_receive_movement "${movement}"
       return 0
       ;;
+    bark.arkoor)
+      # An invoice settled on its Ark address has no Lightning payment hash
+      # in the movement. Resolve the pre-submission row by invoice instead.
+      local invoice hash
+      invoice=$(printf '%s' "${movement}" | jq -r '.sent_to[]? | select(.destination.type == "invoice") | .destination.value' | head -n 1)
+      if [ -n "${invoice}" ]; then
+        hash=$(sql "SELECT payment_hash FROM ark_ln_send WHERE destination='$(sql_quote "${invoice}")' AND NOT published ORDER BY id DESC LIMIT 1")
+        case "${status}" in
+          successful) ark_ln_send_finish "${hash}" complete "${movement_id}" ;;
+          failed) ark_ln_send_finish "${hash}" failed "${movement_id}" ;;
+        esac
+        return 0
+      fi
+      ;;
   esac
 
-  [ "${status}" = "successful" ] || return 0
+  case "${status}" in
+    successful) job_status=successful; job_error=NULL ;;
+    failed) job_status=failed; job_error="'Ark movement failed'" ;;
+    *) return 0 ;;
+  esac
 
   vtxos=$(printf '%s' "${movement}" | jq -c '.output_vtxos // []')
 
-  # Receives: one row per (movement, watch)
-  received=$(printf '%s' "${movement}" | jq -r '.received_on[] | select(.destination.type == "ark") | "\(.destination.value)|\(.amount_sat)"')
-  local IFS="
+  if [ "${status}" = "successful" ]; then
+    # Receives: one row per (movement, watch)
+    received=$(printf '%s' "${movement}" | jq -r '.received_on[]? | select(.destination.type == "ark") | "\(.destination.value)|\(.amount_sat)"')
+    local IFS="
 "
-  for line in ${received}; do
-    address=$(printf '%s' "${line}" | cut -d '|' -f1)
-    amount=$(printf '%s' "${line}" | cut -d '|' -f2)
-    watches=$(sql "SELECT id FROM ark_watching WHERE watching AND address='${address}'")
-    for watch_id in ${watches}; do
-      sql "INSERT INTO ark_receive (movement_id, ark_watching_id, address, amount_sat, vtxos)"\
+    for line in ${received}; do
+      address=$(printf '%s' "${line}" | cut -d '|' -f1)
+      amount=$(printf '%s' "${line}" | cut -d '|' -f2)
+      watches=$(sql "SELECT id FROM ark_watching WHERE watching AND address='${address}'")
+      for watch_id in ${watches}; do
+        sql "INSERT INTO ark_receive (movement_id, ark_watching_id, address, amount_sat, vtxos)"\
 " VALUES (${movement_id}, ${watch_id}, '${address}', ${amount}, '$(sql_quote "${vtxos}")')"\
 " ON CONFLICT (movement_id, ark_watching_id) DO NOTHING" > /dev/null
+      done
     done
-  done
-  unset IFS
+    unset IFS
+  fi
 
   # Jobs: offboards are matched by movement id, boards by their VTXO ids
-  sql "UPDATE ark_job SET status='successful', movement_id=${movement_id} WHERE status='pending' AND movement_id=${movement_id}" > /dev/null
+  sql "UPDATE ark_job SET status='${job_status}', error=${job_error}, movement_id=${movement_id} WHERE status='pending' AND movement_id=${movement_id}" > /dev/null
   jobs=$(sql "SELECT id, vtxos FROM ark_job WHERE status='pending' AND kind='board' AND movement_id IS NULL")
   local IFS="
 "
@@ -71,7 +91,7 @@ ark_process_movement() {
     job_vtxos=$(printf '%s' "${line}" | cut -d '|' -f2-)
     overlap=$(jq -cn --argjson a "${job_vtxos:-[]}" --argjson b "${vtxos}" '($a - ($a - $b)) | length')
     if [ "${overlap}" -gt 0 ]; then
-      sql "UPDATE ark_job SET status='successful', movement_id=${movement_id} WHERE id=${job_id}" > /dev/null
+      sql "UPDATE ark_job SET status='${job_status}', error=${job_error}, movement_id=${movement_id} WHERE id=${job_id} AND status='pending'" > /dev/null
     fi
   done
   unset IFS

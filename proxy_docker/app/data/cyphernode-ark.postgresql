@@ -75,12 +75,14 @@ CREATE INDEX IF NOT EXISTS idx_ark_ln_invoice_calledback ON ark_ln_invoice (call
 CREATE TABLE IF NOT EXISTS ark_ln_send (
   id SERIAL PRIMARY KEY,
   payment_hash VARCHAR NOT NULL UNIQUE,
+  destination VARCHAR,
   event_message VARCHAR,
   movement_id INTEGER,
   status VARCHAR NOT NULL,
   published BOOLEAN DEFAULT FALSE,
   inserted_ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE ark_ln_send ADD COLUMN IF NOT EXISTS destination VARCHAR;
 
 INSERT INTO cyphernode_props (property, value, category)
 SELECT 'ark_last_pushed_at', '', 'ark'

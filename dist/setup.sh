@@ -221,6 +221,7 @@ configure() {
              -e PYCOIN_VERSION=$PYCOIN_VERSION \
              -e POSTGRES_VERSION=$POSTGRES_VERSION \
              -e BITCOIN_VERSION=$BITCOIN_VERSION \
+             -e BITCOIN_SIGNET_VERSION=$BITCOIN_SIGNET_VERSION \
              -e ELEMENTS_VERSION=$ELEMENTS_VERSION \
              -e LIGHTNING_VERSION=$LIGHTNING_VERSION \
              -e PAYMENTALIST_VERSION=$PAYMENTALIST_VERSION \
@@ -1030,6 +1031,7 @@ PYCOIN_VERSION="v0.9.0-dev"
 PAYMENTALIST_VERSION="v0.9.0-dev"
 CYPHERAPPS_VERSION="dev"
 BITCOIN_VERSION="v31.1"
+. "$(dirname "$(realpath "$0")")/bitcoin-signet-version.sh"
 ELEMENTS_VERSION="v23.2.5"
 LIGHTNING_VERSION="v26.06.9"
 BARKD_VERSION="v0.9.0-dev"
@@ -1120,6 +1122,11 @@ if [[ $CLEANUP == 'true' && $(docker image ls | grep cyphernodeconf) =~ cypherno
 fi
 
 if [[ $INSTALL == 1 ]]; then
+  if [[ $BITCOIN_INTERNAL == true && $BITCOIN_IMAGE_VERSION == $BITCOIN_SIGNET_VERSION ]] &&
+     ! docker image inspect "cyphernode/bitcoin:$BITCOIN_SIGNET_VERSION" >/dev/null 2>&1; then
+    echo "Missing cyphernode/bitcoin:$BITCOIN_SIGNET_VERSION. Build it with BUILD_BITCOIN_SIGNET=true ./build.sh before installing." >&2
+    exit 1
+  fi
   sanity_checks_pre_install
   create_user
   install

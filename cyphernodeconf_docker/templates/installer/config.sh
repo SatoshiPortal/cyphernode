@@ -38,6 +38,7 @@ OTSCLIENT_DATAPATH=<%= otsclient_datapath %>
 BITCOIN_DATAPATH=<%= bitcoin_datapath %>
 <% } %>
 BITCOIN_NETWORK=<%= net %>
+BITCOIN_IMAGE_VERSION=<%= bitcoin_image_version %>
 <% if ( features.indexOf('elements') !== -1 ) { %>
 ELEMENTS_DATAPATH=<%= elements_datapath %>
 <% } %>

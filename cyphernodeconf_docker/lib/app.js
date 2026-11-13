@@ -92,6 +92,7 @@ module.exports = class App {
       mosquitto_version: process.env.MOSQUITTO_VERSION,
       otsclient_version: process.env.OTSCLIENT_VERSION,
       bitcoin_version: process.env.BITCOIN_VERSION,
+      bitcoin_signet_version: process.env.BITCOIN_SIGNET_VERSION,
       elements_version: process.env.ELEMENTS_VERSION,
       lightning_version: process.env.LIGHTNING_VERSION,
       paymentalist_version: process.env.PAYMENTALIST_VERSION,
@@ -360,6 +361,18 @@ module.exports = class App {
 
   async writeFiles() {
 
+    if( (this.config.data.features || []).includes('ark') && this.config.data.net === 'testnet' ) {
+      throw new Error('The Ark wallet does not support testnet. Select signet or another supported network.');
+    }
+    if( this.config.data.net === 'signet' && this.config.data.signet_network === 'custom' ) {
+      const {signet_challenge, signet_blocktime, signet_seednodes} = this.config.data;
+      if( !signet_challenge || !/^(?:[0-9a-f]{2})+$/i.test(signet_challenge) ||
+          !Number.isInteger(signet_blocktime) || signet_blocktime < 1 ||
+          !signet_seednodes || !signet_seednodes.trim() ) {
+        throw new Error('Custom signet requires a nonempty hex challenge, block time, and seed nodes.');
+      }
+    }
+
     console.log( chalk.green( '   create' )+' '+configArchiveFileName );
     if( !this.config.serialize(
       this.destinationPath(configArchiveFileName),
@@ -406,13 +419,16 @@ module.exports = class App {
         seednodes: this.config.data.signet_seednodes
       };
       signet.custom = true;
-      signet.challenge = preset.challenge || '';
+      signet.challenge = (preset.challenge || '').toLowerCase();
       signet.blocktime = parseInt( preset.blocktime, 10 ) || 600;
       signet.seednodes = ( preset.seednodes || '' ).split( ',' ).map( s => s.trim() ).filter( s => s );
       signet.patched = signet.blocktime !== 600;
     }
     this.sessionData.signet = signet;
-    this.sessionData.bitcoin_image_version = signet.patched ? 'v32.1-signetblocktime' : this.sessionData.bitcoin_version;
+    if( signet.patched && !this.sessionData.bitcoin_signet_version ) {
+      throw new Error('BITCOIN_SIGNET_VERSION is required for a nonstandard signet block time.');
+    }
+    this.sessionData.bitcoin_image_version = signet.patched ? this.sessionData.bitcoin_signet_version : this.sessionData.bitcoin_version;
 
     this.sessionData.installationInfo = this.installationInfo();
 

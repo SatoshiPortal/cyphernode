@@ -51,10 +51,9 @@ check_bolt11_mrh() {
   trace "[check_bolt11_mrh] ark_server_pubkey=${ark_server_pubkey}"
   local result
 
-  local data="{\"invoice\": \"${bolt11}\", \"network\": \"${network}\"}"
-  if [ -n "${ark_server_pubkey}" ]; then
-    data="{\"invoice\": \"${bolt11}\", \"network\": \"${network}\", \"ark_server_pubkey\": \"${ark_server_pubkey}\"}"
-  fi
+  local data
+  data=$(jq -cn --arg invoice "${bolt11}" --arg network "${network}" --arg server "${ark_server_pubkey}" \
+    '{invoice: $invoice, network: $network} + (if $server == "" then {} else {ark_server_pubkey: $server} end)')
   trace "[check_bolt11_mrh] data=${data}"
 
   result=$(send_to_paymentalist "/check_bolt11_mrh" "${data}")

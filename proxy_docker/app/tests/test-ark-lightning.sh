@@ -73,12 +73,18 @@ PREPAID=
 PAID_AFTER=1
 barkd_call() {
   rm -f "$(barkd_http_code_file)"
+  case "${2}" in
+    /lightning/pay) [ -n "${PAY_SLEEP:-}" ] && sleep "${PAY_SLEEP}" ;;
+    /history*) [ -n "${HISTORY_SLEEP:-}" ] && ! grep -q '^POST /lightning/pay' "${BARKD_LOG}" && sleep "${HISTORY_SLEEP}" ;;
+  esac
   printf '%s %s %s\n' "${1}" "${2}" "${3:-}" >> "${BARKD_LOG}"
   case "${BARKD_MODE}" in
     ok)
       case "${2}" in
         /wallet/connected) echo '{"connected":true}'; return 0 ;;
-        /lightning/pay) echo "{\"message\":\"Payment initiated successfully\",\"payment_hash\":\"${HASH}\"}"; return 0 ;;
+        /lightning/pay)
+          grep -q "INSERT INTO ark_ln_send .*'${HASH}'" "${SQL_LOG}" && printf 'ROW_BEFORE_POST\n' >> "${BARKD_LOG}"
+          echo "{\"message\":\"Payment initiated successfully\",\"payment_hash\":\"${HASH}\"}"; return 0 ;;
         /lightning/sends/*)
           if [ -n "${PREPAID}" ] || [ "$(grep -c '^GET /lightning/sends/' "${BARKD_LOG}")" -ge "${PAID_AFTER}" ] && [ "${MOVEMENT_STATUS}" = "successful" ]; then
             echo "{\"payment_hash\":\"${HASH}\",\"state\":\"paid\",\"invoice\":null,\"preimage\":\"${PRE}\"}"
@@ -126,6 +132,7 @@ sql() {
         touch "${STATE}/published"
         printf '%s' "${SEND_EVENT:-}"
       fi ;;
+    "SELECT payment_hash FROM ark_ln_send WHERE destination="*) printf '%s' "${HASH}" ;;
     "SELECT row_to_json(t) FROM (SELECT id, label, bolt11, payment_hash, callback_url, event_message, amount_sat, received_sat, fee_sat, movement_id FROM ark_ln_invoice WHERE NOT calledback"*)
       [ -f "${STATE}/calledback" ] || printf '{"id":5,"label":"order|123","bolt11":"%s","payment_hash":"%s","callback_url":"http://app/cb?a=1|2","event_message":"ZXZlbnQ=","amount_sat":30000,"received_sat":29840,"fee_sat":160,"movement_id":15}' "${INV}" "${HASH}" ;;
     "UPDATE ark_ln_invoice SET calledback=true, calledback_ts=CURRENT_TIMESTAMP WHERE id=5") touch "${STATE}/calledback" ;;
@@ -165,6 +172,19 @@ check "m, n and p multipliers and whole bitcoins" \
   "[ \"\$(ark_bolt11_amount_msat lnbc20m1qqqq)\" = 2000000000 ] && [ \"\$(ark_bolt11_amount_msat lnbcrt2500n1qqqq)\" = 250000 ] && [ \"\$(ark_bolt11_amount_msat lntb100p1qqqq)\" = 10 ] && [ \"\$(ark_bolt11_amount_msat LNBC11QQQQ)\" = 100000000000 ]"
 check "offers, lightning addresses and lnurls are not invoices" \
   "! ark_is_bolt11 lno1qqqq && ! ark_is_bolt11 user@domain.com && ! ark_is_bolt11 lnurl1qqqq && ark_is_bolt11 ${INV}"
+check "Ark marker detection accepts only one-hop Ark SCIDs" \
+  "ark_bolt11_has_hint '{\"routes\":[[{\"short_channel_id\":\"6386283x65536x0\"}]]}' && ark_bolt11_has_hint '{\"routes\":[[{\"short_channel_id\":\"6386283x131072x0\"}]]}' && ! ark_bolt11_has_hint '{\"routes\":[[{\"short_channel_id\":\"6386283x196608x0\"}]]}' && ! ark_bolt11_has_hint '{\"routes\":[[{\"short_channel_id\":\"6386283x65536x0\"},{\"short_channel_id\":\"1x1x1\"}]]}'"
+
+( barkd_call() { [ "${BARKD_TIMEOUT:-}" = 5 ] && echo '{"server_pubkey":"02aa"}'; }
+  check "Ark server lookup has a five-second timeout" "[ \"\$(ark_server_pubkey)\" = 02aa ]"
+) || fail=1
+
+( . ./paymentalist.sh
+  send_to_paymentalist() { printf '%s' "${2}"; }
+  payload=$(check_bolt11_mrh 'lnbc1"escaped' '' '02aa')
+  check "paymentalist request safely JSON-escapes the invoice" \
+    "[ \"\$(printf '%s' '${payload}' | jq -r '.invoice')\" = 'lnbc1\"escaped' ]"
+) || fail=1
 
 # --- ark_lnpay ---------------------------------------------------------------
 
@@ -194,8 +214,8 @@ check "paid invoice is complete with the preimage, amounts and movement from his
   "[ ${rc} -eq 0 ] && jqcheck '${out}' '.status == \"complete\" and .payment_hash == \"${HASH}\" and .payment_preimage == \"${PRE}\" and .amount_msat == 1000000 and .amount_sent_msat == 1077000 and .movementId == 14 and .destination == \"${INV}\" and (.already_paid == null)'"
 check "the invoice amount is not sent to barkd" "grep -q '^POST /lightning/pay {\"destination\":\"${INV}\"}$' '${BARKD_LOG}'"
 check "the send state was polled until paid" "[ \"\$(grep -c '^GET /lightning/sends/${HASH}' '${BARKD_LOG}')\" -eq 3 ]"
-check "the eventMessage is stored before the wait" \
-  "grep -q \"INSERT INTO ark_ln_send (payment_hash, event_message, status) VALUES ('${HASH}', 'ZXZlbnQ=', 'pending')\" '${SQL_LOG}'"
+check "without local CLN decode, barkd's returned hash keys the event row" \
+  "grep -q \"INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${HASH}', '${INV}', 'ZXZlbnQ=', 'pending')\" '${SQL_LOG}'"
 check "the outcome is recorded and published once" \
   "grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=14, published=true WHERE payment_hash='${HASH}' AND NOT published\" '${SQL_LOG}' && [ \"\$(grep -c '^ark_lnpay ' '${MQTT_LOG}')\" -eq 1 ] && grep -q '^ark_lnpay {\"payment_hash\":\"${HASH}\",\"movementId\":14,\"status\":\"complete\",\"eventMessage\":\"ZXZlbnQ=\"}$' '${MQTT_LOG}'"
 ARK_LNPAY_WAIT=0
@@ -222,6 +242,12 @@ check "amount-less invoice is paid for expected_msatoshi" \
   "jqcheck '${out}' '.status == \"complete\"' && grep -q '^POST /lightning/pay {\"destination\":\"${NOAMOUNT}\",\"amount_sat\":40000}$' '${BARKD_LOG}'"
 
 reset
+upper_invoice=$(printf '%s' "${INV}" | tr 'a-z' 'A-Z')
+out=$(ark_lnpay "{\"destination\":\"${upper_invoice}\"}")
+check "uppercase BOLT11 is normalized before barkd and history lookup" \
+  "jqcheck '${out}' '.status == \"complete\" and .destination == \"${INV}\"' && grep -q '^POST /lightning/pay {\"destination\":\"${INV}\"}$' '${BARKD_LOG}'"
+
+reset
 out=$(ark_lnpay '{"destination":"user@domain.com","expected_msatoshi":"40000000"}')
 check "lightning address is paid for expected_msatoshi and looked up by hash in the full history" \
   "jqcheck '${out}' '.status == \"complete\" and .destination == \"user@domain.com\"' && grep -q '^POST /lightning/pay {\"destination\":\"user@domain.com\",\"amount_sat\":40000}$' '${BARKD_LOG}' && ! grep -q '^GET /history?' '${BARKD_LOG}' && grep -q '^GET /history ' '${BARKD_LOG}'"
@@ -233,6 +259,17 @@ rc=$?
 check "already paid invoice is reported, not paid again" \
   "[ ${rc} -eq 0 ] && jqcheck '${out}' '.already_paid == true and .status == \"complete\" and .payment_hash == \"${HASH}\" and .movementId == 14' && ! grep -q 'POST /lightning/pay' '${BARKD_LOG}'"
 PREPAID=
+
+reset
+FEATURE_LIGHTNING=true HISTORY_SLEEP=0.3 PAY_SLEEP=0.3
+ark_lnpay "{\"destination\":\"${INV}\"}" > "${STATE}/first" &
+first_pid=$!
+ark_lnpay "{\"destination\":\"${INV}\"}" > "${STATE}/second" &
+second_pid=$!
+wait "${first_pid}"; wait "${second_pid}"
+check "simultaneous payments of one invoice submit only once" \
+  "[ \"\$(grep -c '^POST /lightning/pay' '${BARKD_LOG}')\" -eq 1 ]"
+FEATURE_LIGHTNING=false HISTORY_SLEEP= PAY_SLEEP=
 
 reset
 BARKD_MODE=down_after
@@ -256,7 +293,7 @@ check "description mismatch is refused with the CLN decode" \
 reset
 out=$(ark_lnpay '{"destination":"'${INV}'","expected_msatoshi":"1000000","expected_description":"order #1"}')
 check "matching amount and description pay and look the invoice up by its hash" \
-  "jqcheck '${out}' '.status == \"complete\" and .payment_hash == \"${HASH}\"' && grep -q 'POST /lightning/pay' '${BARKD_LOG}'"
+  "jqcheck '${out}' '.status == \"complete\" and .payment_hash == \"${HASH}\"' && grep -q 'POST /lightning/pay' '${BARKD_LOG}' && grep -q '^ROW_BEFORE_POST$' '${BARKD_LOG}'"
 FEATURE_LIGHTNING=false
 
 # --- ark_lncreateinvoice -----------------------------------------------------
@@ -369,6 +406,11 @@ arkoor_movement='{"id":21,"status":"successful","subsystem":{"name":"bark.arkoor
     "jqcheck '${out}' '.status == \"complete\" and .movementId == 21 and .payment_preimage == null and .amount_msat == 1000000 and .amount_sent_msat == 1000000'"
   check "its send row is marked complete" "grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=21\" '${SQL_LOG}'"
   reset
+  SEND_EVENT=ZXZlbnQ=
+  ark_process_movement "${arkoor_movement}"
+  check "movement loop closes and publishes an Ark-address invoice payment" \
+    "grep -q \"SELECT payment_hash FROM ark_ln_send WHERE destination='${INV}'\" '${SQL_LOG}' && grep -q \"UPDATE ark_ln_send SET status='complete', movement_id=21\" '${SQL_LOG}' && [ \"\$(grep -c '^ark_lnpay ' '${MQTT_LOG}')\" -eq 1 ]"
+  reset
   PREPAID=1
   out=$(ark_lnpay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
   check "paying it again reports it already paid and pays nothing" \
@@ -383,7 +425,9 @@ PREPAID=
 . ./call_lightningd.sh
 ln_call_lightningd() {
   printf '%s\n' "$*" >> "${CLN_LOG}"
-  echo "{\"type\":\"bolt11 invoice\",\"valid\":true,\"payment_hash\":\"${HASH}\",\"amount_msat\":${CLN_AMOUNT},\"description\":\"shape\"}"
+  local routes='[]'
+  [ "${HINT_MODE:-none}" = ark ] && routes='[[{"short_channel_id":"6386283x65536x0"}]]'
+  echo "{\"type\":\"bolt11 invoice\",\"valid\":true,\"payment_hash\":\"${HASH}\",\"amount_msat\":${CLN_AMOUNT},\"description\":\"shape\",\"routes\":${routes}}"
 }
 ln_listpays() {
   echo '{"pays":[{"status":"complete","payment_hash":"cln"}]}'
@@ -429,19 +473,26 @@ ark_lnpay() { printf '%s' "${1}" > "${STATE}/ark_lnpay"; echo '{"status":"comple
 ark_bolt11_address() { [ "${MRH_MODE}" = "ark" ] && echo tark1hinted; return 0; }
 
 reset
-FEATURE_ARK=true MRH_MODE=ark
+FEATURE_ARK=true MRH_MODE=ark HINT_MODE=ark
 out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
 check "ln_pay pays a hinted invoice from the Ark wallet" \
-  "jqcheck '${out}' '.via == \"ark\"' && grep -q '\"bolt11\":\"${INV}\"' '${STATE}/ark_lnpay' && [ ! -s '${CLN_LOG}' ]"
+  "jqcheck '${out}' '.via == \"ark\"' && grep -q '\"bolt11\":\"${INV}\"' '${STATE}/ark_lnpay' && [ \"\$(grep -c '^decode ' '${CLN_LOG}')\" -eq 1 ] && ! grep -q '^pay ' '${CLN_LOG}'"
 
-reset
-FEATURE_ARK=true MRH_MODE=none
+reset; : > "${MRH_LOG}"
+FEATURE_ARK=true MRH_MODE=none HINT_MODE=none
 out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
 check "ln_pay pays an invoice without a hint over Lightning" \
-  "jqcheck '${out}' '.payment_hash == \"cln\"' && [ ! -f '${STATE}/ark_lnpay' ]"
+  "jqcheck '${out}' '.payment_hash == \"cln\"' && [ ! -f '${STATE}/ark_lnpay' ] && [ ! -s '${MRH_LOG}' ] && ! grep -q '^GET /wallet/ark-info' '${BARKD_LOG}'"
 
 reset
-FEATURE_ARK=false MRH_MODE=ark
+FEATURE_ARK=true MRH_MODE=down HINT_MODE=ark
+out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
+rc=$?
+check "ln_pay refuses a hinted invoice when Ark lookup is down" \
+  "[ ${rc} -eq 1 ] && jqcheck '${out}' '.error.code == -32003' && [ ! -f '${STATE}/ark_lnpay' ] && ! grep -q '^pay ' '${CLN_LOG}'"
+
+reset
+FEATURE_ARK=false MRH_MODE=ark HINT_MODE=ark
 out=$(ln_pay "{\"bolt11\":\"${INV}\",\"expected_msatoshi\":1000000}")
 check "ln_pay ignores the hint without the Ark feature" \
   "jqcheck '${out}' '.payment_hash == \"cln\"' && [ ! -f '${STATE}/ark_lnpay' ]"

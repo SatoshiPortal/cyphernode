@@ -1957,8 +1957,8 @@ Proxy response:
 
 Available when the `ark` feature is installed. The proxy drives a barkd wallet
 on your Ark server. Amounts are in satoshis. Board and offboard take a caller
-`label` that must be unique: a repeated label returns the stored outcome
-instead of running twice. `ark_send` works like `spend`: the outcome is in the
+`label` that must be unique: a repeated label returns an error without
+running the operation again. `ark_send` works like `spend`: the outcome is in the
 reply and idempotency is the caller's.
 
 ### Get Ark wallet info
@@ -2205,7 +2205,10 @@ know.
 
 With an `eventMessage`, once the payment is final the broker topic `ark_lnpay`
 carries `{"payment_hash":"...","movementId":14,"status":"complete","eventMessage":"eyJ..."}`,
-whether or not the call was still waiting.
+whether or not the call was still waiting. For a BOLT11 invoice decoded by the
+local Lightning node, the callback is recorded before submitting the payment.
+For an offer or Lightning address, barkd supplies the payment hash only after
+submission, so the callback cannot be recorded until then.
 
 ### Create a Lightning invoice paid into the Ark wallet (called by your application)
 

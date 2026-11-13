@@ -269,16 +269,16 @@ main() {
         executecallbacks)
           # curl (GET) http://192.168.111.152:8080/executecallbacks
 
-          response=$(elements_manage_not_imported)
-          response=$(elements_manage_missed_conf)
-          response=$(elements_do_callbacks)
-          response=$(manage_not_imported)
-          response=$(manage_missed_conf)
-          response=$(do_callbacks)
+          returncode=0
+          response=$(elements_manage_not_imported) || returncode=1
+          response=$(elements_manage_missed_conf) || returncode=1
+          response=$(elements_do_callbacks) || returncode=1
+          response=$(manage_not_imported) || returncode=1
+          response=$(manage_missed_conf) || returncode=1
+          response=$(do_callbacks) || returncode=1
           if [ "${FEATURE_ARK}" = "true" ]; then
-            response=$(ark_manage_missed)
+            response=$(ark_manage_missed) || returncode=1
           fi
-          returncode=$?
           ;;
         get_txns_spending)
           # curl (GET) http://192.168.111.152:8080/get_txns_spending/20/10

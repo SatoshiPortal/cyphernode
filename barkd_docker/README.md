@@ -36,8 +36,9 @@ recovers what the server still owes it:
    `{"network":"<net>","mnemonic":"<words>","birthday_height":<height>,"force":true}`
    (birthday height: a block before the wallet's first board).
 4. The new wallet numbers its movements from 1 again. In Cyphernode's
-   database set `ark_history_floor` to `0` and `ark_last_pushed_at` to the
-   empty string (`cyphernode_props`), then restart the proxy. Receives
+   database set `ark_history_floor` and `ark_history_seen` to `0`,
+   `ark_history_pending` to `[]`, and `ark_last_pushed_at` to the empty string
+   (`cyphernode_props`), then restart the proxy. Receives
    already called back keep their rows; a new movement that reuses an old
    movement id for the same watched address is not called back again.
 

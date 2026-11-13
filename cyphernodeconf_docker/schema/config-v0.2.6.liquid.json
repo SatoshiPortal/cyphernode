@@ -42,6 +42,26 @@
   "allOf": [
     {
       "if": {
+        "required": ["net", "signet_network"],
+        "properties": {
+          "net": {"const": "signet"},
+          "signet_network": {"const": "custom"}
+        }
+      },
+      "then": {"required": ["signet_challenge", "signet_blocktime", "signet_seednodes"]}
+    },
+    {
+      "if": {
+        "required": ["net", "features"],
+        "properties": {
+          "net": {"const": "testnet"},
+          "features": {"contains": {"const": "ark"}}
+        }
+      },
+      "then": false
+    },
+    {
+      "if": {
         "properties": {
           "run_as_different_user": {
             "enum": [

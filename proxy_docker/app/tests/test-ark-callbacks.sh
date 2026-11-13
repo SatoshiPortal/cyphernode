@@ -87,9 +87,17 @@ ark_process_movement "${receive}"
 check "received movement is recorded once per watch" \
   "grep -c \"INSERT INTO ark_receive (movement_id, ark_watching_id, address, amount_sat, vtxos) VALUES (9, 7, 'ark1receiver', 12345\" '${SQL_LOG}' | grep -q '^1$'"
 check "offboard jobs are matched by movement id" \
-  "grep -q \"UPDATE ark_job SET status='successful', movement_id=9 WHERE status='pending' AND movement_id=9\" '${SQL_LOG}'"
+  "grep -q \"UPDATE ark_job SET status='successful', error=NULL, movement_id=9 WHERE status='pending' AND movement_id=9\" '${SQL_LOG}'"
 check "board jobs are matched by their vtxo ids" \
-  "grep -q \"UPDATE ark_job SET status='successful', movement_id=9 WHERE id=3\" '${SQL_LOG}'"
+  "grep -q \"UPDATE ark_job SET status='successful', error=NULL, movement_id=9 WHERE id=3 AND status='pending'\" '${SQL_LOG}'"
+
+: > "${SQL_LOG}"
+failed='{"id":12,"status":"failed","subsystem":{"name":"bark.board","kind":"board"},"sent_to":[],"received_on":[],"output_vtxos":["v-board"]}'
+ark_process_movement "${failed}"
+check "failed movement fails its matching board without recording a receive" \
+  "grep -q \"UPDATE ark_job SET status='failed', error='Ark movement failed', movement_id=12 WHERE id=3 AND status='pending'\" '${SQL_LOG}' && ! grep -q 'INSERT INTO ark_receive' '${SQL_LOG}'"
+check "failed movement fails a matching offboard, allowing its callback" \
+  "grep -q \"UPDATE ark_job SET status='failed', error='Ark movement failed', movement_id=12 WHERE status='pending' AND movement_id=12\" '${SQL_LOG}'"
 
 # --- callbacks ---------------------------------------------------------------
 

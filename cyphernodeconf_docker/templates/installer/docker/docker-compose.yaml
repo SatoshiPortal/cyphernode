@@ -469,7 +469,7 @@ services:
     restart: always
     <% } %>
 
-  <% if ( features.indexOf('lightning') !== -1 && features.indexOf('elements') !== -1 ) { %>
+  <% if ( features.indexOf('lightning') !== -1 && (features.indexOf('elements') !== -1 || features.indexOf('ark') !== -1) ) { %>
   ##########################
   # PAYMENTALIST           #
   ##########################

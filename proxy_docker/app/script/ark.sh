@@ -391,8 +391,10 @@ ark_bolt11_amount_msat() {
 # a Lightning send: barkd records it as a bark.arkoor send to the invoice.
 ark_ln_find_send_movement() {
   local path=/history
+  local history
   [ -n "${2:-}" ] && path="/history?type=invoice&value=${2}"
-  barkd_call GET "${path}" | jq -c --arg h "${1}" --arg i "${2:-}" '
+  history=$(barkd_call GET "${path}") || return 1
+  printf '%s' "${history}" | jq -c --arg h "${1}" --arg i "${2:-}" '
     if type == "array" then
       [ .[] | select(
           (.subsystem.name == "bark.lightning_send" and ($h == "" or .metadata.payment_hash == $h))
@@ -444,23 +446,41 @@ ark_ln_send_finish() {
 # not checked and the payment hash comes from barkd's reply.
 # The public key of the Ark server the wallet is on; empty when unknown.
 ark_server_pubkey() {
-  barkd_call GET /wallet/ark-info | jq -r '.server_pubkey // empty' 2>/dev/null
+  BARKD_TIMEOUT=5 barkd_call GET /wallet/ark-info | jq -r '.server_pubkey // empty' 2>/dev/null
 }
 
-# The Ark address a bolt11 invoice asks to be paid on in its route hints, if
-# it is an address of our Ark server. Empty otherwise, and when it cannot be
-# checked.
+# CLN decode exposes invoice route hints as one-hop routes. Ark encodes its
+# marker in the first four bytes of the short channel id: "ark\x01" or
+# "ark\x02". CLN may render that id as a decimal blockxtransactionxoutput
+# string, a hex string, or a JSON number.
+ark_bolt11_has_hint() {
+  printf '%s' "${1}" | jq -e '
+    any((.routes // .route_hints // [])[];
+      (type == "array" and length == 1) and
+      (.[0].short_channel_id as $id |
+        if ($id | type) == "number" then
+          (($id / 4294967296 | floor) == 1634888449 or ($id / 4294967296 | floor) == 1634888450)
+        elif ($id | type) == "string" then
+          ($id | test("^0[xX]61726[bB]0[12][0-9a-fA-F]{8}$")) or
+          (($id | split("x")) as $parts | ($parts | length) == 3 and
+            $parts[0] == "6386283" and (($parts[1] | tonumber) >= 65536) and
+            (($parts[1] | tonumber) < 196608))
+        else false end))' >/dev/null 2>&1
+}
+
+# A hinted invoice must be checked against this wallet's Ark server before
+# payment. Missing server information or a paymentalist failure is an error.
 ark_bolt11_address() {
   local bolt11=${1}
   local server result
 
   server=$(ark_server_pubkey)
-  [ -n "${server}" ] || return 0
-  result=$(check_bolt11_mrh "${bolt11}" "" "${server}") || return 0
-  printf '%s' "${result}" | jq -r '.result.ark_address // empty' 2>/dev/null
+  [ -n "${server}" ] || return 1
+  result=$(check_bolt11_mrh "${bolt11}" "" "${server}") || return 1
+  printf '%s' "${result}" | jq -er '.result.ark_address | select(type == "string" and length > 0)' 2>/dev/null
 }
 
-ark_lnpay() {
+ark_lnpay() (
   trace "Entering ark_lnpay()..."
 
   local request=${1}
@@ -489,7 +509,8 @@ ark_lnpay() {
   invoice_msat=
   payment_hash=
   if ark_is_bolt11 "${destination}"; then
-    bolt11=${destination}
+    bolt11=$(printf '%s' "${destination}" | tr 'A-Z' 'a-z')
+    destination=${bolt11}
     invoice_msat=$(ark_bolt11_amount_msat "${bolt11}")
     if [ "${FEATURE_LIGHTNING}" = "true" ]; then
       decoded=$(ln_call_lightningd decode "${bolt11}")
@@ -505,6 +526,19 @@ ark_lnpay() {
         return 1
       fi
     fi
+  fi
+
+  # Serialize the history check and payment submission for this invoice.
+  # A bolt11 without a decoded hash uses its invoice digest as a stable key.
+  local lock_key
+  lock_key=${payment_hash:-$(printf '%s' "${bolt11:-${destination}}" | sha256sum | cut -d ' ' -f1)}
+  case "${lock_key}" in
+    *[!0-9a-f]*|'') lock_key=$(printf '%s' "${lock_key}" | sha256sum | cut -d ' ' -f1) ;;
+  esac
+  exec 9>"/tmp/ark_lnpay.${lock_key}.lock"
+  if ! flock --timeout 180 9; then
+    echo '{"error":{"code":-32002,"message":"another payment for this destination is still being checked"}}'
+    return 1
   fi
 
   if [ -n "${invoice_msat}" ]; then
@@ -529,7 +563,10 @@ ark_lnpay() {
 
   # Already paid or in flight: only an invoice can be looked up before paying.
   if [ -n "${bolt11}" ]; then
-    movement=$(ark_ln_find_send_movement "${payment_hash}" "${bolt11}")
+    movement=$(ark_ln_find_send_movement "${payment_hash}" "${bolt11}") || {
+      echo '{"error":{"code":-32001,"message":"Ark payment history unavailable; nothing was sent"}}'
+      return 1
+    }
     case "$(printf '%s' "${movement}" | jq -r '.status // empty')" in
       successful)
         ark_ln_send_reply complete "$(printf '%s' "${movement}" | jq -r '.metadata.payment_hash // empty')" "${destination}" "" "${movement}" true
@@ -554,6 +591,13 @@ ark_lnpay() {
     return 1
   fi
 
+  # Store the callback before barkd can accept the payment and emit a movement.
+  event_pg=NULL; [ -n "${event_message}" ] && event_pg="'$(sql_quote "${event_message}")'"
+  if [ -n "${payment_hash}" ]; then
+    sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
+" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null
+  fi
+
   body=$(jq -cn --arg d "${destination}" --arg a "${amount_sat}" '{destination: $d} + (if $a == "" then {} else {amount_sat: ($a | tonumber)} end)')
   response=$(barkd_call POST /lightning/pay "${body}")
   returncode=$?
@@ -571,6 +615,7 @@ ark_lnpay() {
         mosquitto_pub -h broker -t insufficientfunds -m "$(jq -cn --arg m "${message}" '{method: "ark_lnpay", error: $m}')"
         ;;
     esac
+    [ -n "${payment_hash}" ] && ark_ln_send_finish "${payment_hash}" failed
     barkd_error "${returncode}" "${response}"
     return 1
   fi
@@ -581,11 +626,12 @@ ark_lnpay() {
     return 0
   fi
 
-  # The eventMessage is kept for the movement loop in case the outcome
-  # arrives after the wait below. A retry of a failed send reuses the row.
-  event_pg=NULL; [ -n "${event_message}" ] && event_pg="'$(sql_quote "${event_message}")'"
-  sql "INSERT INTO ark_ln_send (payment_hash, event_message, status) VALUES ('${payment_hash}', ${event_pg}, 'pending')"\
-" ON CONFLICT (payment_hash) DO UPDATE SET event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null
+  # When CLN could not decode a hash (for an offer or Lightning address),
+  # barkd's response supplies it and the row can only be keyed at this point.
+  if [ -z "${bolt11}" ] || [ "${FEATURE_LIGHTNING}" != "true" ]; then
+    sql "INSERT INTO ark_ln_send (payment_hash, destination, event_message, status) VALUES ('${payment_hash}', '$(sql_quote "${destination}")', ${event_pg}, 'pending')"\
+" ON CONFLICT (payment_hash) DO UPDATE SET destination=EXCLUDED.destination, event_message=EXCLUDED.event_message, status='pending', movement_id=NULL, published=false" > /dev/null
+  fi
 
   # A failed send ends in state unknown once its HTLCs are revoked, so
   # failure is read from the movement.
@@ -620,7 +666,7 @@ ark_lnpay() {
   ark_ln_send_reply "${status}" "${payment_hash}" "${destination}" "${invoice_msat:-${expected_msatoshi}}" "${movement}"
   [ "${status}" = "failed" ] && return 1
   return 0
-}
+)
 
 # ark_lncreateinvoice: {"msatoshi":"30000000","label":"order-123","description":"Bull order #123","expiry":"900","callbackUrl":"...","eventMessage":"eyJ..."}
 #
