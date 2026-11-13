@@ -31,3 +31,21 @@ test('official CLN config omits the obsolete offers flag', () => {
   const config = read('cyphernodeconf_docker/templates/lightning/c-lightning/config');
   expect(config).not.toMatch(/^experimental-offers$/m);
 });
+
+test('Cyphernet CLN can fund channels when Core has no fee estimates', () => {
+  const template = read('cyphernodeconf_docker/templates/lightning/c-lightning/config');
+  const options = {
+    net: 'signet',
+    lightning_nodename: '',
+    lightning_nodecolor: '',
+    postgres_password: 'test',
+    features: ['lightning'],
+    torifyables: [],
+    lightning_announce: false
+  };
+  const cyphernet = ejs.render(template, {...options, signet_network: 'cyphernet'});
+  const publicSignet = ejs.render(template, {...options, signet_network: 'signet'});
+
+  expect(cyphernet).toMatch(/^force-feerates=253$/m);
+  expect(publicSignet).not.toMatch(/^force-feerates=/m);
+});

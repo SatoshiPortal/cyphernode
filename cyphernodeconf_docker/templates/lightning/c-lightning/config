@@ -20,6 +20,10 @@ rgb=<%= lightning_nodecolor %>
 addr=0.0.0.0:9735
 bitcoin-datadir=/.bitcoin
 wallet=postgres://cln01:<%= postgres_password %>@cln-postgres:5432/cln01
+<% if (signet_network === 'cyphernet') { %>
+# Cyphernet's empty mempool gives CLN no fee estimates for channel funding.
+force-feerates=253
+<% } %>
 
 # With v23.11.2, developer mode breaks:
 # - CLBOSS, when ON at the same time, makes cln crash
