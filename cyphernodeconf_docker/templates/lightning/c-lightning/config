@@ -18,6 +18,7 @@ rgb=<%= lightning_nodecolor %>
 <% } %>
 
 addr=0.0.0.0:9735
+experimental-offers
 bitcoin-datadir=/.bitcoin
 wallet=postgres://cln01:<%= postgres_password %>@cln-postgres:5432/cln01
 
