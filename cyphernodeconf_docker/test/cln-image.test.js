@@ -26,3 +26,8 @@ test('CLN entrypoint still renders both direct and Tor launch paths', () => {
   expect(direct).toContain('pip3 install --user -r "$plugin/requirements.txt"');
   expect(tor).toContain('exec lightningd --lightning-dir=/.lightning --proxy=$TORIP:9050');
 });
+
+test('official CLN config omits the obsolete offers flag', () => {
+  const config = read('cyphernodeconf_docker/templates/lightning/c-lightning/config');
+  expect(config).not.toMatch(/^experimental-offers$/m);
+});
